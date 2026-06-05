@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meta 광고 자동등록</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f5f5f7;
+    --white: #ffffff;
+    --border: #e5e5ea;
+    --border2: #d1d1d6;
+    --text1: #1c1c1e;
+    --text2: #6c6c70;
+    --text3: #aeaeb2;
+    --blue: #007aff;
+    --blue-bg: #f0f6ff;
+    --green: #34c759;
+    --green-bg: #f0faf3;
+    --red: #ff3b30;
+    --red-bg: #fff5f5;
+    --yellow-bg: #fffbf0;
+    --yellow: #ff9500;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text1);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-size: 14px;
+  }
+
+  /* 탑바 */
+  .topbar {
+    height: 56px;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 24px;
+    flex-shrink: 0;
+  }
+  .topbar-brand { font-size: 15px; font-weight: 600; color: var(--text1); letter-spacing: -0.3px; margin-right: 8px; }
+  .tab-btn {
+    height: 56px; padding: 0 4px;
+    background: none; border: none; border-bottom: 2px solid transparent;
+    color: var(--text2); font-family: inherit; font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tab-btn:hover { color: var(--text1); }
+  .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+  .tab-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.5; }
+  .tab-btn.active .tab-dot { opacity: 1; }
+
+  /* 데이터 로딩 상태 */
+  .sync-bar {
+    height: 32px;
+    background: var(--blue-bg);
+    border-bottom: 1px solid #c8dffe;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; flex-shrink: 0;
+    font-size: 12px; color: var(--blue);
+    transition: all 0.3s;
+  }
+  .sync-bar.ok { background: var(--green-bg); border-bottom-color: #b6eac7; color: #1a7f4b; }
+  .sync-bar.err { background: var(--red-bg); border-bottom-color: #ffc9c9; color: #c0392b; }
+  .sync-bar.hidden { display: none; }
+  .sync-left { display: flex; align-items: center; gap: 6px; }
+  .sync-btn {
+    font-size: 11px; font-weight: 600; padding: 3px 10px;
+    background: none; border: 1px solid currentColor; border-radius: 20px;
+    color: inherit; cursor: pointer; font-family: inherit;
+  }
+  .sync-btn:hover { opacity: 0.7; }
+
+  /* 레이아웃 */
+  .layout { flex: 1; display: flex; overflow: hidden; }
+  .panel {
+    width: 360px; min-width: 360px;
+    background: var(--white); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .panel-head { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); }
+  .panel-head h2 { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+  .panel-head p { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .panel-body { flex: 1; overflow-y: auto; padding: 20px 24px; scrollbar-width: none; }
+  .panel-body::-webkit-scrollbar { width: 0; }
+  .panel-foot { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+
+  /* 폼 */
+  .section { margin-bottom: 20px; }
+  .sec-label { font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 10px; }
+  .field { margin-bottom: 10px; }
+  .field label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 5px; }
+  .field input, .field select, .field textarea {
+    width: 100%; height: 40px;
+    background: var(--white); border: 1px solid var(--border2);
+    border-radius: var(--radius-sm); color: var(--text1);
+    font-family: inherit; font-size: 13px;
+    padding: 0 12px; outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    appearance: none; -webkit-appearance: none;
+  }
+  .field textarea { height: 72px; padding: 10px 12px; resize: none; line-height: 1.5; }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,122,255,0.1);
+  }
+  .field input[readonly] { background: var(--bg); color: var(--text2); cursor: default; }
+  .field input[readonly]:focus { border-color: var(--border2); box-shadow: none; }
+  .field select {
+    background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23aeaeb2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+    padding-right: 32px; cursor: pointer;
+  }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .auto-tag { display: inline-flex; align-items: center; font-size: 10px; font-weight: 600; color: var(--blue); background: var(--blue-bg); padding: 2px 7px; border-radius: 20px; margin-left: 6px; }
+  .divider { height: 1px; background: var(--border); margin: 4px 0 16px; }
+
+  .campaign-id-box {
+    background: var(--yellow-bg); border: 1px solid #ffe0a0;
+    border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px;
+  }
+  .campaign-id-box label { display: block; font-size: 12px; font-weight: 600; color: var(--yellow); margin-bottom: 6px; }
+  .campaign-id-box input {
+    width: 100%; height: 40px;
+    background: var(--white); border: 1px solid #ffe0a0;
+    border-radius: var(--radius-sm); color: var(--text1);
+    font-family: inherit; font-size: 13px; padding: 0 12px; outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .campaign-id-box input:focus { border-color: var(--yellow); box-shadow: 0 0 0 3px rgba(255,149,0,0.15); }
+
+  /* 버튼 */
+  .btn-primary { width: 100%; height: 48px; background: var(--blue); border: none; border-radius: var(--radius); color: white; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.15s; letter-spacing: -0.2px; }
+  .btn-primary:hover { background: #0066dd; }
+  .btn-primary:active { transform: scale(0.99); }
+  .btn-primary:disabled { background: var(--border); color: var(--text3); cursor: not-allowed; transform: none; }
+  .btn-ghost { width: 100%; height: 36px; background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text2); font-family: inherit; font-size: 13px; cursor: pointer; transition: all 0.15s; }
+  .btn-ghost:hover { background: var(--bg); color: var(--text1); }
+
+  /* 오른쪽 */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .main-head { padding: 18px 28px 14px; background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .main-head h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
+  .main-head p { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .live-pill { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; color: var(--green); background: var(--green-bg); padding: 5px 12px; border-radius: 20px; }
+  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .content { flex: 1; overflow-y: auto; padding: 24px 28px; }
+  .content::-webkit-scrollbar { width: 4px; }
+  .content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 10px; color: var(--text3); }
+  .empty-icon { width: 56px; height: 56px; background: var(--white); border: 1px solid var(--border); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+  .empty h4 { font-size: 14px; font-weight: 500; color: var(--text2); }
+  .empty p { font-size: 12px; }
+
+  .cards { display: flex; flex-direction: column; gap: 10px; }
+  .card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; transition: box-shadow 0.15s; }
+  .card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+  .card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .card-title-wrap { display: flex; align-items: center; gap: 8px; }
+  .card-type { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+  .type-new { background: #eef4ff; color: #2563eb; }
+  .type-add { background: var(--yellow-bg); color: #c2760a; }
+  .card-title { font-size: 14px; font-weight: 600; letter-spacing: -0.2px; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-wait { background: #fff8ec; color: #b45309; }
+  .badge-sending { background: var(--blue-bg); color: #1d4ed8; }
+  .badge-done { background: var(--green-bg); color: #047857; }
+  .badge-fail { background: var(--red-bg); color: #b91c1c; }
+  .card-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+  .meta-item { font-size: 12px; color: var(--text2); }
+  .meta-label { color: var(--text3); font-size: 11px; margin-right: 3px; }
+  .card-result { margin-top: 10px; padding: 8px 12px; background: var(--bg); border-radius: var(--radius-sm); font-size: 12px; color: var(--text2); border-left: 3px solid var(--border2); }
+  .card-result.success { background: var(--green-bg); border-left-color: var(--green); color: #047857; }
+  .card-result.fail { background: var(--red-bg); border-left-color: var(--red); color: #b91c1c; }
+
+  .tab-panel { display: none; height: 100%; }
+  .tab-panel.active { display: flex; }
+
+  .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(16px); padding: 12px 20px; border-radius: var(--radius); font-size: 13px; font-weight: 500; z-index: 9999; opacity: 0; transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1); pointer-events: none; white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,0.12); display: flex; align-items: center; gap: 8px; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.info { background: #1c1c1e; color: white; }
+  .toast.success { background: #1c1c1e; color: #6ee7b7; }
+  .toast.error { background: #1c1c1e; color: #fca5a5; }
+  .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.2); border-top-color: currentColor; border-radius: 50%; animation: spin 0.6s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-brand">Meta 광고</span>
+  <button class="tab-btn active" id="tab1-btn" onclick="switchTab(1)"><div class="tab-dot"></div> 광고 등록</button>
+  <button class="tab-btn" id="tab2-btn" onclick="switchTab(2)"><div class="tab-dot"></div> 세트 추가</button>
+</div>
+
+<!-- 동기화 상태 바 -->
+<div class="sync-bar" id="syncBar">
+  <div class="sync-left">
+    <div class="spinner"></div>
+    <span id="syncMsg">참조 데이터 불러오는 중...</span>
+  </div>
+</div>
+
+<!-- 탭 1 -->
+<div class="layout tab-panel active" id="tab1-panel">
+  <div class="panel">
+    <div class="panel-head"><h2>광고 등록</h2><p>새 캠페인 · 광고세트 · 광고 생성</p></div>
+    <div class="panel-body">
+      <div class="section">
+        <div class="sec-label">기본 정보</div>
+        <div class="field"><label>제작자</label><input type="text" id="t1_제작자" placeholder="이름 입력"></div>
+        <div class="row2">
+          <div class="field"><label>날짜</label><input type="date" id="t1_날짜"></div>
+          <div class="field"><label>유형</label>
+            <select id="t1_유형"><option value="">선택</option><option>부산</option><option>비용혜택</option><option>실리프팅</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="sec-label">계정</div>
+        <div class="field"><label>계정명</label>
+          <select id="t1_계정명" onchange="onAccount('t1')"><option value="">불러오는 중...</option></select>
+        </div>
+        <div class="field"><label>광고계정 ID <span class="auto-tag">자동</span></label>
+          <input type="text" id="t1_광고계정ID" readonly placeholder="계정 선택 시 자동입력">
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="sec-label">캠페인</div>
+        <div class="field"><label>캠페인명</label><input type="text" id="t1_캠페인명" placeholder="캠페인명 입력"></div>
+        <div class="row2">
+          <div class="field"><label>구매유형</label>
+            <select id="t1_구매유형"><option value="">선택</option><option>AUCTION</option><option>RESERVED</option></select>
+          </div>
+          <div class="field"><label>캠페인목표</label>
+            <select id="t1_캠페인목표"><option value="">선택</option><option>OUTCOME_LEADS</option><option>OUTCOME_TRAFFIC</option><option>OUTCOME_AWARENESS</option></select>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>캠페인예산 (원)</label><input type="number" id="t1_캠페인예산" placeholder="0"></div>
+          <div class="field"><label>세트예산 (원)</label><input type="number" id="t1_세트예산" placeholder="0"></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="sec-label">광고세트</div>
+        <div class="field"><label>광고세트명</label><input type="text" id="t1_광고세트명" placeholder="광고세트명 입력"></div>
+        <div class="row2">
+          <div class="field"><label>전환위치</label>
+            <select id="t1_전환위치"><option value="">선택</option><option>LEAD_GEN</option><option>WEBSITE</option></select>
+          </div>
+          <div class="field"><label>성과목표</label>
+            <select id="t1_성과목표"><option value="">선택</option><option>LEAD_GENERATION</option><option>LINK_CLICKS</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="sec-label">페이지</div>
+        <div class="field"><label>페이지</label>
+          <select id="t1_페이지" onchange="onPage('t1')"><option value="">불러오는 중...</option></select>
+        </div>
+        <div class="field"><label>페이지ID <span class="auto-tag">자동</span></label>
+          <input type="text" id="t1_페이지ID" readonly placeholder="자동입력">
+        </div>
+        <div class="field"><label>인스타계정</label><input type="text" id="t1_인스타계정" placeholder="인스타계정 ID"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="sec-label">일정</div>
+        <div class="row2">
+          <div class="field"><label>시작일</label><input type="date" id="t1_시작일"></div>
+          <div class="field"><label>종료일</label><input type="date" id="t1_종료일"></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="sec-label">타겟</div>
+        <div class="row2">
+          <div class="field"><label>지역구분자</label>
+            <select id="t1_지역구분자"><option value="">선택</option></select>
+          </div>
+          <div class="field"><label>타겟국가</label><input type="text" id="t1_타겟국가" value="KR"></div>
+        </div>
+        <div class="field"><label>제외타겟</label>
+          <select id="t1_제외타겟" onchange="onExclude('t1')"><option value="">계정 선택 후 사용 가능</option></select>
+        </div>
+        <div class="field"><label>제외타겟ID <span class="auto-tag">자동</span></label>
+          <input type="text" id="t1_제외타겟ID" readonly placeholder="자동입력">
+        </div>
+        <div class="row2">
+          <div class="field"><label>어드밴티지 타겟</label>
+            <select id="t1_어드밴티지타겟"><option value="">선택</option><option>ON</option><option>OFF</option></select>
+          </div>
+          <div class="field"><label>언어</label><input type="text" id="t1_언어" placeholder="ko"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>최소나이</label><input type="number" id="t1_최소나이" placeholder="18"></div>
+          <div class="field"><label>최대나이</label><input type="number" id="t1_최대나이" placeholder="65"></div>
+        </div>
+        <div class="field"><label>성별</label>
+          <select id="t1_성별"><option value="">전체</option><option value="1">남성</option><option value="2">여성</option></select>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="sec-label">노출위치</div>
+        <div class="field"><label>노출위치</label><input type="text" id="t1_노출위치1" placeholder="facebook,instagram"></div>
+        <div class="row2">
+          <div class="field"><label>페이스북 지면</label><input type="text" id="t1_페이스북지면" placeholder="feed"></div>
+          <div class="field"><label>인스타 지면</label><input type="text" id="t1_인스타지면" placeholder="stream"></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="sec-label">광고 소재</div>
+        <div class="field"><label>광고명</label><input type="text" id="t1_광고명" placeholder="광고명 입력"></div>
+        <div class="field"><label>파일ID (Google Drive)</label><input type="text" id="t1_파일ID" placeholder="Drive 파일 ID"></div>
+        <div class="field"><label>기본문구</label><textarea id="t1_기본문구" placeholder="광고 기본문구 입력"></textarea></div>
+        <div class="field"><label>제목</label><input type="text" id="t1_제목" placeholder="광고 제목"></div>
+        <div class="field"><label>설명</label><input type="text" id="t1_설명" placeholder="광고 설명"></div>
+        <div class="field"><label>CTA버튼</label>
+          <select id="t1_CTA버튼"><option value="">선택</option><option>LEARN_MORE</option><option>SIGN_UP</option><option>CONTACT_US</option><option>GET_QUOTE</option></select>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="sec-label">인스턴트양식</div>
+        <div class="field"><label>인스턴트양식</label>
+          <select id="t1_인스턴트양식" onchange="onForm('t1')"><option value="">페이지 선택 후 사용 가능</option></select>
+        </div>
+        <div class="field"><label>인스턴트양식ID <span class="auto-tag">자동</span></label>
+          <input type="text" id="t1_인스턴트양식ID" readonly placeholder="자동입력">
+        </div>
+      </div>
+    </div>
+    <div class="panel-foot">
+      <button class="btn-primary" id="t1_submitBtn" onclick="submitAd('t1')">광고 등록하기</button>
+      <button class="btn-ghost" onclick="clearForm('t1')">초기화</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="main-head">
+      <div><h3>등록 현황</h3><p id="t1_count">등록된 광고가 없습니다</p></div>
+      <div class="live-pill"><div class="live-dot"></div>실시간</div>
+    </div>
+    <div class="content">
+      <div class="empty" id="t1_empty"><div class="empty-icon">📋</div><h4>아직 등록된 광고가 없어요</h4><p>왼쪽에서 광고 정보를 입력하세요</p></div>
+      <div class="cards" id="t1_cards" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 탭 2 -->
+<div class="layout tab-panel" id="tab2-panel">
+  <div class="panel">
+    <div class="panel-head"><h2>세트 추가</h2><p>기존 캠페인에 광고세트 · 광고 추가</p></div>
+    <div class="panel-body">
+      <div class="campaign-id-box">
+        <label>기존 캠페인 ID</label>
+        <input type="text" id="t2_캠페인ID" placeholder="캠페인 ID를 입력하세요">
+      </div>
+      <div class="section">
+        <div class="sec-label">기본 정보</div>
+        <div class="field"><label>제작자</label><input type="text" id="t2_제작자" placeholder="이름 입력"></div>
+        <div class="row2">
+          <div class="field"><label>날짜</label><input type="date" id="t2_날짜"></div>
+          <div class="field"><label>유형</label>
+            <select id="t2_유형"><option value="">선택</option><option>부산</option><option>비용혜택</option><option>실리프팅</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="sec-label">계정</div>
+        <div class="field"><label>계정명</label>
+          <select id="t2_계정명" onchange="onAccount('t2')"><option value="">불러오는 중...</option></select>
+        </div>
+        <div class="field"><label>광고계정 ID <span class="auto-tag">자동</span></label>
+          <input type="text" id="t2_광고계정ID" readonly placeholder="계정 선택 시 자동입력">
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="sec-label">광고세트</div>
+        <div class="field"><label>광고세트명</label><input type="text" id="t2_광고세트명" placeholder="광고세트명 입력"></div>
+        <div class="row2">
+          <div class="field"><label>전환위치</label>
+            <select id="t2_전환위치"><option value="">선택</option><option>LEAD_GEN</option><option>WEBSITE</option></select>
+          </div>
+          <div class="field"><label>성과목표</label>
+            <select id="t2_성과목표"><option value="">선택</option><option>LEAD_GENERATION</option><option>LINK_CLICKS</option></select>
+          </div>
+        </div>
+        <div class="field"><label>세트예산 (원)</label><input type="number" id="t2_세트예산" placeholder="0"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="sec-label">페이지</div>
+        <div class="field"><label>페이지</label>
+          <select id="t2_페이지" onchange="onPage('t2')"><option value="">불러오는 중...</option></select>
+        </div>
+        <div class="field"><label>페이지ID <span class="auto-tag">자동</span></label>
+          <input type="text" id="t2_페이지ID" readonly placeholder="자동입력">
+        </div>
+        <div class="field"><label>인스타계정</label><input type="text" id="t2_인스타계정" placeholder="인스타계정 ID"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="sec-label">일정</div>
+        <div class="row2">
+          <div class="field"><label>시작일</label><input type="date" id="t2_시작일"></div>
+          <div class="field"><label>종료일</label><input type="date" id="t2_종료일"></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="sec-label">타겟</div>
+        <div class="row2">
+          <div class="field"><label>지역구분자</label>
+            <select id="t2_지역구분자"><option value="">선택</option></select>
+          </div>
+          <div class="field"><label>타겟국가</label><input type="text" id="t2_타겟국가" value="KR"></div>
+        </div>
+        <div class="field"><label>제외타겟</label>
+          <select id="t2_제외타겟" onchange="onExclude('t2')"><option value="">계정 선택 후 사용 가능</option></select>
+        </div>
+        <div class="field"><label>제외타겟ID <span class="auto-tag">자동</span></label>
+          <input type="text" id="t2_제외타겟ID" readonly placeholder="자동입력">
+        </div>
+        <div class="row2">
+          <div class="field"><label>어드밴티지 타겟</label>
+            <select id="t2_어드밴티지타겟"><option value="">선택</option><option>ON</option><option>OFF</option></select>
+          </div>
+          <div class="field"><label>언어</label><input type="text" id="t2_언어" placeholder="ko"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>최소나이</label><input type="number" id="t2_최소나이" placeholder="18"></div>
+          <div class="field"><label>최대나이</label><input type="number" id="t2_최대나이" placeholder="65"></div>
+        </div>
+        <div class="field"><label>성별</label>
+          <select id="t2_성별"><option value="">전체</option><option value="1">남성</option><option value="2">여성</option></select>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="sec-label">노출위치</div>
+        <div class="field"><label>노출위치</label><input type="text" id="t2_노출위치1" placeholder="facebook,instagram"></div>
+        <div class="row2">
+          <div class="field"><label>페이스북 지면</label><input type="text" id="t2_페이스북지면" placeholder="feed"></div>
+          <div class="field"><label>인스타 지면</label><input type="text" id="t2_인스타지면" placeholder="stream"></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="sec-label">광고 소재</div>
+        <div class="field"><label>광고명</label><input type="text" id="t2_광고명" placeholder="광고명 입력"></div>
+        <div class="field"><label>파일ID (Google Drive)</label><input type="text" id="t2_파일ID" placeholder="Drive 파일 ID"></div>
+        <div class="field"><label>기본문구</label><textarea id="t2_기본문구" placeholder="광고 기본문구 입력"></textarea></div>
+        <div class="field"><label>제목</label><input type="text" id="t2_제목" placeholder="광고 제목"></div>
+        <div class="field"><label>설명</label><input type="text" id="t2_설명" placeholder="광고 설명"></div>
+        <div class="field"><label>CTA버튼</label>
+          <select id="t2_CTA버튼"><option value="">선택</option><option>LEARN_MORE</option><option>SIGN_UP</option><option>CONTACT_US</option><option>GET_QUOTE</option></select>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="sec-label">인스턴트양식</div>
+        <div class="field"><label>인스턴트양식</label>
+          <select id="t2_인스턴트양식" onchange="onForm('t2')"><option value="">페이지 선택 후 사용 가능</option></select>
+        </div>
+        <div class="field"><label>인스턴트양식ID <span class="auto-tag">자동</span></label>
+          <input type="text" id="t2_인스턴트양식ID" readonly placeholder="자동입력">
+        </div>
+      </div>
+    </div>
+    <div class="panel-foot">
+      <button class="btn-primary" id="t2_submitBtn" onclick="submitAd('t2')">세트 추가하기</button>
+      <button class="btn-ghost" onclick="clearForm('t2')">초기화</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="main-head">
+      <div><h3>추가 현황</h3><p id="t2_count">추가된 세트가 없습니다</p></div>
+      <div class="live-pill"><div class="live-dot"></div>실시간</div>
+    </div>
+    <div class="content">
+      <div class="empty" id="t2_empty"><div class="empty-icon">➕</div><h4>아직 추가된 세트가 없어요</h4><p>캠페인 ID와 세트 정보를 입력하세요</p></div>
+      <div class="cards" id="t2_cards" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// =====================
+// 설정 (여기만 수정)
+// =====================
+const SHEET_ID = '1SIyoXfGJ2jI824WUOAcjywrTdApaKEAqtxnG9dkSwqw';
+
+// ⚠️ 실제 Make 웹훅 토큰으로 교체
+const WEBHOOKS = {
+  t1: 'https://hook.eu1.make.com/여기에_광고등록_토큰',
+  t2: 'https://hook.eu1.make.com/여기에_세트추가_토큰',
+};
+
+// =====================
+// 데이터 저장소
+// =====================
+let DB = {
+  accounts: [],    // { name, id }
+  excludes: [],    // { accountId, name, targetId }
+  pages: [],       // { name, pageId }
+  forms: [],       // { pageName, formName, formId, status }
+  regions: [],     // { name, id }
+};
+
+// =====================
+// Sheets API 호출
+// =====================
+const API = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values`;
+
+async function fetchSheet(range) {
+  const url = `${API}/${encodeURIComponent(range)}?key=AIzaSyD-placeholder`;
+  // 공개 시트는 API 키 없이 아래 방식으로 읽음
+  const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(range.split('!')[0])}`;
+  const res = await fetch(csvUrl);
+  if (!res.ok) throw new Error(`시트 불러오기 실패: ${res.status}`);
+  const text = await res.text();
+  return parseCSV(text);
+}
+
+function parseCSV(text) {
+  return text.trim().split('\n').map(row => {
+    const cells = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < row.length; i++) {
+      const c = row[i];
+      if (c === '"') { inQ = !inQ; continue; }
+      if (c === ',' && !inQ) { cells.push(cur.trim()); cur = ''; continue; }
+      cur += c;
+    }
+    cells.push(cur.trim());
+    return cells;
+  });
+}
+
+// =====================
+// 데이터 로드
+// =====================
+async function loadData() {
+  const bar = document.getElementById('syncBar');
+  const msg = document.getElementById('syncMsg');
+  bar.className = 'sync-bar';
+  msg.innerHTML = '<span>참조 데이터 불러오는 중...</span>';
+
+  try {
+    // 참조시트: A=계정명, B=계정ID, G=광고계정ID(제외타겟용), H=제외타겟명, I=제외타겟ID, N=지역명, O=지역ID
+    const [refRows, pageRows] = await Promise.all([
+      fetchSheet('참조'),
+      fetchSheet('페이지_리드폼DB'),
+    ]);
+
+    // 계정 파싱 (1행 헤더 제외)
+    DB.accounts = [];
+    const seenAccounts = new Set();
+    for (let i = 1; i < refRows.length; i++) {
+      const r = refRows[i];
+      const name = r[0], id = r[1];
+      if (name && id && !seenAccounts.has(name)) {
+        DB.accounts.push({ name, id });
+        seenAccounts.add(name);
+      }
+    }
+
+    // 제외타겟 파싱 (G열=광고계정ID, H열=제외타겟명, I열=제외타겟ID)
+    DB.excludes = [];
+    for (let i = 1; i < refRows.length; i++) {
+      const r = refRows[i];
+      const accountId = r[6], name = r[7], targetId = r[8];
+      if (accountId && name && targetId) {
+        DB.excludes.push({ accountId, name, targetId });
+      }
+    }
+
+    // 지역 파싱 (N열=지역명, O열=지역ID)
+    DB.regions = [];
+    const seenRegions = new Set();
+    for (let i = 1; i < refRows.length; i++) {
+      const r = refRows[i];
+      const name = r[13], id = r[14];
+      if (name && !seenRegions.has(name)) {
+        DB.regions.push({ name, id });
+        seenRegions.add(name);
+      }
+    }
+
+    // 페이지 파싱 (A=페이지ID, B=페이지명, C=리드폼ID, D=리드폼명, E=상태)
+    DB.pages = [];
+    DB.forms = [];
+    const seenPages = new Set();
+    for (let i = 1; i < pageRows.length; i++) {
+      const r = pageRows[i];
+      const pageId = r[0], pageName = r[1], formId = r[2], formName = r[3], status = r[4];
+      if (pageName && !seenPages.has(pageName)) {
+        DB.pages.push({ name: pageName, pageId });
+        seenPages.add(pageName);
+      }
+      if (formName && status === 'ACTIVE') {
+        DB.forms.push({ pageName, formName, formId, status });
+      }
+    }
+
+    // 드롭다운 세팅
+    populateDropdowns();
+
+    const now = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+    bar.className = 'sync-bar ok';
+    document.getElementById('syncMsg').textContent = `✓ 데이터 연동 완료 (${now}) — 계정 ${DB.accounts.length}개 · 페이지 ${DB.pages.length}개`;
+    setTimeout(() => { bar.className = 'sync-bar hidden'; }, 4000);
+
+  } catch (err) {
+    bar.className = 'sync-bar err';
+    document.getElementById('syncMsg').innerHTML =
+      `⚠ 데이터 불러오기 실패: ${err.message} &nbsp; <button class="sync-btn" onclick="loadData()">다시 시도</button>`;
+    // 오류 시 폴백 데이터
+    populateDropdowns();
+  }
+}
+
+function populateDropdowns() {
+  ['t1', 't2'].forEach(t => {
+    // 계정명
+    const accSel = document.getElementById(`${t}_계정명`);
+    accSel.innerHTML = '<option value="">선택</option>';
+    DB.accounts.forEach(a => {
+      const o = document.createElement('option');
+      o.value = a.name; o.textContent = a.name; accSel.appendChild(o);
+    });
+
+    // 페이지
+    const pageSel = document.getElementById(`${t}_페이지`);
+    pageSel.innerHTML = '<option value="">선택</option>';
+    DB.pages.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p.name; o.textContent = p.name; pageSel.appendChild(o);
+    });
+
+    // 지역구분자
+    const regSel = document.getElementById(`${t}_지역구분자`);
+    regSel.innerHTML = '<option value="">선택</option>';
+    DB.regions.forEach(r => {
+      const o = document.createElement('option');
+      o.value = r.name; o.textContent = r.name; regSel.appendChild(o);
+    });
+  });
+}
+
+// =====================
+// 이벤트 핸들러
+// =====================
+function onAccount(t) {
+  const name = document.getElementById(`${t}_계정명`).value;
+  const acc = DB.accounts.find(a => a.name === name);
+  document.getElementById(`${t}_광고계정ID`).value = acc ? acc.id : '';
+
+  const sel = document.getElementById(`${t}_제외타겟`);
+  sel.innerHTML = '<option value="">선택</option>';
+  document.getElementById(`${t}_제외타겟ID`).value = '';
+
+  if (acc) {
+    const targets = DB.excludes.filter(e => e.accountId === acc.id);
+    targets.forEach(x => {
+      const o = document.createElement('option');
+      o.value = x.name; o.dataset.id = x.targetId; o.textContent = x.name; sel.appendChild(o);
+    });
+  }
+}
+
+function onExclude(t) {
+  const sel = document.getElementById(`${t}_제외타겟`);
+  const opt = sel.options[sel.selectedIndex];
+  document.getElementById(`${t}_제외타겟ID`).value = opt ? (opt.dataset.id || '') : '';
+}
+
+function onPage(t) {
+  const name = document.getElementById(`${t}_페이지`).value;
+  const page = DB.pages.find(p => p.name === name);
+  document.getElementById(`${t}_페이지ID`).value = page ? page.pageId : '';
+
+  const sel = document.getElementById(`${t}_인스턴트양식`);
+  sel.innerHTML = '<option value="">선택</option>';
+  document.getElementById(`${t}_인스턴트양식ID`).value = '';
+
+  const activeForms = DB.forms.filter(f => f.pageName === name);
+  activeForms.forEach(f => {
+    const o = document.createElement('option');
+    o.value = f.formName; o.dataset.id = f.formId; o.textContent = f.formName; sel.appendChild(o);
+  });
+}
+
+function onForm(t) {
+  const sel = document.getElementById(`${t}_인스턴트양식`);
+  const opt = sel.options[sel.selectedIndex];
+  document.getElementById(`${t}_인스턴트양식ID`).value = opt ? (opt.dataset.id || '') : '';
+}
+
+// =====================
+// 유틸
+// =====================
+function switchTab(n) {
+  [1, 2].forEach(i => {
+    document.getElementById(`tab${i}-btn`).classList.toggle('active', i === n);
+    document.getElementById(`tab${i}-panel`).classList.toggle('active', i === n);
+  });
+}
+
+function g(id) { return document.getElementById(id).value; }
+
+function getData(t) {
+  const d = {
+    제작자: g(`${t}_제작자`), 날짜: g(`${t}_날짜`), 유형: g(`${t}_유형`), 상태: '대기중',
+    계정명: g(`${t}_계정명`), 광고계정ID: g(`${t}_광고계정ID`),
+    광고세트명: g(`${t}_광고세트명`), 전환위치: g(`${t}_전환위치`), 성과목표: g(`${t}_성과목표`), 세트예산: g(`${t}_세트예산`),
+    페이지: g(`${t}_페이지`), 페이지ID: g(`${t}_페이지ID`), 인스타계정: g(`${t}_인스타계정`),
+    시작일: g(`${t}_시작일`), 종료일: g(`${t}_종료일`),
+    지역구분자: g(`${t}_지역구분자`), 타겟국가: g(`${t}_타겟국가`),
+    제외타겟: g(`${t}_제외타겟`), 제외타겟ID: g(`${t}_제외타겟ID`),
+    어드밴티지타겟: g(`${t}_어드밴티지타겟`), 언어: g(`${t}_언어`),
+    최소나이: g(`${t}_최소나이`), 최대나이: g(`${t}_최대나이`), 성별: g(`${t}_성별`),
+    노출위치1: g(`${t}_노출위치1`), 페이스북지면: g(`${t}_페이스북지면`), 인스타지면: g(`${t}_인스타지면`),
+    광고명: g(`${t}_광고명`), 파일ID: g(`${t}_파일ID`), 기본문구: g(`${t}_기본문구`),
+    제목: g(`${t}_제목`), 설명: g(`${t}_설명`), CTA버튼: g(`${t}_CTA버튼`),
+    인스턴트양식: g(`${t}_인스턴트양식`), 인스턴트양식ID: g(`${t}_인스턴트양식ID`),
+  };
+  if (t === 't1') {
+    d.캠페인명 = g('t1_캠페인명'); d.구매유형 = g('t1_구매유형');
+    d.캠페인목표 = g('t1_캠페인목표'); d.캠페인예산 = g('t1_캠페인예산');
+  } else {
+    d.캠페인ID = g('t2_캠페인ID');
+  }
+  return d;
+}
+
+const rows = { t1: [], t2: [] };
+
+function addCard(t, data) {
+  const idx = rows[t].length;
+  rows[t].push(data);
+  document.getElementById(`${t}_empty`).style.display = 'none';
+  const list = document.getElementById(`${t}_cards`);
+  list.style.display = 'flex';
+  const isT2 = t === 't2';
+  const title = isT2 ? (data.광고세트명 || '세트명 없음') : (data.캠페인명 || '캠페인명 없음');
+  const card = document.createElement('div');
+  card.className = 'card'; card.id = `card_${t}_${idx}`;
+  card.innerHTML = `
+    <div class="card-top">
+      <div class="card-title-wrap">
+        <span class="card-type ${isT2 ? 'type-add' : 'type-new'}">${isT2 ? '세트 추가' : '신규 등록'}</span>
+        <span class="card-title">${title}</span>
+      </div>
+      <span class="badge badge-sending" id="badge_${t}_${idx}">전송중</span>
+    </div>
+    <div class="card-meta">
+      <span class="meta-item"><span class="meta-label">계정</span>${data.계정명 || '-'}</span>
+      <span class="meta-item"><span class="meta-label">광고세트</span>${data.광고세트명 || '-'}</span>
+      <span class="meta-item"><span class="meta-label">페이지</span>${data.페이지 || '-'}</span>
+      <span class="meta-item"><span class="meta-label">기간</span>${data.시작일 || '-'} ~ ${data.종료일 || '-'}</span>
+    </div>
+    <div class="card-result" id="result_${t}_${idx}">Make로 전송 중...</div>
+  `;
+  list.appendChild(card);
+  const n = rows[t].length;
+  document.getElementById(`${t}_count`).textContent = `총 ${n}${isT2 ? '개 세트 추가됨' : '건 등록됨'}`;
+  return idx;
+}
+
+function updateCard(t, idx, status, msg) {
+  const badge = document.getElementById(`badge_${t}_${idx}`);
+  const result = document.getElementById(`result_${t}_${idx}`);
+  if (status === '완료') {
+    badge.className = 'badge badge-done'; badge.textContent = '완료';
+    result.className = 'card-result success'; result.textContent = msg;
+  } else {
+    badge.className = 'badge badge-fail'; badge.textContent = '실패';
+    result.className = 'card-result fail'; result.textContent = msg;
+  }
+}
+
+async function submitAd(t) {
+  const data = getData(t);
+  const isT2 = t === 't2';
+  if (!data.계정명 || !data.광고세트명) { showToast('계정명과 광고세트명은 필수입니다', 'error'); return; }
+  if (isT2 && !data.캠페인ID) { showToast('캠페인 ID를 입력해주세요', 'error'); return; }
+  if (!isT2 && !data.캠페인명) { showToast('캠페인명을 입력해주세요', 'error'); return; }
+
+  const btn = document.getElementById(`${t}_submitBtn`);
+  btn.disabled = true; btn.textContent = '전송 중...';
+  showToast('Make로 전송 중...', 'info');
+  const idx = addCard(t, data);
+
+  try {
+    const res = await fetch(WEBHOOKS[t], {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) {
+      updateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중');
+      showToast(isT2 ? '세트 추가 요청 완료!' : '광고 등록 요청 완료!', 'success');
+      clearForm(t);
+    } else {
+      updateCard(t, idx, '실패', `HTTP ${res.status}`);
+      showToast(`전송 실패 (${res.status})`, 'error');
+    }
+  } catch (err) {
+    updateCard(t, idx, '실패', '네트워크 오류: ' + err.message);
+    showToast('네트워크 오류가 발생했어요', 'error');
+  }
+  btn.disabled = false;
+  btn.textContent = isT2 ? '세트 추가하기' : '광고 등록하기';
+}
+
+function clearForm(t) {
+  const panel = document.getElementById(`tab${t === 't1' ? 1 : 2}-panel`);
+  panel.querySelectorAll('input:not([readonly]), select, textarea').forEach(el => { el.value = ''; });
+  document.getElementById(`${t}_날짜`).value = new Date().toISOString().split('T')[0];
+  document.getElementById(`${t}_타겟국가`).value = 'KR';
+  document.getElementById(`${t}_제외타겟`).innerHTML = '<option value="">계정 선택 후 사용 가능</option>';
+  document.getElementById(`${t}_인스턴트양식`).innerHTML = '<option value="">페이지 선택 후 사용 가능</option>';
+}
+
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  t.className = `toast ${type} show`;
+  t.innerHTML = type === 'info' ? `<div class="spinner"></div>${msg}` : msg;
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// =====================
+// 초기화
+// =====================
+['t1', 't2'].forEach(t => {
+  document.getElementById(`${t}_날짜`).value = new Date().toISOString().split('T')[0];
+});
+loadData();
+</script>
+</body>
+</html>
