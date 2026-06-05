@@ -530,6 +530,8 @@ let DB = {
   forms: [],       // { pageName, formName, formId, status }
   regions: [],     // { name, id, refName }
   staff: [],       // { name, id }
+  buyingTypes: [], // { value, label }
+  objectives: [],  // { value, label }
 };
 
 // =====================
@@ -640,6 +642,30 @@ async function loadData() {
       }
     }
 
+    // 구매유형 파싱 (U열=buying_type값, V열=표시명)
+    DB.buyingTypes = [];
+    const seenBuying = new Set();
+    for (let i = 1; i < refRows.length; i++) {
+      const r = refRows[i];
+      const value = r[20], label = r[21];
+      if (value && !seenBuying.has(value)) {
+        DB.buyingTypes.push({ value, label });
+        seenBuying.add(value);
+      }
+    }
+
+    // 캠페인목표 파싱 (X열=objective값, Y열=표시명)
+    DB.objectives = [];
+    const seenObj = new Set();
+    for (let i = 1; i < refRows.length; i++) {
+      const r = refRows[i];
+      const value = r[23], label = r[24];
+      if (value && !seenObj.has(value)) {
+        DB.objectives.push({ value, label });
+        seenObj.add(value);
+      }
+    }
+
     // 드롭다운 세팅
     populateDropdowns();
 
@@ -681,6 +707,26 @@ function populateDropdowns() {
     DB.regions.forEach(r => {
       const o = document.createElement('option');
       o.value = r.name; o.textContent = r.name; regSel.appendChild(o);
+    });
+
+    // 구매유형 (기본값: AUCTION)
+    const buySel = document.getElementById(`${t}_구매유형`);
+    buySel.innerHTML = '';
+    DB.buyingTypes.forEach(b => {
+      const o = document.createElement('option');
+      o.value = b.value; o.textContent = b.label;
+      if (b.value === 'AUCTION') o.selected = true;
+      buySel.appendChild(o);
+    });
+
+    // 캠페인목표 (기본값: OUTCOME_LEADS)
+    const objSel = document.getElementById(`${t}_캠페인목표`);
+    objSel.innerHTML = '';
+    DB.objectives.forEach(ob => {
+      const o = document.createElement('option');
+      o.value = ob.value; o.textContent = ob.label;
+      if (ob.value === 'OUTCOME_LEADS') o.selected = true;
+      objSel.appendChild(o);
     });
   });
 }
