@@ -252,8 +252,8 @@
           </div>
         </div>
         <div class="row2">
-          <div class="field"><label>캠페인예산 (원)</label><input type="number" id="t1_캠페인예산" placeholder="0"></div>
-          <div class="field"><label>세트예산 (원)</label><input type="number" id="t1_세트예산" placeholder="0"></div>
+          <div class="field"><label>캠페인예산 (원)</label><input type="number" id="t1_캠페인예산" placeholder="0" step="1000" min="0"></div>
+          <div class="field"><label>세트예산 (원)</label><input type="number" id="t1_세트예산" placeholder="0" step="1000" min="0"></div>
         </div>
       </div>
       <div class="divider"></div>
@@ -262,7 +262,7 @@
         <div class="field"><label>광고세트명 <span class="auto-tag">자동</span></label><input type="text" id="t1_광고세트명" readonly placeholder="자동생성"></div>
         <div class="row2">
           <div class="field"><label>전환위치</label>
-            <select id="t1_전환위치"><option value="">선택</option><option>LEAD_GEN</option><option>WEBSITE</option></select>
+            <select id="t1_전환위치"><option value="">선택</option><option value='ON_AD'>인스턴트 양식</option><option value='WEBSITE'>웹사이트</option></select>
           </div>
           <div class="field"><label>성과목표</label>
             <select id="t1_성과목표"><option value="">선택</option><option>LEAD_GENERATION</option><option>LINK_CLICKS</option></select>
@@ -285,7 +285,7 @@
         <div class="sec-label">일정</div>
         <div class="row2">
           <div class="field"><label>시작일</label><input type="date" id="t1_시작일"></div>
-          <div class="field"><label>종료일</label><input type="date" id="t1_종료일"></div>
+          
         </div>
       </div>
       <div class="divider"></div>
@@ -295,7 +295,7 @@
           <div class="field"><label>지역구분자</label>
             <select id="t1_지역구분자" onchange="onRegion('t1')"><option value="">선택</option></select>
           </div>
-          <div class="field"><label>타겟국가</label><input type="text" id="t1_타겟국가" value="KR"></div>
+          <div class="field"><label>지역ID <span class="auto-tag">자동</span></label><input type="text" id="t1_타겟국가" readonly placeholder="지역 선택 시 자동입력"></div>
         </div>
         <div class="field"><label>제외타겟</label>
           <select id="t1_제외타겟" onchange="onExclude('t1')"><option value="">계정 선택 후 사용 가능</option></select>
@@ -400,14 +400,18 @@
         <div class="sec-label">광고세트</div>
         <div class="field"><label>광고세트명 <span class="auto-tag">자동</span></label><input type="text" id="t2_광고세트명" readonly placeholder="자동생성"></div>
         <div class="row2">
+          <div class="field"><label>캠페인예산 (원)</label><input type="number" id="t2_캠페인예산" placeholder="0" step="1000" min="0"></div>
+          <div class="field"><label>세트예산 (원)</label><input type="number" id="t2_세트예산" placeholder="0" step="1000" min="0"></div>
+        </div>
+        <div class="row2">
           <div class="field"><label>전환위치</label>
-            <select id="t2_전환위치"><option value="">선택</option><option>LEAD_GEN</option><option>WEBSITE</option></select>
+            <select id="t2_전환위치"><option value="">선택</option><option value='ON_AD'>인스턴트 양식</option><option value='WEBSITE'>웹사이트</option></select>
           </div>
           <div class="field"><label>성과목표</label>
             <select id="t2_성과목표"><option value="">선택</option><option>LEAD_GENERATION</option><option>LINK_CLICKS</option></select>
           </div>
         </div>
-        <div class="field"><label>세트예산 (원)</label><input type="number" id="t2_세트예산" placeholder="0"></div>
+        
       </div>
       <div class="divider"></div>
       <div class="section">
@@ -425,7 +429,7 @@
         <div class="sec-label">일정</div>
         <div class="row2">
           <div class="field"><label>시작일</label><input type="date" id="t2_시작일"></div>
-          <div class="field"><label>종료일</label><input type="date" id="t2_종료일"></div>
+          
         </div>
       </div>
       <div class="divider"></div>
@@ -435,7 +439,7 @@
           <div class="field"><label>지역구분자</label>
             <select id="t2_지역구분자" onchange="onRegion('t2')"><option value="">선택</option></select>
           </div>
-          <div class="field"><label>타겟국가</label><input type="text" id="t2_타겟국가" value="KR"></div>
+          <div class="field"><label>지역ID <span class="auto-tag">자동</span></label><input type="text" id="t2_타겟국가" readonly placeholder="지역 선택 시 자동입력"></div>
         </div>
         <div class="field"><label>제외타겟</label>
           <select id="t2_제외타겟" onchange="onExclude('t2')"><option value="">계정 선택 후 사용 가능</option></select>
@@ -532,6 +536,8 @@ let DB = {
   staff: [],       // { name, id }
   buyingTypes: [], // { value, label }
   objectives: [],  // { value, label }
+  destinations: [], // { value, label }
+  optimizations: [], // { value, label }
 };
 
 // =====================
@@ -666,6 +672,30 @@ async function loadData() {
       }
     }
 
+    // 전환위치 파싱 (AA열=값, AB열=표시명)
+    DB.destinations = [];
+    const seenDest = new Set();
+    for (let i = 1; i < refRows.length; i++) {
+      const r = refRows[i];
+      const value = r[26], label = r[27];
+      if (value && !seenDest.has(value)) {
+        DB.destinations.push({ value, label });
+        seenDest.add(value);
+      }
+    }
+
+    // 성과목표 파싱 (AD열=값, AE열=표시명)
+    DB.optimizations = [];
+    const seenOpt = new Set();
+    for (let i = 1; i < refRows.length; i++) {
+      const r = refRows[i];
+      const value = r[29], label = r[30];
+      if (value && !seenOpt.has(value)) {
+        DB.optimizations.push({ value, label });
+        seenOpt.add(value);
+      }
+    }
+
     // 드롭다운 세팅
     populateDropdowns();
 
@@ -709,6 +739,29 @@ function populateDropdowns() {
       o.value = r.name; o.textContent = r.name; regSel.appendChild(o);
     });
 
+    // 전환위치 (기본값: ON_AD)
+    const destSel = document.getElementById(`${t}_전환위치`);
+    if (destSel) {
+      destSel.innerHTML = '';
+      DB.destinations.forEach(d => {
+        const o = document.createElement('option');
+        o.value = d.value; o.textContent = d.label;
+        if (d.value === 'ON_AD') o.selected = true;
+        destSel.appendChild(o);
+      });
+    }
+
+    // 성과목표 (기본값: LEAD_GENERATION)
+    const optSel = document.getElementById(`${t}_성과목표`);
+    if (optSel) {
+      optSel.innerHTML = '';
+      DB.optimizations.forEach(op => {
+        const o = document.createElement('option');
+        o.value = op.value; o.textContent = op.label;
+        if (op.value === 'LEAD_GENERATION') o.selected = true;
+        optSel.appendChild(o);
+      });
+    }
   });
 
   // 구매유형 (탭1만, 기본값: AUCTION)
@@ -821,6 +874,9 @@ function onPage(t) {
 
 function onRegion(t) {
   autoGenNames(t);
+  const regionName = document.getElementById(`${t}_지역구분자`).value;
+  const region = DB.regions.find(r => r.name === regionName);
+  document.getElementById(`${t}_타겟국가`).value = region ? (region.id || '') : '';
 }
 
 function onForm(t) {
@@ -950,7 +1006,7 @@ function clearForm(t) {
   const panel = document.getElementById(`tab${t === 't1' ? 1 : 2}-panel`);
   panel.querySelectorAll('input:not([readonly]), select, textarea').forEach(el => { el.value = ''; });
   // 날짜 수기 입력
-  document.getElementById(`${t}_타겟국가`).value = 'KR';
+  document.getElementById(`${t}_타겟국가`).value = '';
   document.getElementById(`${t}_제외타겟`).innerHTML = '<option value="">계정 선택 후 사용 가능</option>';
   document.getElementById(`${t}_인스턴트양식`).innerHTML = '<option value="">페이지 선택 후 사용 가능</option>';
 }
@@ -967,7 +1023,8 @@ function showToast(msg, type = 'info') {
 // 초기화
 // =====================
 ['t1', 't2'].forEach(t => {
-  // 날짜 수기 입력
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById(`${t}_시작일`).value = today;
   // 유형/날짜/제작자 변경 시 자동생성
   ['유형', '날짜', '제작자'].forEach(field => {
     const el = document.getElementById(`${t}_${field}`);
