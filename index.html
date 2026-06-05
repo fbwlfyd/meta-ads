@@ -221,11 +221,11 @@
     <div class="panel-body">
       <div class="section">
         <div class="sec-label">기본 정보</div>
-        <div class="field"><label>제작자</label><input type="text" id="t1_제작자" placeholder="이름 입력"></div>
+        <div class="field"><label>제작자</label><input type="text" id="t1_제작자" placeholder="이름 입력" oninput="autoGenNames('t1')"></div>
         <div class="row2">
-          <div class="field"><label>날짜</label><input type="date" id="t1_날짜"></div>
+          <div class="field"><label>날짜</label><input type="date" id="t1_날짜" onchange="autoGenNames('t1')"></div>
           <div class="field"><label>유형</label>
-            <select id="t1_유형"><option value="">선택</option><option>부산</option><option>비용혜택</option><option>실리프팅</option></select>
+            <input type="text" id="t1_유형" placeholder="예: 비용혜택" oninput="autoGenNames('t1')">
           </div>
         </div>
       </div>
@@ -242,7 +242,7 @@
       <div class="divider"></div>
       <div class="section">
         <div class="sec-label">캠페인</div>
-        <div class="field"><label>캠페인명</label><input type="text" id="t1_캠페인명" placeholder="캠페인명 입력"></div>
+        <div class="field"><label>캠페인명 <span class="auto-tag">자동</span></label><input type="text" id="t1_캠페인명" readonly placeholder="계정/유형/날짜 입력 시 자동생성"></div>
         <div class="row2">
           <div class="field"><label>구매유형</label>
             <select id="t1_구매유형"><option value="">선택</option><option>AUCTION</option><option>RESERVED</option></select>
@@ -259,7 +259,7 @@
       <div class="divider"></div>
       <div class="section">
         <div class="sec-label">광고세트</div>
-        <div class="field"><label>광고세트명</label><input type="text" id="t1_광고세트명" placeholder="광고세트명 입력"></div>
+        <div class="field"><label>광고세트명 <span class="auto-tag">자동</span></label><input type="text" id="t1_광고세트명" readonly placeholder="자동생성"></div>
         <div class="row2">
           <div class="field"><label>전환위치</label>
             <select id="t1_전환위치"><option value="">선택</option><option>LEAD_GEN</option><option>WEBSITE</option></select>
@@ -293,7 +293,7 @@
         <div class="sec-label">타겟</div>
         <div class="row2">
           <div class="field"><label>지역구분자</label>
-            <select id="t1_지역구분자"><option value="">선택</option></select>
+            <select id="t1_지역구분자" onchange="onRegion('t1')"><option value="">선택</option></select>
           </div>
           <div class="field"><label>타겟국가</label><input type="text" id="t1_타겟국가" value="KR"></div>
         </div>
@@ -329,7 +329,7 @@
       <div class="divider"></div>
       <div class="section">
         <div class="sec-label">광고 소재</div>
-        <div class="field"><label>광고명</label><input type="text" id="t1_광고명" placeholder="광고명 입력"></div>
+        <div class="field"><label>광고명 <span class="auto-tag">자동</span></label><input type="text" id="t1_광고명" readonly placeholder="세트명과 동일하게 자동생성"></div>
         <div class="field"><label>파일ID (Google Drive)</label><input type="text" id="t1_파일ID" placeholder="Drive 파일 ID"></div>
         <div class="field"><label>기본문구</label><textarea id="t1_기본문구" placeholder="광고 기본문구 입력"></textarea></div>
         <div class="field"><label>제목</label><input type="text" id="t1_제목" placeholder="광고 제목"></div>
@@ -377,11 +377,11 @@
       </div>
       <div class="section">
         <div class="sec-label">기본 정보</div>
-        <div class="field"><label>제작자</label><input type="text" id="t2_제작자" placeholder="이름 입력"></div>
+        <div class="field"><label>제작자</label><input type="text" id="t2_제작자" placeholder="이름 입력" oninput="autoGenNames('t2')"></div>
         <div class="row2">
-          <div class="field"><label>날짜</label><input type="date" id="t2_날짜"></div>
+          <div class="field"><label>날짜</label><input type="date" id="t2_날짜" onchange="autoGenNames('t2')"></div>
           <div class="field"><label>유형</label>
-            <select id="t2_유형"><option value="">선택</option><option>부산</option><option>비용혜택</option><option>실리프팅</option></select>
+            <input type="text" id="t2_유형" placeholder="예: 비용혜택" oninput="autoGenNames('t2')">
           </div>
         </div>
       </div>
@@ -398,7 +398,7 @@
       <div class="divider"></div>
       <div class="section">
         <div class="sec-label">광고세트</div>
-        <div class="field"><label>광고세트명</label><input type="text" id="t2_광고세트명" placeholder="광고세트명 입력"></div>
+        <div class="field"><label>광고세트명 <span class="auto-tag">자동</span></label><input type="text" id="t2_광고세트명" readonly placeholder="자동생성"></div>
         <div class="row2">
           <div class="field"><label>전환위치</label>
             <select id="t2_전환위치"><option value="">선택</option><option>LEAD_GEN</option><option>WEBSITE</option></select>
@@ -433,7 +433,7 @@
         <div class="sec-label">타겟</div>
         <div class="row2">
           <div class="field"><label>지역구분자</label>
-            <select id="t2_지역구분자"><option value="">선택</option></select>
+            <select id="t2_지역구분자" onchange="onRegion('t2')"><option value="">선택</option></select>
           </div>
           <div class="field"><label>타겟국가</label><input type="text" id="t2_타겟국가" value="KR"></div>
         </div>
@@ -469,7 +469,7 @@
       <div class="divider"></div>
       <div class="section">
         <div class="sec-label">광고 소재</div>
-        <div class="field"><label>광고명</label><input type="text" id="t2_광고명" placeholder="광고명 입력"></div>
+        <div class="field"><label>광고명 <span class="auto-tag">자동</span></label><input type="text" id="t2_광고명" readonly placeholder="세트명과 동일하게 자동생성"></div>
         <div class="field"><label>파일ID (Google Drive)</label><input type="text" id="t2_파일ID" placeholder="Drive 파일 ID"></div>
         <div class="field"><label>기본문구</label><textarea id="t2_기본문구" placeholder="광고 기본문구 입력"></textarea></div>
         <div class="field"><label>제목</label><input type="text" id="t2_제목" placeholder="광고 제목"></div>
@@ -524,11 +524,12 @@ const WEBHOOKS = {
 // 데이터 저장소
 // =====================
 let DB = {
-  accounts: [],    // { name, id }
+  accounts: [],    // { name, id, campaignName, setName, subjectName }
   excludes: [],    // { accountId, name, targetId }
   pages: [],       // { name, pageId }
   forms: [],       // { pageName, formName, formId, status }
-  regions: [],     // { name, id }
+  regions: [],     // { name, id, refName }
+  staff: [],       // { name, id }
 };
 
 // =====================
@@ -582,10 +583,22 @@ async function loadData() {
     const seenAccounts = new Set();
     for (let i = 1; i < refRows.length; i++) {
       const r = refRows[i];
-      const name = r[0], id = r[1];
+      const name = r[0], id = r[1], campaignName = r[2], setName = r[3], subjectName = r[4];
       if (name && id && !seenAccounts.has(name)) {
-        DB.accounts.push({ name, id });
+        DB.accounts.push({ name, id, campaignName, setName, subjectName });
         seenAccounts.add(name);
+      }
+    }
+
+    // 사원 파싱 (R열=사원명, S열=사원ID)
+    DB.staff = [];
+    const seenStaff = new Set();
+    for (let i = 1; i < refRows.length; i++) {
+      const r = refRows[i];
+      const name = r[17], id = r[18];
+      if (name && !seenStaff.has(name)) {
+        DB.staff.push({ name, id });
+        seenStaff.add(name);
       }
     }
 
@@ -599,14 +612,14 @@ async function loadData() {
       }
     }
 
-    // 지역 파싱 (N열=지역명, O열=지역ID)
+    // 지역 파싱 (N열=지역명, O열=지역ID, P열=참조이름)
     DB.regions = [];
     const seenRegions = new Set();
     for (let i = 1; i < refRows.length; i++) {
       const r = refRows[i];
-      const name = r[13], id = r[14];
+      const name = r[13], id = r[14], refName = r[15];
       if (name && !seenRegions.has(name)) {
-        DB.regions.push({ name, id });
+        DB.regions.push({ name, id, refName: refName || '' });
         seenRegions.add(name);
       }
     }
@@ -684,6 +697,8 @@ function onAccount(t) {
   sel.innerHTML = '<option value="">선택</option>';
   document.getElementById(`${t}_제외타겟ID`).value = '';
 
+  autoGenNames(t);
+
   if (acc) {
     const targets = DB.excludes.filter(e => e.accountId === acc.id);
     targets.forEach(x => {
@@ -691,6 +706,44 @@ function onAccount(t) {
       o.value = x.name; o.dataset.id = x.targetId; o.textContent = x.name; sel.appendChild(o);
     });
   }
+}
+
+
+// =====================
+// 캠페인명/세트명 자동생성
+// =====================
+function autoGenNames(t) {
+  const accName = document.getElementById(`${t}_계정명`).value;
+  const acc = DB.accounts.find(a => a.name === accName);
+  const regionName = document.getElementById(`${t}_지역구분자`).value;
+  const region = DB.regions.find(r => r.name === regionName);
+  const staffName = document.getElementById(`${t}_제작자`).value;
+  const staffObj = DB.staff.find(s => s.name === staffName);
+  const date = document.getElementById(`${t}_날짜`).value;
+  const type = document.getElementById(`${t}_유형`).value;
+
+  if (!acc) return;
+
+  const refName = region ? (region.refName || '') : '';
+  const staffId = staffObj ? staffObj.id : '';
+
+  // 캠페인명: 캠페인명 + 시술명 + 유형 + (날짜) + 제작자 + 참조이름 + 예비용
+  const campaignParts = [acc.campaignName, acc.subjectName, type, date ? `(${date})` : '', staffName, refName, '예비용'];
+  const campaignName = campaignParts.filter(Boolean).join(' ');
+
+  // 세트명: 세트&광고명 + 시술명 + 유형 + 참조이름 + 1A + 사원ID
+  const setParts = [acc.setName, acc.subjectName, type, refName, '1A', staffId];
+  const setName = setParts.filter(Boolean).join(' ');
+
+  // 캠페인명 필드 업데이트 (탭1만)
+  if (t === 't1') {
+    const camEl = document.getElementById('t1_캠페인명');
+    camEl.value = campaignName;
+  }
+
+  // 세트명 + 광고명 업데이트
+  document.getElementById(`${t}_광고세트명`).value = setName;
+  document.getElementById(`${t}_광고명`).value = setName;
 }
 
 function onExclude(t) {
@@ -713,6 +766,10 @@ function onPage(t) {
     const o = document.createElement('option');
     o.value = f.formName; o.dataset.id = f.formId; o.textContent = f.formName; sel.appendChild(o);
   });
+}
+
+function onRegion(t) {
+  autoGenNames(t);
 }
 
 function onForm(t) {
@@ -860,6 +917,12 @@ function showToast(msg, type = 'info') {
 // =====================
 ['t1', 't2'].forEach(t => {
   document.getElementById(`${t}_날짜`).value = new Date().toISOString().split('T')[0];
+  // 유형/날짜/제작자 변경 시 자동생성
+  ['유형', '날짜', '제작자'].forEach(field => {
+    const el = document.getElementById(`${t}_${field}`);
+    if (el) el.addEventListener('input', () => autoGenNames(t));
+    if (el) el.addEventListener('change', () => autoGenNames(t));
+  });
 });
 loadData();
 </script>
