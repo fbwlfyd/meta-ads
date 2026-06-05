@@ -223,7 +223,7 @@
         <div class="sec-label">기본 정보</div>
         <div class="field"><label>제작자</label><input type="text" id="t1_제작자" placeholder="이름 입력" oninput="autoGenNames('t1')"></div>
         <div class="row2">
-          <div class="field"><label>날짜</label><input type="date" id="t1_날짜" onchange="autoGenNames('t1')"></div>
+          <div class="field"><label>날짜</label><input type="text" id="t1_날짜" placeholder="예: 260605" oninput="autoGenNames('t1')"></div>
           <div class="field"><label>유형</label>
             <input type="text" id="t1_유형" placeholder="예: 비용혜택" oninput="autoGenNames('t1')">
           </div>
@@ -379,7 +379,7 @@
         <div class="sec-label">기본 정보</div>
         <div class="field"><label>제작자</label><input type="text" id="t2_제작자" placeholder="이름 입력" oninput="autoGenNames('t2')"></div>
         <div class="row2">
-          <div class="field"><label>날짜</label><input type="date" id="t2_날짜" onchange="autoGenNames('t2')"></div>
+          <div class="field"><label>날짜</label><input type="text" id="t2_날짜" placeholder="예: 260605" oninput="autoGenNames('t2')"></div>
           <div class="field"><label>유형</label>
             <input type="text" id="t2_유형" placeholder="예: 비용혜택" oninput="autoGenNames('t2')">
           </div>
@@ -898,7 +898,7 @@ async function submitAd(t) {
 function clearForm(t) {
   const panel = document.getElementById(`tab${t === 't1' ? 1 : 2}-panel`);
   panel.querySelectorAll('input:not([readonly]), select, textarea').forEach(el => { el.value = ''; });
-  document.getElementById(`${t}_날짜`).value = new Date().toISOString().split('T')[0];
+  // 날짜 수기 입력
   document.getElementById(`${t}_타겟국가`).value = 'KR';
   document.getElementById(`${t}_제외타겟`).innerHTML = '<option value="">계정 선택 후 사용 가능</option>';
   document.getElementById(`${t}_인스턴트양식`).innerHTML = '<option value="">페이지 선택 후 사용 가능</option>';
@@ -916,7 +916,7 @@ function showToast(msg, type = 'info') {
 // 초기화
 // =====================
 ['t1', 't2'].forEach(t => {
-  document.getElementById(`${t}_날짜`).value = new Date().toISOString().split('T')[0];
+  // 날짜 수기 입력
   // 유형/날짜/제작자 변경 시 자동생성
   ['유형', '날짜', '제작자'].forEach(field => {
     const el = document.getElementById(`${t}_${field}`);
