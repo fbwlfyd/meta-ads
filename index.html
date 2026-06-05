@@ -252,7 +252,7 @@
           </div>
         </div>
         <div class="row2">
-          <div class="field"><label>캠페인예산 (원)</label><input type="number" id="t1_캠페인예산" placeholder="0" step="1000" min="0"></div>
+          <div class="field"><label>캠페인예산 (원)</label><input type="number" id="t1_캠페인예산" value="30000" step="1000" min="0"></div>
           <div class="field"><label>세트예산 (원)</label><input type="number" id="t1_세트예산" placeholder="0" step="1000" min="0"></div>
         </div>
       </div>
@@ -278,14 +278,14 @@
         <div class="field"><label>페이지ID <span class="auto-tag">자동</span></label>
           <input type="text" id="t1_페이지ID" readonly placeholder="자동입력">
         </div>
-        <div class="field"><label>인스타계정</label><input type="text" id="t1_인스타계정" placeholder="인스타계정 ID"></div>
+        <div class="field"><label>인스타계정</label><select id="t1_인스타계정"></select></div>
       </div>
       <div class="divider"></div>
       <div class="section">
         <div class="sec-label">일정</div>
         <div class="row2">
           <div class="field"><label>시작일</label><input type="date" id="t1_시작일"></div>
-          
+          <div class="field"><label>종료일</label><input type="date" id="t1_종료일"></div>
         </div>
       </div>
       <div class="divider"></div>
@@ -305,13 +305,13 @@
         </div>
         <div class="row2">
           <div class="field"><label>어드밴티지 타겟</label>
-            <select id="t1_어드밴티지타겟"><option value="">선택</option><option>ON</option><option>OFF</option></select>
+            <input type="text" id="t1_어드밴티지타겟" value="ON" readonly>
           </div>
           <div class="field"><label>언어</label><input type="text" id="t1_언어" placeholder="ko"></div>
         </div>
         <div class="row2">
-          <div class="field"><label>최소나이</label><input type="number" id="t1_최소나이" placeholder="18"></div>
-          <div class="field"><label>최대나이</label><input type="number" id="t1_최대나이" placeholder="65"></div>
+          <div class="field"><label>최소나이</label><input type="number" id="t1_최소나이" value="35" min="1" max="65"></div>
+          <div class="field"><label>최대나이</label><input type="number" id="t1_최대나이" value="65" min="1" max="65"></div>
         </div>
         <div class="field"><label>성별</label>
           <select id="t1_성별"><option value="">전체</option><option value="1">남성</option><option value="2">여성</option></select>
@@ -320,10 +320,10 @@
       <div class="divider"></div>
       <div class="section">
         <div class="sec-label">노출위치</div>
-        <div class="field"><label>노출위치</label><input type="text" id="t1_노출위치1" placeholder="facebook,instagram"></div>
+        <div class="field"><label>노출위치</label><select id="t1_노출위치1"></select></div>
         <div class="row2">
-          <div class="field"><label>페이스북 지면</label><input type="text" id="t1_페이스북지면" placeholder="feed"></div>
-          <div class="field"><label>인스타 지면</label><input type="text" id="t1_인스타지면" placeholder="stream"></div>
+          <div class="field"><label>페이스북 지면</label><select id="t1_페이스북지면"></select></div>
+          <div class="field"><label>인스타 지면</label><select id="t1_인스타지면"></select></div>
         </div>
       </div>
       <div class="divider"></div>
@@ -400,7 +400,7 @@
         <div class="sec-label">광고세트</div>
         <div class="field"><label>광고세트명 <span class="auto-tag">자동</span></label><input type="text" id="t2_광고세트명" readonly placeholder="자동생성"></div>
         <div class="row2">
-          <div class="field"><label>캠페인예산 (원)</label><input type="number" id="t2_캠페인예산" placeholder="0" step="1000" min="0"></div>
+          <div class="field"><label>캠페인예산 (원)</label><input type="number" id="t2_캠페인예산" value="30000" step="1000" min="0"></div>
           <div class="field"><label>세트예산 (원)</label><input type="number" id="t2_세트예산" placeholder="0" step="1000" min="0"></div>
         </div>
         <div class="row2">
@@ -422,14 +422,14 @@
         <div class="field"><label>페이지ID <span class="auto-tag">자동</span></label>
           <input type="text" id="t2_페이지ID" readonly placeholder="자동입력">
         </div>
-        <div class="field"><label>인스타계정</label><input type="text" id="t2_인스타계정" placeholder="인스타계정 ID"></div>
+        <div class="field"><label>인스타계정</label><select id="t2_인스타계정"></select></div>
       </div>
       <div class="divider"></div>
       <div class="section">
         <div class="sec-label">일정</div>
         <div class="row2">
           <div class="field"><label>시작일</label><input type="date" id="t2_시작일"></div>
-          
+          <div class="field"><label>종료일</label><input type="date" id="t2_종료일"></div>
         </div>
       </div>
       <div class="divider"></div>
@@ -449,13 +449,13 @@
         </div>
         <div class="row2">
           <div class="field"><label>어드밴티지 타겟</label>
-            <select id="t2_어드밴티지타겟"><option value="">선택</option><option>ON</option><option>OFF</option></select>
+            <input type="text" id="t2_어드밴티지타겟" value="ON" readonly>
           </div>
           <div class="field"><label>언어</label><input type="text" id="t2_언어" placeholder="ko"></div>
         </div>
         <div class="row2">
-          <div class="field"><label>최소나이</label><input type="number" id="t2_최소나이" placeholder="18"></div>
-          <div class="field"><label>최대나이</label><input type="number" id="t2_최대나이" placeholder="65"></div>
+          <div class="field"><label>최소나이</label><input type="number" id="t2_최소나이" value="35" min="1" max="65"></div>
+          <div class="field"><label>최대나이</label><input type="number" id="t2_최대나이" value="65" min="1" max="65"></div>
         </div>
         <div class="field"><label>성별</label>
           <select id="t2_성별"><option value="">전체</option><option value="1">남성</option><option value="2">여성</option></select>
@@ -464,10 +464,10 @@
       <div class="divider"></div>
       <div class="section">
         <div class="sec-label">노출위치</div>
-        <div class="field"><label>노출위치</label><input type="text" id="t2_노출위치1" placeholder="facebook,instagram"></div>
+        <div class="field"><label>노출위치</label><select id="t2_노출위치1"></select></div>
         <div class="row2">
-          <div class="field"><label>페이스북 지면</label><input type="text" id="t2_페이스북지면" placeholder="feed"></div>
-          <div class="field"><label>인스타 지면</label><input type="text" id="t2_인스타지면" placeholder="stream"></div>
+          <div class="field"><label>페이스북 지면</label><select id="t2_페이스북지면"></select></div>
+          <div class="field"><label>인스타 지면</label><select id="t2_인스타지면"></select></div>
         </div>
       </div>
       <div class="divider"></div>
@@ -538,6 +538,11 @@ let DB = {
   objectives: [],  // { value, label }
   destinations: [], // { value, label }
   optimizations: [], // { value, label }
+  platforms: [],     // { value, label }
+  fbPositions: [],   // { value, label }
+  igPositions: [],   // { value, label }
+  ctaTypes: [],      // { value, label }
+  instaAccounts: [], // { name, id }
 };
 
 // =====================
@@ -672,6 +677,66 @@ async function loadData() {
       }
     }
 
+    // 인스타계정 파싱 (K열=계정명, L열=ID)
+    DB.instaAccounts = [];
+    const seenInsta = new Set();
+    for (let i = 1; i < refRows.length; i++) {
+      const r = refRows[i];
+      const name = r[10], id = r[11];
+      if (name && !seenInsta.has(name)) {
+        DB.instaAccounts.push({ name, id });
+        seenInsta.add(name);
+      }
+    }
+
+    // CTA 파싱 (AP열=값, AQ열=표시명)
+    DB.ctaTypes = [];
+    const seenCta = new Set();
+    for (let i = 1; i < refRows.length; i++) {
+      const r = refRows[i];
+      const value = r[41], label = r[42];
+      if (value && !seenCta.has(value)) {
+        DB.ctaTypes.push({ value, label });
+        seenCta.add(value);
+      }
+    }
+
+    // 노출위치 파싱 (AG열=값, AH열=표시명)
+    DB.platforms = [];
+    const seenPlat = new Set();
+    for (let i = 1; i < refRows.length; i++) {
+      const r = refRows[i];
+      const value = r[32], label = r[33];
+      if (value && !seenPlat.has(value)) {
+        DB.platforms.push({ value, label });
+        seenPlat.add(value);
+      }
+    }
+
+    // 페이스북 지면 파싱 (AJ열=값, AK열=표시명)
+    DB.fbPositions = [];
+    const seenFb = new Set();
+    for (let i = 1; i < refRows.length; i++) {
+      const r = refRows[i];
+      const value = r[35], label = r[36];
+      if (value && !seenFb.has(value)) {
+        DB.fbPositions.push({ value, label });
+        seenFb.add(value);
+      }
+    }
+
+    // 인스타 지면 파싱 (AM열=값, AN열=표시명)
+    DB.igPositions = [];
+    const seenIg = new Set();
+    for (let i = 1; i < refRows.length; i++) {
+      const r = refRows[i];
+      const value = r[38], label = r[39];
+      if (value && !seenIg.has(value)) {
+        DB.igPositions.push({ value, label });
+        seenIg.add(value);
+      }
+    }
+
     // 전환위치 파싱 (AA열=값, AB열=표시명)
     DB.destinations = [];
     const seenDest = new Set();
@@ -760,6 +825,72 @@ function populateDropdowns() {
         o.value = op.value; o.textContent = op.label;
         if (op.value === 'LEAD_GENERATION') o.selected = true;
         optSel.appendChild(o);
+      });
+    }
+  });
+
+  // 인스타계정 (탭1, 탭2 모두, 기본값: 공란)
+  ['t1', 't2'].forEach(t => {
+    const instaSel = document.getElementById(`${t}_인스타계정`);
+    if (instaSel) {
+      instaSel.innerHTML = '<option value="">선택 안함 (Facebook 페이지 사용)</option>';
+      DB.instaAccounts.forEach(a => {
+        const o = document.createElement('option');
+        o.value = a.id; o.textContent = a.name;
+        instaSel.appendChild(o);
+      });
+    }
+  });
+
+  // CTA버튼 (탭1, 탭2 모두, 기본값: LEARN_MORE)
+  ['t1', 't2'].forEach(t => {
+    const ctaSel = document.getElementById(`${t}_CTA버튼`);
+    if (ctaSel) {
+      ctaSel.innerHTML = '';
+      DB.ctaTypes.forEach(c => {
+        const o = document.createElement('option');
+        o.value = c.value; o.textContent = c.label;
+        if (c.value === 'LEARN_MORE') o.selected = true;
+        ctaSel.appendChild(o);
+      });
+    }
+  });
+
+  // 노출위치/페이스북지면/인스타지면 (탭1, 탭2 모두)
+  ['t1', 't2'].forEach(t => {
+    // 노출위치 (기본값: 2번째 행 = facebook, instagram)
+    const platSel = document.getElementById(`${t}_노출위치1`);
+    if (platSel) {
+      platSel.innerHTML = '';
+      DB.platforms.forEach((p, i) => {
+        const o = document.createElement('option');
+        o.value = p.value; o.textContent = p.label;
+        if (i === 1) o.selected = true;
+        platSel.appendChild(o);
+      });
+    }
+
+    // 페이스북 지면 (기본값: 2번째 행 = feed,story,reels)
+    const fbSel = document.getElementById(`${t}_페이스북지면`);
+    if (fbSel) {
+      fbSel.innerHTML = '';
+      DB.fbPositions.forEach((p, i) => {
+        const o = document.createElement('option');
+        o.value = p.value; o.textContent = p.label;
+        if (i === 1) o.selected = true;
+        fbSel.appendChild(o);
+      });
+    }
+
+    // 인스타 지면 (기본값: 2번째 행 = stream,story,reels,ex)
+    const igSel = document.getElementById(`${t}_인스타지면`);
+    if (igSel) {
+      igSel.innerHTML = '';
+      DB.igPositions.forEach((p, i) => {
+        const o = document.createElement('option');
+        o.value = p.value; o.textContent = p.label;
+        if (i === 1) o.selected = true;
+        igSel.appendChild(o);
       });
     }
   });
