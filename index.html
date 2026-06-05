@@ -709,8 +709,11 @@ function populateDropdowns() {
       o.value = r.name; o.textContent = r.name; regSel.appendChild(o);
     });
 
-    // 구매유형 (기본값: AUCTION)
-    const buySel = document.getElementById(`${t}_구매유형`);
+  });
+
+  // 구매유형 (탭1만, 기본값: AUCTION)
+  const buySel = document.getElementById('t1_구매유형');
+  if (buySel) {
     buySel.innerHTML = '';
     DB.buyingTypes.forEach(b => {
       const o = document.createElement('option');
@@ -718,9 +721,11 @@ function populateDropdowns() {
       if (b.value === 'AUCTION') o.selected = true;
       buySel.appendChild(o);
     });
+  }
 
-    // 캠페인목표 (기본값: OUTCOME_LEADS)
-    const objSel = document.getElementById(`${t}_캠페인목표`);
+  // 캠페인목표 (탭1만, 기본값: OUTCOME_LEADS)
+  const objSel = document.getElementById('t1_캠페인목표');
+  if (objSel) {
     objSel.innerHTML = '';
     DB.objectives.forEach(ob => {
       const o = document.createElement('option');
@@ -728,7 +733,7 @@ function populateDropdowns() {
       if (ob.value === 'OUTCOME_LEADS') o.selected = true;
       objSel.appendChild(o);
     });
-  });
+  }
 }
 
 // =====================
