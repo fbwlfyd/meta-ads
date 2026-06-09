@@ -206,7 +206,6 @@
   <button class="tab-btn" id="tab2-btn" onclick="switchTab(2)"><div class="tab-dot"></div> 세트 추가</button>
 </div>
 
-<!-- 동기화 상태 바 -->
 <div class="sync-bar" id="syncBar">
   <div class="sync-left">
     <div class="spinner"></div>
@@ -214,7 +213,6 @@
   </div>
 </div>
 
-<!-- 탭 1 -->
 <div class="layout tab-panel active" id="tab1-panel">
   <div class="panel">
     <div class="panel-head"><h2>광고 등록</h2><p>새 캠페인 · 광고세트 · 광고 생성</p></div>
@@ -279,7 +277,7 @@
         </div>
         <div class="field" id="t1_drive_wrap">
           <label>파일ID (Google Drive)</label>
-          <input type="text" id="t1_파일ID" placeholder="Drive 파일 ID">
+          <input type="text" id="t1_파일ID" placeholder="Drive 전체 링크 복사 후 붙여넣기" oninput="extractDriveId(this)">
         </div>
         <div class="field" id="t1_upload_wrap" style="display:none;">
           <label>파일 첨부</label>
@@ -407,7 +405,6 @@
   </div>
 </div>
 
-<!-- 탭 2 -->
 <div class="layout tab-panel" id="tab2-panel">
   <div class="panel">
     <div class="panel-head"><h2>세트 추가</h2><p>기존 캠페인에 광고세트 · 광고 추가</p></div>
@@ -477,7 +474,7 @@
         </div>
         <div class="field" id="t2_drive_wrap">
           <label>파일ID (Google Drive)</label>
-          <input type="text" id="t2_파일ID" placeholder="Drive 파일 ID">
+          <input type="text" id="t2_파일ID" placeholder="Drive 전체 링크 복사 후 붙여넣기" oninput="extractDriveId(this)">
         </div>
         <div class="field" id="t2_upload_wrap" style="display:none;">
           <label>파일 첨부</label>
@@ -1029,6 +1026,18 @@ function populateDropdowns() {
 // =====================
 // 이벤트 핸들러
 // =====================
+
+// ✅ Drive 링크 붙여넣기 시 ID만 자동 추출하는 함수
+function extractDriveId(el) {
+  const val = el.value.trim();
+  if (!val) return;
+  // 정규식으로 /d/ 뒤 또는 id= 뒤의 파일 ID를 추출
+  const match = val.match(/\/d\/([a-zA-Z0-9_-]+)/) || val.match(/id=([a-zA-Z0-9_-]+)/);
+  if (match && match[1]) {
+    el.value = match[1]; // 추출된 ID로 텍스트 교체
+  }
+}
+
 function onAccount(t) {
   const name = document.getElementById(`${t}_계정명`).value;
   const acc = DB.accounts.find(a => a.name === name);
