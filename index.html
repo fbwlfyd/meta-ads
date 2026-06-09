@@ -675,7 +675,9 @@ function parseCSV(text) {
 function normalizeCell(val) {
   // 지수 표기법 숫자 (예: 8.12455E+14) → 정수 문자열로 변환
   if (/^-?[0-9]+\.?[0-9]*[eE][+\-]?[0-9]+$/.test(val)) {
-    return BigInt(Math.round(Number(val))).toString();
+    const num = Number(val);
+    // toFixed로 정수 문자열 변환 (소수점 제거)
+    return num.toFixed(0);
   }
   return val;
 }
