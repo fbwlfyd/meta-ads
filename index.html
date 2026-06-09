@@ -549,7 +549,7 @@ const SHEET_ID = '1SIyoXfGJ2jI824WUOAcjywrTdApaKEAqtxnG9dkSwqw';
 
 // ⚠️ 실제 Make 웹훅 토큰으로 교체
 const WEBHOOKS = {
-  t1: 'https://hook.eu1.make.com/wgou4ekrp482asnvqh7i17wnhs7shwgm',
+  t1: 'https://hook.eu1.make.com/여기에_광고등록_토큰',
   t2: 'https://hook.eu1.make.com/여기에_세트추가_토큰',
 };
 
@@ -1163,12 +1163,42 @@ async function submitAd(t) {
 }
 
 function clearForm(t) {
-  const panel = document.getElementById(`tab${t === 't1' ? 1 : 2}-panel`);
-  panel.querySelectorAll('input:not([readonly]), select, textarea').forEach(el => { el.value = ''; });
-  // 날짜 수기 입력
+  // 수기 입력 필드만 초기화 (기본값 있는 것들은 유지)
+  const clearFields = ['제작자', '날짜', '유형', '계정명', '페이지', '인스타계정', '지역구분자', '파일ID', '기본문구', '제목', '설명', '세트예산', '시작일', '종료일', '언어'];
+  clearFields.forEach(field => {
+    const el = document.getElementById(`${t}_${field}`);
+    if (el) el.value = '';
+  });
+
+  // 언어 기본값 ko
+  document.getElementById(`${t}_언어`).value = 'ko';
+
+  // 캠페인예산 기본값 30000
+  const campBudget = document.getElementById(`${t}_캠페인예산`);
+  if (campBudget) campBudget.value = 30000;
+
+  // 최소/최대나이 기본값 복원
+  document.getElementById(`${t}_최소나이`).value = 35;
+  document.getElementById(`${t}_최대나이`).value = 65;
+
+  // 시작일 오늘 날짜
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById(`${t}_시작일`).value = today;
+
+  // 드롭다운 초기화
   document.getElementById(`${t}_타겟국가`).value = '';
   document.getElementById(`${t}_제외타겟`).innerHTML = '<option value="">계정 선택 후 사용 가능</option>';
   document.getElementById(`${t}_인스턴트양식`).innerHTML = '<option value="">페이지 선택 후 사용 가능</option>';
+  document.getElementById(`${t}_제외타겟ID`).value = '';
+
+  // 자동생성 필드 초기화
+  ['광고계정ID', '캠페인명', '광고세트명', '광고명', '페이지ID', '인스턴트양식ID'].forEach(field => {
+    const el = document.getElementById(`${t}_${field}`);
+    if (el) el.value = '';
+  });
+
+  // 드롭다운 기본값 복원 (populateDropdowns 재호출)
+  populateDropdowns();
 }
 
 function showToast(msg, type = 'info') {
