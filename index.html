@@ -280,13 +280,6 @@
         <div class="field" id="t1_drive_wrap">
           <label>파일ID (Google Drive)</label>
           <input type="text" id="t1_파일ID" placeholder="Drive 파일 ID">
-          <div style="margin-top:8px;">
-            <label style="font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:5px;">파일 유형</label>
-            <select id="t1_파일유형" style="width:100%;height:40px;background:var(--white);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:0 12px;font-size:13px;appearance:none;">
-              <option value="이미지">이미지</option>
-              <option value="영상">영상</option>
-            </select>
-          </div>
         </div>
         <div class="field" id="t1_upload_wrap" style="display:none;">
           <label>파일 첨부</label>
@@ -485,13 +478,6 @@
         <div class="field" id="t2_drive_wrap">
           <label>파일ID (Google Drive)</label>
           <input type="text" id="t2_파일ID" placeholder="Drive 파일 ID">
-          <div style="margin-top:8px;">
-            <label style="font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:5px;">파일 유형</label>
-            <select id="t2_파일유형" style="width:100%;height:40px;background:var(--white);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:0 12px;font-size:13px;appearance:none;">
-              <option value="이미지">이미지</option>
-              <option value="영상">영상</option>
-            </select>
-          </div>
         </div>
         <div class="field" id="t2_upload_wrap" style="display:none;">
           <label>파일 첨부</label>
@@ -613,8 +599,7 @@ const SHEET_ID = '1SIyoXfGJ2jI824WUOAcjywrTdApaKEAqtxnG9dkSwqw';
 
 // ⚠️ 실제 Make 웹훅 토큰으로 교체
 // ⚠️ Meta 액세스 토큰 입력 (아래 값을 실제 토큰으로 교체하세요)
-const META_ACCESS_TOKEN = 'EAAQT68743nIBRlU3QvgOZAERtM4PXN6gnMzY773HpcCZA2lFs0xyw2fUI4tWeV9SBEthgEx18o3O3ZBREIdGZCx6rPCttbnty3SsRJQE1CTtkl6ULl8EAFw5fZCfhQQaCgRWyuuMu0Xkw5TBircZCW2qkOySKRgCKq5os8ceXZAlHRhhy1oGpZCtSfbM0ZAUqnQZDZD
-';
+const META_ACCESS_TOKEN = '여기에_메타_액세스_토큰';
 
 // Meta API 이미지 업로드
 async function uploadImageToMeta(file, adAccountId) {
@@ -631,7 +616,7 @@ async function uploadImageToMeta(file, adAccountId) {
 }
 
 const WEBHOOKS = {
-  t1: 'https://hook.eu1.make.com/wgou4ekrp482asnvqh7i17wnhs7shwgm',
+  t1: 'https://hook.eu1.make.com/여기에_광고등록_토큰',
   t2: 'https://hook.eu1.make.com/여기에_세트추가_토큰',
 };
 
@@ -1205,7 +1190,8 @@ function getData(t) {
           return file.type.startsWith('image/') ? '이미지' : '영상';
         }
       }
-      return g(`${t}_파일유형`) || '이미지';
+      // Drive ID 방식은 Make에서 자동 판단
+      return 'drive';
     })(),
     기본문구: g(`${t}_기본문구`),
     제목: g(`${t}_제목`), 설명: g(`${t}_설명`), CTA버튼: g(`${t}_CTA버튼`),
