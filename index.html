@@ -604,7 +604,7 @@ const META_ACCESS_TOKEN = 'EAAQT68743nIBRlU3QvgOZAERtM4PXN6gnMzY773HpcCZA2lFs0xy
 
 // Meta API 이미지 업로드
 async function uploadImageToMeta(file, adAccountId) {
-  const cleanId = adAccountId.replace('act_', '');
+  const cleanId = String(adAccountId).replace('act_', '');
   const url = `https://graph.facebook.com/v19.0/act_${cleanId}/adimages`;
   const formData = new FormData();
   formData.append('filename', file);
@@ -664,12 +664,20 @@ function parseCSV(text) {
     for (let i = 0; i < row.length; i++) {
       const c = row[i];
       if (c === '"') { inQ = !inQ; continue; }
-      if (c === ',' && !inQ) { cells.push(cur.trim()); cur = ''; continue; }
+      if (c === ',' && !inQ) { cells.push(normalizeCell(cur.trim())); cur = ''; continue; }
       cur += c;
     }
-    cells.push(cur.trim());
+    cells.push(normalizeCell(cur.trim()));
     return cells;
   });
+}
+
+function normalizeCell(val) {
+  // 지수 표기법 숫자 (예: 8.12455E+14) → 정수 문자열로 변환
+  if (/^-?[0-9]+\.?[0-9]*[eE][+\-]?[0-9]+$/.test(val)) {
+    return BigInt(Math.round(Number(val))).toString();
+  }
+  return val;
 }
 
 // =====================
