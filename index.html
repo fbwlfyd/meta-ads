@@ -613,7 +613,8 @@ const SHEET_ID = '1SIyoXfGJ2jI824WUOAcjywrTdApaKEAqtxnG9dkSwqw';
 
 // ⚠️ 실제 Make 웹훅 토큰으로 교체
 // ⚠️ Meta 액세스 토큰 입력 (아래 값을 실제 토큰으로 교체하세요)
-const META_ACCESS_TOKEN = 'EAAQT68743nIBRlU3QvgOZAERtM4PXN6gnMzY773HpcCZA2lFs0xyw2fUI4tWeV9SBEthgEx18o3O3ZBREIdGZCx6rPCttbnty3SsRJQE1CTtkl6ULl8EAFw5fZCfhQQaCgRWyuuMu0Xkw5TBircZCW2qkOySKRgCKq5os8ceXZAlHRhhy1oGpZCtSfbM0ZAUqnQZDZD';
+const META_ACCESS_TOKEN = 'EAAQT68743nIBRlU3QvgOZAERtM4PXN6gnMzY773HpcCZA2lFs0xyw2fUI4tWeV9SBEthgEx18o3O3ZBREIdGZCx6rPCttbnty3SsRJQE1CTtkl6ULl8EAFw5fZCfhQQaCgRWyuuMu0Xkw5TBircZCW2qkOySKRgCKq5os8ceXZAlHRhhy1oGpZCtSfbM0ZAUqnQZDZD
+';
 
 // Meta API 이미지 업로드
 async function uploadImageToMeta(file, adAccountId) {
@@ -1195,7 +1196,18 @@ function getData(t) {
     어드밴티지타겟: g(`${t}_어드밴티지타겟`), 언어: g(`${t}_언어`),
     최소나이: g(`${t}_최소나이`), 최대나이: g(`${t}_최대나이`), 성별: g(`${t}_성별`),
     노출위치1: g(`${t}_노출위치1`), 페이스북지면: g(`${t}_페이스북지면`), 인스타지면: g(`${t}_인스타지면`),
-    광고명: g(`${t}_광고명`), 파일ID: g(`${t}_파일ID`), 기본문구: g(`${t}_기본문구`),
+    광고명: g(`${t}_광고명`), 파일ID: g(`${t}_파일ID`),
+    파일유형: (function() {
+      const method = document.getElementById(`${t}_파일방식`).value;
+      if (method === 'upload') {
+        const file = document.getElementById(`${t}_파일첨부`).files[0];
+        if (file) {
+          return file.type.startsWith('image/') ? '이미지' : '영상';
+        }
+      }
+      return g(`${t}_파일유형`) || '이미지';
+    })(),
+    기본문구: g(`${t}_기본문구`),
     제목: g(`${t}_제목`), 설명: g(`${t}_설명`), CTA버튼: g(`${t}_CTA버튼`),
     인스턴트양식: g(`${t}_인스턴트양식`), 인스턴트양식ID: g(`${t}_인스턴트양식ID`),
   };
