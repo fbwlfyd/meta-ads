@@ -270,7 +270,21 @@
 
       <div class="section">
         <div class="sec-label">광고 소재</div>
-        <div class="field"><label>파일ID (Google Drive)</label><input type="text" id="t1_파일ID" placeholder="Drive 파일 ID"></div>
+        <div class="field">
+          <label>파일 업로드 방식</label>
+          <select id="t1_파일방식" onchange="onFileMethod('t1')">
+            <option value="drive">Drive 파일ID</option>
+            <option value="upload">직접 첨부</option>
+          </select>
+        </div>
+        <div class="field" id="t1_drive_wrap">
+          <label>파일ID (Google Drive)</label>
+          <input type="text" id="t1_파일ID" placeholder="Drive 파일 ID">
+        </div>
+        <div class="field" id="t1_upload_wrap" style="display:none;">
+          <label>파일 첨부</label>
+          <input type="file" id="t1_파일첨부" accept="image/*,video/*" style="width:100%;padding:8px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;cursor:pointer;">
+        </div>
         <div class="field"><label>기본문구</label><textarea id="t1_기본문구" placeholder="광고 기본문구 입력"></textarea></div>
         <div class="field"><label>제목</label><input type="text" id="t1_제목" placeholder="광고 제목"></div>
         <div class="field"><label>설명</label><input type="text" id="t1_설명" placeholder="광고 설명"></div>
@@ -443,7 +457,21 @@
 
       <div class="section">
         <div class="sec-label">광고 소재</div>
-        <div class="field"><label>파일ID (Google Drive)</label><input type="text" id="t2_파일ID" placeholder="Drive 파일 ID"></div>
+        <div class="field">
+          <label>파일 업로드 방식</label>
+          <select id="t2_파일방식" onchange="onFileMethod('t2')">
+            <option value="drive">Drive 파일ID</option>
+            <option value="upload">직접 첨부</option>
+          </select>
+        </div>
+        <div class="field" id="t2_drive_wrap">
+          <label>파일ID (Google Drive)</label>
+          <input type="text" id="t2_파일ID" placeholder="Drive 파일 ID">
+        </div>
+        <div class="field" id="t2_upload_wrap" style="display:none;">
+          <label>파일 첨부</label>
+          <input type="file" id="t2_파일첨부" accept="image/*,video/*" style="width:100%;padding:8px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;cursor:pointer;">
+        </div>
         <div class="field"><label>기본문구</label><textarea id="t2_기본문구" placeholder="광고 기본문구 입력"></textarea></div>
         <div class="field"><label>제목</label><input type="text" id="t2_제목" placeholder="광고 제목"></div>
         <div class="field"><label>설명</label><input type="text" id="t2_설명" placeholder="광고 설명"></div>
@@ -549,7 +577,7 @@ const SHEET_ID = '1SIyoXfGJ2jI824WUOAcjywrTdApaKEAqtxnG9dkSwqw';
 
 // ⚠️ 실제 Make 웹훅 토큰으로 교체
 const WEBHOOKS = {
-  t1: 'https://hook.eu1.make.com/wgou4ekrp482asnvqh7i17wnhs7shwgm',
+  t1: 'https://hook.eu1.make.com/여기에_광고등록_토큰',
   t2: 'https://hook.eu1.make.com/여기에_세트추가_토큰',
 };
 
@@ -1039,6 +1067,12 @@ function onRegion(t) {
   document.getElementById(`${t}_타겟국가`).value = region ? (region.id || '') : '';
 }
 
+function onFileMethod(t) {
+  const method = document.getElementById(`${t}_파일방식`).value;
+  document.getElementById(`${t}_drive_wrap`).style.display = method === 'drive' ? 'block' : 'none';
+  document.getElementById(`${t}_upload_wrap`).style.display = method === 'upload' ? 'block' : 'none';
+}
+
 function onForm(t) {
   const sel = document.getElementById(`${t}_인스턴트양식`);
   const opt = sel.options[sel.selectedIndex];
@@ -1141,11 +1175,28 @@ async function submitAd(t) {
   const idx = addCard(t, data);
 
   try {
-    const res = await fetch(WEBHOOKS[t], {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
+    const method = document.getElementById(`${t}_파일방식`).value;
+    const fileInput = document.getElementById(`${t}_파일첨부`);
+    const hasFile = method === 'upload' && fileInput && fileInput.files.length > 0;
+
+    let res;
+    if (hasFile) {
+      // 파일 첨부 방식: FormData로 전송
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+      formData.append('data', JSON.stringify(data));
+      res = await fetch(WEBHOOKS[t], {
+        method: 'POST',
+        body: formData,
+      });
+    } else {
+      // Drive ID 방식: JSON으로 전송
+      res = await fetch(WEBHOOKS[t], {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    }
     if (res.ok) {
       updateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중');
       showToast(isT2 ? '세트 추가 요청 완료!' : '광고 등록 요청 완료!', 'success');
@@ -1190,6 +1241,12 @@ function clearForm(t) {
   document.getElementById(`${t}_제외타겟`).innerHTML = '<option value="">계정 선택 후 사용 가능</option>';
   document.getElementById(`${t}_인스턴트양식`).innerHTML = '<option value="">페이지 선택 후 사용 가능</option>';
   document.getElementById(`${t}_제외타겟ID`).value = '';
+
+  // 파일 첨부 초기화
+  const fileInput = document.getElementById(`${t}_파일첨부`);
+  if (fileInput) fileInput.value = '';
+  const driveInput = document.getElementById(`${t}_파일ID`);
+  if (driveInput) driveInput.value = '';
 
   // 자동생성 필드 초기화
   ['광고계정ID', '캠페인명', '광고세트명', '광고명', '페이지ID', '인스턴트양식ID'].forEach(field => {
