@@ -598,8 +598,11 @@
 const SHEET_ID = '1SIyoXfGJ2jI824WUOAcjywrTdApaKEAqtxnG9dkSwqw';
 
 // ⚠️ 실제 Make 웹훅 토큰으로 교체
+// ⚠️ Meta 액세스 토큰 입력
+const META_ACCESS_TOKEN = 'EAAQT68743nIBRlU3QvgOZAERtM4PXN6gnMzY773HpcCZA2lFs0xyw2fUI4tWeV9SBEthgEx18o3O3ZBREIdGZCx6rPCttbnty3SsRJQE1CTtkl6ULl8EAFw5fZCfhQQaCgRWyuuMu0Xkw5TBircZCW2qkOySKRgCKq5os8ceXZAlHRhhy1oGpZCtSfbM0ZAUqnQZDZD
+';
 const WEBHOOKS = {
-  t1: 'https://hook.eu1.make.com/wgou4ekrp482asnvqh7i17wnhs7shwgm',
+  t1: 'https://hook.eu1.make.com/여기에_광고등록_토큰',
   t2: 'https://hook.eu1.make.com/여기에_세트추가_토큰',
 };
 
@@ -1089,6 +1092,26 @@ function onRegion(t) {
   document.getElementById(`${t}_타겟국가`).value = region ? (region.id || '') : '';
 }
 
+// Meta API 이미지 업로드
+async function uploadImageToMeta(file, adAccountId) {
+  const url = `https://graph.facebook.com/v19.0/act_${adAccountId}/adimages`;
+  const formData = new FormData();
+  formData.append('filename', file);
+  formData.append('access_token', META_ACCESS_TOKEN);
+
+  const res = await fetch(url, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!res.ok) throw new Error(`Meta 이미지 업로드 실패: ${res.status}`);
+  const data = await res.json();
+  // 반환된 해시값 추출
+  const images = data.images;
+  const key = Object.keys(images)[0];
+  return images[key].hash;
+}
+
 function onDragOver(e, t) {
   e.preventDefault();
   const dz = document.getElementById(`${t}_dropzone`);
@@ -1242,13 +1265,16 @@ async function submitAd(t) {
 
     let res;
     if (hasFile) {
-      // 파일 첨부 방식: FormData로 전송
-      const formData = new FormData();
-      formData.append('file', fileInput.files[0]);
-      formData.append('data', JSON.stringify(data));
+      // 파일 첨부 방식: Meta API로 직접 이미지 업로드 후 해시값을 Make로 전송
+      showToast('이미지 Meta 업로드 중...', 'info');
+      const adAccountId = data.광고계정ID.replace('act_', '');
+      const imageHash = await uploadImageToMeta(fileInput.files[0], adAccountId);
+      data.이미지해시 = imageHash;
+      data.파일ID = ''; // Drive ID 비움
       res = await fetch(WEBHOOKS[t], {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
       });
     } else {
       // Drive ID 방식: JSON으로 전송
