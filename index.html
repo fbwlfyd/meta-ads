@@ -1200,7 +1200,7 @@ function getData(t) {
           return file.type.startsWith('image/') ? '이미지' : '영상';
         }
       }
-      // Drive ID 방식은 Make에서 자동 판단
+      // Drive ID 방식은 Make에서 MIME 타입으로 자동 판단
       return 'drive';
     })(),
     기본문구: g(`${t}_기본문구`),
