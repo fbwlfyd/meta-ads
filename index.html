@@ -283,7 +283,18 @@
         </div>
         <div class="field" id="t1_upload_wrap" style="display:none;">
           <label>파일 첨부</label>
-          <input type="file" id="t1_파일첨부" accept="image/*,video/*" style="width:100%;padding:8px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;cursor:pointer;">
+          <div id="t1_dropzone" 
+            style="border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg);"
+            ondragover="onDragOver(event, 't1')"
+            ondragleave="onDragLeave(event, 't1')"
+            ondrop="onDrop(event, 't1')"
+            onclick="document.getElementById('t1_파일첨부').click()">
+            <div id="t1_dropzone_text" style="font-size:13px;color:var(--text2);">
+              📎 클릭하거나 파일을 여기에 드래그하세요<br>
+              <span style="font-size:11px;color:var(--text3);">이미지 · 영상 파일 지원</span>
+            </div>
+          </div>
+          <input type="file" id="t1_파일첨부" accept="image/*,video/*" style="display:none;" onchange="onFileSelected('t1')">
         </div>
         <div class="field"><label>기본문구</label><textarea id="t1_기본문구" placeholder="광고 기본문구 입력"></textarea></div>
         <div class="field"><label>제목</label><input type="text" id="t1_제목" placeholder="광고 제목"></div>
@@ -470,7 +481,18 @@
         </div>
         <div class="field" id="t2_upload_wrap" style="display:none;">
           <label>파일 첨부</label>
-          <input type="file" id="t2_파일첨부" accept="image/*,video/*" style="width:100%;padding:8px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;cursor:pointer;">
+          <div id="t2_dropzone" 
+            style="border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg);"
+            ondragover="onDragOver(event, 't2')"
+            ondragleave="onDragLeave(event, 't2')"
+            ondrop="onDrop(event, 't2')"
+            onclick="document.getElementById('t2_파일첨부').click()">
+            <div id="t2_dropzone_text" style="font-size:13px;color:var(--text2);">
+              📎 클릭하거나 파일을 여기에 드래그하세요<br>
+              <span style="font-size:11px;color:var(--text3);">이미지 · 영상 파일 지원</span>
+            </div>
+          </div>
+          <input type="file" id="t2_파일첨부" accept="image/*,video/*" style="display:none;" onchange="onFileSelected('t2')">
         </div>
         <div class="field"><label>기본문구</label><textarea id="t2_기본문구" placeholder="광고 기본문구 입력"></textarea></div>
         <div class="field"><label>제목</label><input type="text" id="t2_제목" placeholder="광고 제목"></div>
@@ -1065,6 +1087,45 @@ function onRegion(t) {
   const regionName = document.getElementById(`${t}_지역구분자`).value;
   const region = DB.regions.find(r => r.name === regionName);
   document.getElementById(`${t}_타겟국가`).value = region ? (region.id || '') : '';
+}
+
+function onDragOver(e, t) {
+  e.preventDefault();
+  const dz = document.getElementById(`${t}_dropzone`);
+  dz.style.borderColor = 'var(--blue)';
+  dz.style.background = 'var(--blue-bg)';
+}
+
+function onDragLeave(e, t) {
+  const dz = document.getElementById(`${t}_dropzone`);
+  dz.style.borderColor = 'var(--border2)';
+  dz.style.background = 'var(--bg)';
+}
+
+function onDrop(e, t) {
+  e.preventDefault();
+  const dz = document.getElementById(`${t}_dropzone`);
+  dz.style.borderColor = 'var(--border2)';
+  dz.style.background = 'var(--bg)';
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  const input = document.getElementById(`${t}_파일첨부`);
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  input.files = dt.files;
+  updateDropzoneText(t, file.name);
+}
+
+function onFileSelected(t) {
+  const input = document.getElementById(`${t}_파일첨부`);
+  if (input.files.length > 0) {
+    updateDropzoneText(t, input.files[0].name);
+  }
+}
+
+function updateDropzoneText(t, name) {
+  document.getElementById(`${t}_dropzone_text`).innerHTML = 
+    `✅ <strong>${name}</strong><br><span style="font-size:11px;color:var(--text3);">클릭하면 다시 선택할 수 있어요</span>`;
 }
 
 function onFileMethod(t) {
