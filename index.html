@@ -742,7 +742,7 @@ function getData(t) {
       const ageMin = parseInt(g(`${t}_최소나이`)) || 35;
       const ageMax = parseInt(g(`${t}_최대나이`)) || 65;
       const langVal = g(`${t}_언어`).trim();
-      const langMap = { 'ko': 6, 'en': 1, 'ja': 5, 'zh': 7 };
+      const langMap = { 'ko': 12, 'en': 6, 'ja': 11, 'zh': 20 };
       const langCode = langMap[langVal] || 6;
 
       // 제외타겟 IDs
@@ -829,7 +829,7 @@ function clearForm(t) {
   ['제작자','날짜','유형','계정명','페이지','인스타계정','지역구분자','파일ID','기본문구','제목','설명','세트예산','시작일','종료일','언어'].forEach(field => { const el = document.getElementById(`${t}_${field}`); if (el) el.value = ''; });
   document.getElementById(`${t}_언어`).value = 'ko';
   const cb = document.getElementById(`${t}_캠페인예산`); if (cb) cb.value = 30000;
-  document.getElementById(`${t}_최소나이`).value = 25;
+  document.getElementById(`${t}_최소나이`).value = 35;
   document.getElementById(`${t}_최대나이`).value = 65;
   document.getElementById(`${t}_시작일`).value = new Date().toISOString().split('T')[0];
   document.getElementById(`${t}_타겟국가`).value = '';
