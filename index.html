@@ -391,12 +391,12 @@ const SHEET_ID = '1SIyoXfGJ2jI824WUOAcjywrTdApaKEAqtxnG9dkSwqw';
 
 // ⚠️ 실제 Make 웹훅 URL로 교체
 const WEBHOOKS = {
-  t1: 'https://hook.eu1.make.com/wgou4ekrp482asnvqh7i17wnhs7shwgm',
+  t1: 'https://hook.eu1.make.com/여기에_광고등록_토큰',
   t2: 'https://hook.eu1.make.com/여기에_세트추가_토큰',
 };
 
 // ⚠️ Meta 액세스 토큰으로 교체
-const META_ACCESS_TOKEN = 'EAAQT68743nIBRlU3QvgOZAERtM4PXN6gnMzY773HpcCZA2lFs0xyw2fUI4tWeV9SBEthgEx18o3O3ZBREIdGZCx6rPCttbnty3SsRJQE1CTtkl6ULl8EAFw5fZCfhQQaCgRWyuuMu0Xkw5TBircZCW2qkOySKRgCKq5os8ceXZAlHRhhy1oGpZCtSfbM0ZAUqnQZDZD';
+const META_ACCESS_TOKEN = '여기에_메타_액세스_토큰';
 
 async function uploadImageToMeta(file, adAccountId) {
   const cleanId = String(adAccountId).replace('act_', '');
@@ -652,10 +652,19 @@ function getData(t) {
     제외타겟: g(`${t}_제외타겟`), 제외타겟ID: g(`${t}_제외타겟ID`),
     어드밴티지타겟: g(`${t}_어드밴티지타겟`), 언어: g(`${t}_언어`),
     최소나이: g(`${t}_최소나이`), 최대나이: g(`${t}_최대나이`), 성별: g(`${t}_성별`),
-    // ✅ 노출위치/지면 → 배열로 변환해서 전송
+    // ✅ targeting JSON 완성해서 전송
     노출위치1: toArray(g(`${t}_노출위치1`)),
     페이스북지면: toArray(g(`${t}_페이스북지면`)),
     인스타지면: toArray(g(`${t}_인스타지면`)),
+    targeting: JSON.stringify({
+      age_min: parseInt(g(`${t}_최소나이`)) || 18,
+      age_max: parseInt(g(`${t}_최대나이`)) || 65,
+      geo_locations: { cities: [{ key: g(`${t}_타겟국가`) }] },
+      publisher_platforms: toArray(g(`${t}_노출위치1`)),
+      facebook_positions: toArray(g(`${t}_페이스북지면`)),
+      instagram_positions: toArray(g(`${t}_인스타지면`)),
+      locales: [6]
+    }),
     광고명: g(`${t}_광고명`), 파일ID: g(`${t}_파일ID`),
     파일유형: (() => {
       const method = document.getElementById(`${t}_파일방식`).value;
