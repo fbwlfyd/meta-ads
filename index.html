@@ -8,146 +8,57 @@
   @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #f5f5f7;
-    --white: #ffffff;
-    --border: #e5e5ea;
-    --border2: #d1d1d6;
-    --text1: #1c1c1e;
-    --text2: #6c6c70;
-    --text3: #aeaeb2;
-    --blue: #007aff;
-    --blue-bg: #f0f6ff;
-    --green: #34c759;
-    --green-bg: #f0faf3;
-    --red: #ff3b30;
-    --red-bg: #fff5f5;
-    --yellow-bg: #fffbf0;
-    --yellow: #ff9500;
-    --radius: 12px;
-    --radius-sm: 8px;
+    --bg: #f5f5f7; --white: #ffffff; --border: #e5e5ea; --border2: #d1d1d6;
+    --text1: #1c1c1e; --text2: #6c6c70; --text3: #aeaeb2;
+    --blue: #007aff; --blue-bg: #f0f6ff; --green: #34c759; --green-bg: #f0faf3;
+    --red: #ff3b30; --red-bg: #fff5f5; --yellow-bg: #fffbf0; --yellow: #ff9500;
+    --radius: 12px; --radius-sm: 8px;
   }
-  body {
-    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--bg);
-    color: var(--text1);
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    font-size: 14px;
-  }
-
-  /* 탑바 */
-  .topbar {
-    height: 56px;
-    background: var(--white);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    padding: 0 24px;
-    gap: 24px;
-    flex-shrink: 0;
-  }
+  body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text1); height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-size: 14px; }
+  .topbar { height: 56px; background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 24px; flex-shrink: 0; }
   .topbar-brand { font-size: 15px; font-weight: 600; color: var(--text1); letter-spacing: -0.3px; margin-right: 8px; }
-  .tab-btn {
-    height: 56px; padding: 0 4px;
-    background: none; border: none; border-bottom: 2px solid transparent;
-    color: var(--text2); font-family: inherit; font-size: 14px; font-weight: 500;
-    cursor: pointer; transition: all 0.15s;
-    display: flex; align-items: center; gap: 6px;
-  }
+  .tab-btn { height: 56px; padding: 0 4px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text2); font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
   .tab-btn:hover { color: var(--text1); }
   .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
   .tab-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.5; }
   .tab-btn.active .tab-dot { opacity: 1; }
-
-  /* 데이터 로딩 상태 */
-  .sync-bar {
-    height: 32px;
-    background: var(--blue-bg);
-    border-bottom: 1px solid #c8dffe;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 24px; flex-shrink: 0;
-    font-size: 12px; color: var(--blue);
-    transition: all 0.3s;
-  }
+  .sync-bar { height: 32px; background: var(--blue-bg); border-bottom: 1px solid #c8dffe; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; font-size: 12px; color: var(--blue); transition: all 0.3s; }
   .sync-bar.ok { background: var(--green-bg); border-bottom-color: #b6eac7; color: #1a7f4b; }
   .sync-bar.err { background: var(--red-bg); border-bottom-color: #ffc9c9; color: #c0392b; }
   .sync-bar.hidden { display: none; }
   .sync-left { display: flex; align-items: center; gap: 6px; }
-  .sync-btn {
-    font-size: 11px; font-weight: 600; padding: 3px 10px;
-    background: none; border: 1px solid currentColor; border-radius: 20px;
-    color: inherit; cursor: pointer; font-family: inherit;
-  }
-  .sync-btn:hover { opacity: 0.7; }
-
-  /* 레이아웃 */
+  .sync-btn { font-size: 11px; font-weight: 600; padding: 3px 10px; background: none; border: 1px solid currentColor; border-radius: 20px; color: inherit; cursor: pointer; font-family: inherit; }
   .layout { flex: 1; display: flex; overflow: hidden; }
-  .panel {
-    width: 360px; min-width: 360px;
-    background: var(--white); border-right: 1px solid var(--border);
-    display: flex; flex-direction: column; overflow: hidden;
-  }
+  .panel { width: 360px; min-width: 360px; background: var(--white); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
   .panel-head { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); }
   .panel-head h2 { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
   .panel-head p { font-size: 12px; color: var(--text2); margin-top: 2px; }
   .panel-body { flex: 1; overflow-y: auto; padding: 20px 24px; scrollbar-width: none; }
   .panel-body::-webkit-scrollbar { width: 0; }
   .panel-foot { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
-
-  /* 폼 */
   .section { margin-bottom: 20px; }
   .sec-label { font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 10px; }
   .field { margin-bottom: 10px; }
   .field label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 5px; }
-  .field input, .field select, .field textarea {
-    width: 100%; height: 40px;
-    background: var(--white); border: 1px solid var(--border2);
-    border-radius: var(--radius-sm); color: var(--text1);
-    font-family: inherit; font-size: 13px;
-    padding: 0 12px; outline: none;
-    transition: border-color 0.15s, box-shadow 0.15s;
-    appearance: none; -webkit-appearance: none;
-  }
+  .field input, .field select, .field textarea { width: 100%; height: 40px; background: var(--white); border: 1px solid var(--border2); border-radius: var(--radius-sm); color: var(--text1); font-family: inherit; font-size: 13px; padding: 0 12px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; appearance: none; -webkit-appearance: none; }
   .field textarea { height: 72px; padding: 10px 12px; resize: none; line-height: 1.5; }
-  .field input:focus, .field select:focus, .field textarea:focus {
-    border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,122,255,0.1);
-  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
   .field input[readonly] { background: var(--bg); color: var(--text2); cursor: default; }
   .field input[readonly]:focus { border-color: var(--border2); box-shadow: none; }
-  .field select {
-    background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23aeaeb2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 10px center;
-    padding-right: 32px; cursor: pointer;
-  }
+  .field select { background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23aeaeb2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 32px; cursor: pointer; }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .auto-tag { display: inline-flex; align-items: center; font-size: 10px; font-weight: 600; color: var(--blue); background: var(--blue-bg); padding: 2px 7px; border-radius: 20px; margin-left: 6px; }
   .divider { height: 1px; background: var(--border); margin: 4px 0 16px; }
-
-  .campaign-id-box {
-    background: var(--yellow-bg); border: 1px solid #ffe0a0;
-    border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px;
-  }
+  .campaign-id-box { background: var(--yellow-bg); border: 1px solid #ffe0a0; border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px; }
   .campaign-id-box label { display: block; font-size: 12px; font-weight: 600; color: var(--yellow); margin-bottom: 6px; }
-  .campaign-id-box input {
-    width: 100%; height: 40px;
-    background: var(--white); border: 1px solid #ffe0a0;
-    border-radius: var(--radius-sm); color: var(--text1);
-    font-family: inherit; font-size: 13px; padding: 0 12px; outline: none;
-    transition: border-color 0.15s, box-shadow 0.15s;
-  }
+  .campaign-id-box input { width: 100%; height: 40px; background: var(--white); border: 1px solid #ffe0a0; border-radius: var(--radius-sm); color: var(--text1); font-family: inherit; font-size: 13px; padding: 0 12px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
   .campaign-id-box input:focus { border-color: var(--yellow); box-shadow: 0 0 0 3px rgba(255,149,0,0.15); }
-
-  /* 버튼 */
   .btn-primary { width: 100%; height: 48px; background: var(--blue); border: none; border-radius: var(--radius); color: white; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.15s; letter-spacing: -0.2px; }
   .btn-primary:hover { background: #0066dd; }
   .btn-primary:active { transform: scale(0.99); }
   .btn-primary:disabled { background: var(--border); color: var(--text3); cursor: not-allowed; transform: none; }
   .btn-ghost { width: 100%; height: 36px; background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text2); font-family: inherit; font-size: 13px; cursor: pointer; transition: all 0.15s; }
   .btn-ghost:hover { background: var(--bg); color: var(--text1); }
-
-  /* 오른쪽 */
   .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
   .main-head { padding: 18px 28px 14px; background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
   .main-head h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
@@ -155,16 +66,13 @@
   .live-pill { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; color: var(--green); background: var(--green-bg); padding: 5px 12px; border-radius: 20px; }
   .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 2s infinite; }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
   .content { flex: 1; overflow-y: auto; padding: 24px 28px; }
   .content::-webkit-scrollbar { width: 4px; }
   .content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
   .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 10px; color: var(--text3); }
   .empty-icon { width: 56px; height: 56px; background: var(--white); border: 1px solid var(--border); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 26px; }
   .empty h4 { font-size: 14px; font-weight: 500; color: var(--text2); }
   .empty p { font-size: 12px; }
-
   .cards { display: flex; flex-direction: column; gap: 10px; }
   .card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; transition: box-shadow 0.15s; }
   .card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
@@ -185,10 +93,8 @@
   .card-result { margin-top: 10px; padding: 8px 12px; background: var(--bg); border-radius: var(--radius-sm); font-size: 12px; color: var(--text2); border-left: 3px solid var(--border2); }
   .card-result.success { background: var(--green-bg); border-left-color: var(--green); color: #047857; }
   .card-result.fail { background: var(--red-bg); border-left-color: var(--red); color: #b91c1c; }
-
   .tab-panel { display: none; height: 100%; }
   .tab-panel.active { display: flex; }
-
   .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(16px); padding: 12px 20px; border-radius: var(--radius); font-size: 13px; font-weight: 500; z-index: 9999; opacity: 0; transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1); pointer-events: none; white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,0.12); display: flex; align-items: center; gap: 8px; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   .toast.info { background: #1c1c1e; color: white; }
@@ -213,11 +119,11 @@
   </div>
 </div>
 
+<!-- 탭1 -->
 <div class="layout tab-panel active" id="tab1-panel">
   <div class="panel">
     <div class="panel-head"><h2>광고 등록</h2><p>새 캠페인 · 광고세트 · 광고 생성</p></div>
     <div class="panel-body">
-
       <div class="section">
         <div class="sec-label">기본 정보</div>
         <div class="field"><label>제작자</label><input type="text" id="t1_제작자" placeholder="이름 입력" oninput="autoGenNames('t1')"></div>
@@ -227,45 +133,28 @@
         </div>
       </div>
       <div class="divider"></div>
-
       <div class="section">
         <div class="sec-label">계정</div>
-        <div class="field"><label>계정명</label>
-          <select id="t1_계정명" onchange="onAccount('t1')"><option value="">선택</option></select>
-        </div>
+        <div class="field"><label>계정명</label><select id="t1_계정명" onchange="onAccount('t1')"><option value="">선택</option></select></div>
       </div>
       <div class="divider"></div>
-
       <div class="section">
         <div class="sec-label">페이지</div>
-        <div class="field"><label>페이지</label>
-          <select id="t1_페이지" onchange="onPage('t1')"><option value="">선택</option></select>
-        </div>
-        <div class="field"><label>인스타계정</label>
-          <select id="t1_인스타계정"></select>
-        </div>
+        <div class="field"><label>페이지</label><select id="t1_페이지" onchange="onPage('t1')"><option value="">선택</option></select></div>
+        <div class="field"><label>인스타계정</label><select id="t1_인스타계정"></select></div>
       </div>
       <div class="divider"></div>
-
       <div class="section">
         <div class="sec-label">타겟</div>
-        <div class="field"><label>지역구분자</label>
-          <select id="t1_지역구분자" onchange="onRegion('t1')"><option value="">선택</option></select>
-        </div>
-        <div class="field"><label>제외타겟</label>
-          <select id="t1_제외타겟" onchange="onExclude('t1')"><option value="">계정 선택 후 사용 가능</option></select>
-        </div>
+        <div class="field"><label>지역구분자</label><select id="t1_지역구분자" onchange="onRegion('t1')"><option value="">선택</option></select></div>
+        <div class="field"><label>제외타겟</label><select id="t1_제외타겟" onchange="onExclude('t1')"><option value="">계정 선택 후 사용 가능</option></select></div>
       </div>
       <div class="divider"></div>
-
       <div class="section">
         <div class="sec-label">인스턴트양식</div>
-        <div class="field"><label>인스턴트양식</label>
-          <select id="t1_인스턴트양식" onchange="onForm('t1')"><option value="">페이지 선택 후 사용 가능</option></select>
-        </div>
+        <div class="field"><label>인스턴트양식</label><select id="t1_인스턴트양식" onchange="onForm('t1')"><option value="">페이지 선택 후 사용 가능</option></select></div>
       </div>
       <div class="divider"></div>
-
       <div class="section">
         <div class="sec-label">광고 소재</div>
         <div class="field">
@@ -281,43 +170,26 @@
         </div>
         <div class="field" id="t1_upload_wrap" style="display:none;">
           <label>파일 첨부</label>
-          <div id="t1_dropzone" 
-            style="border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg);"
-            ondragover="onDragOver(event, 't1')"
-            ondragleave="onDragLeave(event, 't1')"
-            ondrop="onDrop(event, 't1')"
+          <div id="t1_dropzone" style="border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg);"
+            ondragover="onDragOver(event,'t1')" ondragleave="onDragLeave(event,'t1')" ondrop="onDrop(event,'t1')"
             onclick="document.getElementById('t1_파일첨부').click()">
-            <div id="t1_dropzone_text" style="font-size:13px;color:var(--text2);">
-              📎 클릭하거나 파일을 여기에 드래그하세요<br>
-              <span style="font-size:11px;color:var(--text3);">이미지 · 영상 파일 지원</span>
-            </div>
+            <div id="t1_dropzone_text" style="font-size:13px;color:var(--text2);">📎 클릭하거나 파일을 여기에 드래그하세요<br><span style="font-size:11px;color:var(--text3);">이미지 · 영상 파일 지원</span></div>
           </div>
           <input type="file" id="t1_파일첨부" accept="image/*,video/*" style="display:none;" onchange="onFileSelected('t1')">
         </div>
         <div class="field"><label>기본문구</label><textarea id="t1_기본문구" placeholder="광고 기본문구 입력"></textarea></div>
         <div class="field"><label>제목</label><input type="text" id="t1_제목" placeholder="광고 제목"></div>
         <div class="field"><label>설명</label><input type="text" id="t1_설명" placeholder="광고 설명"></div>
-        <div class="field"><label>CTA버튼</label>
-          <select id="t1_CTA버튼"></select>
-        </div>
+        <div class="field"><label>CTA버튼</label><select id="t1_CTA버튼"></select></div>
       </div>
       <div class="divider"></div>
-
       <div class="section">
         <div class="sec-label">캠페인 설정</div>
-        <div class="field"><label>광고계정 ID <span class="auto-tag">자동</span></label>
-          <input type="text" id="t1_광고계정ID" readonly placeholder="계정 선택 시 자동입력">
-        </div>
-        <div class="field"><label>캠페인명 <span class="auto-tag">자동</span></label>
-          <input type="text" id="t1_캠페인명" readonly placeholder="자동생성">
-        </div>
+        <div class="field"><label>광고계정 ID <span class="auto-tag">자동</span></label><input type="text" id="t1_광고계정ID" readonly placeholder="계정 선택 시 자동입력"></div>
+        <div class="field"><label>캠페인명 <span class="auto-tag">자동</span></label><input type="text" id="t1_캠페인명" readonly placeholder="자동생성"></div>
         <div class="row2">
-          <div class="field"><label>구매유형</label>
-            <select id="t1_구매유형"></select>
-          </div>
-          <div class="field"><label>캠페인목표</label>
-            <select id="t1_캠페인목표"></select>
-          </div>
+          <div class="field"><label>구매유형</label><select id="t1_구매유형"></select></div>
+          <div class="field"><label>캠페인목표</label><select id="t1_캠페인목표"></select></div>
         </div>
         <div class="row2">
           <div class="field"><label>캠페인예산 (원)</label><input type="number" id="t1_캠페인예산" value="30000" step="1000" min="0"></div>
@@ -325,19 +197,12 @@
         </div>
       </div>
       <div class="divider"></div>
-
       <div class="section">
         <div class="sec-label">광고세트 설정</div>
-        <div class="field"><label>광고세트명 <span class="auto-tag">자동</span></label>
-          <input type="text" id="t1_광고세트명" readonly placeholder="자동생성">
-        </div>
+        <div class="field"><label>광고세트명 <span class="auto-tag">자동</span></label><input type="text" id="t1_광고세트명" readonly placeholder="자동생성"></div>
         <div class="row2">
-          <div class="field"><label>전환위치</label>
-            <select id="t1_전환위치"></select>
-          </div>
-          <div class="field"><label>성과목표</label>
-            <select id="t1_성과목표"></select>
-          </div>
+          <div class="field"><label>전환위치</label><select id="t1_전환위치"></select></div>
+          <div class="field"><label>성과목표</label><select id="t1_성과목표"></select></div>
         </div>
         <div class="field"><label>노출위치</label><select id="t1_노출위치1"></select></div>
         <div class="row2">
@@ -353,40 +218,24 @@
           <div class="field"><label>최대나이</label><input type="number" id="t1_최대나이" value="65" min="1" max="65"></div>
         </div>
         <div class="row2">
-          <div class="field"><label>성별</label>
-            <select id="t1_성별"><option value="">전체</option><option value="1">남성</option><option value="2">여성</option></select>
-          </div>
+          <div class="field"><label>성별</label><select id="t1_성별"><option value="">전체</option><option value="1">남성</option><option value="2">여성</option></select></div>
           <div class="field"><label>언어</label><input type="text" id="t1_언어" placeholder="ko"></div>
         </div>
-        <div class="field"><label>어드밴티지 타겟</label>
-          <input type="text" id="t1_어드밴티지타겟" value="ON" readonly>
-        </div>
+        <div class="field"><label>어드밴티지 타겟</label><input type="text" id="t1_어드밴티지타겟" value="ON" readonly></div>
       </div>
       <div class="divider"></div>
-
       <div class="section">
         <div class="sec-label">자동생성 값</div>
-        <div class="field"><label>광고명 <span class="auto-tag">자동</span></label>
-          <input type="text" id="t1_광고명" readonly placeholder="세트명과 동일하게 자동생성">
+        <div class="field"><label>광고명 <span class="auto-tag">자동</span></label><input type="text" id="t1_광고명" readonly placeholder="세트명과 동일하게 자동생성"></div>
+        <div class="row2">
+          <div class="field"><label>페이지ID <span class="auto-tag">자동</span></label><input type="text" id="t1_페이지ID" readonly placeholder="자동입력"></div>
+          <div class="field"><label>지역ID <span class="auto-tag">자동</span></label><input type="text" id="t1_타겟국가" readonly placeholder="자동입력"></div>
         </div>
         <div class="row2">
-          <div class="field"><label>페이지ID <span class="auto-tag">자동</span></label>
-            <input type="text" id="t1_페이지ID" readonly placeholder="자동입력">
-          </div>
-          <div class="field"><label>지역ID <span class="auto-tag">자동</span></label>
-            <input type="text" id="t1_타겟국가" readonly placeholder="자동입력">
-          </div>
-        </div>
-        <div class="row2">
-          <div class="field"><label>제외타겟ID <span class="auto-tag">자동</span></label>
-            <input type="text" id="t1_제외타겟ID" readonly placeholder="자동입력">
-          </div>
-          <div class="field"><label>인스턴트양식ID <span class="auto-tag">자동</span></label>
-            <input type="text" id="t1_인스턴트양식ID" readonly placeholder="자동입력">
-          </div>
+          <div class="field"><label>제외타겟ID <span class="auto-tag">자동</span></label><input type="text" id="t1_제외타겟ID" readonly placeholder="자동입력"></div>
+          <div class="field"><label>인스턴트양식ID <span class="auto-tag">자동</span></label><input type="text" id="t1_인스턴트양식ID" readonly placeholder="자동입력"></div>
         </div>
       </div>
-
     </div>
     <div class="panel-foot">
       <button class="btn-primary" id="t1_submitBtn" onclick="submitAd('t1')">광고 등록하기</button>
@@ -405,16 +254,15 @@
   </div>
 </div>
 
+<!-- 탭2 -->
 <div class="layout tab-panel" id="tab2-panel">
   <div class="panel">
     <div class="panel-head"><h2>세트 추가</h2><p>기존 캠페인에 광고세트 · 광고 추가</p></div>
     <div class="panel-body">
-
       <div class="campaign-id-box">
         <label>기존 캠페인 ID</label>
         <input type="text" id="t2_캠페인ID" placeholder="캠페인 ID를 입력하세요">
       </div>
-
       <div class="section">
         <div class="sec-label">기본 정보</div>
         <div class="field"><label>제작자</label><input type="text" id="t2_제작자" placeholder="이름 입력" oninput="autoGenNames('t2')"></div>
@@ -424,45 +272,28 @@
         </div>
       </div>
       <div class="divider"></div>
-
       <div class="section">
         <div class="sec-label">계정</div>
-        <div class="field"><label>계정명</label>
-          <select id="t2_계정명" onchange="onAccount('t2')"><option value="">선택</option></select>
-        </div>
+        <div class="field"><label>계정명</label><select id="t2_계정명" onchange="onAccount('t2')"><option value="">선택</option></select></div>
       </div>
       <div class="divider"></div>
-
       <div class="section">
         <div class="sec-label">페이지</div>
-        <div class="field"><label>페이지</label>
-          <select id="t2_페이지" onchange="onPage('t2')"><option value="">선택</option></select>
-        </div>
-        <div class="field"><label>인스타계정</label>
-          <select id="t2_인스타계정"></select>
-        </div>
+        <div class="field"><label>페이지</label><select id="t2_페이지" onchange="onPage('t2')"><option value="">선택</option></select></div>
+        <div class="field"><label>인스타계정</label><select id="t2_인스타계정"></select></div>
       </div>
       <div class="divider"></div>
-
       <div class="section">
         <div class="sec-label">타겟</div>
-        <div class="field"><label>지역구분자</label>
-          <select id="t2_지역구분자" onchange="onRegion('t2')"><option value="">선택</option></select>
-        </div>
-        <div class="field"><label>제외타겟</label>
-          <select id="t2_제외타겟" onchange="onExclude('t2')"><option value="">계정 선택 후 사용 가능</option></select>
-        </div>
+        <div class="field"><label>지역구분자</label><select id="t2_지역구분자" onchange="onRegion('t2')"><option value="">선택</option></select></div>
+        <div class="field"><label>제외타겟</label><select id="t2_제외타겟" onchange="onExclude('t2')"><option value="">계정 선택 후 사용 가능</option></select></div>
       </div>
       <div class="divider"></div>
-
       <div class="section">
         <div class="sec-label">인스턴트양식</div>
-        <div class="field"><label>인스턴트양식</label>
-          <select id="t2_인스턴트양식" onchange="onForm('t2')"><option value="">페이지 선택 후 사용 가능</option></select>
-        </div>
+        <div class="field"><label>인스턴트양식</label><select id="t2_인스턴트양식" onchange="onForm('t2')"><option value="">페이지 선택 후 사용 가능</option></select></div>
       </div>
       <div class="divider"></div>
-
       <div class="section">
         <div class="sec-label">광고 소재</div>
         <div class="field">
@@ -478,47 +309,30 @@
         </div>
         <div class="field" id="t2_upload_wrap" style="display:none;">
           <label>파일 첨부</label>
-          <div id="t2_dropzone" 
-            style="border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg);"
-            ondragover="onDragOver(event, 't2')"
-            ondragleave="onDragLeave(event, 't2')"
-            ondrop="onDrop(event, 't2')"
+          <div id="t2_dropzone" style="border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg);"
+            ondragover="onDragOver(event,'t2')" ondragleave="onDragLeave(event,'t2')" ondrop="onDrop(event,'t2')"
             onclick="document.getElementById('t2_파일첨부').click()">
-            <div id="t2_dropzone_text" style="font-size:13px;color:var(--text2);">
-              📎 클릭하거나 파일을 여기에 드래그하세요<br>
-              <span style="font-size:11px;color:var(--text3);">이미지 · 영상 파일 지원</span>
-            </div>
+            <div id="t2_dropzone_text" style="font-size:13px;color:var(--text2);">📎 클릭하거나 파일을 여기에 드래그하세요<br><span style="font-size:11px;color:var(--text3);">이미지 · 영상 파일 지원</span></div>
           </div>
           <input type="file" id="t2_파일첨부" accept="image/*,video/*" style="display:none;" onchange="onFileSelected('t2')">
         </div>
         <div class="field"><label>기본문구</label><textarea id="t2_기본문구" placeholder="광고 기본문구 입력"></textarea></div>
         <div class="field"><label>제목</label><input type="text" id="t2_제목" placeholder="광고 제목"></div>
         <div class="field"><label>설명</label><input type="text" id="t2_설명" placeholder="광고 설명"></div>
-        <div class="field"><label>CTA버튼</label>
-          <select id="t2_CTA버튼"></select>
-        </div>
+        <div class="field"><label>CTA버튼</label><select id="t2_CTA버튼"></select></div>
       </div>
       <div class="divider"></div>
-
       <div class="section">
         <div class="sec-label">광고세트 설정</div>
-        <div class="field"><label>광고계정 ID <span class="auto-tag">자동</span></label>
-          <input type="text" id="t2_광고계정ID" readonly placeholder="계정 선택 시 자동입력">
-        </div>
-        <div class="field"><label>광고세트명 <span class="auto-tag">자동</span></label>
-          <input type="text" id="t2_광고세트명" readonly placeholder="자동생성">
-        </div>
+        <div class="field"><label>광고계정 ID <span class="auto-tag">자동</span></label><input type="text" id="t2_광고계정ID" readonly placeholder="계정 선택 시 자동입력"></div>
+        <div class="field"><label>광고세트명 <span class="auto-tag">자동</span></label><input type="text" id="t2_광고세트명" readonly placeholder="자동생성"></div>
         <div class="row2">
           <div class="field"><label>캠페인예산 (원)</label><input type="number" id="t2_캠페인예산" value="30000" step="1000" min="0"></div>
           <div class="field"><label>세트예산 (원)</label><input type="number" id="t2_세트예산" placeholder="0" step="1000" min="0"></div>
         </div>
         <div class="row2">
-          <div class="field"><label>전환위치</label>
-            <select id="t2_전환위치"></select>
-          </div>
-          <div class="field"><label>성과목표</label>
-            <select id="t2_성과목표"></select>
-          </div>
+          <div class="field"><label>전환위치</label><select id="t2_전환위치"></select></div>
+          <div class="field"><label>성과목표</label><select id="t2_성과목표"></select></div>
         </div>
         <div class="field"><label>노출위치</label><select id="t2_노출위치1"></select></div>
         <div class="row2">
@@ -534,40 +348,24 @@
           <div class="field"><label>최대나이</label><input type="number" id="t2_최대나이" value="65" min="1" max="65"></div>
         </div>
         <div class="row2">
-          <div class="field"><label>성별</label>
-            <select id="t2_성별"><option value="">전체</option><option value="1">남성</option><option value="2">여성</option></select>
-          </div>
+          <div class="field"><label>성별</label><select id="t2_성별"><option value="">전체</option><option value="1">남성</option><option value="2">여성</option></select></div>
           <div class="field"><label>언어</label><input type="text" id="t2_언어" placeholder="ko"></div>
         </div>
-        <div class="field"><label>어드밴티지 타겟</label>
-          <input type="text" id="t2_어드밴티지타겟" value="ON" readonly>
-        </div>
+        <div class="field"><label>어드밴티지 타겟</label><input type="text" id="t2_어드밴티지타겟" value="ON" readonly></div>
       </div>
       <div class="divider"></div>
-
       <div class="section">
         <div class="sec-label">자동생성 값</div>
-        <div class="field"><label>광고명 <span class="auto-tag">자동</span></label>
-          <input type="text" id="t2_광고명" readonly placeholder="세트명과 동일하게 자동생성">
+        <div class="field"><label>광고명 <span class="auto-tag">자동</span></label><input type="text" id="t2_광고명" readonly placeholder="세트명과 동일하게 자동생성"></div>
+        <div class="row2">
+          <div class="field"><label>페이지ID <span class="auto-tag">자동</span></label><input type="text" id="t2_페이지ID" readonly placeholder="자동입력"></div>
+          <div class="field"><label>지역ID <span class="auto-tag">자동</span></label><input type="text" id="t2_타겟국가" readonly placeholder="자동입력"></div>
         </div>
         <div class="row2">
-          <div class="field"><label>페이지ID <span class="auto-tag">자동</span></label>
-            <input type="text" id="t2_페이지ID" readonly placeholder="자동입력">
-          </div>
-          <div class="field"><label>지역ID <span class="auto-tag">자동</span></label>
-            <input type="text" id="t2_타겟국가" readonly placeholder="자동입력">
-          </div>
-        </div>
-        <div class="row2">
-          <div class="field"><label>제외타겟ID <span class="auto-tag">자동</span></label>
-            <input type="text" id="t2_제외타겟ID" readonly placeholder="자동입력">
-          </div>
-          <div class="field"><label>인스턴트양식ID <span class="auto-tag">자동</span></label>
-            <input type="text" id="t2_인스턴트양식ID" readonly placeholder="자동입력">
-          </div>
+          <div class="field"><label>제외타겟ID <span class="auto-tag">자동</span></label><input type="text" id="t2_제외타겟ID" readonly placeholder="자동입력"></div>
+          <div class="field"><label>인스턴트양식ID <span class="auto-tag">자동</span></label><input type="text" id="t2_인스턴트양식ID" readonly placeholder="자동입력"></div>
         </div>
       </div>
-
     </div>
     <div class="panel-foot">
       <button class="btn-primary" id="t2_submitBtn" onclick="submitAd('t2')">세트 추가하기</button>
@@ -589,16 +387,17 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// =====================
-// 설정 (여기만 수정)
-// =====================
 const SHEET_ID = '1SIyoXfGJ2jI824WUOAcjywrTdApaKEAqtxnG9dkSwqw';
 
-// ⚠️ 실제 Make 웹훅 토큰으로 교체
-// ⚠️ Meta 액세스 토큰 입력 (아래 값을 실제 토큰으로 교체하세요)
+// ⚠️ 실제 Make 웹훅 URL로 교체
+const WEBHOOKS = {
+  t1: 'https://hook.eu1.make.com/wgou4ekrp482asnvqh7i17wnhs7shwgm',
+  t2: 'https://hook.eu1.make.com/여기에_세트추가_토큰',
+};
+
+// ⚠️ Meta 액세스 토큰으로 교체
 const META_ACCESS_TOKEN = 'EAAQT68743nIBRlU3QvgOZAERtM4PXN6gnMzY773HpcCZA2lFs0xyw2fUI4tWeV9SBEthgEx18o3O3ZBREIdGZCx6rPCttbnty3SsRJQE1CTtkl6ULl8EAFw5fZCfhQQaCgRWyuuMu0Xkw5TBircZCW2qkOySKRgCKq5os8ceXZAlHRhhy1oGpZCtSfbM0ZAUqnQZDZD';
 
-// Meta API 이미지 업로드
 async function uploadImageToMeta(file, adAccountId) {
   const cleanId = String(adAccountId).replace('act_', '');
   const url = `https://graph.facebook.com/v19.0/act_${cleanId}/adimages`;
@@ -612,51 +411,22 @@ async function uploadImageToMeta(file, adAccountId) {
   return json.images[key].hash;
 }
 
-const WEBHOOKS = {
-  t1: 'https://hook.eu1.make.com/wgou4ekrp482asnvqh7i17wnhs7shwgm',
-  t2: 'https://hook.eu1.make.com/여기에_세트추가_토큰',
-};
-
-// =====================
-// 데이터 저장소
-// =====================
 let DB = {
-  accounts: [],    // { name, id, campaignName, setName, subjectName }
-  excludes: [],    // { accountId, name, targetId }
-  pages: [],       // { name, pageId }
-  forms: [],       // { pageName, formName, formId, status }
-  regions: [],     // { name, id, refName }
-  staff: [],       // { name, id }
-  buyingTypes: [], // { value, label }
-  objectives: [],  // { value, label }
-  destinations: [], // { value, label }
-  optimizations: [], // { value, label }
-  platforms: [],     // { value, label }
-  fbPositions: [],   // { value, label }
-  igPositions: [],   // { value, label }
-  ctaTypes: [],      // { value, label }
-  instaAccounts: [], // { name, id }
+  accounts: [], excludes: [], pages: [], forms: [], regions: [], staff: [],
+  buyingTypes: [], objectives: [], destinations: [], optimizations: [],
+  platforms: [], fbPositions: [], igPositions: [], ctaTypes: [], instaAccounts: [],
 };
-
-// =====================
-// Sheets API 호출
-// =====================
-const API = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values`;
 
 async function fetchSheet(range) {
-  const url = `${API}/${encodeURIComponent(range)}?key=AIzaSyD-placeholder`;
-  // 공개 시트는 API 키 없이 아래 방식으로 읽음
   const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(range.split('!')[0])}`;
   const res = await fetch(csvUrl);
   if (!res.ok) throw new Error(`시트 불러오기 실패: ${res.status}`);
-  const text = await res.text();
-  return parseCSV(text);
+  return parseCSV(await res.text());
 }
 
 function parseCSV(text) {
   return text.trim().split('\n').map(row => {
-    const cells = [];
-    let cur = '', inQ = false;
+    const cells = []; let cur = '', inQ = false;
     for (let i = 0; i < row.length; i++) {
       const c = row[i];
       if (c === '"') { inQ = !inQ; continue; }
@@ -669,429 +439,153 @@ function parseCSV(text) {
 }
 
 function normalizeCell(val) {
-  // 지수 표기법 숫자 (예: 8.12455E+14) → 정수 문자열로 변환
   if (/^-?[0-9]+\.?[0-9]*[eE][+\-]?[0-9]+$/.test(val)) {
-    const num = Number(val);
-    // toFixed로 정수 문자열 변환 (소수점 제거)
-    return num.toFixed(0);
+    return Number(val).toFixed(0);
   }
   return val;
 }
 
-// =====================
-// 데이터 로드
-// =====================
 async function loadData() {
   const bar = document.getElementById('syncBar');
-  const msg = document.getElementById('syncMsg');
   bar.className = 'sync-bar';
-  msg.innerHTML = '<span>참조 데이터 불러오는 중...</span>';
-
+  document.getElementById('syncMsg').innerHTML = '<span>참조 데이터 불러오는 중...</span>';
   try {
-    // 참조시트: A=계정명, B=계정ID, G=광고계정ID(제외타겟용), H=제외타겟명, I=제외타겟ID, N=지역명, O=지역ID
-    const [refRows, pageRows] = await Promise.all([
-      fetchSheet('참조'),
-      fetchSheet('페이지_리드폼DB'),
-    ]);
+    const [refRows, pageRows] = await Promise.all([fetchSheet('참조'), fetchSheet('페이지_리드폼DB')]);
 
-    // 계정 파싱 (1행 헤더 제외)
-    DB.accounts = [];
-    const seenAccounts = new Set();
-    for (let i = 1; i < refRows.length; i++) {
-      const r = refRows[i];
-      const name = r[0], id = r[1], campaignName = r[2], setName = r[3], subjectName = r[4];
-      if (name && id && !seenAccounts.has(name)) {
-        DB.accounts.push({ name, id, campaignName, setName, subjectName });
-        seenAccounts.add(name);
+    const parse = (arr, keyFn, seen = new Set()) => {
+      const result = [];
+      for (let i = 1; i < arr.length; i++) {
+        const item = keyFn(arr[i]);
+        if (item && item.key && !seen.has(item.key)) { seen.add(item.key); result.push(item.data); }
       }
-    }
+      return result;
+    };
 
-    // 사원 파싱 (R열=사원명, S열=사원ID)
-    DB.staff = [];
-    const seenStaff = new Set();
-    for (let i = 1; i < refRows.length; i++) {
-      const r = refRows[i];
-      const name = r[17], id = r[18];
-      if (name && !seenStaff.has(name)) {
-        DB.staff.push({ name, id });
-        seenStaff.add(name);
-      }
-    }
+    DB.accounts = parse(refRows, r => r[0] && r[1] ? { key: r[0], data: { name: r[0], id: r[1], campaignName: r[2], setName: r[3], subjectName: r[4] } } : null);
+    DB.staff = parse(refRows, r => r[17] ? { key: r[17], data: { name: r[17], id: r[18] } } : null);
+    DB.excludes = refRows.slice(1).filter(r => r[6] && r[7] && r[8]).map(r => ({ accountId: r[6], name: r[7], targetId: r[8] }));
+    DB.regions = parse(refRows, r => r[13] ? { key: r[13], data: { name: r[13], id: r[14], refName: r[15] || '' } } : null);
+    DB.instaAccounts = parse(refRows, r => r[10] ? { key: r[10], data: { name: r[10], id: r[11] } } : null);
+    DB.buyingTypes = parse(refRows, r => r[20] ? { key: r[20], data: { value: r[20], label: r[21] } } : null);
+    DB.objectives = parse(refRows, r => r[23] ? { key: r[23], data: { value: r[23], label: r[24] } } : null);
+    DB.destinations = parse(refRows, r => r[26] ? { key: r[26], data: { value: r[26], label: r[27] } } : null);
+    DB.optimizations = parse(refRows, r => r[29] ? { key: r[29], data: { value: r[29], label: r[30] } } : null);
+    DB.platforms = parse(refRows, r => r[32] ? { key: r[32], data: { value: r[32], label: r[33] } } : null);
+    DB.fbPositions = parse(refRows, r => r[35] ? { key: r[35], data: { value: r[35], label: r[36] } } : null);
+    DB.igPositions = parse(refRows, r => r[38] ? { key: r[38], data: { value: r[38], label: r[39] } } : null);
+    DB.ctaTypes = parse(refRows, r => r[41] ? { key: r[41], data: { value: r[41], label: r[42] } } : null);
 
-    // 제외타겟 파싱 (G열=광고계정ID, H열=제외타겟명, I열=제외타겟ID)
-    DB.excludes = [];
-    for (let i = 1; i < refRows.length; i++) {
-      const r = refRows[i];
-      const accountId = r[6], name = r[7], targetId = r[8];
-      if (accountId && name && targetId) {
-        DB.excludes.push({ accountId, name, targetId });
-      }
-    }
-
-    // 지역 파싱 (N열=지역명, O열=지역ID, P열=참조이름)
-    DB.regions = [];
-    const seenRegions = new Set();
-    for (let i = 1; i < refRows.length; i++) {
-      const r = refRows[i];
-      const name = r[13], id = r[14], refName = r[15];
-      if (name && !seenRegions.has(name)) {
-        DB.regions.push({ name, id, refName: refName || '' });
-        seenRegions.add(name);
-      }
-    }
-
-    // 페이지 파싱 (A=페이지ID, B=페이지명, C=리드폼ID, D=리드폼명, E=상태)
-    DB.pages = [];
-    DB.forms = [];
     const seenPages = new Set();
+    DB.pages = []; DB.forms = [];
     for (let i = 1; i < pageRows.length; i++) {
       const r = pageRows[i];
-      const pageId = r[0], pageName = r[1], formId = r[2], formName = r[3], status = r[4];
-      if (pageName && !seenPages.has(pageName)) {
-        DB.pages.push({ name: pageName, pageId });
-        seenPages.add(pageName);
-      }
-      if (formName && status === 'ACTIVE') {
-        DB.forms.push({ pageName, formName, formId, status });
-      }
+      if (r[1] && !seenPages.has(r[1])) { seenPages.add(r[1]); DB.pages.push({ name: r[1], pageId: r[0] }); }
+      if (r[3] && r[4] === 'ACTIVE') DB.forms.push({ pageName: r[1], formName: r[3], formId: r[2], status: r[4] });
     }
 
-    // 구매유형 파싱 (U열=buying_type값, V열=표시명)
-    DB.buyingTypes = [];
-    const seenBuying = new Set();
-    for (let i = 1; i < refRows.length; i++) {
-      const r = refRows[i];
-      const value = r[20], label = r[21];
-      if (value && !seenBuying.has(value)) {
-        DB.buyingTypes.push({ value, label });
-        seenBuying.add(value);
-      }
-    }
-
-    // 캠페인목표 파싱 (X열=objective값, Y열=표시명)
-    DB.objectives = [];
-    const seenObj = new Set();
-    for (let i = 1; i < refRows.length; i++) {
-      const r = refRows[i];
-      const value = r[23], label = r[24];
-      if (value && !seenObj.has(value)) {
-        DB.objectives.push({ value, label });
-        seenObj.add(value);
-      }
-    }
-
-    // 인스타계정 파싱 (K열=계정명, L열=ID)
-    DB.instaAccounts = [];
-    const seenInsta = new Set();
-    for (let i = 1; i < refRows.length; i++) {
-      const r = refRows[i];
-      const name = r[10], id = r[11];
-      if (name && !seenInsta.has(name)) {
-        DB.instaAccounts.push({ name, id });
-        seenInsta.add(name);
-      }
-    }
-
-    // CTA 파싱 (AP열=값, AQ열=표시명)
-    DB.ctaTypes = [];
-    const seenCta = new Set();
-    for (let i = 1; i < refRows.length; i++) {
-      const r = refRows[i];
-      const value = r[41], label = r[42];
-      if (value && !seenCta.has(value)) {
-        DB.ctaTypes.push({ value, label });
-        seenCta.add(value);
-      }
-    }
-
-    // 노출위치 파싱 (AG열=값, AH열=표시명)
-    DB.platforms = [];
-    const seenPlat = new Set();
-    for (let i = 1; i < refRows.length; i++) {
-      const r = refRows[i];
-      const value = r[32], label = r[33];
-      if (value && !seenPlat.has(value)) {
-        DB.platforms.push({ value, label });
-        seenPlat.add(value);
-      }
-    }
-
-    // 페이스북 지면 파싱 (AJ열=값, AK열=표시명)
-    DB.fbPositions = [];
-    const seenFb = new Set();
-    for (let i = 1; i < refRows.length; i++) {
-      const r = refRows[i];
-      const value = r[35], label = r[36];
-      if (value && !seenFb.has(value)) {
-        DB.fbPositions.push({ value, label });
-        seenFb.add(value);
-      }
-    }
-
-    // 인스타 지면 파싱 (AM열=값, AN열=표시명)
-    DB.igPositions = [];
-    const seenIg = new Set();
-    for (let i = 1; i < refRows.length; i++) {
-      const r = refRows[i];
-      const value = r[38], label = r[39];
-      if (value && !seenIg.has(value)) {
-        DB.igPositions.push({ value, label });
-        seenIg.add(value);
-      }
-    }
-
-    // 전환위치 파싱 (AA열=값, AB열=표시명)
-    DB.destinations = [];
-    const seenDest = new Set();
-    for (let i = 1; i < refRows.length; i++) {
-      const r = refRows[i];
-      const value = r[26], label = r[27];
-      if (value && !seenDest.has(value)) {
-        DB.destinations.push({ value, label });
-        seenDest.add(value);
-      }
-    }
-
-    // 성과목표 파싱 (AD열=값, AE열=표시명)
-    DB.optimizations = [];
-    const seenOpt = new Set();
-    for (let i = 1; i < refRows.length; i++) {
-      const r = refRows[i];
-      const value = r[29], label = r[30];
-      if (value && !seenOpt.has(value)) {
-        DB.optimizations.push({ value, label });
-        seenOpt.add(value);
-      }
-    }
-
-    // 드롭다운 세팅
     populateDropdowns();
-
     const now = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
     bar.className = 'sync-bar ok';
     document.getElementById('syncMsg').textContent = `✓ 데이터 연동 완료 (${now}) — 계정 ${DB.accounts.length}개 · 페이지 ${DB.pages.length}개`;
     setTimeout(() => { bar.className = 'sync-bar hidden'; }, 4000);
-
   } catch (err) {
     bar.className = 'sync-bar err';
-    document.getElementById('syncMsg').innerHTML =
-      `⚠ 데이터 불러오기 실패: ${err.message} &nbsp; <button class="sync-btn" onclick="loadData()">다시 시도</button>`;
-    // 오류 시 폴백 데이터
+    document.getElementById('syncMsg').innerHTML = `⚠ 데이터 불러오기 실패: ${err.message} &nbsp; <button class="sync-btn" onclick="loadData()">다시 시도</button>`;
     populateDropdowns();
   }
 }
 
 function populateDropdowns() {
-  ['t1', 't2'].forEach(t => {
+  ['t1','t2'].forEach(t => {
+    const fill = (id, items, valKey, labelKey, defaultVal) => {
+      const sel = document.getElementById(`${t}_${id}`);
+      if (!sel) return;
+      const prev = sel.value;
+      sel.innerHTML = '';
+      items.forEach(item => {
+        const o = document.createElement('option');
+        o.value = item[valKey || 'value']; o.textContent = item[labelKey || 'label'];
+        sel.appendChild(o);
+      });
+      if (defaultVal) sel.value = defaultVal;
+      else if (prev) sel.value = prev;
+    };
+
     // 계정명
     const accSel = document.getElementById(`${t}_계정명`);
     accSel.innerHTML = '<option value="">선택</option>';
-    DB.accounts.forEach(a => {
-      const o = document.createElement('option');
-      o.value = a.name; o.textContent = a.name; accSel.appendChild(o);
-    });
+    DB.accounts.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; accSel.appendChild(o); });
 
     // 페이지
     const pageSel = document.getElementById(`${t}_페이지`);
     pageSel.innerHTML = '<option value="">선택</option>';
-    DB.pages.forEach(p => {
-      const o = document.createElement('option');
-      o.value = p.name; o.textContent = p.name; pageSel.appendChild(o);
-    });
+    DB.pages.forEach(p => { const o = document.createElement('option'); o.value = p.name; o.textContent = p.name; pageSel.appendChild(o); });
 
     // 지역구분자
     const regSel = document.getElementById(`${t}_지역구분자`);
     regSel.innerHTML = '<option value="">선택</option>';
-    DB.regions.forEach(r => {
-      const o = document.createElement('option');
-      o.value = r.name; o.textContent = r.name; regSel.appendChild(o);
-    });
+    DB.regions.forEach(r => { const o = document.createElement('option'); o.value = r.name; o.textContent = r.name; regSel.appendChild(o); });
 
-    // 전환위치 (기본값: ON_AD)
-    const destSel = document.getElementById(`${t}_전환위치`);
-    if (destSel) {
-      destSel.innerHTML = '';
-      DB.destinations.forEach(d => {
-        const o = document.createElement('option');
-        o.value = d.value; o.textContent = d.label;
-        if (d.value === 'ON_AD') o.selected = true;
-        destSel.appendChild(o);
-      });
-    }
-
-    // 성과목표 (기본값: LEAD_GENERATION)
-    const optSel = document.getElementById(`${t}_성과목표`);
-    if (optSel) {
-      optSel.innerHTML = '';
-      DB.optimizations.forEach(op => {
-        const o = document.createElement('option');
-        o.value = op.value; o.textContent = op.label;
-        if (op.value === 'LEAD_GENERATION') o.selected = true;
-        optSel.appendChild(o);
-      });
-    }
-  });
-
-  // 인스타계정 (탭1, 탭2 모두, 기본값: 공란)
-  ['t1', 't2'].forEach(t => {
+    // 인스타계정
     const instaSel = document.getElementById(`${t}_인스타계정`);
-    if (instaSel) {
-      instaSel.innerHTML = '<option value="">선택 안함 (Facebook 페이지 사용)</option>';
-      DB.instaAccounts.forEach(a => {
-        const o = document.createElement('option');
-        o.value = a.id; o.textContent = a.name;
-        instaSel.appendChild(o);
-      });
-    }
+    instaSel.innerHTML = '<option value="">선택 안함 (Facebook 페이지 사용)</option>';
+    DB.instaAccounts.forEach(a => { const o = document.createElement('option'); o.value = a.id; o.textContent = a.name; instaSel.appendChild(o); });
+
+    fill('전환위치', DB.destinations, 'value', 'label', 'ON_AD');
+    fill('성과목표', DB.optimizations, 'value', 'label', 'LEAD_GENERATION');
+    fill('노출위치1', DB.platforms, 'value', 'label', DB.platforms[0]?.value);
+    fill('페이스북지면', DB.fbPositions, 'value', 'label', DB.fbPositions[0]?.value);
+    fill('인스타지면', DB.igPositions, 'value', 'label', DB.igPositions[0]?.value);
+    fill('CTA버튼', DB.ctaTypes, 'value', 'label', 'LEARN_MORE');
   });
 
-  // CTA버튼 (탭1, 탭2 모두, 기본값: LEARN_MORE)
-  ['t1', 't2'].forEach(t => {
-    const ctaSel = document.getElementById(`${t}_CTA버튼`);
-    if (ctaSel) {
-      ctaSel.innerHTML = '';
-      DB.ctaTypes.forEach(c => {
-        const o = document.createElement('option');
-        o.value = c.value; o.textContent = c.label;
-        if (c.value === 'LEARN_MORE') o.selected = true;
-        ctaSel.appendChild(o);
-      });
-    }
-  });
-
-  // 노출위치/페이스북지면/인스타지면 (탭1, 탭2 모두)
-  ['t1', 't2'].forEach(t => {
-    // 노출위치 (기본값: 2번째 행 = facebook, instagram)
-    const platSel = document.getElementById(`${t}_노출위치1`);
-    if (platSel) {
-      platSel.innerHTML = '';
-      DB.platforms.forEach((p, i) => {
-        const o = document.createElement('option');
-        o.value = p.value; o.textContent = p.label;
-        if (i === 0) o.selected = true;
-        platSel.appendChild(o);
-      });
-    }
-
-    // 페이스북 지면 (기본값: 2번째 행 = feed,story,reels)
-    const fbSel = document.getElementById(`${t}_페이스북지면`);
-    if (fbSel) {
-      fbSel.innerHTML = '';
-      DB.fbPositions.forEach((p, i) => {
-        const o = document.createElement('option');
-        o.value = p.value; o.textContent = p.label;
-        if (i === 0) o.selected = true;
-        fbSel.appendChild(o);
-      });
-    }
-
-    // 인스타 지면 (기본값: 2번째 행 = stream,story,reels,ex)
-    const igSel = document.getElementById(`${t}_인스타지면`);
-    if (igSel) {
-      igSel.innerHTML = '';
-      DB.igPositions.forEach((p, i) => {
-        const o = document.createElement('option');
-        o.value = p.value; o.textContent = p.label;
-        if (i === 0) o.selected = true;
-        igSel.appendChild(o);
-      });
-    }
-  });
-
-  // 구매유형 (탭1만, 기본값: AUCTION)
+  // 탭1만
   const buySel = document.getElementById('t1_구매유형');
-  if (buySel) {
-    buySel.innerHTML = '';
-    DB.buyingTypes.forEach(b => {
-      const o = document.createElement('option');
-      o.value = b.value; o.textContent = b.label;
-      if (b.value === 'AUCTION') o.selected = true;
-      buySel.appendChild(o);
-    });
-  }
-
-  // 캠페인목표 (탭1만, 기본값: OUTCOME_LEADS)
+  if (buySel) { buySel.innerHTML = ''; DB.buyingTypes.forEach(b => { const o = document.createElement('option'); o.value = b.value; o.textContent = b.label; if (b.value === 'AUCTION') o.selected = true; buySel.appendChild(o); }); }
   const objSel = document.getElementById('t1_캠페인목표');
-  if (objSel) {
-    objSel.innerHTML = '';
-    DB.objectives.forEach(ob => {
-      const o = document.createElement('option');
-      o.value = ob.value; o.textContent = ob.label;
-      if (ob.value === 'OUTCOME_LEADS') o.selected = true;
-      objSel.appendChild(o);
-    });
-  }
+  if (objSel) { objSel.innerHTML = ''; DB.objectives.forEach(ob => { const o = document.createElement('option'); o.value = ob.value; o.textContent = ob.label; if (ob.value === 'OUTCOME_LEADS') o.selected = true; objSel.appendChild(o); }); }
 }
 
-// =====================
-// 이벤트 핸들러
-// =====================
-
-// ✅ Drive 링크 붙여넣기 시 ID만 자동 추출하는 함수
 function extractDriveId(el) {
   const val = el.value.trim();
-  if (!val) return;
-  // 정규식으로 /d/ 뒤 또는 id= 뒤의 파일 ID를 추출
   const match = val.match(/\/d\/([a-zA-Z0-9_-]+)/) || val.match(/id=([a-zA-Z0-9_-]+)/);
-  if (match && match[1]) {
-    el.value = match[1]; // 추출된 ID로 텍스트 교체
-  }
+  if (match && match[1]) el.value = match[1];
+}
+
+// 콤마로 구분된 문자열 → 배열 변환
+function toArray(str) {
+  if (!str) return [];
+  return str.split(',').map(s => s.trim()).filter(Boolean);
 }
 
 function onAccount(t) {
   const name = document.getElementById(`${t}_계정명`).value;
   const acc = DB.accounts.find(a => a.name === name);
   document.getElementById(`${t}_광고계정ID`).value = acc ? acc.id : '';
-
   const sel = document.getElementById(`${t}_제외타겟`);
   sel.innerHTML = '<option value="">선택</option>';
   document.getElementById(`${t}_제외타겟ID`).value = '';
-
   autoGenNames(t);
-
   if (acc) {
-    const targets = DB.excludes.filter(e => e.accountId === acc.id);
-    targets.forEach(x => {
-      const o = document.createElement('option');
-      o.value = x.name; o.dataset.id = x.targetId; o.textContent = x.name; sel.appendChild(o);
+    DB.excludes.filter(e => e.accountId === acc.id).forEach(x => {
+      const o = document.createElement('option'); o.value = x.name; o.dataset.id = x.targetId; o.textContent = x.name; sel.appendChild(o);
     });
   }
 }
 
-
-// =====================
-// 캠페인명/세트명 자동생성
-// =====================
 function autoGenNames(t) {
-  const accName = document.getElementById(`${t}_계정명`).value;
-  const acc = DB.accounts.find(a => a.name === accName);
-  const regionName = document.getElementById(`${t}_지역구분자`).value;
-  const region = DB.regions.find(r => r.name === regionName);
+  const acc = DB.accounts.find(a => a.name === document.getElementById(`${t}_계정명`).value);
+  if (!acc) return;
+  const region = DB.regions.find(r => r.name === document.getElementById(`${t}_지역구분자`).value);
   const staffName = document.getElementById(`${t}_제작자`).value;
   const staffObj = DB.staff.find(s => s.name === staffName);
   const date = document.getElementById(`${t}_날짜`).value;
   const type = document.getElementById(`${t}_유형`).value;
-
-  if (!acc) return;
-
   const refName = region ? (region.refName || '') : '';
   const staffId = staffObj ? staffObj.id : '';
-
-  // 캠페인명: 캠페인명 + 시술명 + 유형 + (날짜) + 제작자 + 참조이름 + 예비용
-  const campaignParts = [acc.campaignName, acc.subjectName, type, date ? `(${date})` : '', staffName, refName, '예비용'];
-  const campaignName = campaignParts.filter(Boolean).join(' ');
-
-  // 세트명: 세트&광고명 + 시술명 + 유형 + 참조이름 + 1A + 사원ID
-  const setParts = [acc.setName, acc.subjectName, type, refName, '1A', staffId];
-  const setName = setParts.filter(Boolean).join(' ');
-
-  // 캠페인명 필드 업데이트 (탭1만)
-  if (t === 't1') {
-    const camEl = document.getElementById('t1_캠페인명');
-    camEl.value = campaignName;
-  }
-
-  // 세트명 + 광고명 업데이트
+  const campaignName = [acc.campaignName, acc.subjectName, type, date ? `(${date})` : '', staffName, refName, '예비용'].filter(Boolean).join(' ');
+  const setName = [acc.setName, acc.subjectName, type, refName, '1A', staffId].filter(Boolean).join(' ');
+  if (t === 't1') document.getElementById('t1_캠페인명').value = campaignName;
   document.getElementById(`${t}_광고세트명`).value = setName;
   document.getElementById(`${t}_광고명`).value = setName;
 }
@@ -1106,84 +600,43 @@ function onPage(t) {
   const name = document.getElementById(`${t}_페이지`).value;
   const page = DB.pages.find(p => p.name === name);
   document.getElementById(`${t}_페이지ID`).value = page ? page.pageId : '';
-
   const sel = document.getElementById(`${t}_인스턴트양식`);
   sel.innerHTML = '<option value="">선택</option>';
   document.getElementById(`${t}_인스턴트양식ID`).value = '';
-
-  const activeForms = DB.forms.filter(f => f.pageName === name);
-  activeForms.forEach(f => {
-    const o = document.createElement('option');
-    o.value = f.formName; o.dataset.id = f.formId; o.textContent = f.formName; sel.appendChild(o);
+  DB.forms.filter(f => f.pageName === name).forEach(f => {
+    const o = document.createElement('option'); o.value = f.formName; o.dataset.id = f.formId; o.textContent = f.formName; sel.appendChild(o);
   });
 }
 
 function onRegion(t) {
   autoGenNames(t);
-  const regionName = document.getElementById(`${t}_지역구분자`).value;
-  const region = DB.regions.find(r => r.name === regionName);
+  const region = DB.regions.find(r => r.name === document.getElementById(`${t}_지역구분자`).value);
   document.getElementById(`${t}_타겟국가`).value = region ? (region.id || '') : '';
 }
 
-function onDragOver(e, t) {
-  e.preventDefault();
-  const dz = document.getElementById(`${t}_dropzone`);
-  dz.style.borderColor = 'var(--blue)';
-  dz.style.background = 'var(--blue-bg)';
-}
-
-function onDragLeave(e, t) {
-  const dz = document.getElementById(`${t}_dropzone`);
-  dz.style.borderColor = 'var(--border2)';
-  dz.style.background = 'var(--bg)';
-}
-
+function onDragOver(e, t) { e.preventDefault(); const dz = document.getElementById(`${t}_dropzone`); dz.style.borderColor = 'var(--blue)'; dz.style.background = 'var(--blue-bg)'; }
+function onDragLeave(e, t) { const dz = document.getElementById(`${t}_dropzone`); dz.style.borderColor = 'var(--border2)'; dz.style.background = 'var(--bg)'; }
 function onDrop(e, t) {
   e.preventDefault();
-  const dz = document.getElementById(`${t}_dropzone`);
-  dz.style.borderColor = 'var(--border2)';
-  dz.style.background = 'var(--bg)';
-  const file = e.dataTransfer.files[0];
-  if (!file) return;
-  const input = document.getElementById(`${t}_파일첨부`);
-  const dt = new DataTransfer();
-  dt.items.add(file);
-  input.files = dt.files;
+  const dz = document.getElementById(`${t}_dropzone`); dz.style.borderColor = 'var(--border2)'; dz.style.background = 'var(--bg)';
+  const file = e.dataTransfer.files[0]; if (!file) return;
+  const input = document.getElementById(`${t}_파일첨부`); const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files;
   updateDropzoneText(t, file.name);
 }
-
-function onFileSelected(t) {
-  const input = document.getElementById(`${t}_파일첨부`);
-  if (input.files.length > 0) {
-    updateDropzoneText(t, input.files[0].name);
-  }
-}
-
-function updateDropzoneText(t, name) {
-  document.getElementById(`${t}_dropzone_text`).innerHTML = 
-    `✅ <strong>${name}</strong><br><span style="font-size:11px;color:var(--text3);">클릭하면 다시 선택할 수 있어요</span>`;
-}
-
+function onFileSelected(t) { const input = document.getElementById(`${t}_파일첨부`); if (input.files.length > 0) updateDropzoneText(t, input.files[0].name); }
+function updateDropzoneText(t, name) { document.getElementById(`${t}_dropzone_text`).innerHTML = `✅ <strong>${name}</strong><br><span style="font-size:11px;color:var(--text3);">클릭하면 다시 선택할 수 있어요</span>`; }
 function onFileMethod(t) {
   const method = document.getElementById(`${t}_파일방식`).value;
   document.getElementById(`${t}_drive_wrap`).style.display = method === 'drive' ? 'block' : 'none';
   document.getElementById(`${t}_upload_wrap`).style.display = method === 'upload' ? 'block' : 'none';
 }
-
 function onForm(t) {
-  const sel = document.getElementById(`${t}_인스턴트양식`);
-  const opt = sel.options[sel.selectedIndex];
+  const sel = document.getElementById(`${t}_인스턴트양식`); const opt = sel.options[sel.selectedIndex];
   document.getElementById(`${t}_인스턴트양식ID`).value = opt ? (opt.dataset.id || '') : '';
 }
 
-// =====================
-// 유틸
-// =====================
 function switchTab(n) {
-  [1, 2].forEach(i => {
-    document.getElementById(`tab${i}-btn`).classList.toggle('active', i === n);
-    document.getElementById(`tab${i}-panel`).classList.toggle('active', i === n);
-  });
+  [1,2].forEach(i => { document.getElementById(`tab${i}-btn`).classList.toggle('active', i===n); document.getElementById(`tab${i}-panel`).classList.toggle('active', i===n); });
 }
 
 function g(id) { return document.getElementById(id).value; }
@@ -1199,194 +652,96 @@ function getData(t) {
     제외타겟: g(`${t}_제외타겟`), 제외타겟ID: g(`${t}_제외타겟ID`),
     어드밴티지타겟: g(`${t}_어드밴티지타겟`), 언어: g(`${t}_언어`),
     최소나이: g(`${t}_최소나이`), 최대나이: g(`${t}_최대나이`), 성별: g(`${t}_성별`),
-    노출위치1: g(`${t}_노출위치1`), 페이스북지면: g(`${t}_페이스북지면`), 인스타지면: g(`${t}_인스타지면`),
+    // ✅ 노출위치/지면 → 배열로 변환해서 전송
+    노출위치1: toArray(g(`${t}_노출위치1`)),
+    페이스북지면: toArray(g(`${t}_페이스북지면`)),
+    인스타지면: toArray(g(`${t}_인스타지면`)),
     광고명: g(`${t}_광고명`), 파일ID: g(`${t}_파일ID`),
-    파일유형: (function() {
+    파일유형: (() => {
       const method = document.getElementById(`${t}_파일방식`).value;
       if (method === 'upload') {
         const file = document.getElementById(`${t}_파일첨부`).files[0];
-        if (file) {
-          return file.type.startsWith('image/') ? '이미지' : '영상';
-        }
+        if (file) return file.type.startsWith('image/') ? '이미지' : '영상';
       }
-      // Drive ID 방식은 Make에서 MIME 타입으로 자동 판단
       return 'drive';
     })(),
-    기본문구: g(`${t}_기본문구`),
-    제목: g(`${t}_제목`), 설명: g(`${t}_설명`), CTA버튼: g(`${t}_CTA버튼`),
+    기본문구: g(`${t}_기본문구`), 제목: g(`${t}_제목`), 설명: g(`${t}_설명`), CTA버튼: g(`${t}_CTA버튼`),
     인스턴트양식: g(`${t}_인스턴트양식`), 인스턴트양식ID: g(`${t}_인스턴트양식ID`),
   };
-  if (t === 't1') {
-    d.캠페인명 = g('t1_캠페인명'); d.구매유형 = g('t1_구매유형');
-    d.캠페인목표 = g('t1_캠페인목표'); d.캠페인예산 = g('t1_캠페인예산');
-  } else {
-    d.캠페인ID = g('t2_캠페인ID');
-  }
+  if (t === 't1') { d.캠페인명 = g('t1_캠페인명'); d.구매유형 = g('t1_구매유형'); d.캠페인목표 = g('t1_캠페인목표'); d.캠페인예산 = g('t1_캠페인예산'); }
+  else { d.캠페인ID = g('t2_캠페인ID'); }
   return d;
 }
 
 const rows = { t1: [], t2: [] };
 
 function addCard(t, data) {
-  const idx = rows[t].length;
-  rows[t].push(data);
+  const idx = rows[t].length; rows[t].push(data);
   document.getElementById(`${t}_empty`).style.display = 'none';
-  const list = document.getElementById(`${t}_cards`);
-  list.style.display = 'flex';
+  const list = document.getElementById(`${t}_cards`); list.style.display = 'flex';
   const isT2 = t === 't2';
-  const title = isT2 ? (data.광고세트명 || '세트명 없음') : (data.캠페인명 || '캠페인명 없음');
-  const card = document.createElement('div');
-  card.className = 'card'; card.id = `card_${t}_${idx}`;
-  card.innerHTML = `
-    <div class="card-top">
-      <div class="card-title-wrap">
-        <span class="card-type ${isT2 ? 'type-add' : 'type-new'}">${isT2 ? '세트 추가' : '신규 등록'}</span>
-        <span class="card-title">${title}</span>
-      </div>
-      <span class="badge badge-sending" id="badge_${t}_${idx}">전송중</span>
-    </div>
-    <div class="card-meta">
-      <span class="meta-item"><span class="meta-label">계정</span>${data.계정명 || '-'}</span>
-      <span class="meta-item"><span class="meta-label">광고세트</span>${data.광고세트명 || '-'}</span>
-      <span class="meta-item"><span class="meta-label">페이지</span>${data.페이지 || '-'}</span>
-      <span class="meta-item"><span class="meta-label">기간</span>${data.시작일 || '-'} ~ ${data.종료일 || '-'}</span>
-    </div>
-    <div class="card-result" id="result_${t}_${idx}">Make로 전송 중...</div>
-  `;
+  const title = isT2 ? (data.광고세트명||'세트명 없음') : (data.캠페인명||'캠페인명 없음');
+  const card = document.createElement('div'); card.className = 'card'; card.id = `card_${t}_${idx}`;
+  card.innerHTML = `<div class="card-top"><div class="card-title-wrap"><span class="card-type ${isT2?'type-add':'type-new'}">${isT2?'세트 추가':'신규 등록'}</span><span class="card-title">${title}</span></div><span class="badge badge-sending" id="badge_${t}_${idx}">전송중</span></div><div class="card-meta"><span class="meta-item"><span class="meta-label">계정</span>${data.계정명||'-'}</span><span class="meta-item"><span class="meta-label">광고세트</span>${data.광고세트명||'-'}</span><span class="meta-item"><span class="meta-label">페이지</span>${data.페이지||'-'}</span><span class="meta-item"><span class="meta-label">기간</span>${data.시작일||'-'} ~ ${data.종료일||'-'}</span></div><div class="card-result" id="result_${t}_${idx}">Make로 전송 중...</div>`;
   list.appendChild(card);
-  const n = rows[t].length;
-  document.getElementById(`${t}_count`).textContent = `총 ${n}${isT2 ? '개 세트 추가됨' : '건 등록됨'}`;
+  document.getElementById(`${t}_count`).textContent = `총 ${rows[t].length}${isT2?'개 세트 추가됨':'건 등록됨'}`;
   return idx;
 }
 
 function updateCard(t, idx, status, msg) {
-  const badge = document.getElementById(`badge_${t}_${idx}`);
-  const result = document.getElementById(`result_${t}_${idx}`);
-  if (status === '완료') {
-    badge.className = 'badge badge-done'; badge.textContent = '완료';
-    result.className = 'card-result success'; result.textContent = msg;
-  } else {
-    badge.className = 'badge badge-fail'; badge.textContent = '실패';
-    result.className = 'card-result fail'; result.textContent = msg;
-  }
+  const badge = document.getElementById(`badge_${t}_${idx}`); const result = document.getElementById(`result_${t}_${idx}`);
+  if (status === '완료') { badge.className = 'badge badge-done'; badge.textContent = '완료'; result.className = 'card-result success'; result.textContent = msg; }
+  else { badge.className = 'badge badge-fail'; badge.textContent = '실패'; result.className = 'card-result fail'; result.textContent = msg; }
 }
 
 async function submitAd(t) {
-  const data = getData(t);
-  const isT2 = t === 't2';
+  const data = getData(t); const isT2 = t === 't2';
   if (!data.계정명 || !data.광고세트명) { showToast('계정명과 광고세트명은 필수입니다', 'error'); return; }
   if (isT2 && !data.캠페인ID) { showToast('캠페인 ID를 입력해주세요', 'error'); return; }
   if (!isT2 && !data.캠페인명) { showToast('캠페인명을 입력해주세요', 'error'); return; }
-
-  const btn = document.getElementById(`${t}_submitBtn`);
-  btn.disabled = true; btn.textContent = '전송 중...';
+  const btn = document.getElementById(`${t}_submitBtn`); btn.disabled = true; btn.textContent = '전송 중...';
   showToast('Make로 전송 중...', 'info');
   const idx = addCard(t, data);
-
   try {
     const method = document.getElementById(`${t}_파일방식`).value;
     const fileInput = document.getElementById(`${t}_파일첨부`);
     const hasFile = method === 'upload' && fileInput && fileInput.files.length > 0;
-
-    let res;
-    if (hasFile) {
-      showToast('이미지 업로드 중...', 'info');
-      const imageHash = await uploadImageToMeta(fileInput.files[0], data.광고계정ID);
-      data.이미지해시 = imageHash;
-      data.파일ID = '';
-      res = await fetch(WEBHOOKS[t], {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-    } else {
-      // Drive ID 방식: JSON으로 전송
-      res = await fetch(WEBHOOKS[t], {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-    }
-    if (res.ok) {
-      updateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중');
-      showToast(isT2 ? '세트 추가 요청 완료!' : '광고 등록 요청 완료!', 'success');
-      clearForm(t);
-    } else {
-      updateCard(t, idx, '실패', `HTTP ${res.status}`);
-      showToast(`전송 실패 (${res.status})`, 'error');
-    }
-  } catch (err) {
-    updateCard(t, idx, '실패', '네트워크 오류: ' + err.message);
-    showToast('네트워크 오류가 발생했어요', 'error');
-  }
-  btn.disabled = false;
-  btn.textContent = isT2 ? '세트 추가하기' : '광고 등록하기';
+    if (hasFile) { showToast('이미지 업로드 중...', 'info'); data.이미지해시 = await uploadImageToMeta(fileInput.files[0], data.광고계정ID); data.파일ID = ''; }
+    const res = await fetch(WEBHOOKS[t], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    if (res.ok) { updateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중'); showToast(isT2?'세트 추가 요청 완료!':'광고 등록 요청 완료!', 'success'); clearForm(t); }
+    else { updateCard(t, idx, '실패', `HTTP ${res.status}`); showToast(`전송 실패 (${res.status})`, 'error'); }
+  } catch (err) { updateCard(t, idx, '실패', '오류: ' + err.message); showToast('오류: ' + err.message, 'error'); }
+  btn.disabled = false; btn.textContent = isT2 ? '세트 추가하기' : '광고 등록하기';
 }
 
 function clearForm(t) {
-  // 수기 입력 필드만 초기화 (기본값 있는 것들은 유지)
-  const clearFields = ['제작자', '날짜', '유형', '계정명', '페이지', '인스타계정', '지역구분자', '파일ID', '기본문구', '제목', '설명', '세트예산', '시작일', '종료일', '언어'];
-  clearFields.forEach(field => {
-    const el = document.getElementById(`${t}_${field}`);
-    if (el) el.value = '';
-  });
-
-  // 언어 기본값 ko
+  ['제작자','날짜','유형','계정명','페이지','인스타계정','지역구분자','파일ID','기본문구','제목','설명','세트예산','시작일','종료일','언어'].forEach(field => { const el = document.getElementById(`${t}_${field}`); if (el) el.value = ''; });
   document.getElementById(`${t}_언어`).value = 'ko';
-
-  // 캠페인예산 기본값 30000
-  const campBudget = document.getElementById(`${t}_캠페인예산`);
-  if (campBudget) campBudget.value = 30000;
-
-  // 최소/최대나이 기본값 복원
+  const cb = document.getElementById(`${t}_캠페인예산`); if (cb) cb.value = 30000;
   document.getElementById(`${t}_최소나이`).value = 35;
   document.getElementById(`${t}_최대나이`).value = 65;
-
-  // 시작일 오늘 날짜
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById(`${t}_시작일`).value = today;
-
-  // 드롭다운 초기화
+  document.getElementById(`${t}_시작일`).value = new Date().toISOString().split('T')[0];
   document.getElementById(`${t}_타겟국가`).value = '';
   document.getElementById(`${t}_제외타겟`).innerHTML = '<option value="">계정 선택 후 사용 가능</option>';
   document.getElementById(`${t}_인스턴트양식`).innerHTML = '<option value="">페이지 선택 후 사용 가능</option>';
   document.getElementById(`${t}_제외타겟ID`).value = '';
-
-  // 파일 첨부 초기화
-  const fileInput = document.getElementById(`${t}_파일첨부`);
-  if (fileInput) fileInput.value = '';
-  const driveInput = document.getElementById(`${t}_파일ID`);
-  if (driveInput) driveInput.value = '';
-
-  // 자동생성 필드 초기화
-  ['광고계정ID', '캠페인명', '광고세트명', '광고명', '페이지ID', '인스턴트양식ID'].forEach(field => {
-    const el = document.getElementById(`${t}_${field}`);
-    if (el) el.value = '';
-  });
-
-  // 드롭다운 기본값 복원 (populateDropdowns 재호출)
+  const fi = document.getElementById(`${t}_파일첨부`); if (fi) fi.value = '';
+  const dz = document.getElementById(`${t}_dropzone_text`); if (dz) dz.innerHTML = '📎 클릭하거나 파일을 여기에 드래그하세요<br><span style="font-size:11px;color:var(--text3);">이미지 · 영상 파일 지원</span>';
+  ['광고계정ID','캠페인명','광고세트명','광고명','페이지ID','인스턴트양식ID'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
   populateDropdowns();
 }
 
-function showToast(msg, type = 'info') {
-  const t = document.getElementById('toast');
-  t.className = `toast ${type} show`;
-  t.innerHTML = type === 'info' ? `<div class="spinner"></div>${msg}` : msg;
-  clearTimeout(t._t);
-  t._t = setTimeout(() => t.classList.remove('show'), 3000);
+function showToast(msg, type='info') {
+  const t = document.getElementById('toast'); t.className = `toast ${type} show`;
+  t.innerHTML = type==='info' ? `<div class="spinner"></div>${msg}` : msg;
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// =====================
-// 초기화
-// =====================
-['t1', 't2'].forEach(t => {
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById(`${t}_시작일`).value = today;
-  // 유형/날짜/제작자 변경 시 자동생성
-  ['유형', '날짜', '제작자'].forEach(field => {
+['t1','t2'].forEach(t => {
+  document.getElementById(`${t}_시작일`).value = new Date().toISOString().split('T')[0];
+  ['유형','날짜','제작자'].forEach(field => {
     const el = document.getElementById(`${t}_${field}`);
-    if (el) el.addEventListener('input', () => autoGenNames(t));
-    if (el) el.addEventListener('change', () => autoGenNames(t));
+    if (el) { el.addEventListener('input', () => autoGenNames(t)); el.addEventListener('change', () => autoGenNames(t)); }
   });
 });
 loadData();
