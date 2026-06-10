@@ -756,7 +756,7 @@ function getData(t) {
         publisher_platforms: toArray(g(`${t}_노출위치1`)),
         facebook_positions: toArray(g(`${t}_페이스북지면`)),
         instagram_positions: toArray(g(`${t}_인스타지면`)),
-        locales: [langCode],
+        locales: [Number(langCode)],
         targeting_automation: { advantage_audience: 1 },
       };
 
