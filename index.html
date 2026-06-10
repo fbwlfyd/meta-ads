@@ -363,7 +363,7 @@
           <div class="field"><label>성별</label><select id="t2_성별"><option value="">전체</option><option value="1">남성</option><option value="2">여성</option></select></div>
           <div class="field"><label>언어</label><input type="text" id="t2_언어" placeholder="ko"></div>
         </div>
-        <div class="field"><label>어드밴티지 타겟</label><input type="text" id="t2_어드밴티지타겟" value="OFF" readonly></div>
+        <div class="field"><label>어드밴티지 타겟</label><input type="text" id="t2_어드밴티지타겟" value="0" readonly></div>
       </div>
       <div class="divider"></div>
       <div class="section">
@@ -403,12 +403,12 @@ const SHEET_ID = '1SIyoXfGJ2jI824WUOAcjywrTdApaKEAqtxnG9dkSwqw';
 
 // ⚠️ 실제 Make 웹훅 URL로 교체
 const WEBHOOKS = {
-  t1: 'https://hook.eu1.make.com/wgou4ekrp482asnvqh7i17wnhs7shwgm',
+  t1: 'https://hook.eu1.make.com/여기에_광고등록_토큰',
   t2: 'https://hook.eu1.make.com/여기에_세트추가_토큰',
 };
 
 // ⚠️ Meta 액세스 토큰으로 교체
-const META_ACCESS_TOKEN = 'EAAQT68743nIBRlU3QvgOZAERtM4PXN6gnMzY773HpcCZA2lFs0xyw2fUI4tWeV9SBEthgEx18o3O3ZBREIdGZCx6rPCttbnty3SsRJQE1CTtkl6ULl8EAFw5fZCfhQQaCgRWyuuMu0Xkw5TBircZCW2qkOySKRgCKq5os8ceXZAlHRhhy1oGpZCtSfbM0ZAUqnQZDZD';
+const META_ACCESS_TOKEN = '여기에_메타_액세스_토큰';
 
 async function uploadImageToMeta(file, adAccountId) {
   const cleanId = String(adAccountId).replace('act_', '');
