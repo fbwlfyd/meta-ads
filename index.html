@@ -439,8 +439,15 @@ function parseCSV(text) {
 }
 
 function normalizeCell(val) {
+  // 지수 표기법 숫자 → 정확한 정수 문자열로 변환
   if (/^-?[0-9]+\.?[0-9]*[eE][+\-]?[0-9]+$/.test(val)) {
-    return Number(val).toFixed(0);
+    // BigInt로 정밀도 손실 없이 변환
+    try {
+      const str = Number(val).toLocaleString('fullwide', {maximumFractionDigits: 0, useGrouping: false});
+      return str;
+    } catch(e) {
+      return val;
+    }
   }
   return val;
 }
