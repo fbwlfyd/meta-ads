@@ -439,12 +439,12 @@ function parseCSV(text) {
 }
 
 function normalizeCell(val) {
+  // 앞에 작은따옴표 있으면 제거 (Sheets 텍스트 강제 저장 방식)
+  if (val && val.startsWith("'")) return val.slice(1);
   // 지수 표기법 숫자 → 정확한 정수 문자열로 변환
   if (/^-?[0-9]+\.?[0-9]*[eE][+\-]?[0-9]+$/.test(val)) {
-    // BigInt로 정밀도 손실 없이 변환
     try {
-      const str = Number(val).toLocaleString('fullwide', {maximumFractionDigits: 0, useGrouping: false});
-      return str;
+      return Number(val).toLocaleString('fullwide', {maximumFractionDigits: 0, useGrouping: false});
     } catch(e) {
       return val;
     }
