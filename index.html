@@ -149,9 +149,10 @@
         <div class="field"><label>지역구분자</label><select id="t1_지역구분자" onchange="onRegion('t1')"><option value="">선택</option></select></div>
         <div class="field">
           <label>제외타겟</label>
-          <select id="t1_제외타겟" onchange="onExclude('t1')" multiple style="height:80px;padding:4px 8px;">
+          <select id="t1_제외타겟" onchange="onExclude('t1')">
+            <option value="">선택</option>
           </select>
-          <div style="font-size:11px;color:var(--text3);margin-top:4px;">Ctrl 또는 Cmd 클릭으로 여러 개 선택</div>
+          <div id="t1_제외타겟_tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>
         </div>
       </div>
       <div class="divider"></div>
@@ -293,9 +294,10 @@
         <div class="field"><label>지역구분자</label><select id="t2_지역구분자" onchange="onRegion('t2')"><option value="">선택</option></select></div>
         <div class="field">
           <label>제외타겟</label>
-          <select id="t2_제외타겟" onchange="onExclude('t2')" multiple style="height:80px;padding:4px 8px;">
+          <select id="t2_제외타겟" onchange="onExclude('t2')">
+            <option value="">선택</option>
           </select>
-          <div style="font-size:11px;color:var(--text3);margin-top:4px;">Ctrl 또는 Cmd 클릭으로 여러 개 선택</div>
+          <div id="t2_제외타겟_tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>
         </div>
       </div>
       <div class="divider"></div>
@@ -518,7 +520,10 @@ function populateDropdowns() {
       const sel = document.getElementById(`${t}_${id}`);
       if (!sel) return;
       const prev = sel.value;
-      sel.innerHTML = '';
+      sel.innerHTML = '<option value="">선택</option>';
+  selectedExcludes[t] = [];
+  renderExcludeTags(t);
+  updateExcludeIds(t);
       items.forEach(item => {
         const o = document.createElement('option');
         o.value = item[valKey || 'value']; o.textContent = item[labelKey || 'label'];
@@ -580,7 +585,10 @@ function onAccount(t) {
   const acc = DB.accounts.find(a => a.name === name);
   document.getElementById(`${t}_광고계정ID`).value = acc ? acc.id : '';
   const sel = document.getElementById(`${t}_제외타겟`);
-  sel.innerHTML = '';
+  sel.innerHTML = '<option value="">선택</option>';
+  selectedExcludes[t] = [];
+  renderExcludeTags(t);
+  updateExcludeIds(t);
   document.getElementById(`${t}_제외타겟ID`).value = '';
   autoGenNames(t);
   if (acc) {
@@ -607,10 +615,45 @@ function autoGenNames(t) {
   document.getElementById(`${t}_광고명`).value = setName;
 }
 
+// 선택된 제외타겟 저장소
+const selectedExcludes = { t1: [], t2: [] };
+
 function onExclude(t) {
   const sel = document.getElementById(`${t}_제외타겟`);
-  const selectedIds = Array.from(sel.selectedOptions).map(o => o.dataset.id).filter(Boolean);
-  document.getElementById(`${t}_제외타겟ID`).value = selectedIds.join(',');
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt || !opt.value) return;
+
+  // 중복 체크
+  if (selectedExcludes[t].find(e => e.name === opt.value)) {
+    sel.value = '';
+    return;
+  }
+
+  // 추가
+  selectedExcludes[t].push({ name: opt.value, id: opt.dataset.id || '' });
+  sel.value = '';
+  renderExcludeTags(t);
+  updateExcludeIds(t);
+}
+
+function removeExclude(t, name) {
+  selectedExcludes[t] = selectedExcludes[t].filter(e => e.name !== name);
+  renderExcludeTags(t);
+  updateExcludeIds(t);
+}
+
+function renderExcludeTags(t) {
+  const container = document.getElementById(`${t}_제외타겟_tags`);
+  container.innerHTML = selectedExcludes[t].map(e => `
+    <span style="display:inline-flex;align-items:center;gap:4px;background:var(--blue-bg);color:var(--blue);border:1px solid #c8dffe;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:500;">
+      ${e.name}
+      <span onclick="removeExclude('${t}', '${e.name}')" style="cursor:pointer;font-size:14px;line-height:1;color:var(--text3);">×</span>
+    </span>
+  `).join('');
+}
+
+function updateExcludeIds(t) {
+  document.getElementById(`${t}_제외타겟ID`).value = selectedExcludes[t].map(e => e.id).join(',');
 }
 
 function onPage(t) {
@@ -618,7 +661,10 @@ function onPage(t) {
   const page = DB.pages.find(p => p.name === name);
   document.getElementById(`${t}_페이지ID`).value = page ? page.pageId : '';
   const sel = document.getElementById(`${t}_인스턴트양식`);
-  sel.innerHTML = '';
+  sel.innerHTML = '<option value="">선택</option>';
+  selectedExcludes[t] = [];
+  renderExcludeTags(t);
+  updateExcludeIds(t);
   document.getElementById(`${t}_인스턴트양식ID`).value = '';
   DB.forms.filter(f => f.pageName === name).forEach(f => {
     const o = document.createElement('option'); o.value = f.formName; o.dataset.id = f.formId; o.textContent = f.formName; sel.appendChild(o);
@@ -666,9 +712,9 @@ function getData(t) {
     페이지: g(`${t}_페이지`), 페이지ID: g(`${t}_페이지ID`), 인스타계정: g(`${t}_인스타계정`),
     시작일: g(`${t}_시작일`), 종료일: g(`${t}_종료일`),
     지역구분자: g(`${t}_지역구분자`), 타겟국가: g(`${t}_타겟국가`),
-    제외타겟: Array.from(document.getElementById(`${t}_제외타겟`).selectedOptions).map(o => o.value).filter(Boolean).join(','),
-    제외타겟ID: g(`${t}_제외타겟ID`),
-    제외타겟IDs: g(`${t}_제외타겟ID`) ? g(`${t}_제외타겟ID`).split(',') : [],
+    제외타겟: selectedExcludes[t].map(e => e.name).join(','),
+    제외타겟ID: selectedExcludes[t].map(e => e.id).join(','),
+    제외타겟IDs: selectedExcludes[t].map(e => e.id).filter(Boolean),
     어드밴티지타겟: g(`${t}_어드밴티지타겟`), 언어: g(`${t}_언어`),
     최소나이: g(`${t}_최소나이`), 최대나이: g(`${t}_최대나이`), 성별: g(`${t}_성별`),
     // ✅ targeting JSON 완성해서 전송
@@ -769,7 +815,10 @@ function clearForm(t) {
   document.getElementById(`${t}_최대나이`).value = 65;
   document.getElementById(`${t}_시작일`).value = new Date().toISOString().split('T')[0];
   document.getElementById(`${t}_타겟국가`).value = '';
-  document.getElementById(`${t}_제외타겟`).innerHTML = '';
+  document.getElementById(`${t}_제외타겟`).innerHTML = '<option value="">선택</option>';
+  selectedExcludes[t] = [];
+  renderExcludeTags(t);
+  updateExcludeIds(t);
   document.getElementById(`${t}_인스턴트양식`).innerHTML = '<option value="">페이지 선택 후 사용 가능</option>';
   document.getElementById(`${t}_제외타겟ID`).value = '';
   const fi = document.getElementById(`${t}_파일첨부`); if (fi) fi.value = '';
