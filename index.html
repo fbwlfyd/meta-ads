@@ -739,15 +739,33 @@ function getData(t) {
         geoLocations = { cities: [{ key: regionKey }] };
       }
 
-      return JSON.stringify({
-        age_min: parseInt(g(`${t}_최소나이`)) || 25,
-        age_max: parseInt(g(`${t}_최대나이`)) || 65,
+      const ageMin = parseInt(g(`${t}_최소나이`)) || 35;
+      const ageMax = parseInt(g(`${t}_최대나이`)) || 65;
+      const langVal = g(`${t}_언어`).trim();
+      const langMap = { 'ko': 6, 'en': 1, 'ja': 5, 'zh': 7 };
+      const langCode = langMap[langVal] || 6;
+
+      // 제외타겟 IDs
+      const excludeIds = selectedExcludes[t].map(e => e.id).filter(Boolean);
+
+      const targetingObj = {
+        age_min: 25,
+        age_max: 65,
+        age_range: [ageMin, ageMax],
         geo_locations: geoLocations,
         publisher_platforms: toArray(g(`${t}_노출위치1`)),
         facebook_positions: toArray(g(`${t}_페이스북지면`)),
         instagram_positions: toArray(g(`${t}_인스타지면`)),
-        locales: [6]
-      });
+        locales: [langCode],
+        targeting_automation: { advantage_audience: 1 },
+      };
+
+      // 제외타겟 있을 때만 추가
+      if (excludeIds.length > 0) {
+        targetingObj.excluded_custom_audiences = excludeIds.map(id => ({ id }));
+      }
+
+      return JSON.stringify(targetingObj);
     })(),
     광고명: g(`${t}_광고명`), 파일ID: g(`${t}_파일ID`),
     파일유형: (() => {
