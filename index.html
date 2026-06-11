@@ -174,7 +174,7 @@
           <label>파일ID (Google Drive)</label>
           <input type="text" id="t1_파일ID" placeholder="Drive 전체 링크 복사 후 붙여넣기" oninput="extractDriveId(this); checkThumbField('t1')">
         </div>
-        <div class="field" id="t1_thumb_wrap" style="display:none;">
+        <div class="field" id="t1_thumb_wrap">
           <label>썸네일 파일ID (Google Drive)</label>
           <input type="text" id="t1_썸네일파일ID" placeholder="썸네일 이미지 Drive 링크 붙여넣기" oninput="extractDriveIdThumb(this)">
         </div>
@@ -323,7 +323,7 @@
           <label>파일ID (Google Drive)</label>
           <input type="text" id="t2_파일ID" placeholder="Drive 전체 링크 복사 후 붙여넣기" oninput="extractDriveId(this); checkThumbField('t2')">
         </div>
-        <div class="field" id="t2_thumb_wrap" style="display:none;">
+        <div class="field" id="t2_thumb_wrap">
           <label>썸네일 파일ID (Google Drive)</label>
           <input type="text" id="t2_썸네일파일ID" placeholder="썸네일 이미지 Drive 링크 붙여넣기" oninput="extractDriveIdThumb(this)">
         </div>
@@ -419,11 +419,9 @@ const WEBHOOKS = {
 const META_ACCESS_TOKEN = 'EAAQT68743nIBRlU3QvgOZAERtM4PXN6gnMzY773HpcCZA2lFs0xyw2fUI4tWeV9SBEthgEx18o3O3ZBREIdGZCx6rPCttbnty3SsRJQE1CTtkl6ULl8EAFw5fZCfhQQaCgRWyuuMu0Xkw5TBircZCW2qkOySKRgCKq5os8ceXZAlHRhhy1oGpZCtSfbM0ZAUqnQZDZD';
 
 function checkThumbField(t) {
-  const fileId = document.getElementById(`${t}_파일ID`).value.toLowerCase();
+  const method = document.getElementById(`${t}_파일방식`).value;
   const thumbWrap = document.getElementById(`${t}_thumb_wrap`);
-  // 영상 확장자 포함 여부로 판단
-  const isVideo = /\.(mp4|mov|avi|mkv|webm|wmv|flv)/.test(fileId) || fileId.includes('video');
-  thumbWrap.style.display = isVideo ? '' : 'none';
+  thumbWrap.style.display = method === 'drive' ? '' : 'none';
 }
 
 function extractDriveIdThumb(input) {
@@ -714,6 +712,7 @@ function onFileMethod(t) {
   const method = document.getElementById(`${t}_파일방식`).value;
   document.getElementById(`${t}_drive_wrap`).style.display = method === 'drive' ? 'block' : 'none';
   document.getElementById(`${t}_upload_wrap`).style.display = method === 'upload' ? 'block' : 'none';
+  checkThumbField(t);
 }
 function onForm(t) {
   const sel = document.getElementById(`${t}_인스턴트양식`); const opt = sel.options[sel.selectedIndex];
@@ -765,7 +764,7 @@ function getData(t) {
       const ageMax = parseInt(g(`${t}_최대나이`)) || 65;
       const langVal = g(`${t}_언어`).trim();
       const langMap = { 'ko': 12, 'en': 6, 'ja': 11, 'zh': 20 };
-      const langCode = langMap[langVal] || 6;
+      const langCode = langMap[langVal] || 12;
 
       // 제외타겟 IDs
       const excludeIds = selectedExcludes[t].map(e => e.id).filter(Boolean);
@@ -881,6 +880,7 @@ function showToast(msg, type='info') {
   });
 });
 loadData();
+['t1','t2'].forEach(t => checkThumbField(t));
 </script>
 </body>
 </html>
