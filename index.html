@@ -423,6 +423,19 @@ async function uploadImageToMeta(file, adAccountId) {
   return json.images[key].hash;
 }
 
+async function uploadVideoToMeta(file, adAccountId) {
+  const cleanId = String(adAccountId).replace('act_', '');
+  const url = `https://graph.facebook.com/v25.0/act_${cleanId}/advideos`;
+  const formData = new FormData();
+  formData.append('source', file);
+  formData.append('name', file.name);
+  formData.append('access_token', META_ACCESS_TOKEN);
+  const res = await fetch(url, { method: 'POST', body: formData });
+  if (!res.ok) throw new Error(`Meta 영상 업로드 실패: ${res.status}`);
+  const json = await res.json();
+  return json.id;
+}
+
 let DB = {
   accounts: [], excludes: [], pages: [], forms: [], regions: [], staff: [],
   buyingTypes: [], objectives: [], destinations: [], optimizations: [],
@@ -817,7 +830,18 @@ async function submitAd(t) {
     const method = document.getElementById(`${t}_파일방식`).value;
     const fileInput = document.getElementById(`${t}_파일첨부`);
     const hasFile = method === 'upload' && fileInput && fileInput.files.length > 0;
-    if (hasFile) { showToast('이미지 업로드 중...', 'info'); data.이미지해시 = await uploadImageToMeta(fileInput.files[0], data.광고계정ID); data.파일ID = ''; }
+    if (hasFile) {
+      const file = fileInput.files[0];
+      if (file.type.startsWith('image/')) {
+        showToast('이미지 업로드 중...', 'info');
+        data.이미지해시 = await uploadImageToMeta(file, data.광고계정ID);
+        data.파일ID = '';
+      } else {
+        showToast('영상 업로드 중... 잠시 기다려주세요', 'info');
+        data.videoId = await uploadVideoToMeta(file, data.광고계정ID);
+        data.파일ID = '';
+      }
+    }
     const res = await fetch(WEBHOOKS[t], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     if (res.ok) { updateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중'); showToast(isT2?'세트 추가 요청 완료!':'광고 등록 요청 완료!', 'success'); clearForm(t); }
     else { updateCard(t, idx, '실패', `HTTP ${res.status}`); showToast(`전송 실패 (${res.status})`, 'error'); }
