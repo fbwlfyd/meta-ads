@@ -220,7 +220,7 @@
           <div class="field"><label>종료일</label><input type="date" id="t1_종료일"></div>
         </div>
         <div class="row2">
-          <div class="field"><label>최소나이</label><input type="number" id="t1_최소나이" value="25" min="1" max="65"></div>
+          <div class="field"><label>최소나이</label><input type="number" id="t1_최소나이" value="35" min="1" max="65"></div>
           <div class="field"><label>최대나이</label><input type="number" id="t1_최대나이" value="65" min="1" max="65"></div>
         </div>
         <div class="row2">
@@ -267,7 +267,7 @@
     <div class="panel-body">
       <div class="campaign-id-box">
         <label>기존 캠페인 ID</label>
-        <input type="text" id="t2_캠페인ID" placeholder="캠페인 ID를 입력하세요">
+        <input type="text" id="t2_캠페인ID" placeholder="캠페인 ID를 입력하세요" onblur="onCampaignId('t2')">
       </div>
       <div class="section">
         <div class="sec-label">기본 정보</div>
@@ -356,7 +356,7 @@
           <div class="field"><label>종료일</label><input type="date" id="t2_종료일"></div>
         </div>
         <div class="row2">
-          <div class="field"><label>최소나이</label><input type="number" id="t2_최소나이" value="25" min="1" max="65"></div>
+          <div class="field"><label>최소나이</label><input type="number" id="t2_최소나이" value="35" min="1" max="65"></div>
           <div class="field"><label>최대나이</label><input type="number" id="t2_최대나이" value="65" min="1" max="65"></div>
         </div>
         <div class="row2">
@@ -404,7 +404,7 @@ const SHEET_ID = '1SIyoXfGJ2jI824WUOAcjywrTdApaKEAqtxnG9dkSwqw';
 // ⚠️ 실제 Make 웹훅 URL로 교체
 const WEBHOOKS = {
   t1: 'https://hook.eu1.make.com/wgou4ekrp482asnvqh7i17wnhs7shwgm',
-  t2: 'https://hook.eu1.make.com/여기에_세트추가_토큰',
+  t2: 'https://hook.eu1.make.com/wgou4ekrp482asnvqh7i17wnhs7shwgm',
 };
 
 // ⚠️ Meta 액세스 토큰으로 교체
@@ -436,10 +436,21 @@ async function uploadVideoToMeta(file, adAccountId) {
   return json.id;
 }
 
+// 캠페인ID로 Facebook 캠페인 정보(이름, 계정ID) 조회
+async function fetchCampaignInfo(campaignId) {
+  const url = `https://graph.facebook.com/v25.0/${campaignId}?fields=name,account_id&access_token=${META_ACCESS_TOKEN}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`캠페인 조회 실패: ${res.status}`);
+  const json = await res.json();
+  if (json.error) throw new Error(json.error.message);
+  return json; // { name, account_id, id }
+}
+
 let DB = {
   accounts: [], excludes: [], pages: [], forms: [], regions: [], staff: [],
   buyingTypes: [], objectives: [], destinations: [], optimizations: [],
   platforms: [], fbPositions: [], igPositions: [], ctaTypes: [], instaAccounts: [],
+  baseRegions: {}, // 계정ID -> 본지역명
 };
 
 async function fetchSheet(range) {
@@ -506,6 +517,12 @@ async function loadData() {
     DB.fbPositions = parse(refRows, r => r[35] ? { key: r[35], data: { value: r[35], label: r[36] } } : null);
     DB.igPositions = parse(refRows, r => r[38] ? { key: r[38], data: { value: r[38], label: r[39] } } : null);
     DB.ctaTypes = parse(refRows, r => r[41] ? { key: r[41], data: { value: r[41], label: r[42] } } : null);
+
+    // 본지역: B열(계정ID) -> F열(본지역)
+    DB.baseRegions = {};
+    refRows.slice(1).forEach(r => {
+      if (r[1] && r[5]) DB.baseRegions[r[1]] = r[5];
+    });
 
     const seenPages = new Set();
     DB.pages = []; DB.forms = [];
@@ -690,6 +707,49 @@ function onRegion(t) {
   document.getElementById(`${t}_타겟국가`).value = region ? (region.id || '') : '';
 }
 
+// 캠페인ID 입력 시: 캠페인명 조회 → 계정 자동매칭 → 캠페인명에서 지역(00타겟) 추출, 없으면 본지역 사용
+async function onCampaignId(t) {
+  const campaignId = document.getElementById(`${t}_캠페인ID`).value.trim();
+  if (!campaignId) return;
+  showToast('캠페인 정보 조회 중...', 'info');
+  try {
+    const info = await fetchCampaignInfo(campaignId);
+    const accountId = info.account_id;
+
+    // 계정 자동 매칭 (참조시트 B열 계정ID 기준)
+    const acc = DB.accounts.find(a => a.id === accountId);
+    if (acc) {
+      document.getElementById(`${t}_계정명`).value = acc.name;
+      onAccount(t); // 계정 선택 효과(제외타겟 목록 등) 적용
+    } else {
+      document.getElementById(`${t}_광고계정ID`).value = accountId || '';
+    }
+
+    // 캠페인명에서 지역 추출: "OO타겟" 패턴
+    const campaignName = info.name || '';
+    const regionMatch = campaignName.match(/([가-힣]+)타겟/);
+    let regionName = '';
+    if (regionMatch) {
+      regionName = regionMatch[1];
+    } else if (accountId && DB.baseRegions[accountId]) {
+      regionName = DB.baseRegions[accountId];
+    }
+
+    if (regionName) {
+      const regSel = document.getElementById(`${t}_지역구분자`);
+      const exists = Array.from(regSel.options).some(o => o.value === regionName);
+      if (exists) {
+        regSel.value = regionName;
+        onRegion(t);
+      }
+    }
+
+    showToast('캠페인 정보를 불러왔어요', 'success');
+  } catch (err) {
+    showToast('캠페인 조회 실패: ' + err.message, 'error');
+  }
+}
+
 function onDragOver(e, t) { e.preventDefault(); const dz = document.getElementById(`${t}_dropzone`); dz.style.borderColor = 'var(--blue)'; dz.style.background = 'var(--blue-bg)'; }
 function onDragLeave(e, t) { const dz = document.getElementById(`${t}_dropzone`); dz.style.borderColor = 'var(--border2)'; dz.style.background = 'var(--bg)'; }
 function onDrop(e, t) {
@@ -762,8 +822,8 @@ function getData(t) {
       const excludeIds = selectedExcludes[t].map(e => e.id).filter(Boolean);
 
       const targetingObj = {
-        age_min: 25,
-        age_max: 65,
+        age_min: ageMin,
+        age_max: ageMax,
         age_range: [ageMin, ageMax],
         geo_locations: geoLocations,
         publisher_platforms: toArray(g(`${t}_노출위치1`)),
