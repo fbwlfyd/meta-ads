@@ -268,19 +268,12 @@
       <div class="campaign-id-box">
         <label>기존 캠페인 ID</label>
         <input type="text" id="t2_캠페인ID" placeholder="캠페인 ID를 입력하세요" onblur="onCampaignId('t2')">
+        <div id="t2_캠페인명_display" style="margin-top:8px;font-size:12px;color:var(--text2);min-height:16px;"></div>
       </div>
       <div class="section">
         <div class="sec-label">기본 정보</div>
         <div class="field"><label>제작자</label><input type="text" id="t2_제작자" placeholder="이름 입력" oninput="autoGenNames('t2')"></div>
-        <div class="row2">
-          <div class="field"><label>날짜</label><input type="text" id="t2_날짜" placeholder="예: 260605" oninput="autoGenNames('t2')"></div>
-          <div class="field"><label>유형</label><input type="text" id="t2_유형" placeholder="예: 비용혜택" oninput="autoGenNames('t2')"></div>
-        </div>
-      </div>
-      <div class="divider"></div>
-      <div class="section">
-        <div class="sec-label">계정</div>
-        <div class="field"><label>계정명</label><select id="t2_계정명" onchange="onAccount('t2')"><option value="">선택</option></select></div>
+        <div class="field"><label>유형</label><input type="text" id="t2_유형" placeholder="예: 비용혜택" oninput="autoGenNames('t2')"></div>
       </div>
       <div class="divider"></div>
       <div class="section">
@@ -368,6 +361,7 @@
       <div class="divider"></div>
       <div class="section">
         <div class="sec-label">자동생성 값</div>
+        <div class="field"><label>계정명 <span class="auto-tag">자동</span></label><input type="text" id="t2_계정명_display" readonly placeholder="캠페인ID 입력 시 자동입력"></div>
         <div class="field"><label>광고명 <span class="auto-tag">자동</span></label><input type="text" id="t2_광고명" readonly placeholder="세트명과 동일하게 자동생성"></div>
         <div class="row2">
           <div class="field"><label>페이지ID <span class="auto-tag">자동</span></label><input type="text" id="t2_페이지ID" readonly placeholder="자동입력"></div>
@@ -563,10 +557,12 @@ function populateDropdowns() {
       else if (prev) sel.value = prev;
     };
 
-    // 계정명
+    // 계정명 (t2는 select가 없고 표시용 input만 있음 - 캠페인ID로 자동 매칭)
     const accSel = document.getElementById(`${t}_계정명`);
-    accSel.innerHTML = '<option value="">선택</option>';
-    DB.accounts.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; accSel.appendChild(o); });
+    if (accSel) {
+      accSel.innerHTML = '<option value="">선택</option>';
+      DB.accounts.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; accSel.appendChild(o); });
+    }
 
     // 페이지
     const pageSel = document.getElementById(`${t}_페이지`);
@@ -610,8 +606,25 @@ function toArray(str) {
   return str.split(',').map(s => s.trim()).filter(Boolean);
 }
 
+// 선택된 계정 저장소 (t2는 select가 없으므로 캠페인ID 조회로 내부 저장)
+const selectedAccount = { t1: '', t2: '' };
+
+function getAccountName(t) {
+  if (t === 't1') return document.getElementById('t1_계정명').value;
+  return selectedAccount.t2;
+}
+
+function setAccountName(t, name) {
+  if (t === 't1') {
+    document.getElementById('t1_계정명').value = name;
+  } else {
+    selectedAccount.t2 = name;
+    document.getElementById('t2_계정명_display').value = name;
+  }
+}
+
 function onAccount(t) {
-  const name = document.getElementById(`${t}_계정명`).value;
+  const name = getAccountName(t);
   const acc = DB.accounts.find(a => a.name === name);
   document.getElementById(`${t}_광고계정ID`).value = acc ? acc.id : '';
   const sel = document.getElementById(`${t}_제외타겟`);
@@ -629,12 +642,13 @@ function onAccount(t) {
 }
 
 function autoGenNames(t) {
-  const acc = DB.accounts.find(a => a.name === document.getElementById(`${t}_계정명`).value);
+  const acc = DB.accounts.find(a => a.name === getAccountName(t));
   if (!acc) return;
   const region = DB.regions.find(r => r.name === document.getElementById(`${t}_지역구분자`).value);
   const staffName = document.getElementById(`${t}_제작자`).value;
   const staffObj = DB.staff.find(s => s.name === staffName);
-  const date = document.getElementById(`${t}_날짜`).value;
+  const dateEl = document.getElementById(`${t}_날짜`);
+  const date = dateEl ? dateEl.value : '';
   const type = document.getElementById(`${t}_유형`).value;
   const refName = region ? (region.refName || '') : '';
   const staffId = staffObj ? staffObj.id : '';
@@ -715,18 +729,22 @@ async function onCampaignId(t) {
   try {
     const info = await fetchCampaignInfo(campaignId);
     const accountId = info.account_id;
+    const campaignName = info.name || '';
+
+    // 캠페인ID박스 아래에 캠페인명 표시
+    const nameDisplay = document.getElementById(`${t}_캠페인명_display`);
+    if (nameDisplay) nameDisplay.textContent = campaignName ? `📌 ${campaignName}` : '';
 
     // 계정 자동 매칭 (참조시트 B열 계정ID 기준)
     const acc = DB.accounts.find(a => a.id === accountId);
     if (acc) {
-      document.getElementById(`${t}_계정명`).value = acc.name;
+      setAccountName(t, acc.name);
       onAccount(t); // 계정 선택 효과(제외타겟 목록 등) 적용
     } else {
       document.getElementById(`${t}_광고계정ID`).value = accountId || '';
     }
 
     // 캠페인명에서 지역 추출: "OO타겟" 패턴
-    const campaignName = info.name || '';
     const regionMatch = campaignName.match(/([가-힣]+)타겟/);
     let regionName = '';
     if (regionMatch) {
@@ -780,7 +798,7 @@ function g(id) { return document.getElementById(id).value; }
 function getData(t) {
   const d = {
     제작자: g(`${t}_제작자`), 날짜: g(`${t}_날짜`), 유형: g(`${t}_유형`), 상태: '대기중',
-    계정명: g(`${t}_계정명`), 광고계정ID: g(`${t}_광고계정ID`),
+    계정명: getAccountName(t), 광고계정ID: g(`${t}_광고계정ID`),
     광고세트명: g(`${t}_광고세트명`), 전환위치: g(`${t}_전환위치`), 성과목표: g(`${t}_성과목표`), 세트예산: g(`${t}_세트예산`),
     페이지: g(`${t}_페이지`), 페이지ID: g(`${t}_페이지ID`), 인스타계정: g(`${t}_인스타계정`),
     시작일: g(`${t}_시작일`), 종료일: g(`${t}_종료일`),
@@ -926,6 +944,12 @@ function clearForm(t) {
   const fi = document.getElementById(`${t}_파일첨부`); if (fi) fi.value = '';
   const dz = document.getElementById(`${t}_dropzone_text`); if (dz) dz.innerHTML = '📎 클릭하거나 파일을 여기에 드래그하세요<br><span style="font-size:11px;color:var(--text3);">이미지 · 영상 파일 지원</span>';
   ['광고계정ID','캠페인명','광고세트명','광고명','페이지ID','인스턴트양식ID'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
+  if (t === 't2') {
+    selectedAccount.t2 = '';
+    const accDisp = document.getElementById('t2_계정명_display'); if (accDisp) accDisp.value = '';
+    const campDisp = document.getElementById('t2_캠페인명_display'); if (campDisp) campDisp.textContent = '';
+    const campIdEl = document.getElementById('t2_캠페인ID'); if (campIdEl) campIdEl.value = '';
+  }
   populateDropdowns();
 }
 
