@@ -875,8 +875,8 @@ function getData(t) {
       const excludeIds = selectedExcludes[t].map(e => e.id).filter(Boolean);
 
       const targetingObj = {
-        age_min: ageMin,
-        age_max: ageMax,
+        age_min: 25,
+        age_max: 65,
         age_range: [ageMin, ageMax],
         geo_locations: geoLocations,
         publisher_platforms: toArray(g(`${t}_노출위치1`)),
