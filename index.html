@@ -828,7 +828,7 @@ function switchTab(n) {
   [1,2].forEach(i => { document.getElementById(`tab${i}-btn`).classList.toggle('active', i===n); document.getElementById(`tab${i}-panel`).classList.toggle('active', i===n); });
 }
 
-function g(id) { return document.getElementById(id).value; }
+function g(id) { const el = document.getElementById(id); return el ? el.value : ''; }
 
 function getData(t) {
   const d = {
