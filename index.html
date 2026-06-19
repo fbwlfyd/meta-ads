@@ -788,7 +788,11 @@ async function loadData() {
   bar.className = 'sync-bar';
   document.getElementById('syncMsg').innerHTML = '<span>참조 데이터 불러오는 중...</span>';
   try {
-    const [refRows, pageRows] = await Promise.all([fetchSheet('참조'), fetchSheet('페이지_리드폼DB')]);
+    const [refRows, pageRows, gRefRows] = await Promise.all([
+      fetchSheet('메타참조'),
+      fetchSheet('페이지_리드폼DB'),
+      fetchSheet('구글참조').catch(() => [['']]) // 시트가 아직 없거나 비어있어도 전체 흐름이 멈추지 않도록
+    ]);
 
     const parse = (arr, keyFn, seen = new Set()) => {
       const result = [];
@@ -817,6 +821,25 @@ async function loadData() {
     DB.baseRegions = {};
     refRows.slice(1).forEach(r => {
       if (r[1] && r[5]) DB.baseRegions[r[1]] = r[5];
+    });
+
+    // ===== 구글참조 시트 파싱 =====
+    // 컬럼 가정: A=계정명, B=계정ID(customerId) / D=지역명, E=GoogleCriterionID
+    // G=잠재고객_계정ID, H=잠재고객명, I=잠재고객ID / K=채널_계정ID, L=채널명, M=채널ID
+    GDB.googleRegions = parse(gRefRows, r => r[3] ? { key: r[3], data: { name: r[3], criterionId: r[4] || '' } } : null);
+    GDB.audiencesByAccount = {};
+    gRefRows.slice(1).forEach(r => {
+      if (r[6] && r[7] && r[8]) {
+        if (!GDB.audiencesByAccount[r[6]]) GDB.audiencesByAccount[r[6]] = [];
+        GDB.audiencesByAccount[r[6]].push({ name: r[7], id: r[8] });
+      }
+    });
+    GDB.youtubeChannelsByAccount = {};
+    gRefRows.slice(1).forEach(r => {
+      if (r[10] && r[11] && r[12]) {
+        if (!GDB.youtubeChannelsByAccount[r[10]]) GDB.youtubeChannelsByAccount[r[10]] = [];
+        GDB.youtubeChannelsByAccount[r[10]].push({ name: r[11], id: r[12] });
+      }
     });
 
     const seenPages = new Set();
@@ -1298,8 +1321,9 @@ const G_WEBHOOKS = {
 
 // Google 참조 DB (참조시트에 컬럼 추가되면 loadData()에서 같이 채움 — 현재는 빈 상태로 동작)
 let GDB = {
-  googleRegions: [],     // { name, criterionId }  (지역명 -> Google Geo Target Criterion ID, 추후 참조시트 컬럼)
-  audiencesByAccount: {}, // { accountId: [{name, id}] } (추후 Google_잠재고객DB 시트)
+  googleRegions: [],     // { name, criterionId }  ← 구글참조 시트 D,E열
+  audiencesByAccount: {}, // { accountId: [{name, id}] }  ← 구글참조 시트 G,H,I열
+  youtubeChannelsByAccount: {}, // { accountId: [{name, id}] } ← 구글참조 시트 K,L,M열
 };
 
 const gSelectedAccount = { g1: '', g2: '' };
@@ -1322,11 +1346,12 @@ function gPopulateDropdowns() {
       accSel.innerHTML = '<option value="">선택</option>';
       DB.accounts.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; accSel.appendChild(o); });
     }
-    // 지역구분자 - Google지역ID 참조 (현재는 GDB.googleRegions가 비어있으면 Meta 지역명만 보여주고 ID는 추후 매핑)
+    // 지역구분자 - 구글참조 시트의 Google지역ID(Criterion ID) 우선 사용, 비어있으면 Meta 지역명만 폴백 표시
     const regSel = document.getElementById(`${t}_지역구분자`);
     if (regSel) {
       regSel.innerHTML = '<option value="">선택</option>';
-      DB.regions.forEach(r => { const o = document.createElement('option'); o.value = r.name; o.textContent = r.name; regSel.appendChild(o); });
+      const source = GDB.googleRegions.length > 0 ? GDB.googleRegions : DB.regions;
+      source.forEach(r => { const o = document.createElement('option'); o.value = r.name; o.textContent = r.name; regSel.appendChild(o); });
     }
   });
 }
@@ -1533,14 +1558,15 @@ function gCollectChannels(t) {
 function gGetData(t) {
   const isT2 = t === 'g2';
   const acc = DB.accounts.find(a => a.name === gGetAccountName(t));
-  const region = DB.regions.find(r => r.name === document.getElementById(`${t}_지역구분자`).value);
+  const regionName = document.getElementById(`${t}_지역구분자`).value;
+  const gRegion = GDB.googleRegions.find(r => r.name === regionName);
   const d = {
     플랫폼: 'google',
     제작자: g(`${t}_제작자`), 날짜: g(`${t}_날짜`), 유형: g(`${t}_유형`), 상태: '대기중',
     계정명: gGetAccountName(t), 광고계정ID: g(`${t}_광고계정ID`),
     광고그룹명: g(`${t}_광고그룹명`),
-    지역구분자: g(`${t}_지역구분자`),
-    구글지역ID: region ? (region.googleCriterionId || '') : '', // 추후 참조시트 컬럼 매핑
+    지역구분자: regionName,
+    구글지역ID: gRegion ? (gRegion.criterionId || '') : '', // 구글참조 시트 D,E열 매핑
     언어: 'ko',
     채널: gCollectChannels(t),
     잠재고객ID: g(`${t}_잠재고객`),
