@@ -828,8 +828,16 @@ async function loadData() {
     // 지역 (구글참조 C, D, E열)
     GDB.googleRegions = parse(gRefRows, r => r[2] ? { key: r[2], data: { name: r[2], criterionId: r[3] || '', refName: r[4] || '' } } : null);
 
-    // 잠재고객 (구글참조 F, H, I열 — F열 계정명 기준으로 그룹핑)
-    GDB.audiencesByAccount = {};
+    // YouTube 채널 (구글참조 A열 계정명, N열 채널명, O열 채널ID)
+    GDB.youtubeChannelsByAccount = {};
+    gRefRows.slice(1).forEach(r => {
+      const accName    = r[0];  // A열: 계정명
+      const chName     = r[13]; // N열: 채널명
+      const chId       = r[14]; // O열: 채널ID
+      if (accName && chId) {
+        GDB.youtubeChannelsByAccount[accName] = { channelName: chName || '', channelId: chId };
+      }
+    });
     gRefRows.slice(1).forEach(r => {
       const accName = r[5]; // F열: 계정명
       const audName = r[7]; // H열: 잠재고객명
@@ -1323,6 +1331,7 @@ let GDB = {
   staff: [],               // { name, id } ← 구글참조 L,M열
   googleRegions: [],       // { name, criterionId, refName } ← 구글참조 C,D,E열
   audiencesByAccount: {},  // { 계정명: [{name, id}] } ← 구글참조 F,H,I열
+  youtubeChannelsByAccount: {}, // { 계정명: {channelName, channelId} } ← 구글참조 A,N,O열
 };
 
 const gSelectedAccount = { g1: '', g2: '' };
@@ -1575,6 +1584,7 @@ function gGetData(t) {
     언어: 'ko',
     채널: gCollectChannels(t),
     잠재고객ID: g(`${t}_잠재고객`),
+    유튜브채널ID: (GDB.youtubeChannelsByAccount[gGetAccountName(t)] || {}).channelId || 'UChg_3mq-CO2kFPkbXlTR3pw',
     기기: g(`${t}_기기`),
     영상목록: gCollectVideos(t).map(v => ({ ...v, 파일첨부: undefined })),
     최종URL: g(`${t}_최종URL`),
