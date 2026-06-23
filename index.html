@@ -482,11 +482,6 @@
           </div>
         </div>
         <div class="field"><label>잠재고객 <span style="font-size:10px;color:var(--text3);">(계정별 참조시트)</span></label><select id="g1_잠재고객"><option value="">계정 선택 후 사용 가능</option></select></div>
-        <div class="row2">
-          <div class="field"><label>최소나이</label><input type="number" id="g1_최소나이" value="35" min="1" max="65"></div>
-          <div class="field"><label>최대나이</label><input type="number" id="g1_최대나이" value="65" min="1" max="65"></div>
-        </div>
-        <div class="field"><label>성별</label><select id="g1_성별"><option value="">전체</option><option value="MALE">남성</option><option value="FEMALE">여성</option></select></div>
       </div>
       <div class="divider"></div>
       <div class="section">
@@ -583,11 +578,6 @@
           </div>
         </div>
         <div class="field"><label>잠재고객 <span style="font-size:10px;color:var(--text3);">(계정별 참조시트)</span></label><select id="g2_잠재고객"><option value="">캠페인ID 입력 후 사용 가능</option></select></div>
-        <div class="row2">
-          <div class="field"><label>최소나이</label><input type="number" id="g2_최소나이" value="35" min="1" max="65"></div>
-          <div class="field"><label>최대나이</label><input type="number" id="g2_최대나이" value="65" min="1" max="65"></div>
-        </div>
-        <div class="field"><label>성별</label><select id="g2_성별"><option value="">전체</option><option value="MALE">남성</option><option value="FEMALE">여성</option></select></div>
         <div class="field"><label>기기</label>
           <select id="g2_기기">
             <option value="ALL" selected>전체 (컴퓨터+휴대전화)</option>
@@ -824,21 +814,24 @@ async function loadData() {
     });
 
     // ===== 구글참조 시트 파싱 =====
-    // 컬럼 가정: A=계정명, B=계정ID(customerId) / D=지역명, E=GoogleCriterionID
-    // G=잠재고객_계정ID, H=잠재고객명, I=잠재고객ID / K=채널_계정ID, L=채널명, M=채널ID
-    GDB.googleRegions = parse(gRefRows, r => r[3] ? { key: r[3], data: { name: r[3], criterionId: r[4] || '' } } : null);
+    // A(0)=계정명, B(1)=계정ID / C(2)=지역명, D(3)=지역ID, E(4)=참조이름
+    // F(5)=잠재고객_계정명, G(6)=잠재고객_계정ID(resourceName), H(7)=잠재고객명, I(8)=잠재고객ID
+
+    // 계정 목록 (구글참조 A, B열)
+    GDB.accounts = parse(gRefRows, r => r[0] && r[1] ? { key: r[0], data: { name: r[0], id: r[1] } } : null);
+
+    // 지역 (구글참조 C, D열)
+    GDB.googleRegions = parse(gRefRows, r => r[2] ? { key: r[2], data: { name: r[2], criterionId: r[3] || '' } } : null);
+
+    // 잠재고객 (구글참조 F, H, I열 — F열 계정명 기준으로 그룹핑)
     GDB.audiencesByAccount = {};
     gRefRows.slice(1).forEach(r => {
-      if (r[6] && r[7] && r[8]) {
-        if (!GDB.audiencesByAccount[r[6]]) GDB.audiencesByAccount[r[6]] = [];
-        GDB.audiencesByAccount[r[6]].push({ name: r[7], id: r[8] });
-      }
-    });
-    GDB.youtubeChannelsByAccount = {};
-    gRefRows.slice(1).forEach(r => {
-      if (r[10] && r[11] && r[12]) {
-        if (!GDB.youtubeChannelsByAccount[r[10]]) GDB.youtubeChannelsByAccount[r[10]] = [];
-        GDB.youtubeChannelsByAccount[r[10]].push({ name: r[11], id: r[12] });
+      const accName = r[5]; // F열: 계정명
+      const audName = r[7]; // H열: 잠재고객명
+      const audId   = r[8]; // I열: 잠재고객ID
+      if (accName && audName && audId) {
+        if (!GDB.audiencesByAccount[accName]) GDB.audiencesByAccount[accName] = [];
+        GDB.audiencesByAccount[accName].push({ name: audName, id: audId });
       }
     });
 
@@ -1315,15 +1308,15 @@ function showToast(msg, type='info') {
 
 // ⚠️ Google용 Make Webhook URL로 교체 (추후 Make 세팅 시 채움)
 const G_WEBHOOKS = {
-  g1: 'https://hook.eu1.make.com/여기에_구글_캠페인등록_웹훅',
-  g2: 'https://hook.eu1.make.com/여기에_구글_세트추가_웹훅',
+  g1: 'https://hook.eu1.make.com/feqfvpytm8fr92wgp1yha705vfnz944c',
+  g2: 'https://hook.eu1.make.com/feqfvpytm8fr92wgp1yha705vfnz944c',
 };
 
 // Google 참조 DB (참조시트에 컬럼 추가되면 loadData()에서 같이 채움 — 현재는 빈 상태로 동작)
 let GDB = {
-  googleRegions: [],     // { name, criterionId }  ← 구글참조 시트 D,E열
-  audiencesByAccount: {}, // { accountId: [{name, id}] }  ← 구글참조 시트 G,H,I열
-  youtubeChannelsByAccount: {}, // { accountId: [{name, id}] } ← 구글참조 시트 K,L,M열
+  accounts: [],            // { name, id } ← 구글참조 A,B열
+  googleRegions: [],       // { name, criterionId } ← 구글참조 C,D열
+  audiencesByAccount: {},  // { 계정명: [{name, id}] } ← 구글참조 F,H,I열
 };
 
 const gSelectedAccount = { g1: '', g2: '' };
@@ -1340,32 +1333,32 @@ function gSetAccountName(t, name) {
 
 function gPopulateDropdowns() {
   ['g1','g2'].forEach(t => {
-    // 계정명 (g2는 표시용 input만)
+    // 계정명 → 구글참조 A열 기준
     const accSel = document.getElementById(`${t}_계정명`);
     if (accSel) {
       accSel.innerHTML = '<option value="">선택</option>';
-      DB.accounts.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; accSel.appendChild(o); });
+      GDB.accounts.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; accSel.appendChild(o); });
     }
-    // 지역구분자 - 구글참조 시트의 Google지역ID(Criterion ID) 우선 사용, 비어있으면 Meta 지역명만 폴백 표시
+    // 지역구분자 → 구글참조 C열 기준
     const regSel = document.getElementById(`${t}_지역구분자`);
     if (regSel) {
       regSel.innerHTML = '<option value="">선택</option>';
-      const source = GDB.googleRegions.length > 0 ? GDB.googleRegions : DB.regions;
-      source.forEach(r => { const o = document.createElement('option'); o.value = r.name; o.textContent = r.name; regSel.appendChild(o); });
+      GDB.googleRegions.forEach(r => { const o = document.createElement('option'); o.value = r.name; o.textContent = r.name; regSel.appendChild(o); });
     }
   });
 }
 
 function gOnAccount(t) {
   const name = gGetAccountName(t);
-  const acc = DB.accounts.find(a => a.name === name);
+  // 구글참조 A,B열에서 계정ID 조회
+  const acc = GDB.accounts.find(a => a.name === name);
   document.getElementById(`${t}_광고계정ID`).value = acc ? acc.id : '';
   gAutoGenNames(t);
-  // 잠재고객 목록 (계정별 참조시트 - 추후 채움)
+  // 잠재고객 목록 → 구글참조 F열(계정명) 기준으로 H,I열 매핑
   const audSel = document.getElementById(`${t}_잠재고객`);
   if (audSel) {
     audSel.innerHTML = '<option value="">선택 안함</option>';
-    const list = acc ? (GDB.audiencesByAccount[acc.id] || []) : [];
+    const list = GDB.audiencesByAccount[name] || [];
     list.forEach(a => { const o = document.createElement('option'); o.value = a.id; o.textContent = a.name; audSel.appendChild(o); });
   }
 }
@@ -1557,7 +1550,7 @@ function gCollectChannels(t) {
 
 function gGetData(t) {
   const isT2 = t === 'g2';
-  const acc = DB.accounts.find(a => a.name === gGetAccountName(t));
+  const acc = GDB.accounts.find(a => a.name === gGetAccountName(t));
   const regionName = document.getElementById(`${t}_지역구분자`).value;
   const gRegion = GDB.googleRegions.find(r => r.name === regionName);
   const d = {
@@ -1566,13 +1559,12 @@ function gGetData(t) {
     계정명: gGetAccountName(t), 광고계정ID: g(`${t}_광고계정ID`),
     광고그룹명: g(`${t}_광고그룹명`),
     지역구분자: regionName,
-    구글지역ID: gRegion ? (gRegion.criterionId || '') : '', // 구글참조 시트 D,E열 매핑
+    구글지역ID: gRegion ? (gRegion.criterionId || '') : '',
     언어: 'ko',
     채널: gCollectChannels(t),
     잠재고객ID: g(`${t}_잠재고객`),
-    최소나이: g(`${t}_최소나이`), 최대나이: g(`${t}_최대나이`), 성별: g(`${t}_성별`),
     기기: g(`${t}_기기`),
-    영상목록: gCollectVideos(t).map(v => ({ ...v, 파일첨부: undefined })), // 파일 바이너리는 별도 처리, JSON엔 메타만
+    영상목록: gCollectVideos(t).map(v => ({ ...v, 파일첨부: undefined })),
     최종URL: g(`${t}_최종URL`),
     광고제목목록: gCollectTexts(t, 'headline'),
     긴광고제목: g(`${t}_긴광고제목`),
@@ -1630,17 +1622,16 @@ async function gSubmitAd(t) {
 
 function gClearForm(t) {
   ['제작자','날짜','유형','지역구분자'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
-  document.getElementById(`${t}_최소나이`).value = 35;
-  document.getElementById(`${t}_최대나이`).value = 65;
-  const genderEl = document.getElementById(`${t}_성별`); if (genderEl) genderEl.value = '';
   const deviceEl = document.getElementById(`${t}_기기`); if (deviceEl) deviceEl.value = 'ALL';
   ['ch_discover','ch_gmail','ch_display','ch_maps'].forEach(k => { const el = document.getElementById(`${t}_${k}`); if (el) { el.checked = false; gToggleChip(el); } });
   const audSel = document.getElementById(`${t}_잠재고객`); if (audSel) audSel.innerHTML = '<option value="">선택 안함</option>';
-  const commonEl = document.getElementById(`${t}_video_common`); if (commonEl) commonEl.checked = false;
   document.getElementById(`${t}_video_list`).innerHTML = '';
   document.getElementById(`${t}_headline_list`).innerHTML = '';
   document.getElementById(`${t}_desc_list`).innerHTML = '';
-  gAddVideoBlock(t); gAddTextBlock(t,'headline'); gAddTextBlock(t,'desc');
+  // 영상 3개 기본 + 공통 체크 ON
+  gAddVideoBlock(t); gAddVideoBlock(t); gAddVideoBlock(t);
+  const commonEl = document.getElementById(`${t}_video_common`); if (commonEl) { commonEl.checked = true; gToggleVideoCommon(t); }
+  gAddTextBlock(t,'headline'); gAddTextBlock(t,'desc');
   ['최종URL','긴광고제목','업체명'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
   const ctaEl = document.getElementById(`${t}_CTA`); if (ctaEl) ctaEl.value = 'AUTOMATED';
   ['광고계정ID','캠페인명','광고그룹명'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
@@ -1656,9 +1647,16 @@ function gClearForm(t) {
   gPopulateDropdowns();
 }
 
-// 초기화: 기본 1개 블록씩 + 시작일 자동 입력
+// 초기화: 영상 기본 3개 + 공통 체크 ON + 헤드라인/설명 1개씩 + 시작일 자동 입력
 ['g1','g2'].forEach(t => {
+  // 영상 3개 기본 추가
   gAddVideoBlock(t);
+  gAddVideoBlock(t);
+  gAddVideoBlock(t);
+  // 공통 체크박스 ON
+  const commonEl = document.getElementById(`${t}_video_common`);
+  if (commonEl) { commonEl.checked = true; gToggleVideoCommon(t); }
+  // 헤드라인/설명 1개씩
   gAddTextBlock(t, 'headline');
   gAddTextBlock(t, 'desc');
   ['유형','날짜','제작자'].forEach(field => {
