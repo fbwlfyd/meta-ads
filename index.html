@@ -442,16 +442,14 @@
     <div class="panel-body">
       <div class="section">
         <div class="sec-label">기본 정보</div>
-        <div class="field"><label>제작자</label><input type="text" id="g1_제작자" placeholder="이름 입력" oninput="gAutoGenNames('g1')"></div>
         <div class="row2">
+          <div class="field"><label>제작자</label><input type="text" id="g1_제작자" placeholder="이름 입력" oninput="gAutoGenNames('g1')"></div>
           <div class="field"><label>날짜</label><input type="text" id="g1_날짜" placeholder="예: 260605" oninput="gAutoGenNames('g1')"></div>
-          <div class="field"><label>유형</label><input type="text" id="g1_유형" placeholder="예: 비용혜택" oninput="gAutoGenNames('g1')"></div>
         </div>
-      </div>
-      <div class="divider"></div>
-      <div class="section">
-        <div class="sec-label">계정</div>
-        <div class="field"><label>계정명</label><select id="g1_계정명" onchange="gOnAccount('g1')"><option value="">선택</option></select></div>
+        <div class="row2">
+          <div class="field"><label>계정명</label><select id="g1_계정명" onchange="gOnAccount('g1')"><option value="">선택</option></select></div>
+          <div class="field"><label>지역구분자</label><select id="g1_지역구분자" onchange="gOnRegion('g1')"><option value="">선택</option></select></div>
+        </div>
       </div>
       <div class="divider"></div>
       <div class="section">
@@ -470,7 +468,6 @@
       <div class="divider"></div>
       <div class="section">
         <div class="sec-label">광고그룹 설정</div>
-        <div class="field"><label>지역구분자 <span style="font-size:10px;color:var(--text3);">(Google지역ID 참조)</span></label><select id="g1_지역구분자" onchange="gOnRegion('g1')"><option value="">선택</option></select></div>
         <div class="field">
           <label>채널 (YouTube 고정 + 추가 선택)</label>
           <div class="chip-group">
@@ -560,13 +557,18 @@
       </div>
       <div class="section">
         <div class="sec-label">기본 정보</div>
-        <div class="field"><label>제작자</label><input type="text" id="g2_제작자" placeholder="이름 입력" oninput="gAutoGenNames('g2')"></div>
-        <div class="field"><label>유형</label><input type="text" id="g2_유형" placeholder="예: 비용혜택" oninput="gAutoGenNames('g2')"></div>
+        <div class="row2">
+          <div class="field"><label>제작자</label><input type="text" id="g2_제작자" placeholder="이름 입력" oninput="gAutoGenNames('g2')"></div>
+          <div class="field"><label>날짜</label><input type="text" id="g2_날짜" placeholder="예: 260605" oninput="gAutoGenNames('g2')"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>계정명</label><select id="g2_계정명" onchange="gOnAccount('g2')"><option value="">선택</option></select></div>
+          <div class="field"><label>지역구분자</label><select id="g2_지역구분자" onchange="gOnRegion('g2')"><option value="">선택</option></select></div>
+        </div>
       </div>
       <div class="divider"></div>
       <div class="section">
         <div class="sec-label">광고그룹 설정</div>
-        <div class="field"><label>지역구분자 <span style="font-size:10px;color:var(--text3);">(Google지역ID 참조)</span></label><select id="g2_지역구분자" onchange="gOnRegion('g2')"><option value="">선택</option></select></div>
         <div class="field">
           <label>채널 (YouTube 고정 + 추가 선택)</label>
           <div class="chip-group">
@@ -577,7 +579,7 @@
             <label class="chip"><input type="checkbox" id="g2_ch_maps" onchange="gToggleChip(this)"> 지도</label>
           </div>
         </div>
-        <div class="field"><label>잠재고객 <span style="font-size:10px;color:var(--text3);">(계정별 참조시트)</span></label><select id="g2_잠재고객"><option value="">캠페인ID 입력 후 사용 가능</option></select></div>
+        <div class="field"><label>잠재고객 <span style="font-size:10px;color:var(--text3);">(계정별 참조시트)</span></label><select id="g2_잠재고객"><option value="">계정 선택 후 사용 가능</option></select></div>
         <div class="field"><label>기기</label>
           <select id="g2_기기">
             <option value="ALL" selected>전체 (컴퓨터+휴대전화)</option>
@@ -620,9 +622,9 @@
       <div class="divider"></div>
       <div class="section">
         <div class="sec-label">자동생성 / 고정 값</div>
-        <div class="field"><label>계정명 <span class="auto-tag g">자동</span></label><input type="text" id="g2_계정명_display" readonly placeholder="캠페인ID 입력 시 자동입력"></div>
         <div class="field"><label>광고계정 ID(customerId) <span class="auto-tag g">자동</span></label><input type="text" id="g2_광고계정ID" readonly placeholder="자동입력"></div>
         <div class="field"><label>광고그룹명 <span class="auto-tag g">자동</span></label><input type="text" id="g2_광고그룹명" readonly placeholder="자동생성"></div>
+        <div class="field"><label>계정명_display <span class="auto-tag g">자동</span></label><input type="text" id="g2_계정명_display" readonly placeholder="캠페인ID 입력 시 자동입력"></div>
         <div class="field"><label>언어 <span class="auto-tag g">고정</span></label><input type="text" value="한국어 (ko)" readonly></div>
       </div>
     </div>
@@ -817,11 +819,14 @@ async function loadData() {
     // A(0)=계정명, B(1)=계정ID / C(2)=지역명, D(3)=지역ID, E(4)=참조이름
     // F(5)=잠재고객_계정명, G(6)=잠재고객_계정ID(resourceName), H(7)=잠재고객명, I(8)=잠재고객ID
 
-    // 계정 목록 (구글참조 A, B열)
-    GDB.accounts = parse(gRefRows, r => r[0] && r[1] ? { key: r[0], data: { name: r[0], id: r[1] } } : null);
+    // 계정 목록 (구글참조 A, B열) + J,K열(캠페인명/세트명 prefix) + L,M열(사원명/ID)
+    GDB.accounts = parse(gRefRows, r => r[0] && r[1] ? { key: r[0], data: { name: r[0], id: r[1], campaignName: r[9] || '', setName: r[10] || '' } } : null);
 
-    // 지역 (구글참조 C, D열)
-    GDB.googleRegions = parse(gRefRows, r => r[2] ? { key: r[2], data: { name: r[2], criterionId: r[3] || '' } } : null);
+    // 사원 목록 (구글참조 L,M열)
+    GDB.staff = parse(gRefRows, r => r[11] ? { key: r[11], data: { name: r[11], id: r[12] || '' } } : null);
+
+    // 지역 (구글참조 C, D, E열)
+    GDB.googleRegions = parse(gRefRows, r => r[2] ? { key: r[2], data: { name: r[2], criterionId: r[3] || '', refName: r[4] || '' } } : null);
 
     // 잠재고객 (구글참조 F, H, I열 — F열 계정명 기준으로 그룹핑)
     GDB.audiencesByAccount = {};
@@ -1314,8 +1319,9 @@ const G_WEBHOOKS = {
 
 // Google 참조 DB (참조시트에 컬럼 추가되면 loadData()에서 같이 채움 — 현재는 빈 상태로 동작)
 let GDB = {
-  accounts: [],            // { name, id } ← 구글참조 A,B열
-  googleRegions: [],       // { name, criterionId } ← 구글참조 C,D열
+  accounts: [],            // { name, id, campaignName, setName } ← 구글참조 A,B,J,K열
+  staff: [],               // { name, id } ← 구글참조 L,M열
+  googleRegions: [],       // { name, criterionId, refName } ← 구글참조 C,D,E열
   audiencesByAccount: {},  // { 계정명: [{name, id}] } ← 구글참조 F,H,I열
 };
 
@@ -1324,11 +1330,18 @@ const gNextSetNumber = { g2: 1 };
 
 function gGetAccountName(t) {
   if (t === 'g1') return document.getElementById('g1_계정명').value;
-  return gSelectedAccount.g2;
+  const sel = document.getElementById('g2_계정명');
+  return sel ? sel.value : gSelectedAccount.g2;
 }
 function gSetAccountName(t, name) {
   if (t === 'g1') document.getElementById('g1_계정명').value = name;
-  else { gSelectedAccount.g2 = name; document.getElementById('g2_계정명_display').value = name; }
+  else {
+    gSelectedAccount.g2 = name;
+    const sel = document.getElementById('g2_계정명');
+    if (sel) sel.value = name;
+    const disp = document.getElementById('g2_계정명_display');
+    if (disp) disp.value = name;
+  }
 }
 
 function gPopulateDropdowns() {
@@ -1373,19 +1386,18 @@ function gToggleChip(input) {
 }
 
 function gAutoGenNames(t) {
-  const acc = DB.accounts.find(a => a.name === gGetAccountName(t));
+  const acc = GDB.accounts.find(a => a.name === gGetAccountName(t));
   if (!acc) return;
-  const region = DB.regions.find(r => r.name === document.getElementById(`${t}_지역구분자`).value);
+  const region = GDB.googleRegions.find(r => r.name === document.getElementById(`${t}_지역구분자`).value);
   const staffName = document.getElementById(`${t}_제작자`).value;
-  const staffObj = DB.staff.find(s => s.name === staffName);
+  const staffObj = GDB.staff.find(s => s.name === staffName);
   const dateEl = document.getElementById(`${t}_날짜`);
   const date = dateEl ? dateEl.value : '';
-  const type = document.getElementById(`${t}_유형`).value;
   const refName = region ? (region.refName || '') : '';
   const staffId = staffObj ? staffObj.id : '';
   const seqLabel = t === 'g2' ? `${gNextSetNumber.g2}A` : '1A';
-  const campaignName = [acc.campaignName, acc.subjectName, type, date ? `(${date})` : '', staffName, refName, 'GDN', '예비용'].filter(Boolean).join(' ');
-  const groupName = [acc.setName, acc.subjectName, type, refName, 'GDN', seqLabel, staffId].filter(Boolean).join(' ');
+  const campaignName = [acc.campaignName, '디맨드젠', date ? `(${date})` : '', staffName, refName, '예비용'].filter(Boolean).join(' ');
+  const groupName = [acc.setName, '디맨드젠', refName, seqLabel, staffId].filter(Boolean).join(' ');
   if (t === 'g1') document.getElementById('g1_캠페인명').value = campaignName;
   document.getElementById(`${t}_광고그룹명`).value = groupName;
 }
@@ -1621,7 +1633,7 @@ async function gSubmitAd(t) {
 }
 
 function gClearForm(t) {
-  ['제작자','날짜','유형','지역구분자'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
+  ['제작자','날짜','지역구분자'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
   const deviceEl = document.getElementById(`${t}_기기`); if (deviceEl) deviceEl.value = 'ALL';
   ['ch_discover','ch_gmail','ch_display','ch_maps'].forEach(k => { const el = document.getElementById(`${t}_${k}`); if (el) { el.checked = false; gToggleChip(el); } });
   const audSel = document.getElementById(`${t}_잠재고객`); if (audSel) audSel.innerHTML = '<option value="">선택 안함</option>';
@@ -1640,6 +1652,7 @@ function gClearForm(t) {
     document.getElementById('g1_시작일').value = new Date().toISOString().split('T')[0];
   } else {
     gSelectedAccount.g2 = ''; gNextSetNumber.g2 = 1;
+    const accSel = document.getElementById('g2_계정명'); if (accSel) accSel.value = '';
     const accDisp = document.getElementById('g2_계정명_display'); if (accDisp) accDisp.value = '';
     const campDisp = document.getElementById('g2_캠페인명_display'); if (campDisp) campDisp.textContent = '';
     const campIdEl = document.getElementById('g2_캠페인ID'); if (campIdEl) campIdEl.value = '';
