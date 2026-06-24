@@ -448,8 +448,9 @@
         </div>
         <div class="row2">
           <div class="field"><label>계정명</label><select id="g1_계정명" onchange="gOnAccount('g1')"><option value="">선택</option></select></div>
-          <div class="field"><label>지역구분자</label><select id="g1_지역구분자" onchange="gOnRegion('g1')"><option value="">선택</option></select></div>
+          <div class="field"><label>치과명</label><select id="g1_치과명" onchange="gOnClinic('g1')"><option value="">계정 선택 후 사용 가능</option></select></div>
         </div>
+        <div class="field"><label>지역구분자</label><select id="g1_지역구분자" onchange="gOnRegion('g1')"><option value="">선택</option></select></div>
       </div>
       <div class="divider"></div>
       <div class="section">
@@ -503,7 +504,6 @@
             <option value="UChg_3mq-CO2kFPkbXlTR3pw">오늘의병원</option>
           </select>
         </div>
-        <div class="field"><label>업체명</label><input type="text" id="g1_업체명" maxlength="25" placeholder="업체명 (최대 25자)"></div>
         <div class="field"><label>CTA버튼</label>
           <select id="g1_CTA">
             <option value="AUTOMATED">자동</option>
@@ -522,6 +522,7 @@
         <div class="field"><label>광고계정 ID(customerId) <span class="auto-tag g">자동</span></label><input type="text" id="g1_광고계정ID" readonly placeholder="계정 선택 시 자동입력"></div>
         <div class="field"><label>캠페인명 <span class="auto-tag g">자동</span></label><input type="text" id="g1_캠페인명" readonly placeholder="자동생성"></div>
         <div class="field"><label>광고그룹명 <span class="auto-tag g">자동</span></label><input type="text" id="g1_광고그룹명" readonly placeholder="자동생성"></div>
+        <div class="field"><label>업체명 <span class="auto-tag g">자동</span></label><input type="text" id="g1_업체명" readonly placeholder="치과명 선택 시 자동입력"></div>
         <div class="row2">
           <div class="field"><label>캠페인목표 <span class="auto-tag g">고정</span></label><input type="text" value="리드 (SUBMIT_LEAD_FORM)" readonly></div>
           <div class="field"><label>언어 <span class="auto-tag g">고정</span></label><input type="text" value="한국어 (ko)" readonly></div>
@@ -568,8 +569,9 @@
         </div>
         <div class="row2">
           <div class="field"><label>계정명</label><select id="g2_계정명" onchange="gOnAccount('g2')"><option value="">선택</option></select></div>
-          <div class="field"><label>지역구분자</label><select id="g2_지역구분자" onchange="gOnRegion('g2')"><option value="">선택</option></select></div>
+          <div class="field"><label>치과명</label><select id="g2_치과명" onchange="gOnClinic('g2')"><option value="">계정 선택 후 사용 가능</option></select></div>
         </div>
+        <div class="field"><label>지역구분자</label><select id="g2_지역구분자" onchange="gOnRegion('g2')"><option value="">선택</option></select></div>
       </div>
       <div class="divider"></div>
       <div class="section">
@@ -616,7 +618,6 @@
             <option value="UChg_3mq-CO2kFPkbXlTR3pw">오늘의병원</option>
           </select>
         </div>
-        <div class="field"><label>업체명</label><input type="text" id="g2_업체명" maxlength="25" placeholder="업체명 (최대 25자)"></div>
         <div class="field"><label>CTA버튼</label>
           <select id="g2_CTA">
             <option value="AUTOMATED">자동</option>
@@ -634,7 +635,8 @@
         <div class="sec-label">자동생성 / 고정 값</div>
         <div class="field"><label>광고계정 ID(customerId) <span class="auto-tag g">자동</span></label><input type="text" id="g2_광고계정ID" readonly placeholder="자동입력"></div>
         <div class="field"><label>광고그룹명 <span class="auto-tag g">자동</span></label><input type="text" id="g2_광고그룹명" readonly placeholder="자동생성"></div>
-        <div class="field"><label>계정명_display <span class="auto-tag g">자동</span></label><input type="text" id="g2_계정명_display" readonly placeholder="캠페인ID 입력 시 자동입력"></div>
+        <div class="field"><label>업체명 <span class="auto-tag g">자동</span></label><input type="text" id="g2_업체명" readonly placeholder="치과명 선택 시 자동입력"></div>
+        <div class="field"><label>계정명 <span class="auto-tag g">자동</span></label><input type="text" id="g2_계정명_display" readonly placeholder="캠페인ID 입력 시 자동입력"></div>
         <div class="field"><label>언어 <span class="auto-tag g">고정</span></label><input type="text" value="한국어 (ko)" readonly></div>
       </div>
     </div>
@@ -1384,18 +1386,39 @@ function gOnAccount(t) {
   const acc = GDB.accounts.find(a => a.name === name);
   document.getElementById(`${t}_광고계정ID`).value = acc ? acc.id : '';
   gAutoGenNames(t);
-  // 잠재고객 목록 → 구글참조 F열(계정명) 기준으로 H,I열 매핑
+  // 잠재고객 목록
   const audSel = document.getElementById(`${t}_잠재고객`);
   if (audSel) {
     audSel.innerHTML = '<option value="">선택 안함</option>';
     const list = GDB.audiencesByAccount[name] || [];
     list.forEach(a => { const o = document.createElement('option'); o.value = a.id; o.textContent = a.name; audSel.appendChild(o); });
   }
+  // 치과명 드롭다운 (해당 계정의 K열 setName)
+  const clinicSel = document.getElementById(`${t}_치과명`);
+  if (clinicSel) {
+    clinicSel.innerHTML = '<option value="">선택</option>';
+    if (acc && acc.setName) {
+      const o = document.createElement('option');
+      o.value = acc.setName;
+      o.textContent = acc.setName;
+      clinicSel.appendChild(o);
+      clinicSel.value = acc.setName;
+      gOnClinic(t);
+    }
+  }
   // YouTube 채널 자동 선택
   gPopulateYoutubeChannels(t);
   const ch = GDB.youtubeChannelsByAccount[name];
   const chSel = document.getElementById(`${t}_유튜브채널`);
   if (ch && chSel) chSel.value = ch.channelId;
+}
+
+function gOnClinic(t) {
+  const clinicName = document.getElementById(`${t}_치과명`)?.value || '';
+  // 업체명 자동 입력
+  const bizEl = document.getElementById(`${t}_업체명`);
+  if (bizEl) bizEl.value = clinicName;
+  gAutoGenNames(t);
 }
 
 function gOnRegion(t) {
@@ -1679,6 +1702,8 @@ async function gSubmitAd(t) {
 
 function gClearForm(t) {
   ['제작자','날짜','지역구분자'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
+  const clinicSel = document.getElementById(`${t}_치과명`); if (clinicSel) clinicSel.innerHTML = '<option value="">계정 선택 후 사용 가능</option>';
+  const bizEl = document.getElementById(`${t}_업체명`); if (bizEl) bizEl.value = '';
   const deviceEl = document.getElementById(`${t}_기기`); if (deviceEl) deviceEl.value = 'ALL';
   ['ch_discover','ch_gmail','ch_display','ch_maps'].forEach(k => { const el = document.getElementById(`${t}_${k}`); if (el) { el.checked = false; gToggleChip(el); } });
   const audSel = document.getElementById(`${t}_잠재고객`); if (audSel) audSel.innerHTML = '<option value="">선택 안함</option>';
