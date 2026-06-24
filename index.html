@@ -1652,8 +1652,9 @@ function gGetData(t) {
   const gRegion = GDB.googleRegions.find(r => r.name === regionName);
   const d = {
     플랫폼: 'google',
-    제작자: g(`${t}_제작자`), 날짜: g(`${t}_날짜`), 유형: g(`${t}_유형`), 상태: '대기중',
+    제작자: g(`${t}_제작자`), 날짜: g(`${t}_날짜`), 유형: '디맨드젠', 상태: '대기중',
     계정명: gGetAccountName(t), 광고계정ID: g(`${t}_광고계정ID`),
+    치과명: g(`${t}_치과명`),
     광고그룹명: g(`${t}_광고그룹명`),
     지역구분자: regionName,
     구글지역ID: gRegion ? (gRegion.criterionId || '') : '',
