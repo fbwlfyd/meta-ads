@@ -1637,14 +1637,12 @@ function gCollectTexts(t, kind) {
   return Array.from(list.children).map(b => b.querySelector('[data-role="text"]').value).filter(Boolean);
 }
 function gCollectChannels(t) {
-  return {
-    gmail: document.getElementById(`${t}_ch_gmail`)?.checked || false,
-    discover: document.getElementById(`${t}_ch_discover`)?.checked || false,
-    display: document.getElementById(`${t}_ch_display`)?.checked || false,
-    youtubeInFeed: true,
-    youtubeInStream: true,
-    youtubeShorts: true
-  };
+  const channels = ['YOUTUBE'];
+  if (document.getElementById(`${t}_ch_discover`)?.checked) channels.push('DISCOVER');
+  if (document.getElementById(`${t}_ch_gmail`)?.checked) channels.push('GMAIL');
+  if (document.getElementById(`${t}_ch_display`)?.checked) channels.push('DISPLAY');
+  if (document.getElementById(`${t}_ch_maps`)?.checked) channels.push('MAPS');
+  return channels;
 }
 
 function gGetData(t) {
