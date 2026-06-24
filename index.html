@@ -498,6 +498,11 @@
         <div class="field"><label>광고제목 (헤드라인, 최대 5개)</label><div id="g1_headline_list"></div><button type="button" class="repeat-add" onclick="gAddTextBlock('g1','headline')">+ 광고제목 추가</button></div>
         <div class="field"><label>긴 광고제목 (1개, 최대 90자)</label><input type="text" id="g1_긴광고제목" maxlength="90" placeholder="긴 광고 제목"></div>
         <div class="field"><label>설명 (최대 5개)</label><div id="g1_desc_list"></div><button type="button" class="repeat-add" onclick="gAddTextBlock('g1','desc')">+ 설명 추가</button></div>
+        <div class="field"><label>YouTube 채널</label>
+          <select id="g1_유튜브채널" onchange="gOnYoutubeChannel('g1')">
+            <option value="UChg_3mq-CO2kFPkbXlTR3pw">오늘의병원</option>
+          </select>
+        </div>
         <div class="field"><label>업체명</label><input type="text" id="g1_업체명" maxlength="25" placeholder="업체명 (최대 25자)"></div>
         <div class="field"><label>CTA버튼</label>
           <select id="g1_CTA">
@@ -606,6 +611,11 @@
         <div class="field"><label>광고제목 (헤드라인, 최대 5개)</label><div id="g2_headline_list"></div><button type="button" class="repeat-add" onclick="gAddTextBlock('g2','headline')">+ 광고제목 추가</button></div>
         <div class="field"><label>긴 광고제목 (1개, 최대 90자)</label><input type="text" id="g2_긴광고제목" maxlength="90" placeholder="긴 광고 제목"></div>
         <div class="field"><label>설명 (최대 5개)</label><div id="g2_desc_list"></div><button type="button" class="repeat-add" onclick="gAddTextBlock('g2','desc')">+ 설명 추가</button></div>
+        <div class="field"><label>YouTube 채널</label>
+          <select id="g2_유튜브채널" onchange="gOnYoutubeChannel('g2')">
+            <option value="UChg_3mq-CO2kFPkbXlTR3pw">오늘의병원</option>
+          </select>
+        </div>
         <div class="field"><label>업체명</label><input type="text" id="g2_업체명" maxlength="25" placeholder="업체명 (최대 25자)"></div>
         <div class="field"><label>CTA버튼</label>
           <select id="g2_CTA">
@@ -1355,24 +1365,22 @@ function gSetAccountName(t, name) {
 
 function gPopulateDropdowns() {
   ['g1','g2'].forEach(t => {
-    // 계정명 → 구글참조 A열 기준
     const accSel = document.getElementById(`${t}_계정명`);
     if (accSel) {
       accSel.innerHTML = '<option value="">선택</option>';
       GDB.accounts.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; accSel.appendChild(o); });
     }
-    // 지역구분자 → 구글참조 C열 기준
     const regSel = document.getElementById(`${t}_지역구분자`);
     if (regSel) {
       regSel.innerHTML = '<option value="">선택</option>';
       GDB.googleRegions.forEach(r => { const o = document.createElement('option'); o.value = r.name; o.textContent = r.name; regSel.appendChild(o); });
     }
+    gPopulateYoutubeChannels(t);
   });
 }
 
 function gOnAccount(t) {
   const name = gGetAccountName(t);
-  // 구글참조 A,B열에서 계정ID 조회
   const acc = GDB.accounts.find(a => a.name === name);
   document.getElementById(`${t}_광고계정ID`).value = acc ? acc.id : '';
   gAutoGenNames(t);
@@ -1383,6 +1391,11 @@ function gOnAccount(t) {
     const list = GDB.audiencesByAccount[name] || [];
     list.forEach(a => { const o = document.createElement('option'); o.value = a.id; o.textContent = a.name; audSel.appendChild(o); });
   }
+  // YouTube 채널 자동 선택
+  gPopulateYoutubeChannels(t);
+  const ch = GDB.youtubeChannelsByAccount[name];
+  const chSel = document.getElementById(`${t}_유튜브채널`);
+  if (ch && chSel) chSel.value = ch.channelId;
 }
 
 function gOnRegion(t) {
@@ -1392,6 +1405,28 @@ function gOnRegion(t) {
 function gToggleChip(input) {
   const chip = input.closest('.chip');
   if (chip) chip.classList.toggle('checked', input.checked);
+}
+
+function gOnYoutubeChannel(t) {
+  // select value가 channelId라서 gGetData에서 그대로 읽음
+}
+
+function gPopulateYoutubeChannels(t) {
+  const sel = document.getElementById(`${t}_유튜브채널`);
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '<option value="UChg_3mq-CO2kFPkbXlTR3pw">오늘의병원</option>';
+  const seen = new Set(['UChg_3mq-CO2kFPkbXlTR3pw']);
+  Object.values(GDB.youtubeChannelsByAccount).forEach(ch => {
+    if (ch.channelId && !seen.has(ch.channelId)) {
+      seen.add(ch.channelId);
+      const o = document.createElement('option');
+      o.value = ch.channelId;
+      o.textContent = ch.channelName || ch.channelId;
+      sel.appendChild(o);
+    }
+  });
+  sel.value = prev || 'UChg_3mq-CO2kFPkbXlTR3pw';
 }
 
 function gAutoGenNames(t) {
@@ -1584,7 +1619,7 @@ function gGetData(t) {
     언어: 'ko',
     채널: gCollectChannels(t),
     잠재고객ID: g(`${t}_잠재고객`),
-    유튜브채널ID: (GDB.youtubeChannelsByAccount[gGetAccountName(t)] || {}).channelId || 'UChg_3mq-CO2kFPkbXlTR3pw',
+    유튜브채널ID: g(`${t}_유튜브채널`) || 'UChg_3mq-CO2kFPkbXlTR3pw',
     기기: g(`${t}_기기`),
     영상목록: gCollectVideos(t).map(v => ({ ...v, 파일첨부: undefined })),
     최종URL: g(`${t}_최종URL`),
@@ -1656,6 +1691,7 @@ function gClearForm(t) {
   gAddTextBlock(t,'headline'); gAddTextBlock(t,'desc');
   ['최종URL','긴광고제목','업체명'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
   const ctaEl = document.getElementById(`${t}_CTA`); if (ctaEl) ctaEl.value = 'AUTOMATED';
+  const chSel = document.getElementById(`${t}_유튜브채널`); if (chSel) chSel.value = 'UChg_3mq-CO2kFPkbXlTR3pw';
   ['광고계정ID','캠페인명','광고그룹명'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
   if (t === 'g1') {
     document.getElementById('g1_계정명').value = '';
