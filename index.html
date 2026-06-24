@@ -1469,9 +1469,12 @@ function gAutoGenNames(t) {
   const date = dateEl ? dateEl.value : '';
   const refName = region ? (region.refName || '') : '';
   const staffId = staffObj ? staffObj.id : '';
-  const seqLabel = t === 'g2' ? `${gNextSetNumber.g2}A` : '1A';
+  const seqLabel = t === 'g2' ? `${gNextSetNumber.g2}U` : '1U';
+  // 캠페인명: J열(campaignName) + 디맨드젠 + (날짜) + 제작자 + refName + 예비용
   const campaignName = [acc.campaignName, '디맨드젠', date ? `(${date})` : '', staffName, refName, '예비용'].filter(Boolean).join(' ');
-  const groupName = [acc.setName, '디맨드젠', refName, seqLabel, staffId].filter(Boolean).join(' ');
+  // 광고그룹명: K열(치과명=clinicName) + 임플란트 + refName + 1U + 사원ID
+  const clinicName = document.getElementById(`${t}_치과명`)?.value || acc.setName || '';
+  const groupName = [clinicName, '임플란트', refName, seqLabel, staffId].filter(Boolean).join(' ');
   if (t === 'g1') document.getElementById('g1_캠페인명').value = campaignName;
   document.getElementById(`${t}_광고그룹명`).value = groupName;
 }
