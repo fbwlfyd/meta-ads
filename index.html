@@ -1627,7 +1627,7 @@ function gCollectVideos(t) {
       유튜브설명: (isCommon && i > 0) ? firstDesc : block.querySelector('[data-role="유튜브설명"]').value,
       // 공개상태/아동용은 화면 노출 없이 항상 고정값으로 전송
       공개상태: 'unlisted',
-      아동용: false,
+      아동용: 'false',
     };
   });
 }
