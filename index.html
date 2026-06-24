@@ -1663,11 +1663,12 @@ function gGetData(t) {
     잠재고객ID: g(`${t}_잠재고객`),
     유튜브채널ID: g(`${t}_유튜브채널`) || 'UChg_3mq-CO2kFPkbXlTR3pw',
     기기: g(`${t}_기기`),
-    기기타겟팅: (() => {
+    기기제외목록: (() => {
       const device = document.getElementById(`${t}_기기`)?.value || 'ALL';
-      if (device === 'DESKTOP') return { excludeMobile: true, excludeTablet: true, excludeTV: true };
-      if (device === 'MOBILE') return { excludeDesktop: true, excludeTablet: true, excludeTV: true };
-      return { excludeTablet: true, excludeTV: true }; // ALL: 태블릿·TV만 제외
+      const excluded = ['TABLET', 'CONNECTED_TV'];
+      if (device === 'DESKTOP') excluded.push('MOBILE');
+      if (device === 'MOBILE') excluded.push('DESKTOP');
+      return excluded;
     })(),
     영상목록: gCollectVideos(t).map(v => ({ ...v, 파일첨부: undefined })),
     최종URL: g(`${t}_최종URL`),
