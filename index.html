@@ -840,6 +840,13 @@ async function loadData() {
     // 지역 (구글참조 C, D, E열)
     GDB.googleRegions = parse(gRefRows, r => r[2] ? { key: r[2], data: { name: r[2], criterionId: r[3] || '', refName: r[4] || '' } } : null);
 
+    // 치과명 목록 (구글참조 K열, 중복 제거)
+    const clinicSeen = new Set();
+    GDB.clinicNames = [];
+    gRefRows.slice(1).forEach(r => {
+      if (r[10] && !clinicSeen.has(r[10])) { clinicSeen.add(r[10]); GDB.clinicNames.push(r[10]); }
+    });
+
     // YouTube 채널 (구글참조 A열 계정명, N열 채널명, O열 채널ID)
     GDB.youtubeChannelsByAccount = {};
     gRefRows.slice(1).forEach(r => {
@@ -1339,10 +1346,11 @@ const G_WEBHOOKS = {
 
 // Google 참조 DB (참조시트에 컬럼 추가되면 loadData()에서 같이 채움 — 현재는 빈 상태로 동작)
 let GDB = {
-  accounts: [],            // { name, id, campaignName, setName } ← 구글참조 A,B,J,K열
+  accounts: [],            // { name, id, campaignName, setName, clinicName } ← 구글참조 A,B,J,K열
   staff: [],               // { name, id } ← 구글참조 L,M열
   googleRegions: [],       // { name, criterionId, refName } ← 구글참조 C,D,E열
   audiencesByAccount: {},  // { 계정명: [{name, id}] } ← 구글참조 F,H,I열
+  clinicNames: [],         // [치과명] ← 구글참조 K열 전체 목록
   youtubeChannelsByAccount: {}, // { 계정명: {channelName, channelId} } ← 구글참조 A,N,O열
 };
 
@@ -1377,6 +1385,12 @@ function gPopulateDropdowns() {
       regSel.innerHTML = '<option value="">선택</option>';
       GDB.googleRegions.forEach(r => { const o = document.createElement('option'); o.value = r.name; o.textContent = r.name; regSel.appendChild(o); });
     }
+    // 치과명 드롭다운 (K열 전체 목록)
+    const clinicSel = document.getElementById(`${t}_치과명`);
+    if (clinicSel) {
+      clinicSel.innerHTML = '<option value="">선택</option>';
+      GDB.clinicNames.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; clinicSel.appendChild(o); });
+    }
     gPopulateYoutubeChannels(t);
   });
 }
@@ -1393,27 +1407,16 @@ function gOnAccount(t) {
     const list = GDB.audiencesByAccount[name] || [];
     list.forEach(a => { const o = document.createElement('option'); o.value = a.id; o.textContent = a.name; audSel.appendChild(o); });
   }
-  // 치과명 드롭다운
-  const clinicSel = document.getElementById(`${t}_치과명`);
-  if (clinicSel) {
-    clinicSel.innerHTML = '<option value="">선택</option>';
-    if (acc && acc.clinicName) {
-      const o = document.createElement('option');
-      o.value = acc.clinicName;
-      o.textContent = acc.clinicName;
-      clinicSel.appendChild(o);
-      clinicSel.value = acc.clinicName;
-    }
-  }
   // YouTube 채널 자동 선택
   gPopulateYoutubeChannels(t);
   const ch = GDB.youtubeChannelsByAccount[name];
   const chSel = document.getElementById(`${t}_유튜브채널`);
   if (ch && chSel) {
     chSel.value = ch.channelId;
-    // 업체명 = YouTube 채널명
     const bizEl = document.getElementById(`${t}_업체명`);
     if (bizEl) bizEl.value = ch.channelName || '';
+  } else {
+    gOnYoutubeChannel(t);
   }
 }
 
@@ -1431,7 +1434,11 @@ function gToggleChip(input) {
 }
 
 function gOnYoutubeChannel(t) {
-  // select value가 channelId라서 gGetData에서 그대로 읽음
+  const sel = document.getElementById(`${t}_유튜브채널`);
+  if (!sel) return;
+  const selectedText = sel.options[sel.selectedIndex]?.text || '';
+  const bizEl = document.getElementById(`${t}_업체명`);
+  if (bizEl) bizEl.value = selectedText;
 }
 
 function gPopulateYoutubeChannels(t) {
