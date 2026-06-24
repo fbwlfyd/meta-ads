@@ -832,7 +832,7 @@ async function loadData() {
     // F(5)=잠재고객_계정명, G(6)=잠재고객_계정ID(resourceName), H(7)=잠재고객명, I(8)=잠재고객ID
 
     // 계정 목록 (구글참조 A, B열) + J,K열(캠페인명/세트명 prefix) + L,M열(사원명/ID)
-    GDB.accounts = parse(gRefRows, r => r[0] && r[1] ? { key: r[0], data: { name: r[0], id: r[1], campaignName: r[9] || '', setName: r[10] || '' } } : null);
+    GDB.accounts = parse(gRefRows, r => r[0] && r[1] ? { key: r[0], data: { name: r[0], id: r[1], campaignName: r[9] || '', setName: r[10] || '', clinicName: r[10] || '' } } : null);
 
     // 사원 목록 (구글참조 L,M열)
     GDB.staff = parse(gRefRows, r => r[11] ? { key: r[11], data: { name: r[11], id: r[12] || '' } } : null);
@@ -1393,31 +1393,31 @@ function gOnAccount(t) {
     const list = GDB.audiencesByAccount[name] || [];
     list.forEach(a => { const o = document.createElement('option'); o.value = a.id; o.textContent = a.name; audSel.appendChild(o); });
   }
-  // 치과명 드롭다운 (해당 계정의 K열 setName)
+  // 치과명 드롭다운
   const clinicSel = document.getElementById(`${t}_치과명`);
   if (clinicSel) {
     clinicSel.innerHTML = '<option value="">선택</option>';
-    if (acc && acc.setName) {
+    if (acc && acc.clinicName) {
       const o = document.createElement('option');
-      o.value = acc.setName;
-      o.textContent = acc.setName;
+      o.value = acc.clinicName;
+      o.textContent = acc.clinicName;
       clinicSel.appendChild(o);
-      clinicSel.value = acc.setName;
-      gOnClinic(t);
+      clinicSel.value = acc.clinicName;
     }
   }
   // YouTube 채널 자동 선택
   gPopulateYoutubeChannels(t);
   const ch = GDB.youtubeChannelsByAccount[name];
   const chSel = document.getElementById(`${t}_유튜브채널`);
-  if (ch && chSel) chSel.value = ch.channelId;
+  if (ch && chSel) {
+    chSel.value = ch.channelId;
+    // 업체명 = YouTube 채널명
+    const bizEl = document.getElementById(`${t}_업체명`);
+    if (bizEl) bizEl.value = ch.channelName || '';
+  }
 }
 
 function gOnClinic(t) {
-  const clinicName = document.getElementById(`${t}_치과명`)?.value || '';
-  // 업체명 자동 입력
-  const bizEl = document.getElementById(`${t}_업체명`);
-  if (bizEl) bizEl.value = clinicName;
   gAutoGenNames(t);
 }
 
