@@ -840,6 +840,12 @@ async function loadData() {
     // 지역 (구글참조 C, D, E열)
     GDB.googleRegions = parse(gRefRows, r => r[2] ? { key: r[2], data: { name: r[2], criterionId: r[3] || '', refName: r[4] || '' } } : null);
 
+    // 치과명(K열) → 줄인치과명(J열) 매핑
+    GDB.clinicToShortName = {};
+    gRefRows.slice(1).forEach(r => {
+      if (r[10] && r[9]) GDB.clinicToShortName[r[10]] = r[9];
+    });
+
     // 치과명 목록 (구글참조 K열, 중복 제거)
     const clinicSeen = new Set();
     GDB.clinicNames = [];
@@ -1346,12 +1352,13 @@ const G_WEBHOOKS = {
 
 // Google 참조 DB (참조시트에 컬럼 추가되면 loadData()에서 같이 채움 — 현재는 빈 상태로 동작)
 let GDB = {
-  accounts: [],            // { name, id, campaignName, setName, clinicName } ← 구글참조 A,B,J,K열
-  staff: [],               // { name, id } ← 구글참조 L,M열
-  googleRegions: [],       // { name, criterionId, refName } ← 구글참조 C,D,E열
-  audiencesByAccount: {},  // { 계정명: [{name, id}] } ← 구글참조 F,H,I열
-  clinicNames: [],         // [치과명] ← 구글참조 K열 전체 목록
-  youtubeChannelsByAccount: {}, // { 계정명: {channelName, channelId} } ← 구글참조 A,N,O열
+  accounts: [],
+  staff: [],
+  googleRegions: [],
+  audiencesByAccount: {},
+  clinicNames: [],
+  clinicToShortName: {},   // { 치과명(K열): 줄인치과명(J열) }
+  youtubeChannelsByAccount: {},
 };
 
 const gSelectedAccount = { g1: '', g2: '' };
@@ -1470,10 +1477,11 @@ function gAutoGenNames(t) {
   const refName = region ? (region.refName || '') : '';
   const staffId = staffObj ? staffObj.id : '';
   const seqLabel = t === 'g2' ? `${gNextSetNumber.g2}U` : '1U';
-  // 캠페인명: J열(campaignName) + 디맨드젠 + (날짜) + 제작자 + refName + 예비용
-  const campaignName = [acc.campaignName, '디맨드젠', date ? `(${date})` : '', staffName, refName, '예비용'].filter(Boolean).join(' ');
-  // 광고그룹명: K열(치과명=clinicName) + 임플란트 + refName + 1U + 사원ID
-  const clinicName = document.getElementById(`${t}_치과명`)?.value || acc.setName || '';
+  // 캠페인명: J열(줄인치과명) + 디맨드젠 + (날짜) + 제작자 + refName + 예비용
+  const clinicName = document.getElementById(`${t}_치과명`)?.value || '';
+  const shortName = GDB.clinicToShortName[clinicName] || acc.campaignName || '';
+  const campaignName = [shortName, '디맨드젠', date ? `(${date})` : '', staffName, refName, '예비용'].filter(Boolean).join(' ');
+  // 광고그룹명: K열(치과명) + 임플란트 + refName + 1U + 사원ID
   const groupName = [clinicName, '임플란트', refName, seqLabel, staffId].filter(Boolean).join(' ');
   if (t === 'g1') document.getElementById('g1_캠페인명').value = campaignName;
   document.getElementById(`${t}_광고그룹명`).value = groupName;
