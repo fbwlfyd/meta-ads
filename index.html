@@ -763,6 +763,12 @@ async function loadData() {
       }
     });
 
+    // 로고 파일ID (구글참조 R열=17: 채널명, S열=18: 파일ID)
+    GDB.logoByChannel = {};
+    gRefRows.slice(1).forEach(r => {
+      if (r[17] && r[18]) GDB.logoByChannel[r[17]] = r[18];
+    });
+
     const seenPages = new Set();
     DB.pages = []; DB.forms = [];
     for (let i = 1; i < pageRows.length; i++) {
@@ -1112,6 +1118,7 @@ let GDB = {
   clinicToShortName: {},
   youtubeChannelsByAccount: {},
   ctaTypes: [],  // ✅ 추가: CTA 버튼 목록 (구글참조 P열=label, Q열=value)
+  logoByChannel: {},  // 채널명 → 로고 파일ID (구글참조 R열=채널명, S열=파일ID)
 };
 
 const gSelectedAccount = { g1: '', g2: '' };
@@ -1192,6 +1199,9 @@ function gOnYoutubeChannel(t) {
   const sel = document.getElementById(`${t}_유튜브채널`); if (!sel) return;
   const selectedText = sel.options[sel.selectedIndex]?.text || '';
   const bizEl = document.getElementById(`${t}_업체명`); if (bizEl) bizEl.value = selectedText;
+  // 로고 파일ID 자동 세팅
+  if (!window._logoFileId) window._logoFileId = {};
+  window._logoFileId[t] = GDB.logoByChannel[selectedText] || '';
 }
 function gPopulateYoutubeChannels(t) {
   const sel = document.getElementById(`${t}_유튜브채널`); if (!sel) return;
@@ -1365,6 +1375,7 @@ function gGetData(t) {
     설명목록: gCollectTexts(t, 'desc'),
     업체명: g(`${t}_업체명`),
     CTA버튼: g(`${t}_CTA`),
+    로고파일ID: (window._logoFileId && window._logoFileId[t]) || '',
   };
   if (!isT2) {
     d.캠페인명 = g('g1_캠페인명'); d.캠페인목표 = 'LEADS';
