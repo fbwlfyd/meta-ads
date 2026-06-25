@@ -453,7 +453,7 @@
       <div class="section"><div class="sec-label">광고 텍스트</div>
         <div class="field"><label>최종 URL</label><input type="text" id="g1_최종URL" placeholder="https://..."></div>
         <div class="field"><label>광고제목 (헤드라인, 최대 5개)</label><div id="g1_headline_list"></div><button type="button" class="repeat-add" onclick="gAddTextBlock('g1','headline')">+ 광고제목 추가</button></div>
-        <div class="field"><label>긴 광고제목 (1개, 최대 90자)</label><input type="text" id="g1_긴광고제목" maxlength="90" placeholder="긴 광고 제목"></div>
+        <div class="field"><label>긴 광고제목 (1개, 최대 90자)</label><div class="repeat-block"><div class="repeat-block-head"><span class="repeat-block-title">긴 광고제목</span></div><input type="text" id="g1_긴광고제목" maxlength="90" placeholder="긴 광고 제목 입력 (최대 90자)" style="width:100%;height:40px;background:var(--white);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text1);font-family:inherit;font-size:13px;padding:0 12px;outline:none;"></div></div>
         <div class="field"><label>설명 (최대 5개)</label><div id="g1_desc_list"></div><button type="button" class="repeat-add" onclick="gAddTextBlock('g1','desc')">+ 설명 추가</button></div>
         <div class="field"><label>YouTube 채널</label>
           <select id="g1_유튜브채널" onchange="gOnYoutubeChannel('g1')">
@@ -552,7 +552,7 @@
       <div class="section"><div class="sec-label">광고 텍스트</div>
         <div class="field"><label>최종 URL</label><input type="text" id="g2_최종URL" placeholder="https://..."></div>
         <div class="field"><label>광고제목 (헤드라인, 최대 5개)</label><div id="g2_headline_list"></div><button type="button" class="repeat-add" onclick="gAddTextBlock('g2','headline')">+ 광고제목 추가</button></div>
-        <div class="field"><label>긴 광고제목 (1개, 최대 90자)</label><input type="text" id="g2_긴광고제목" maxlength="90" placeholder="긴 광고 제목"></div>
+        <div class="field"><label>긴 광고제목 (1개, 최대 90자)</label><div class="repeat-block"><div class="repeat-block-head"><span class="repeat-block-title">긴 광고제목</span></div><input type="text" id="g2_긴광고제목" maxlength="90" placeholder="긴 광고 제목 입력 (최대 90자)" style="width:100%;height:40px;background:var(--white);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text1);font-family:inherit;font-size:13px;padding:0 12px;outline:none;"></div></div>
         <div class="field"><label>설명 (최대 5개)</label><div id="g2_desc_list"></div><button type="button" class="repeat-add" onclick="gAddTextBlock('g2','desc')">+ 설명 추가</button></div>
         <div class="field"><label>YouTube 채널</label>
           <select id="g2_유튜브채널" onchange="gOnYoutubeChannel('g2')">
@@ -1062,7 +1062,7 @@ async function submitAd(t) {
       }
     }
     const res = await fetch(WEBHOOKS[t], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-    if (res.ok) { updateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중'); showToast(isT2?'세트 추가 요청 완료!':'광고 등록 요청 완료!', 'success'); clearForm(t); }
+    if (res.ok) { updateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중'); showToast(isT2?'세트 추가 요청 완료!':'광고 등록 요청 완료!', 'success'); }
     else { updateCard(t, idx, '실패', `HTTP ${res.status}`); showToast(`전송 실패 (${res.status})`, 'error'); }
   } catch (err) { updateCard(t, idx, '실패', '오류: ' + err.message); showToast('오류: ' + err.message, 'error'); }
   btn.disabled = false; btn.textContent = isT2 ? '세트 추가하기' : '광고 등록하기';
@@ -1168,7 +1168,7 @@ function gPopulateDropdowns() {
         o.textContent = c.label;
         ctaSel.appendChild(o);
       });
-      if (prev) ctaSel.value = prev;
+      ctaSel.value = prev || 'CONTACT_US';
     }
   });
 }
@@ -1330,7 +1330,7 @@ function gCollectVideos(t) {
       공개상태: 'unlisted',
       아동용: 'false',
     };
-  });
+  }).filter(v => v.파일ID && v.파일ID.trim() !== '');
 }
 function gCollectTexts(t, kind) {
   const listKey = kind === 'desc' ? 'desc_list' : 'headline_list';
@@ -1417,7 +1417,7 @@ async function gSubmitAd(t) {
   const idx = gAddCard(t, data);
   try {
     const res = await fetch(G_WEBHOOKS[t], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-    if (res.ok) { gUpdateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중'); showToast(isT2?'세트 추가 요청 완료!':'캠페인 등록 요청 완료!', 'success'); gClearForm(t); }
+    if (res.ok) { gUpdateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중'); showToast(isT2?'세트 추가 요청 완료!':'캠페인 등록 요청 완료!', 'success'); }
     else { gUpdateCard(t, idx, '실패', `HTTP ${res.status}`); showToast(`전송 실패 (${res.status})`, 'error'); }
   } catch (err) { gUpdateCard(t, idx, '실패', '오류: ' + err.message); showToast('오류: ' + err.message, 'error'); }
   btn.disabled = false; btn.textContent = isT2 ? '세트 추가하기' : '캠페인 등록하기';
@@ -1436,7 +1436,7 @@ function gClearForm(t) {
   const commonEl = document.getElementById(`${t}_video_common`); if (commonEl) { commonEl.checked = true; gToggleVideoCommon(t); }
   gAddTextBlock(t,'headline'); gAddTextBlock(t,'desc');
   ['최종URL','긴광고제목','업체명'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
-  const ctaEl = document.getElementById(`${t}_CTA`); if (ctaEl) ctaEl.value = '';
+  const ctaEl = document.getElementById(`${t}_CTA`); if (ctaEl) ctaEl.value = 'CONTACT_US';
   const chSel = document.getElementById(`${t}_유튜브채널`); if (chSel) chSel.value = 'UChg_3mq-CO2kFPkbXlTR3pw';
   ['광고계정ID','캠페인명','광고그룹명'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
   if (t === 'g1') { document.getElementById('g1_계정명').value = ''; document.getElementById('g1_시작일').value = new Date().toISOString().split('T')[0]; }
