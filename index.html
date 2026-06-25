@@ -1375,7 +1375,11 @@ function gGetData(t) {
     설명목록: gCollectTexts(t, 'desc'),
     업체명: g(`${t}_업체명`),
     CTA버튼: g(`${t}_CTA`),
-    로고파일ID: (window._logoFileId && window._logoFileId[t]) || '',
+    로고파일ID: (() => {
+      const sel = document.getElementById(`${t}_유튜브채널`);
+      const channelName = sel ? (sel.options[sel.selectedIndex]?.text || '') : '';
+      return GDB.logoByChannel[channelName] || '';
+    })(),
   };
   if (!isT2) {
     d.캠페인명 = g('g1_캠페인명'); d.캠페인목표 = 'LEADS';
