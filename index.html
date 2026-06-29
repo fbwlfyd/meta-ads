@@ -1263,6 +1263,8 @@ function gOnVideoFileMethod(blockId) {
   const method = block.querySelector('select').value;
   block.querySelector('[data-role="drive_wrap"]').style.display = method === 'drive' ? 'block' : 'none';
   block.querySelector('[data-role="upload_wrap"]').style.display = method === 'upload' ? 'block' : 'none';
+  // upload 선택 시 파일ID 초기화
+  if (method === 'upload') block.querySelector('[data-role="파일ID"]').value = '';
 }
 function gToggleVideoCommon(t) { gApplyVideoCommonState(t); gSyncVideoCommon(t); }
 function gApplyVideoCommonState(t) {
