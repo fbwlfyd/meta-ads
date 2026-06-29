@@ -785,7 +785,8 @@ function gShowCopySuggest(t, blockId, type) {
     const list = document.getElementById(t + '_desc_list');
     keyword = list?.children[0]?.querySelector('[data-role="text"]')?.value || '';
   } else if (type === 'longheadline') {
-    keyword = document.getElementById(t + '_긴광고제목')?.value || '';
+    const list = document.getElementById(t + '_longheadline_list');
+    keyword = list?.children[0]?.querySelector('[data-role="text"]')?.value || '';
   }
 
   const cached = gCopySuggestions[t][type] || [];
