@@ -115,11 +115,18 @@
   .toast.error { background: #1c1c1e; color: #fca5a5; }
   .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.2); border-top-color: currentColor; border-radius: 50%; animation: spin 0.6s linear infinite; flex-shrink: 0; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .repeat-block { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 10px; background: var(--bg); position: relative; }
-  .repeat-block-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .repeat-block { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 6px; background: var(--bg); position: relative; }
+  .repeat-block-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
   .repeat-block-title { font-size: 12px; font-weight: 600; color: var(--text2); }
   .repeat-remove { font-size: 12px; color: var(--text3); cursor: pointer; background: none; border: none; font-family: inherit; }
   .repeat-remove:hover { color: var(--red); }
+  .copy-suggest-wrap { position: relative; }
+  .copy-suggest-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--white); border: 1px solid var(--border2); border-radius: var(--radius-sm); box-shadow: 0 4px 16px rgba(0,0,0,0.1); z-index: 999; max-height: 280px; overflow-y: auto; display: none; }
+  .copy-suggest-dropdown.show { display: block; }
+  .copy-suggest-item { padding: 8px 12px; font-size: 12px; color: var(--text1); cursor: pointer; border-bottom: 1px solid var(--border); line-height: 1.4; }
+  .copy-suggest-item:last-child { border-bottom: none; }
+  .copy-suggest-item:hover { background: var(--blue-bg); color: var(--blue); }
+  .copy-suggest-loading { padding: 10px 12px; font-size: 12px; color: var(--text3); text-align: center; }
   .repeat-add { width: 100%; height: 36px; border: 1px dashed var(--border2); border-radius: var(--radius-sm); background: none; color: var(--text2); font-family: inherit; font-size: 12px; cursor: pointer; margin-bottom: 10px; }
   .repeat-add:hover { background: var(--bg); border-color: var(--g-red); color: var(--g-red); }
   .chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -696,6 +703,146 @@ function normalizeCell(val) {
   return val;
 }
 
+
+// ===== AI 카피 추천 =====
+let gCopySuggestions = { g1: [], g2: [] };
+let gCopySuggestTimer = null;
+let gLearnedCopies = []; // 구글 시트 T열에서 로드한 학습 카피
+
+async function gLoadLearnedCopies() {
+  try {
+    const rows = await fetchSheet('구글참조');
+    gLearnedCopies = rows.slice(1).map(r => r[19]).filter(Boolean); // T열=19
+  } catch(e) {}
+}
+
+async function gSaveCopies(copies) {
+  if (!copies || copies.length === 0) return;
+  try {
+    const token = await gDriveSignIn();
+    // 기존 T열 데이터 가져오기
+    const getRes = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/구글참조!T:T`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const getData = await getRes.json();
+    const existing = (getData.values || []).flat().filter(Boolean);
+    // 중복 제거하고 새 카피 추가
+    const newCopies = copies.filter(c => c && !existing.includes(c));
+    if (newCopies.length === 0) return;
+    const startRow = existing.length + 1;
+    await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/구글참조!T${startRow}:T${startRow + newCopies.length - 1}?valueInputOption=RAW`,
+      {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: newCopies.map(c => [c]) })
+      }
+    );
+    gLearnedCopies = [...existing, ...newCopies];
+  } catch(e) { console.warn('카피 저장 실패:', e); }
+}
+
+async function gGenerateCopySuggestions(t, keyword) {
+  if (!keyword || keyword.length < 4) return;
+  const dropdown = document.querySelector(`#suggest_${t}_headline_0 ~ .copy-suggest-dropdown`) ||
+    document.querySelector(`[id^="suggest_${t}_headline"]`);
+
+  // 먼저 학습된 카피에서 유사한 것 찾기
+  const learned = gLearnedCopies.filter(c => c && c.length > 0).slice(0, 5);
+
+  const listEl = document.getElementById(`${t}_headline_list`);
+  const dropdowns = listEl.querySelectorAll('.copy-suggest-dropdown');
+  dropdowns.forEach(d => {
+    d.innerHTML = '<div class="copy-suggest-loading">✨ AI 카피 생성 중...</div>';
+    d.classList.add('show');
+  });
+
+  try {
+    const learnedPrompt = learned.length > 0 ? `
+
+참고할 기존 우수 카피:
+${learned.map((c,i)=>`${i+1}. ${c}`).join('
+')}` : '';
+    
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: `치과 구글 디맨드젠 광고 헤드라인 카피를 10개 만들어줘. 각 카피는 최대 40자 이내.
+기준 카피: "${keyword}"${learnedPrompt}
+
+응답 형식: JSON 배열만. 예: ["카피1","카피2",...]
+다른 설명 없이 JSON만 응답해줘.`
+        }]
+      })
+    });
+    const data = await response.json();
+    const text = data.content?.[0]?.text || '[]';
+    const clean = text.replace(/```json|```/g, '').trim();
+    const suggestions = JSON.parse(clean);
+    gCopySuggestions[t] = suggestions;
+
+    dropdowns.forEach(d => {
+      d.innerHTML = suggestions.map(s =>
+        `<div class="copy-suggest-item" onclick="gSelectCopySuggest(this, '${t}')">${s}</div>`
+      ).join('');
+    });
+  } catch(e) {
+    dropdowns.forEach(d => {
+      d.innerHTML = '<div class="copy-suggest-loading">추천 생성 실패</div>';
+    });
+  }
+}
+
+function gShowCopySuggest(t, blockId) {
+  const block = document.getElementById(blockId);
+  if (!block) return;
+  const dropdown = document.getElementById(`suggest_${blockId}`);
+  if (!dropdown) return;
+
+  // 1번 헤드라인 값 가져오기
+  const list = document.getElementById(`${t}_headline_list`);
+  const firstInput = list?.children[0]?.querySelector('[data-role="text"]');
+  const keyword = firstInput?.value || '';
+
+  if (gCopySuggestions[t].length > 0) {
+    dropdown.innerHTML = gCopySuggestions[t].map(s =>
+      `<div class="copy-suggest-item" onclick="gSelectCopySuggest(this, '${t}')">${s}</div>`
+    ).join('');
+    dropdown.classList.add('show');
+  } else if (keyword.length >= 4) {
+    clearTimeout(gCopySuggestTimer);
+    gCopySuggestTimer = setTimeout(() => gGenerateCopySuggestions(t, keyword), 800);
+    dropdown.innerHTML = '<div class="copy-suggest-loading">✨ AI 카피 생성 중...</div>';
+    dropdown.classList.add('show');
+  }
+}
+
+function gHideCopySuggest(blockId) {
+  const dropdown = document.getElementById(`suggest_${blockId}`);
+  if (dropdown) dropdown.classList.remove('show');
+}
+
+function gSelectCopySuggest(el, t) {
+  const block = el.closest('.repeat-block');
+  if (!block) return;
+  const input = block.querySelector('[data-role="text"]');
+  if (input) input.value = el.textContent;
+  const dropdown = el.closest('.copy-suggest-dropdown');
+  if (dropdown) dropdown.classList.remove('show');
+}
+
+// 1번 헤드라인 입력 시 캐시 초기화 + 재생성 트리거
+function gOnFirstHeadlineInput(t) {
+  gCopySuggestions[t] = []; // 캐시 초기화
+  clearTimeout(gCopySuggestTimer);
+}
+
 async function loadData() {
   const bar = document.getElementById('syncBar');
   bar.className = 'sync-bar';
@@ -778,6 +925,7 @@ async function loadData() {
     }
 
     populateDropdowns();
+    gLoadLearnedCopies();
     const now = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
     bar.className = 'sync-bar ok';
     document.getElementById('syncMsg').textContent = `✓ 데이터 연동 완료 (${now}) — 계정 ${DB.accounts.length}개 · 페이지 ${DB.pages.length}개`;
@@ -1117,7 +1265,7 @@ async function gDriveSignIn() {
   return new Promise((resolve, reject) => {
     if (gDriveAccessToken) { resolve(gDriveAccessToken); return; }
     const popup = window.open(
-      `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GDRIVE_CLIENT_ID}&redirect_uri=${encodeURIComponent(location.origin + '/oauth2callback')}&response_type=token&scope=https://www.googleapis.com/auth/drive.file`,
+      `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GDRIVE_CLIENT_ID}&redirect_uri=${encodeURIComponent(location.origin + '/oauth2callback')}&response_type=token&scope=https://www.googleapis.com/auth/drive.file%20https://www.googleapis.com/auth/spreadsheets`,
       'googleAuth', 'width=500,height=600'
     );
     const handler = (e) => {
@@ -1286,7 +1434,8 @@ function gAutoGenNames(t) {
   const seqLabel = t === 'g2' ? `${gNextSetNumber.g2}U` : '1U';
   const clinicName = document.getElementById(`${t}_치과명`)?.value || '';
   const shortName = GDB.clinicToShortName[clinicName] || acc.campaignName || '';
-  const campaignName = [shortName, '디맨드젠', date ? `(${date})` : '', staffName, refName, '예비용'].filter(Boolean).join(' ');
+  const accNameLabel = gGetAccountName(t) ? `[${gGetAccountName(t)}]` : '';
+  const campaignName = [shortName, '디맨드젠', date ? `(${date})` : '', staffName, refName, accNameLabel, '예비용'].filter(Boolean).join(' ');
   const groupName = [clinicName, '임플란트', seqLabel, staffId].filter(Boolean).join(' ');
   if (t === 'g1') document.getElementById('g1_캠페인명').value = campaignName;
   document.getElementById(`${t}_광고그룹명`).value = groupName;
@@ -1323,6 +1472,19 @@ function gOnVideoFileMethod(blockId) {
   block.querySelector('[data-role="upload_wrap"]').style.display = method === 'upload' ? 'block' : 'none';
   // upload 선택 시 파일ID 초기화
   if (method === 'upload') block.querySelector('[data-role="파일ID"]').value = '';
+  // 1번 블록이면 나머지도 동일하게 변경
+  const list = block.parentElement;
+  if (list && list.children[0] === block) {
+    Array.from(list.children).forEach((b, i) => {
+      if (i === 0) return;
+      const sel = b.querySelector('select');
+      if (!sel) return;
+      sel.value = method;
+      b.querySelector('[data-role="drive_wrap"]').style.display = method === 'drive' ? 'block' : 'none';
+      b.querySelector('[data-role="upload_wrap"]').style.display = method === 'upload' ? 'block' : 'none';
+      if (method === 'upload') b.querySelector('[data-role="파일ID"]').value = '';
+    });
+  }
 }
 function gToggleVideoCommon(t) { gApplyVideoCommonState(t); gSyncVideoCommon(t); }
 function gApplyVideoCommonState(t) {
@@ -1369,7 +1531,13 @@ function gAddTextBlock(t, kind) {
   const maxLen = kind === 'desc' ? 90 : 40;
   const block = document.createElement('div');
   block.className = 'repeat-block'; block.id = id; block.dataset.kind = kind;
-  block.innerHTML = `<div class="repeat-block-head"><span class="repeat-block-title">${label} ${idx}</span><button type="button" class="repeat-remove" onclick="gRemoveBlock('${t}','${listKey}','${id}')">삭제</button></div><input type="text" data-role="text" maxlength="${maxLen}" placeholder="${label} 입력 (최대 ${maxLen}자)">`;
+  if (kind === 'headline' && idx === 1) {
+    block.innerHTML = `<div class="repeat-block-head"><span class="repeat-block-title">${label} ${idx}</span><button type="button" class="repeat-remove" onclick="gRemoveBlock('${t}','${listKey}','${id}')">삭제</button></div><input type="text" data-role="text" maxlength="${maxLen}" placeholder="${label} 입력 (최대 ${maxLen}자)" oninput="gOnFirstHeadlineInput('${t}')">`;
+  } else if (kind === 'headline' && idx > 1) {
+    block.innerHTML = `<div class="repeat-block-head"><span class="repeat-block-title">${label} ${idx}</span><button type="button" class="repeat-remove" onclick="gRemoveBlock('${t}','${listKey}','${id}')">삭제</button></div><div class="copy-suggest-wrap"><input type="text" data-role="text" maxlength="${maxLen}" placeholder="${label} 입력 (최대 ${maxLen}자)" onfocus="gShowCopySuggest('${t}','${id}')" oninput="gShowCopySuggest('${t}','${id}')" onblur="setTimeout(()=>gHideCopySuggest('${id}'),200)" autocomplete="off"><div class="copy-suggest-dropdown" id="suggest_${id}"></div></div>`;
+  } else {
+    block.innerHTML = `<div class="repeat-block-head"><span class="repeat-block-title">${label} ${idx}</span><button type="button" class="repeat-remove" onclick="gRemoveBlock('${t}','${listKey}','${id}')">삭제</button></div><input type="text" data-role="text" maxlength="${maxLen}" placeholder="${label} 입력 (최대 ${maxLen}자)">`;
+  }
   list.appendChild(block);
 }
 
@@ -1505,7 +1673,13 @@ async function gSubmitAd(t) {
   const idx = gAddCard(t, data);
   try {
     const res = await fetch(G_WEBHOOKS[t], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-    if (res.ok) { gUpdateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중'); showToast(isT2?'세트 추가 요청 완료!':'캠페인 등록 요청 완료!', 'success'); }
+    if (res.ok) {
+      gUpdateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중');
+      showToast(isT2?'세트 추가 요청 완료!':'캠페인 등록 요청 완료!', 'success');
+      // 사용된 카피 시트에 저장
+      const usedCopies = gCollectTexts(t, 'headline').concat(gCollectTexts(t, 'desc'));
+      gSaveCopies(usedCopies).catch(() => {});
+    }
     else { gUpdateCard(t, idx, '실패', `HTTP ${res.status}`); showToast(`전송 실패 (${res.status})`, 'error'); }
   } catch (err) { gUpdateCard(t, idx, '실패', '오류: ' + err.message); showToast('오류: ' + err.message, 'error'); }
   btn.disabled = false; btn.textContent = isT2 ? '세트 추가하기' : '캠페인 등록하기';
