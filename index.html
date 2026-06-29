@@ -460,7 +460,7 @@
       <div class="section"><div class="sec-label">광고 텍스트</div>
         <div class="field"><label>최종 URL</label><input type="text" id="g1_최종URL" placeholder="https://..."></div>
         <div class="field"><label>광고제목 (헤드라인, 최대 5개)</label><div id="g1_headline_list"></div><button type="button" class="repeat-add" onclick="gAddTextBlock('g1','headline')">+ 광고제목 추가</button></div>
-        <div class="field"><label>긴 광고제목 (1개, 최대 90자)</label><div class="repeat-block"><div class="repeat-block-head"><span class="repeat-block-title">긴 광고제목</span></div><input type="text" id="g1_긴광고제목" maxlength="90" placeholder="긴 광고 제목 입력 (최대 90자)" style="width:100%;height:40px;background:var(--white);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text1);font-family:inherit;font-size:13px;padding:0 12px;outline:none;"></div></div>
+        <div class="field"><label>긴 광고제목 (최대 5개, 최대 90자)</label><div id="g1_longheadline_list"></div><button type="button" class="repeat-add" onclick="gAddLongHeadlineBlock('g1')">+ 긴 광고제목 추가</button></div>
         <div class="field"><label>설명 (최대 5개)</label><div id="g1_desc_list"></div><button type="button" class="repeat-add" onclick="gAddTextBlock('g1','desc')">+ 설명 추가</button></div>
         <div class="field"><label>YouTube 채널</label>
           <select id="g1_유튜브채널" onchange="gOnYoutubeChannel('g1')">
@@ -559,7 +559,7 @@
       <div class="section"><div class="sec-label">광고 텍스트</div>
         <div class="field"><label>최종 URL</label><input type="text" id="g2_최종URL" placeholder="https://..."></div>
         <div class="field"><label>광고제목 (헤드라인, 최대 5개)</label><div id="g2_headline_list"></div><button type="button" class="repeat-add" onclick="gAddTextBlock('g2','headline')">+ 광고제목 추가</button></div>
-        <div class="field"><label>긴 광고제목 (1개, 최대 90자)</label><div class="repeat-block"><div class="repeat-block-head"><span class="repeat-block-title">긴 광고제목</span></div><input type="text" id="g2_긴광고제목" maxlength="90" placeholder="긴 광고 제목 입력 (최대 90자)" style="width:100%;height:40px;background:var(--white);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text1);font-family:inherit;font-size:13px;padding:0 12px;outline:none;"></div></div>
+        <div class="field"><label>긴 광고제목 (최대 5개, 최대 90자)</label><div id="g2_longheadline_list"></div><button type="button" class="repeat-add" onclick="gAddLongHeadlineBlock('g2')">+ 긴 광고제목 추가</button></div>
         <div class="field"><label>설명 (최대 5개)</label><div id="g2_desc_list"></div><button type="button" class="repeat-add" onclick="gAddTextBlock('g2','desc')">+ 설명 추가</button></div>
         <div class="field"><label>YouTube 채널</label>
           <select id="g2_유튜브채널" onchange="gOnYoutubeChannel('g2')">
@@ -705,7 +705,7 @@ function normalizeCell(val) {
 
 
 // ===== AI 카피 추천 =====
-let gCopySuggestions = { g1: [], g2: [] };
+let gCopySuggestions = { g1: { headline: [], desc: [], longheadline: [] }, g2: { headline: [], desc: [], longheadline: [] } };
 let gCopySuggestTimer = null;
 let gLearnedCopies = []; // 구글 시트 T열에서 로드한 학습 카피
 
@@ -743,76 +743,60 @@ async function gSaveCopies(copies) {
   } catch(e) { console.warn('카피 저장 실패:', e); }
 }
 
-async function gGenerateCopySuggestions(t, keyword) {
+async function gGenerateCopySuggestions(t, keyword, type, dropdownId) {
   if (!keyword || keyword.length < 4) return;
-  const dropdown = document.querySelector(`#suggest_${t}_headline_0 ~ .copy-suggest-dropdown`) ||
-    document.querySelector(`[id^="suggest_${t}_headline"]`);
+  const dropdown = document.getElementById(dropdownId);
+  if (!dropdown) return;
 
-  // 먼저 학습된 카피에서 유사한 것 찾기
-  const learned = gLearnedCopies.filter(c => c && c.length > 0).slice(0, 5);
-
-  const listEl = document.getElementById(`${t}_headline_list`);
-  const dropdowns = listEl.querySelectorAll('.copy-suggest-dropdown');
-  dropdowns.forEach(d => {
-    d.innerHTML = '<div class="copy-suggest-loading">✨ AI 카피 생성 중...</div>';
-    d.classList.add('show');
-  });
+  dropdown.innerHTML = '<div class="copy-suggest-loading">✨ AI 카피 생성 중...</div>';
+  dropdown.classList.add('show');
 
   try {
-    const learnedPrompt = learned.length > 0 ? '\n\n참고할 기존 우수 카피:\n' + learned.map((c,i)=>(i+1)+'. '+c).join('\n') : '';
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch(COPY_SUGGEST_WEBHOOK, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: `치과 구글 디맨드젠 광고 헤드라인 카피를 10개 만들어줘. 각 카피는 최대 40자 이내.
-기준 카피: "${keyword}"${learnedPrompt}
-
-응답 형식: JSON 배열만. 예: ["카피1","카피2",...]
-다른 설명 없이 JSON만 응답해줘.`
-        }]
-      })
+      body: JSON.stringify({ keyword, type })
     });
-    const data = await response.json();
-    const text = data.content?.[0]?.text || '[]';
+    const text = await res.text();
     const clean = text.replace(/```json|```/g, '').trim();
     const suggestions = JSON.parse(clean);
-    gCopySuggestions[t] = suggestions;
+    gCopySuggestions[t][type] = suggestions;
 
-    dropdowns.forEach(d => {
-      d.innerHTML = suggestions.map(s =>
-        `<div class="copy-suggest-item" onclick="gSelectCopySuggest(this, '${t}')">${s}</div>`
-      ).join('');
-    });
+    dropdown.innerHTML = suggestions.map(s =>
+      `<div class="copy-suggest-item" onclick="gSelectCopySuggest(this)">${s}</div>`
+    ).join('');
   } catch(e) {
-    dropdowns.forEach(d => {
-      d.innerHTML = '<div class="copy-suggest-loading">추천 생성 실패</div>';
-    });
+    dropdown.innerHTML = '<div class="copy-suggest-loading">추천 생성 실패</div>';
   }
 }
 
-function gShowCopySuggest(t, blockId) {
+function gShowCopySuggest(t, blockId, type) {
   const block = document.getElementById(blockId);
   if (!block) return;
-  const dropdown = document.getElementById(`suggest_${blockId}`);
+  const dropdown = document.getElementById('suggest_' + blockId);
   if (!dropdown) return;
 
-  // 1번 헤드라인 값 가져오기
-  const list = document.getElementById(`${t}_headline_list`);
-  const firstInput = list?.children[0]?.querySelector('[data-role="text"]');
-  const keyword = firstInput?.value || '';
+  // 해당 타입의 1번 값 가져오기
+  let keyword = '';
+  if (type === 'headline') {
+    const list = document.getElementById(t + '_headline_list');
+    keyword = list?.children[0]?.querySelector('[data-role="text"]')?.value || '';
+  } else if (type === 'desc') {
+    const list = document.getElementById(t + '_desc_list');
+    keyword = list?.children[0]?.querySelector('[data-role="text"]')?.value || '';
+  } else if (type === 'longheadline') {
+    keyword = document.getElementById(t + '_긴광고제목')?.value || '';
+  }
 
-  if (gCopySuggestions[t].length > 0) {
-    dropdown.innerHTML = gCopySuggestions[t].map(s =>
-      `<div class="copy-suggest-item" onclick="gSelectCopySuggest(this, '${t}')">${s}</div>`
+  const cached = gCopySuggestions[t][type] || [];
+  if (cached.length > 0) {
+    dropdown.innerHTML = cached.map(s =>
+      '<div class="copy-suggest-item" onclick="gSelectCopySuggest(this)">' + s + '</div>'
     ).join('');
     dropdown.classList.add('show');
   } else if (keyword.length >= 4) {
     clearTimeout(gCopySuggestTimer);
-    gCopySuggestTimer = setTimeout(() => gGenerateCopySuggestions(t, keyword), 800);
+    gCopySuggestTimer = setTimeout(() => gGenerateCopySuggestions(t, keyword, type, 'suggest_' + blockId), 800);
     dropdown.innerHTML = '<div class="copy-suggest-loading">✨ AI 카피 생성 중...</div>';
     dropdown.classList.add('show');
   }
@@ -823,10 +807,10 @@ function gHideCopySuggest(blockId) {
   if (dropdown) dropdown.classList.remove('show');
 }
 
-function gSelectCopySuggest(el, t) {
+function gSelectCopySuggest(el) {
   const block = el.closest('.repeat-block');
   if (!block) return;
-  const input = block.querySelector('[data-role="text"]');
+  const input = block.querySelector('[data-role="text"]') || block.querySelector('input[type="text"]');
   if (input) input.value = el.textContent;
   const dropdown = el.closest('.copy-suggest-dropdown');
   if (dropdown) dropdown.classList.remove('show');
@@ -834,7 +818,15 @@ function gSelectCopySuggest(el, t) {
 
 // 1번 헤드라인 입력 시 캐시 초기화 + 재생성 트리거
 function gOnFirstHeadlineInput(t) {
-  gCopySuggestions[t] = []; // 캐시 초기화
+  gCopySuggestions[t].headline = []; // 캐시 초기화
+  clearTimeout(gCopySuggestTimer);
+}
+function gOnFirstDescInput(t) {
+  gCopySuggestions[t].desc = [];
+  clearTimeout(gCopySuggestTimer);
+}
+function gOnFirstLongHeadlineInput(t) {
+  gCopySuggestions[t].longheadline = [];
   clearTimeout(gCopySuggestTimer);
 }
 
@@ -1251,6 +1243,7 @@ const G_WEBHOOKS = {
   g1: 'https://hook.eu1.make.com/feqfvpytm8fr92wgp1yha705vfnz944c',
   g2: 'https://hook.eu1.make.com/feqfvpytm8fr92wgp1yha705vfnz944c',
 };
+const COPY_SUGGEST_WEBHOOK = 'https://hook.eu1.make.com/m2o5gs9ms2iewctp68enxcs7ipesgneg';
 
 // 구글 드라이브 업로드 (upload 방식 영상용)
 const GDRIVE_CLIENT_ID = '907431503239-ijcprs8pppon0r7eh0q4nj5pvimpes9m.apps.googleusercontent.com';
@@ -1526,12 +1519,15 @@ function gAddTextBlock(t, kind) {
   const maxLen = kind === 'desc' ? 90 : 40;
   const block = document.createElement('div');
   block.className = 'repeat-block'; block.id = id; block.dataset.kind = kind;
-  if (kind === 'headline' && idx === 1) {
-    block.innerHTML = `<div class="repeat-block-head"><span class="repeat-block-title">${label} ${idx}</span><button type="button" class="repeat-remove" onclick="gRemoveBlock('${t}','${listKey}','${id}')">삭제</button></div><input type="text" data-role="text" maxlength="${maxLen}" placeholder="${label} 입력 (최대 ${maxLen}자)" oninput="gOnFirstHeadlineInput('${t}')">`;
-  } else if (kind === 'headline' && idx > 1) {
-    block.innerHTML = `<div class="repeat-block-head"><span class="repeat-block-title">${label} ${idx}</span><button type="button" class="repeat-remove" onclick="gRemoveBlock('${t}','${listKey}','${id}')">삭제</button></div><div class="copy-suggest-wrap"><input type="text" data-role="text" maxlength="${maxLen}" placeholder="${label} 입력 (최대 ${maxLen}자)" onfocus="gShowCopySuggest('${t}','${id}')" oninput="gShowCopySuggest('${t}','${id}')" onblur="setTimeout(function(){gHideCopySuggest('${id}')},200)" autocomplete="off"><div class="copy-suggest-dropdown" id="suggest_${id}"></div></div>`;
+  const removeBtn = `<button type="button" class="repeat-remove" onclick="gRemoveBlock('${t}','${listKey}','${id}')">삭제</button>`;
+  const head = `<div class="repeat-block-head"><span class="repeat-block-title">${label} ${idx}</span>${removeBtn}</div>`;
+  if ((kind === 'headline' || kind === 'desc') && idx === 1) {
+    const onInput = kind === 'headline' ? `gOnFirstHeadlineInput('${t}')` : `gOnFirstDescInput('${t}')`;
+    block.innerHTML = head + `<input type="text" data-role="text" maxlength="${maxLen}" placeholder="${label} 입력 (최대 ${maxLen}자)" oninput="${onInput}">`;
+  } else if (kind === 'headline' || kind === 'desc') {
+    block.innerHTML = head + `<div class="copy-suggest-wrap"><input type="text" data-role="text" maxlength="${maxLen}" placeholder="${label} 입력 (최대 ${maxLen}자)" onfocus="gShowCopySuggest('${t}','${id}','${kind}')" oninput="gShowCopySuggest('${t}','${id}','${kind}')" onblur="setTimeout(function(){gHideCopySuggest('${id}')},200)" autocomplete="off"><div class="copy-suggest-dropdown" id="suggest_${id}"></div></div>`;
   } else {
-    block.innerHTML = `<div class="repeat-block-head"><span class="repeat-block-title">${label} ${idx}</span><button type="button" class="repeat-remove" onclick="gRemoveBlock('${t}','${listKey}','${id}')">삭제</button></div><input type="text" data-role="text" maxlength="${maxLen}" placeholder="${label} 입력 (최대 ${maxLen}자)">`;
+    block.innerHTML = head + `<input type="text" data-role="text" maxlength="${maxLen}" placeholder="${label} 입력 (최대 ${maxLen}자)">`;
   }
   list.appendChild(block);
 }
@@ -1555,6 +1551,24 @@ function gCollectVideos(t) {
     };
   }).filter(v => v.파일ID && v.파일ID.trim() !== '');
 }
+let gLongHeadlineSeq = { g1: 0, g2: 0 };
+function gAddLongHeadlineBlock(t) {
+  const list = document.getElementById(`${t}_longheadline_list`);
+  if (list.children.length >= 5) { showToast('긴 광고제목은 최대 5개까지 추가할 수 있어요', 'error'); return; }
+  const seq = gLongHeadlineSeq[t]++;
+  const id = `${t}_longheadline_${seq}`;
+  const idx = list.children.length + 1;
+  const block = document.createElement('div');
+  block.className = 'repeat-block'; block.id = id; block.dataset.kind = 'longheadline';
+  const head = `<div class="repeat-block-head"><span class="repeat-block-title">긴 광고제목 ${idx}</span><button type="button" class="repeat-remove" onclick="gRemoveBlock('${t}','longheadline_list','${id}')">삭제</button></div>`;
+  if (idx === 1) {
+    block.innerHTML = head + `<input type="text" data-role="text" maxlength="90" placeholder="긴 광고 제목 입력 (최대 90자)" oninput="gOnFirstLongHeadlineInput('${t}')">`;
+  } else {
+    block.innerHTML = head + `<div class="copy-suggest-wrap"><input type="text" data-role="text" maxlength="90" placeholder="긴 광고 제목 입력 (최대 90자)" onfocus="gShowCopySuggest('${t}','${id}','longheadline')" oninput="gShowCopySuggest('${t}','${id}','longheadline')" onblur="setTimeout(function(){gHideCopySuggest('${id}')},200)" autocomplete="off"><div class="copy-suggest-dropdown" id="suggest_${id}"></div></div>`;
+  }
+  list.appendChild(block);
+}
+
 function gCollectTexts(t, kind) {
   const listKey = kind === 'desc' ? 'desc_list' : 'headline_list';
   const list = document.getElementById(`${t}_${listKey}`);
@@ -1594,7 +1608,11 @@ function gGetData(t) {
     영상목록: gCollectVideos(t).map(v => ({ ...v, 파일첨부: undefined })),
     최종URL: g(`${t}_최종URL`),
     광고제목목록: gCollectTexts(t, 'headline'),
-    긴광고제목: g(`${t}_긴광고제목`),
+    긴광고제목목록: (() => {
+      const list = document.getElementById(t + '_longheadline_list');
+      if (!list) return [g(t + '_긴광고제목')].filter(Boolean);
+      return Array.from(list.children).map(b => b.querySelector('[data-role="text"]')?.value || '').filter(Boolean);
+    })(),
     설명목록: gCollectTexts(t, 'desc'),
     업체명: g(`${t}_업체명`),
     CTA버튼: g(`${t}_CTA`),
@@ -1692,7 +1710,8 @@ function gClearForm(t) {
   gAddVideoBlock(t); gAddVideoBlock(t); gAddVideoBlock(t);
   const commonEl = document.getElementById(`${t}_video_common`); if (commonEl) { commonEl.checked = true; gToggleVideoCommon(t); }
   gAddTextBlock(t,'headline'); gAddTextBlock(t,'desc');
-  ['최종URL','긴광고제목','업체명'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
+  ['최종URL','업체명'].forEach(f => { const el = document.getElementById(t + '_' + f); if (el) el.value = ''; });
+  const longList = document.getElementById(t + '_longheadline_list'); if (longList) { longList.innerHTML = ''; gLongHeadlineSeq[t] = 0; gAddLongHeadlineBlock(t); }
   const ctaEl = document.getElementById(`${t}_CTA`); if (ctaEl) ctaEl.value = 'CONTACT_US';
   const chSel = document.getElementById(`${t}_유튜브채널`); if (chSel) chSel.value = 'UChg_3mq-CO2kFPkbXlTR3pw';
   ['광고계정ID','캠페인명','광고그룹명'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
@@ -1712,6 +1731,7 @@ function gClearForm(t) {
   const commonEl = document.getElementById(`${t}_video_common`);
   if (commonEl) { commonEl.checked = true; gToggleVideoCommon(t); }
   gAddTextBlock(t, 'headline'); gAddTextBlock(t, 'desc');
+  gAddLongHeadlineBlock(t);
   ['유형','날짜','제작자'].forEach(field => {
     const el = document.getElementById(`${t}_${field}`);
     if (el) { el.addEventListener('input', () => gAutoGenNames(t)); el.addEventListener('change', () => gAutoGenNames(t)); }
