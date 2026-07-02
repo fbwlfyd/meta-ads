@@ -267,7 +267,7 @@
     <div class="panel-body">
       <div class="campaign-id-box">
         <label>기존 캠페인 ID</label>
-        <input type="text" id="t2_캠페인ID" placeholder="캠페인 ID를 입력하세요">
+        <input type="text" id="t2_캠페인ID" placeholder="캠페인 ID를 입력하세요" oninput="onCampaignIdInput()">
       </div>
       <div class="section">
         <div class="sec-label">기본 정보</div>
@@ -578,6 +578,42 @@ function extractDriveId(el) {
 function toArray(str) {
   if (!str) return [];
   return str.split(',').map(s => s.trim()).filter(Boolean);
+}
+
+async function onCampaignIdInput() {
+  const campaignId = document.getElementById('t2_캠페인ID').value.trim();
+  if (!campaignId) return;
+
+  try {
+    const res = await fetch(`https://graph.facebook.com/v19.0/${campaignId}?fields=account_id&access_token=${META_ACCESS_TOKEN}`);
+    const data = await res.json();
+    if (data.error) { console.error('캠페인 조회 실패:', data.error.message); return; }
+
+    const accountId = data.account_id; // act_ 없는 숫자만
+    document.getElementById('t2_광고계정ID').value = accountId;
+
+    // 제외타겟 드롭다운 갱신 (계정ID 기준)
+    const sel = document.getElementById('t2_제외타겟');
+    sel.innerHTML = '<option value="">선택</option>';
+    selectedExcludes['t2'] = [];
+    renderExcludeTags('t2');
+    updateExcludeIds('t2');
+
+    const targets = DB.excludes.filter(e => e.accountId === accountId);
+    targets.forEach(x => {
+      const o = document.createElement('option');
+      o.value = x.name; o.dataset.id = x.targetId; o.textContent = x.name; sel.appendChild(o);
+    });
+
+    // 계정명도 자동으로 찾아서 세팅
+    const acc = DB.accounts.find(a => a.id === accountId);
+    if (acc) {
+      document.getElementById('t2_계정명').value = acc.name;
+      autoGenNames('t2');
+    }
+  } catch(err) {
+    console.error('캠페인 조회 오류:', err);
+  }
 }
 
 function onAccount(t) {
