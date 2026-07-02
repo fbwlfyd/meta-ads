@@ -589,10 +589,10 @@ async function onCampaignIdInput() {
     const data = await res.json();
     if (data.error) { console.error('캠페인 조회 실패:', data.error.message); return; }
 
-    const accountId = data.account_id; // act_ 없는 숫자만
+    const accountId = data.account_id;
     document.getElementById('t2_광고계정ID').value = accountId;
 
-    // 제외타겟 드롭다운 갱신 (계정ID 기준)
+    // 제외타겟 드롭다운 갱신
     const sel = document.getElementById('t2_제외타겟');
     sel.innerHTML = '<option value="">선택</option>';
     selectedExcludes['t2'] = [];
@@ -605,7 +605,7 @@ async function onCampaignIdInput() {
       o.value = x.name; o.dataset.id = x.targetId; o.textContent = x.name; sel.appendChild(o);
     });
 
-    // 계정명도 자동으로 찾아서 세팅
+    // 계정명 자동 세팅
     const acc = DB.accounts.find(a => a.id === accountId);
     if (acc) {
       document.getElementById('t2_계정명').value = acc.name;
@@ -775,32 +775,15 @@ function getData(t) {
         geoLocations = { cities: [{ key: regionKey }] };
       }
 
-      const ageMin = parseInt(g(`${t}_최소나이`)) || 35;
-      const ageMax = parseInt(g(`${t}_최대나이`)) || 65;
-      const langVal = g(`${t}_언어`).trim();
-      const langMap = { 'ko': 12, 'en': 6, 'ja': 11, 'zh': 20 };
-      const langCode = Number(langMap[langVal] || 12);
-
-      // 제외타겟 IDs
-      const excludeIds = selectedExcludes[t].map(e => e.id).filter(Boolean);
-
-      const targetingObj = {
-        age_min: 25,
-        age_max: 65,
-        age_range: [ageMin, ageMax],
+      return JSON.stringify({
+        age_min: parseInt(g(`${t}_최소나이`)) || 25,
+        age_max: parseInt(g(`${t}_최대나이`)) || 65,
         geo_locations: geoLocations,
         publisher_platforms: toArray(g(`${t}_노출위치1`)),
         facebook_positions: toArray(g(`${t}_페이스북지면`)),
         instagram_positions: toArray(g(`${t}_인스타지면`)),
-        locales: [langCode],
-      };
-
-      // 제외타겟 있을 때만 추가
-      if (excludeIds.length > 0) {
-        targetingObj.excluded_custom_audiences = excludeIds.map(id => ({ id }));
-      }
-
-      return JSON.stringify(targetingObj);
+        locales: [6]
+      });
     })(),
     광고명: g(`${t}_광고명`), 파일ID: g(`${t}_파일ID`),
     파일유형: (() => {
