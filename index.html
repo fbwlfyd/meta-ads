@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>광고 자동등록</title>
+<title>Meta 광고 자동등록</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -13,22 +13,15 @@
     --blue: #007aff; --blue-bg: #f0f6ff; --green: #34c759; --green-bg: #f0faf3;
     --red: #ff3b30; --red-bg: #fff5f5; --yellow-bg: #fffbf0; --yellow: #ff9500;
     --radius: 12px; --radius-sm: 8px;
-    --g-red: #ea4335; --g-red-bg: #fdecea; --g-red-border: #f6c6c1; --g-red-dark: #c5221f;
   }
   body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text1); height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-size: 14px; }
-  .topbar { height: 56px; background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 16px; flex-shrink: 0; overflow-x: auto; overflow-y: hidden; }
-  .topbar-brand { font-size: 15px; font-weight: 600; color: var(--text1); letter-spacing: -0.3px; margin-right: 4px; white-space: nowrap; flex-shrink: 0; }
-  .platform-tabs { display: flex; gap: 4px; background: var(--bg); border-radius: 10px; padding: 3px; flex-shrink: 0; }
-  .platform-tab { padding: 6px 14px; border: none; background: none; border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text2); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
-  .platform-tab.active.meta { background: var(--white); color: var(--blue); box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
-  .platform-tab.active.google { background: var(--white); color: var(--g-red); box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
-  .subtabs-group { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
-  .tab-btn { height: 56px; padding: 0 8px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text2); font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 6px; white-space: nowrap; flex-shrink: 0; }
+  .topbar { height: 56px; background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 24px; flex-shrink: 0; }
+  .topbar-brand { font-size: 15px; font-weight: 600; color: var(--text1); letter-spacing: -0.3px; margin-right: 8px; }
+  .tab-btn { height: 56px; padding: 0 4px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text2); font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
   .tab-btn:hover { color: var(--text1); }
   .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
-  .tab-btn.g-active { color: var(--g-red); border-bottom-color: var(--g-red); }
-  .tab-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.5; flex-shrink: 0; }
-  .tab-btn.active .tab-dot, .tab-btn.g-active .tab-dot { opacity: 1; }
+  .tab-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.5; }
+  .tab-btn.active .tab-dot { opacity: 1; }
   .sync-bar { height: 32px; background: var(--blue-bg); border-bottom: 1px solid #c8dffe; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; font-size: 12px; color: var(--blue); transition: all 0.3s; }
   .sync-bar.ok { background: var(--green-bg); border-bottom-color: #b6eac7; color: #1a7f4b; }
   .sync-bar.err { background: var(--red-bg); border-bottom-color: #ffc9c9; color: #c0392b; }
@@ -55,22 +48,15 @@
   .field select { background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23aeaeb2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 32px; cursor: pointer; }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .auto-tag { display: inline-flex; align-items: center; font-size: 10px; font-weight: 600; color: var(--blue); background: var(--blue-bg); padding: 2px 7px; border-radius: 20px; margin-left: 6px; }
-  .auto-tag.g { color: var(--g-red); background: var(--g-red-bg); }
   .divider { height: 1px; background: var(--border); margin: 4px 0 16px; }
   .campaign-id-box { background: var(--yellow-bg); border: 1px solid #ffe0a0; border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px; }
   .campaign-id-box label { display: block; font-size: 12px; font-weight: 600; color: var(--yellow); margin-bottom: 6px; }
   .campaign-id-box input { width: 100%; height: 40px; background: var(--white); border: 1px solid #ffe0a0; border-radius: var(--radius-sm); color: var(--text1); font-family: inherit; font-size: 13px; padding: 0 12px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
   .campaign-id-box input:focus { border-color: var(--yellow); box-shadow: 0 0 0 3px rgba(255,149,0,0.15); }
-  .campaign-id-box select { width: 100%; height: 40px; background: var(--white); border: 1px solid #ffe0a0; border-radius: var(--radius-sm); color: var(--text1); font-family: inherit; font-size: 13px; padding: 0 32px 0 12px; outline: none; appearance: none; -webkit-appearance: none; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23c2760a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
-  .campaign-id-box select:focus { border-color: var(--yellow); box-shadow: 0 0 0 3px rgba(255,149,0,0.15); }
-  .campaign-id-box .manual-toggle { display: inline-block; margin-top: 10px; font-size: 11px; font-weight: 500; color: #c2760a; text-decoration: underline; cursor: pointer; }
-  .campaign-id-box .manual-toggle:hover { color: var(--yellow); }
   .btn-primary { width: 100%; height: 48px; background: var(--blue); border: none; border-radius: var(--radius); color: white; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.15s; letter-spacing: -0.2px; }
   .btn-primary:hover { background: #0066dd; }
   .btn-primary:active { transform: scale(0.99); }
   .btn-primary:disabled { background: var(--border); color: var(--text3); cursor: not-allowed; transform: none; }
-  .btn-primary.g { background: var(--g-red); }
-  .btn-primary.g:hover { background: var(--g-red-dark); }
   .btn-ghost { width: 100%; height: 36px; background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text2); font-family: inherit; font-size: 13px; cursor: pointer; transition: all 0.15s; }
   .btn-ghost:hover { background: var(--bg); color: var(--text1); }
   .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
@@ -95,7 +81,6 @@
   .card-type { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
   .type-new { background: #eef4ff; color: #2563eb; }
   .type-add { background: var(--yellow-bg); color: #c2760a; }
-  .type-g-new { background: var(--g-red-bg); color: var(--g-red-dark); }
   .card-title { font-size: 14px; font-weight: 600; letter-spacing: -0.2px; }
   .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
   .badge-wait { background: #fff8ec; color: #b45309; }
@@ -110,8 +95,6 @@
   .card-result.fail { background: var(--red-bg); border-left-color: var(--red); color: #b91c1c; }
   .tab-panel { display: none; height: 100%; }
   .tab-panel.active { display: flex; }
-  .platform-panel { display: none; height: calc(100% - 32px); flex-direction: column; }
-  .platform-panel.active { display: flex; }
   .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(16px); padding: 12px 20px; border-radius: var(--radius); font-size: 13px; font-weight: 500; z-index: 9999; opacity: 0; transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1); pointer-events: none; white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,0.12); display: flex; align-items: center; gap: 8px; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   .toast.info { background: #1c1c1e; color: white; }
@@ -119,42 +102,14 @@
   .toast.error { background: #1c1c1e; color: #fca5a5; }
   .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.2); border-top-color: currentColor; border-radius: 50%; animation: spin 0.6s linear infinite; flex-shrink: 0; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .repeat-block { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 6px; background: var(--bg); position: relative; }
-  .repeat-block-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-  .repeat-block-title { font-size: 12px; font-weight: 600; color: var(--text2); }
-  .repeat-remove { font-size: 12px; color: var(--text3); cursor: pointer; background: none; border: none; font-family: inherit; }
-  .repeat-remove:hover { color: var(--red); }
-  .copy-suggest-wrap { position: relative; }
-  .copy-suggest-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--white); border: 1px solid var(--border2); border-radius: var(--radius-sm); box-shadow: 0 4px 16px rgba(0,0,0,0.1); z-index: 999; max-height: 280px; overflow-y: auto; display: none; }
-  .copy-suggest-dropdown.show { display: block; }
-  .copy-suggest-item { padding: 8px 12px; font-size: 12px; color: var(--text1); cursor: pointer; border-bottom: 1px solid var(--border); line-height: 1.4; }
-  .copy-suggest-item:last-child { border-bottom: none; }
-  .copy-suggest-item:hover { background: var(--blue-bg); color: var(--blue); }
-  .copy-suggest-loading { padding: 10px 12px; font-size: 12px; color: var(--text3); text-align: center; }
-  .repeat-add { width: 100%; height: 36px; border: 1px dashed var(--border2); border-radius: var(--radius-sm); background: none; color: var(--text2); font-family: inherit; font-size: 12px; cursor: pointer; margin-bottom: 10px; }
-  .repeat-add:hover { background: var(--bg); border-color: var(--g-red); color: var(--g-red); }
-  .chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border: 1px solid var(--border2); border-radius: 20px; font-size: 12px; cursor: pointer; user-select: none; background: var(--white); }
-  .chip input { display: none; }
-  .chip.checked { background: var(--g-red-bg); border-color: var(--g-red-border); color: var(--g-red-dark); font-weight: 600; }
 </style>
 </head>
 <body>
 
 <div class="topbar">
-  <span class="topbar-brand">광고 자동등록</span>
-  <div class="platform-tabs">
-    <button class="platform-tab active meta" id="platform-meta-btn" onclick="switchPlatform('meta')">Meta</button>
-    <button class="platform-tab google" id="platform-google-btn" onclick="switchPlatform('google')">Google</button>
-  </div>
-  <div class="subtabs-group" id="meta-subtabs">
-    <button class="tab-btn active" id="tab1-btn" onclick="switchTab(1)"><div class="tab-dot"></div> 광고 등록</button>
-    <button class="tab-btn" id="tab2-btn" onclick="switchTab(2)"><div class="tab-dot"></div> 세트 추가</button>
-  </div>
-  <div class="subtabs-group" id="google-subtabs" style="display:none;">
-    <button class="tab-btn g-active" id="gtab1-btn" onclick="switchGTab(1)"><div class="tab-dot"></div> 광고 등록</button>
-    <button class="tab-btn" id="gtab2-btn" onclick="switchGTab(2)"><div class="tab-dot"></div> 세트 추가</button>
-  </div>
+  <span class="topbar-brand">Meta 광고</span>
+  <button class="tab-btn active" id="tab1-btn" onclick="switchTab(1)"><div class="tab-dot"></div> 광고 등록</button>
+  <button class="tab-btn" id="tab2-btn" onclick="switchTab(2)"><div class="tab-dot"></div> 세트 추가</button>
 </div>
 
 <div class="sync-bar" id="syncBar">
@@ -164,13 +119,13 @@
   </div>
 </div>
 
-<!-- META -->
-<div class="platform-panel active" id="platform-meta-panel">
+<!-- 탭1 -->
 <div class="layout tab-panel active" id="tab1-panel">
   <div class="panel">
     <div class="panel-head"><h2>광고 등록</h2><p>새 캠페인 · 광고세트 · 광고 생성</p></div>
     <div class="panel-body">
-      <div class="section"><div class="sec-label">기본 정보</div>
+      <div class="section">
+        <div class="sec-label">기본 정보</div>
         <div class="field"><label>제작자</label><input type="text" id="t1_제작자" placeholder="이름 입력" oninput="autoGenNames('t1')"></div>
         <div class="row2">
           <div class="field"><label>날짜</label><input type="text" id="t1_날짜" placeholder="예: 260605" oninput="autoGenNames('t1')"></div>
@@ -178,29 +133,38 @@
         </div>
       </div>
       <div class="divider"></div>
-      <div class="section"><div class="sec-label">계정</div>
+      <div class="section">
+        <div class="sec-label">계정</div>
         <div class="field"><label>계정명</label><select id="t1_계정명" onchange="onAccount('t1')"><option value="">선택</option></select></div>
       </div>
       <div class="divider"></div>
-      <div class="section"><div class="sec-label">페이지</div>
+      <div class="section">
+        <div class="sec-label">페이지</div>
         <div class="field"><label>페이지</label><select id="t1_페이지" onchange="onPage('t1')"><option value="">선택</option></select></div>
         <div class="field"><label>인스타계정</label><select id="t1_인스타계정"></select></div>
       </div>
       <div class="divider"></div>
-      <div class="section"><div class="sec-label">타겟</div>
+      <div class="section">
+        <div class="sec-label">타겟</div>
         <div class="field"><label>지역구분자</label><select id="t1_지역구분자" onchange="onRegion('t1')"><option value="">선택</option></select></div>
-        <div class="field"><label>제외타겟</label>
-          <select id="t1_제외타겟" onchange="onExclude('t1')"><option value="">선택</option></select>
+        <div class="field">
+          <label>제외타겟</label>
+          <select id="t1_제외타겟" onchange="onExclude('t1')">
+            <option value="">선택</option>
+          </select>
           <div id="t1_제외타겟_tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>
         </div>
       </div>
       <div class="divider"></div>
-      <div class="section"><div class="sec-label">인스턴트양식</div>
+      <div class="section">
+        <div class="sec-label">인스턴트양식</div>
         <div class="field"><label>인스턴트양식</label><select id="t1_인스턴트양식" onchange="onForm('t1')"><option value="">페이지 선택 후 사용 가능</option></select></div>
       </div>
       <div class="divider"></div>
-      <div class="section"><div class="sec-label">광고 소재</div>
-        <div class="field"><label>파일 업로드 방식</label>
+      <div class="section">
+        <div class="sec-label">광고 소재</div>
+        <div class="field">
+          <label>파일 업로드 방식</label>
           <select id="t1_파일방식" onchange="onFileMethod('t1')">
             <option value="drive">Drive 파일ID</option>
             <option value="upload">직접 첨부</option>
@@ -225,7 +189,8 @@
         <div class="field"><label>CTA버튼</label><select id="t1_CTA버튼"></select></div>
       </div>
       <div class="divider"></div>
-      <div class="section"><div class="sec-label">캠페인 설정</div>
+      <div class="section">
+        <div class="sec-label">캠페인 설정</div>
         <div class="field"><label>광고계정 ID <span class="auto-tag">자동</span></label><input type="text" id="t1_광고계정ID" readonly placeholder="계정 선택 시 자동입력"></div>
         <div class="field"><label>캠페인명 <span class="auto-tag">자동</span></label><input type="text" id="t1_캠페인명" readonly placeholder="자동생성"></div>
         <div class="row2">
@@ -238,7 +203,8 @@
         </div>
       </div>
       <div class="divider"></div>
-      <div class="section"><div class="sec-label">광고세트 설정</div>
+      <div class="section">
+        <div class="sec-label">광고세트 설정</div>
         <div class="field"><label>광고세트명 <span class="auto-tag">자동</span></label><input type="text" id="t1_광고세트명" readonly placeholder="자동생성"></div>
         <div class="row2">
           <div class="field"><label>전환위치</label><select id="t1_전환위치"></select></div>
@@ -254,7 +220,7 @@
           <div class="field"><label>종료일</label><input type="date" id="t1_종료일"></div>
         </div>
         <div class="row2">
-          <div class="field"><label>최소나이</label><input type="number" id="t1_최소나이" value="35" min="1" max="65"></div>
+          <div class="field"><label>최소나이</label><input type="number" id="t1_최소나이" value="25" min="1" max="65"></div>
           <div class="field"><label>최대나이</label><input type="number" id="t1_최대나이" value="65" min="1" max="65"></div>
         </div>
         <div class="row2">
@@ -264,7 +230,8 @@
         <div class="field"><label>어드밴티지 타겟</label><input type="text" id="t1_어드밴티지타겟" value="0" readonly></div>
       </div>
       <div class="divider"></div>
-      <div class="section"><div class="sec-label">자동생성 값</div>
+      <div class="section">
+        <div class="sec-label">자동생성 값</div>
         <div class="field"><label>광고명 <span class="auto-tag">자동</span></label><input type="text" id="t1_광고명" readonly placeholder="세트명과 동일하게 자동생성"></div>
         <div class="row2">
           <div class="field"><label>페이지ID <span class="auto-tag">자동</span></label><input type="text" id="t1_페이지ID" readonly placeholder="자동입력"></div>
@@ -282,7 +249,10 @@
     </div>
   </div>
   <div class="main">
-    <div class="main-head"><div><h3>등록 현황</h3><p id="t1_count">등록된 광고가 없습니다</p></div><div class="live-pill"><div class="live-dot"></div>실시간</div></div>
+    <div class="main-head">
+      <div><h3>등록 현황</h3><p id="t1_count">등록된 광고가 없습니다</p></div>
+      <div class="live-pill"><div class="live-dot"></div>실시간</div>
+    </div>
     <div class="content">
       <div class="empty" id="t1_empty"><div class="empty-icon">📋</div><h4>아직 등록된 광고가 없어요</h4><p>왼쪽에서 광고 정보를 입력하세요</p></div>
       <div class="cards" id="t1_cards" style="display:none;"></div>
@@ -290,48 +260,56 @@
   </div>
 </div>
 
+<!-- 탭2 -->
 <div class="layout tab-panel" id="tab2-panel">
   <div class="panel">
     <div class="panel-head"><h2>세트 추가</h2><p>기존 캠페인에 광고세트 · 광고 추가</p></div>
     <div class="panel-body">
       <div class="campaign-id-box">
-        <label>기존 캠페인 불러오기</label>
-        <div class="copy-suggest-wrap">
-          <select id="t2_캠페인선택계정" onchange="onCampaignAccountSelect('t2')">
-            <option value="">계정을 선택하세요</option>
-          </select>
-          <div class="copy-suggest-dropdown" id="t2_캠페인목록" style="max-height:240px;"></div>
-        </div>
-        <div id="t2_캠페인명_display" style="margin-top:8px;font-size:12px;color:var(--text2);min-height:16px;"></div>
-        <span class="manual-toggle" onclick="toggleManualCampaignId('t2')">캠페인 ID를 직접 입력할래요</span>
-        <div id="t2_manual_wrap" style="display:none;margin-top:8px;">
-          <input type="text" id="t2_캠페인ID" placeholder="캠페인 ID를 입력하세요" onblur="onCampaignId('t2')">
-        </div>
+        <label>기존 캠페인 ID</label>
+        <input type="text" id="t2_캠페인ID" placeholder="캠페인 ID를 입력하세요">
       </div>
-      <div class="section"><div class="sec-label">기본 정보</div>
+      <div class="section">
+        <div class="sec-label">기본 정보</div>
         <div class="field"><label>제작자</label><input type="text" id="t2_제작자" placeholder="이름 입력" oninput="autoGenNames('t2')"></div>
-        <div class="field"><label>유형</label><input type="text" id="t2_유형" placeholder="예: 비용혜택" oninput="autoGenNames('t2')"></div>
+        <div class="row2">
+          <div class="field"><label>날짜</label><input type="text" id="t2_날짜" placeholder="예: 260605" oninput="autoGenNames('t2')"></div>
+          <div class="field"><label>유형</label><input type="text" id="t2_유형" placeholder="예: 비용혜택" oninput="autoGenNames('t2')"></div>
+        </div>
       </div>
       <div class="divider"></div>
-      <div class="section"><div class="sec-label">페이지</div>
+      <div class="section">
+        <div class="sec-label">계정</div>
+        <div class="field"><label>계정명</label><select id="t2_계정명" onchange="onAccount('t2')"><option value="">선택</option></select></div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="sec-label">페이지</div>
         <div class="field"><label>페이지</label><select id="t2_페이지" onchange="onPage('t2')"><option value="">선택</option></select></div>
         <div class="field"><label>인스타계정</label><select id="t2_인스타계정"></select></div>
       </div>
       <div class="divider"></div>
-      <div class="section"><div class="sec-label">타겟</div>
+      <div class="section">
+        <div class="sec-label">타겟</div>
         <div class="field"><label>지역구분자</label><select id="t2_지역구분자" onchange="onRegion('t2')"><option value="">선택</option></select></div>
-        <div class="field"><label>제외타겟</label>
-          <select id="t2_제외타겟" onchange="onExclude('t2')"><option value="">선택</option></select>
+        <div class="field">
+          <label>제외타겟</label>
+          <select id="t2_제외타겟" onchange="onExclude('t2')">
+            <option value="">선택</option>
+          </select>
           <div id="t2_제외타겟_tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>
         </div>
       </div>
       <div class="divider"></div>
-      <div class="section"><div class="sec-label">인스턴트양식</div>
+      <div class="section">
+        <div class="sec-label">인스턴트양식</div>
         <div class="field"><label>인스턴트양식</label><select id="t2_인스턴트양식" onchange="onForm('t2')"><option value="">페이지 선택 후 사용 가능</option></select></div>
       </div>
       <div class="divider"></div>
-      <div class="section"><div class="sec-label">광고 소재</div>
-        <div class="field"><label>파일 업로드 방식</label>
+      <div class="section">
+        <div class="sec-label">광고 소재</div>
+        <div class="field">
+          <label>파일 업로드 방식</label>
           <select id="t2_파일방식" onchange="onFileMethod('t2')">
             <option value="drive">Drive 파일ID</option>
             <option value="upload">직접 첨부</option>
@@ -356,7 +334,8 @@
         <div class="field"><label>CTA버튼</label><select id="t2_CTA버튼"></select></div>
       </div>
       <div class="divider"></div>
-      <div class="section"><div class="sec-label">광고세트 설정</div>
+      <div class="section">
+        <div class="sec-label">광고세트 설정</div>
         <div class="field"><label>광고계정 ID <span class="auto-tag">자동</span></label><input type="text" id="t2_광고계정ID" readonly placeholder="계정 선택 시 자동입력"></div>
         <div class="field"><label>광고세트명 <span class="auto-tag">자동</span></label><input type="text" id="t2_광고세트명" readonly placeholder="자동생성"></div>
         <div class="row2">
@@ -377,7 +356,7 @@
           <div class="field"><label>종료일</label><input type="date" id="t2_종료일"></div>
         </div>
         <div class="row2">
-          <div class="field"><label>최소나이</label><input type="number" id="t2_최소나이" value="35" min="1" max="65"></div>
+          <div class="field"><label>최소나이</label><input type="number" id="t2_최소나이" value="25" min="1" max="65"></div>
           <div class="field"><label>최대나이</label><input type="number" id="t2_최대나이" value="65" min="1" max="65"></div>
         </div>
         <div class="row2">
@@ -387,8 +366,8 @@
         <div class="field"><label>어드밴티지 타겟</label><input type="text" id="t2_어드밴티지타겟" value="0" readonly></div>
       </div>
       <div class="divider"></div>
-      <div class="section"><div class="sec-label">자동생성 값</div>
-        <div class="field"><label>계정명 <span class="auto-tag">자동</span></label><input type="text" id="t2_계정명_display" readonly placeholder="캠페인ID 입력 시 자동입력"></div>
+      <div class="section">
+        <div class="sec-label">자동생성 값</div>
         <div class="field"><label>광고명 <span class="auto-tag">자동</span></label><input type="text" id="t2_광고명" readonly placeholder="세트명과 동일하게 자동생성"></div>
         <div class="row2">
           <div class="field"><label>페이지ID <span class="auto-tag">자동</span></label><input type="text" id="t2_페이지ID" readonly placeholder="자동입력"></div>
@@ -406,233 +385,31 @@
     </div>
   </div>
   <div class="main">
-    <div class="main-head"><div><h3>추가 현황</h3><p id="t2_count">추가된 세트가 없습니다</p></div><div class="live-pill"><div class="live-dot"></div>실시간</div></div>
+    <div class="main-head">
+      <div><h3>추가 현황</h3><p id="t2_count">추가된 세트가 없습니다</p></div>
+      <div class="live-pill"><div class="live-dot"></div>실시간</div>
+    </div>
     <div class="content">
       <div class="empty" id="t2_empty"><div class="empty-icon">➕</div><h4>아직 추가된 세트가 없어요</h4><p>캠페인 ID와 세트 정보를 입력하세요</p></div>
       <div class="cards" id="t2_cards" style="display:none;"></div>
     </div>
   </div>
 </div>
-</div>
-
-<!-- GOOGLE -->
-<div class="platform-panel" id="platform-google-panel">
-<div class="layout tab-panel active" id="g-tab1-panel">
-  <div class="panel">
-    <div class="panel-head"><h2>Google 광고 등록</h2><p>디맨드젠 캠페인 · 광고그룹 · 광고 생성</p></div>
-    <div class="panel-body">
-      <div class="section"><div class="sec-label">기본 정보</div>
-        <div class="row2">
-          <div class="field"><label>제작자</label><input type="text" id="g1_제작자" placeholder="이름 입력" oninput="gAutoGenNames('g1')"></div>
-          <div class="field"><label>날짜</label><input type="text" id="g1_날짜" placeholder="예: 260605" oninput="gAutoGenNames('g1')"></div>
-        </div>
-        <div class="row2">
-          <div class="field"><label>계정명</label><select id="g1_계정명" onchange="gOnAccount('g1')"><option value="">선택</option></select></div>
-          <div class="field"><label>치과명</label><select id="g1_치과명" onchange="gOnClinic('g1')"><option value="">계정 선택 후 사용 가능</option></select></div>
-        </div>
-        <div class="field"><label>지역구분자</label><select id="g1_지역구분자" onchange="gOnRegion('g1')"><option value="">선택</option></select></div>
-      </div>
-      <div class="divider"></div>
-      <div class="section"><div class="sec-label">캠페인 설정</div>
-        <div class="row2">
-          <div class="field"><label>일일예산 (원)</label><input type="number" id="g1_일일예산" value="30000" step="1000" min="0"></div>
-          <div class="field"><label>기기</label>
-            <select id="g1_기기">
-              <option value="ALL" selected>전체 (컴퓨터+휴대전화)</option>
-              <option value="DESKTOP">컴퓨터만</option>
-              <option value="MOBILE">휴대전화만</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      <div class="divider"></div>
-      <div class="section"><div class="sec-label">광고그룹 설정</div>
-        <div class="field"><label>채널 (YouTube 고정 + 추가 선택)</label>
-          <div class="chip-group">
-            <label class="chip checked"><input type="checkbox" checked disabled> YouTube</label>
-            <label class="chip"><input type="checkbox" id="g1_ch_discover" onchange="gToggleChip(this)"> 둘러보기</label>
-            <label class="chip"><input type="checkbox" id="g1_ch_gmail" onchange="gToggleChip(this)"> Gmail</label>
-            <label class="chip"><input type="checkbox" id="g1_ch_display" onchange="gToggleChip(this)"> 디스플레이 네트워크</label>
-            <label class="chip"><input type="checkbox" id="g1_ch_maps" onchange="gToggleChip(this)"> 지도</label>
-          </div>
-        </div>
-        <div class="field"><label>잠재고객</label><select id="g1_잠재고객"><option value="">계정 선택 후 사용 가능</option></select></div>
-      </div>
-      <div class="divider"></div>
-      <div class="section">
-        <div class="sec-label" style="display:flex;align-items:center;justify-content:space-between;">
-          <span>영상 소재 (1~5개)</span>
-          <label style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--text2);text-transform:none;letter-spacing:0;cursor:pointer;">
-            <input type="checkbox" id="g1_video_common" onchange="gToggleVideoCommon('g1')"> 공통
-          </label>
-        </div>
-        <div id="g1_video_list"></div>
-        <button type="button" class="repeat-add" onclick="gAddVideoBlock('g1')">+ 영상 추가</button>
-      </div>
-      <div class="divider"></div>
-      <div class="section"><div class="sec-label">광고 텍스트</div>
-        <div class="field"><label>최종 URL</label><input type="text" id="g1_최종URL" placeholder="https://..."></div>
-        <div class="field"><label>광고제목 (헤드라인, 최대 5개)</label><div id="g1_headline_list"></div><button type="button" class="repeat-add" onclick="gAddTextBlock('g1','headline')">+ 광고제목 추가</button></div>
-        <div class="field"><label>긴 광고제목 (최대 5개, 최대 90자)</label><div id="g1_longheadline_list"></div><button type="button" class="repeat-add" onclick="gAddLongHeadlineBlock('g1')">+ 긴 광고제목 추가</button></div>
-        <div class="field"><label>설명 (최대 5개)</label><div id="g1_desc_list"></div><button type="button" class="repeat-add" onclick="gAddTextBlock('g1','desc')">+ 설명 추가</button></div>
-        <div class="field"><label>YouTube 채널</label>
-          <select id="g1_유튜브채널" onchange="gOnYoutubeChannel('g1')">
-            <option value="UChg_3mq-CO2kFPkbXlTR3pw">오늘의병원</option>
-          </select>
-        </div>
-        <div class="field"><label>CTA버튼</label>
-          <select id="g1_CTA">
-            <option value="">자동</option>
-          </select>
-        </div>
-      </div>
-      <div class="divider"></div>
-      <div class="section"><div class="sec-label">자동생성 / 고정 값</div>
-        <div class="field"><label>광고계정 ID(customerId) <span class="auto-tag g">자동</span></label><input type="text" id="g1_광고계정ID" readonly placeholder="계정 선택 시 자동입력"></div>
-        <div class="field"><label>캠페인명 <span class="auto-tag g">자동</span></label><input type="text" id="g1_캠페인명" readonly placeholder="자동생성"></div>
-        <div class="field"><label>광고그룹명 <span class="auto-tag g">자동</span></label><input type="text" id="g1_광고그룹명" readonly placeholder="자동생성"></div>
-        <div class="field"><label>업체명 <span class="auto-tag g">자동</span></label><input type="text" id="g1_업체명" readonly placeholder="치과명 선택 시 자동입력"></div>
-        <div class="row2">
-          <div class="field"><label>캠페인목표 <span class="auto-tag g">고정</span></label><input type="text" value="리드 (SUBMIT_LEAD_FORM)" readonly></div>
-          <div class="field"><label>언어 <span class="auto-tag g">고정</span></label><input type="text" value="한국어 (ko)" readonly></div>
-        </div>
-        <div class="row2">
-          <div class="field"><label>시작일 <span class="auto-tag g">자동: 오늘</span></label><input type="date" id="g1_시작일" readonly></div>
-          <div class="field"><label>종료일 <span class="auto-tag g">고정</span></label><input type="text" value="없음" readonly></div>
-        </div>
-        <div class="field"><label>타겟팅 최적화 <span class="auto-tag g">고정</span></label><input type="text" value="최적화 타겟팅 사용 / 연령·성별 요건 게재" readonly></div>
-      </div>
-    </div>
-    <div class="panel-foot">
-      <button class="btn-primary g" id="g1_submitBtn" onclick="gSubmitAd('g1')">캠페인 등록하기</button>
-      <button class="btn-ghost" onclick="gClearForm('g1')">초기화</button>
-    </div>
-  </div>
-  <div class="main">
-    <div class="main-head"><div><h3>등록 현황</h3><p id="g1_count">등록된 캠페인이 없습니다</p></div><div class="live-pill" style="color:var(--g-red);background:var(--g-red-bg);"><div class="live-dot" style="background:var(--g-red);"></div>실시간</div></div>
-    <div class="content">
-      <div class="empty" id="g1_empty"><div class="empty-icon">🟥</div><h4>아직 등록된 캠페인이 없어요</h4><p>왼쪽에서 캠페인 정보를 입력하세요</p></div>
-      <div class="cards" id="g1_cards" style="display:none;"></div>
-    </div>
-  </div>
-</div>
-
-<div class="layout tab-panel" id="g-tab2-panel">
-  <div class="panel">
-    <div class="panel-head"><h2>Google 세트 추가</h2><p>기존 캠페인에 광고그룹 · 광고 추가</p></div>
-    <div class="panel-body">
-      <div class="campaign-id-box">
-        <label>기존 캠페인 ID</label>
-        <input type="text" id="g2_캠페인ID" placeholder="캠페인 리소스 ID를 입력하세요" onblur="gOnCampaignId('g2')">
-        <div id="g2_캠페인명_display" style="margin-top:8px;font-size:12px;color:var(--text2);min-height:16px;"></div>
-      </div>
-      <div class="section"><div class="sec-label">기본 정보</div>
-        <div class="row2">
-          <div class="field"><label>제작자</label><input type="text" id="g2_제작자" placeholder="이름 입력" oninput="gAutoGenNames('g2')"></div>
-          <div class="field"><label>날짜</label><input type="text" id="g2_날짜" placeholder="예: 260605" oninput="gAutoGenNames('g2')"></div>
-        </div>
-        <div class="row2">
-          <div class="field"><label>계정명</label><select id="g2_계정명" onchange="gOnAccount('g2')"><option value="">선택</option></select></div>
-          <div class="field"><label>치과명</label><select id="g2_치과명" onchange="gOnClinic('g2')"><option value="">계정 선택 후 사용 가능</option></select></div>
-        </div>
-        <div class="field"><label>지역구분자</label><select id="g2_지역구분자" onchange="gOnRegion('g2')"><option value="">선택</option></select></div>
-      </div>
-      <div class="divider"></div>
-      <div class="section"><div class="sec-label">광고그룹 설정</div>
-        <div class="field"><label>채널 (YouTube 고정 + 추가 선택)</label>
-          <div class="chip-group">
-            <label class="chip checked"><input type="checkbox" checked disabled> YouTube</label>
-            <label class="chip"><input type="checkbox" id="g2_ch_discover" onchange="gToggleChip(this)"> 둘러보기</label>
-            <label class="chip"><input type="checkbox" id="g2_ch_gmail" onchange="gToggleChip(this)"> Gmail</label>
-            <label class="chip"><input type="checkbox" id="g2_ch_display" onchange="gToggleChip(this)"> 디스플레이 네트워크</label>
-            <label class="chip"><input type="checkbox" id="g2_ch_maps" onchange="gToggleChip(this)"> 지도</label>
-          </div>
-        </div>
-        <div class="field"><label>잠재고객</label><select id="g2_잠재고객"><option value="">계정 선택 후 사용 가능</option></select></div>
-        <div class="field"><label>기기</label>
-          <select id="g2_기기">
-            <option value="ALL" selected>전체 (컴퓨터+휴대전화)</option>
-            <option value="DESKTOP">컴퓨터만</option>
-            <option value="MOBILE">휴대전화만</option>
-          </select>
-        </div>
-      </div>
-      <div class="divider"></div>
-      <div class="section">
-        <div class="sec-label" style="display:flex;align-items:center;justify-content:space-between;">
-          <span>영상 소재 (1~5개)</span>
-          <label style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--text2);text-transform:none;letter-spacing:0;cursor:pointer;">
-            <input type="checkbox" id="g2_video_common" onchange="gToggleVideoCommon('g2')"> 공통
-          </label>
-        </div>
-        <div id="g2_video_list"></div>
-        <button type="button" class="repeat-add" onclick="gAddVideoBlock('g2')">+ 영상 추가</button>
-      </div>
-      <div class="divider"></div>
-      <div class="section"><div class="sec-label">광고 텍스트</div>
-        <div class="field"><label>최종 URL</label><input type="text" id="g2_최종URL" placeholder="https://..."></div>
-        <div class="field"><label>광고제목 (헤드라인, 최대 5개)</label><div id="g2_headline_list"></div><button type="button" class="repeat-add" onclick="gAddTextBlock('g2','headline')">+ 광고제목 추가</button></div>
-        <div class="field"><label>긴 광고제목 (최대 5개, 최대 90자)</label><div id="g2_longheadline_list"></div><button type="button" class="repeat-add" onclick="gAddLongHeadlineBlock('g2')">+ 긴 광고제목 추가</button></div>
-        <div class="field"><label>설명 (최대 5개)</label><div id="g2_desc_list"></div><button type="button" class="repeat-add" onclick="gAddTextBlock('g2','desc')">+ 설명 추가</button></div>
-        <div class="field"><label>YouTube 채널</label>
-          <select id="g2_유튜브채널" onchange="gOnYoutubeChannel('g2')">
-            <option value="UChg_3mq-CO2kFPkbXlTR3pw">오늘의병원</option>
-          </select>
-        </div>
-        <div class="field"><label>CTA버튼</label>
-          <select id="g2_CTA">
-            <option value="">자동</option>
-          </select>
-        </div>
-      </div>
-      <div class="divider"></div>
-      <div class="section"><div class="sec-label">자동생성 / 고정 값</div>
-        <div class="field"><label>광고계정 ID(customerId) <span class="auto-tag g">자동</span></label><input type="text" id="g2_광고계정ID" readonly placeholder="자동입력"></div>
-        <div class="field"><label>광고그룹명 <span class="auto-tag g">자동</span></label><input type="text" id="g2_광고그룹명" readonly placeholder="자동생성"></div>
-        <div class="field"><label>업체명 <span class="auto-tag g">자동</span></label><input type="text" id="g2_업체명" readonly placeholder="치과명 선택 시 자동입력"></div>
-        <div class="field"><label>계정명 <span class="auto-tag g">자동</span></label><input type="text" id="g2_계정명_display" readonly placeholder="캠페인ID 입력 시 자동입력"></div>
-        <div class="field"><label>언어 <span class="auto-tag g">고정</span></label><input type="text" value="한국어 (ko)" readonly></div>
-      </div>
-    </div>
-    <div class="panel-foot">
-      <button class="btn-primary g" id="g2_submitBtn" onclick="gSubmitAd('g2')">세트 추가하기</button>
-      <button class="btn-ghost" onclick="gClearForm('g2')">초기화</button>
-    </div>
-  </div>
-  <div class="main">
-    <div class="main-head"><div><h3>추가 현황</h3><p id="g2_count">추가된 세트가 없습니다</p></div><div class="live-pill" style="color:var(--g-red);background:var(--g-red-bg);"><div class="live-dot" style="background:var(--g-red);"></div>실시간</div></div>
-    <div class="content">
-      <div class="empty" id="g2_empty"><div class="empty-icon">🟥</div><h4>아직 추가된 세트가 없어요</h4><p>캠페인 ID와 세트 정보를 입력하세요</p></div>
-      <div class="cards" id="g2_cards" style="display:none;"></div>
-    </div>
-  </div>
-</div>
-</div>
 
 <div class="toast" id="toast"></div>
 
 <script>
 const SHEET_ID = '1SIyoXfGJ2jI824WUOAcjywrTdApaKEAqtxnG9dkSwqw';
+
+// ⚠️ 실제 Make 웹훅 URL로 교체
 const WEBHOOKS = {
   t1: 'https://hook.eu1.make.com/wgou4ekrp482asnvqh7i17wnhs7shwgm',
-  t2: 'https://hook.eu1.make.com/wgou4ekrp482asnvqh7i17wnhs7shwgm',
+  t2: 'https://hook.eu1.make.com/여기에_세트추가_토큰',
 };
+
+// ⚠️ Meta 액세스 토큰으로 교체
 const META_ACCESS_TOKEN = 'EAAQT68743nIBRlU3QvgOZAERtM4PXN6gnMzY773HpcCZA2lFs0xyw2fUI4tWeV9SBEthgEx18o3O3ZBREIdGZCx6rPCttbnty3SsRJQE1CTtkl6ULl8EAFw5fZCfhQQaCgRWyuuMu0Xkw5TBircZCW2qkOySKRgCKq5os8ceXZAlHRhhy1oGpZCtSfbM0ZAUqnQZDZD';
 
-let currentPlatform = 'meta';
-function switchPlatform(p) {
-  currentPlatform = p;
-  document.getElementById('platform-meta-btn').classList.toggle('active', p === 'meta');
-  document.getElementById('platform-google-btn').classList.toggle('active', p === 'google');
-  document.getElementById('platform-meta-panel').classList.toggle('active', p === 'meta');
-  document.getElementById('platform-google-panel').classList.toggle('active', p === 'google');
-  document.getElementById('meta-subtabs').style.display = p === 'meta' ? 'flex' : 'none';
-  document.getElementById('google-subtabs').style.display = p === 'google' ? 'flex' : 'none';
-}
-function switchGTab(n) {
-  if (currentPlatform !== 'google') switchPlatform('google');
-  [1,2].forEach(i => { document.getElementById(`gtab${i}-btn`).classList.toggle('g-active', i===n); document.getElementById(`g-tab${i}-panel`).classList.toggle('active', i===n); });
-}
 async function uploadImageToMeta(file, adAccountId) {
   const cleanId = String(adAccountId).replace('act_', '');
   const url = `https://graph.facebook.com/v19.0/act_${cleanId}/adimages`;
@@ -645,56 +422,11 @@ async function uploadImageToMeta(file, adAccountId) {
   const key = Object.keys(json.images)[0];
   return json.images[key].hash;
 }
-async function uploadVideoToMeta(file, adAccountId) {
-  const cleanId = String(adAccountId).replace('act_', '');
-  const url = `https://graph.facebook.com/v25.0/act_${cleanId}/advideos`;
-  const formData = new FormData();
-  formData.append('source', file);
-  formData.append('name', file.name);
-  formData.append('access_token', META_ACCESS_TOKEN);
-  const res = await fetch(url, { method: 'POST', body: formData });
-  if (!res.ok) throw new Error(`Meta 영상 업로드 실패: ${res.status}`);
-  const json = await res.json();
-  return json.id;
-}
-async function fetchCampaignInfo(campaignId) {
-  const url = `https://graph.facebook.com/v25.0/${campaignId}?fields=name,account_id&access_token=${META_ACCESS_TOKEN}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`캠페인 조회 실패: ${res.status}`);
-  const json = await res.json();
-  if (json.error) throw new Error(json.error.message);
-  return json;
-}
-async function fetchActiveCampaigns(accountId) {
-  const cleanId = String(accountId).replace('act_', '');
-  const statusFilter = encodeURIComponent(JSON.stringify(['ACTIVE']));
-  const url = `https://graph.facebook.com/v25.0/act_${cleanId}/campaigns?fields=id,name&effective_status=${statusFilter}&limit=200&access_token=${META_ACCESS_TOKEN}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`캠페인 목록 조회 실패: ${res.status}`);
-  const json = await res.json();
-  if (json.error) throw new Error(json.error.message);
-  return json.data || [];
-}
-async function fetchNextSetNumber(campaignId) {
-  const url = `https://graph.facebook.com/v25.0/${campaignId}/adsets?fields=name&limit=200&access_token=${META_ACCESS_TOKEN}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`광고세트 조회 실패: ${res.status}`);
-  const json = await res.json();
-  if (json.error) throw new Error(json.error.message);
-  const list = json.data || [];
-  let maxNum = 0;
-  list.forEach(item => {
-    const m = (item.name || '').match(/(\d+)A\s*$/);
-    if (m) { const n = parseInt(m[1], 10); if (n > maxNum) maxNum = n; }
-  });
-  return maxNum + 1;
-}
 
 let DB = {
   accounts: [], excludes: [], pages: [], forms: [], regions: [], staff: [],
   buyingTypes: [], objectives: [], destinations: [], optimizations: [],
   platforms: [], fbPositions: [], igPositions: [], ctaTypes: [], instaAccounts: [],
-  baseRegions: {},
 };
 
 async function fetchSheet(range) {
@@ -719,139 +451,17 @@ function parseCSV(text) {
 }
 
 function normalizeCell(val) {
+  // 앞에 작은따옴표 있으면 제거 (Sheets 텍스트 강제 저장 방식)
   if (val && val.startsWith("'")) return val.slice(1);
+  // 지수 표기법 숫자 → 정확한 정수 문자열로 변환
   if (/^-?[0-9]+\.?[0-9]*[eE][+\-]?[0-9]+$/.test(val)) {
-    try { return Number(val).toLocaleString('fullwide', {maximumFractionDigits: 0, useGrouping: false}); } catch(e) { return val; }
+    try {
+      return Number(val).toLocaleString('fullwide', {maximumFractionDigits: 0, useGrouping: false});
+    } catch(e) {
+      return val;
+    }
   }
   return val;
-}
-
-
-// ===== AI 카피 추천 =====
-let gCopySuggestions = { g1: { headline: [], desc: [], longheadline: [] }, g2: { headline: [], desc: [], longheadline: [] } };
-let gCopySuggestTimer = null;
-let gLearnedCopies = []; // 구글 시트 T열에서 로드한 학습 카피
-
-async function gLoadLearnedCopies() {
-  try {
-    const rows = await fetchSheet('구글참조');
-    gLearnedCopies = rows.slice(1).map(r => r[19]).filter(Boolean); // T열=19
-  } catch(e) {}
-}
-
-async function gSaveCopies(copies) {
-  if (!copies || copies.length === 0) return;
-  try {
-    const token = await gDriveSignIn();
-    // 기존 T열 데이터 가져오기
-    const getRes = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/구글참조!T:T`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    const getData = await getRes.json();
-    const existing = (getData.values || []).flat().filter(Boolean);
-    // 중복 제거하고 새 카피 추가
-    const newCopies = copies.filter(c => c && !existing.includes(c));
-    if (newCopies.length === 0) return;
-    const startRow = existing.length + 1;
-    await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/구글참조!T${startRow}:T${startRow + newCopies.length - 1}?valueInputOption=RAW`,
-      {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ values: newCopies.map(c => [c]) })
-      }
-    );
-    gLearnedCopies = [...existing, ...newCopies];
-  } catch(e) { console.warn('카피 저장 실패:', e); }
-}
-
-async function gGenerateCopySuggestions(t, keyword, type, dropdownId) {
-  if (!keyword || keyword.length < 4) return;
-  const dropdown = document.getElementById(dropdownId);
-  if (!dropdown) return;
-
-  dropdown.innerHTML = '<div class="copy-suggest-loading">✨ AI 카피 생성 중...</div>';
-  dropdown.classList.add('show');
-
-  try {
-    const res = await fetch(COPY_SUGGEST_WEBHOOK, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ keyword, type })
-    });
-    const text = await res.text();
-    const clean = text.replace(/```json|```/g, '').trim();
-    const suggestions = JSON.parse(clean);
-    gCopySuggestions[t][type] = suggestions;
-
-    dropdown.innerHTML = suggestions.map(s =>
-      `<div class="copy-suggest-item" onclick="gSelectCopySuggest(this)">${s}</div>`
-    ).join('');
-  } catch(e) {
-    dropdown.innerHTML = '<div class="copy-suggest-loading">추천 생성 실패</div>';
-  }
-}
-
-function gShowCopySuggest(t, blockId, type) {
-  const block = document.getElementById(blockId);
-  if (!block) return;
-  const dropdown = document.getElementById('suggest_' + blockId);
-  if (!dropdown) return;
-
-  // 해당 타입의 1번 값 가져오기
-  let keyword = '';
-  if (type === 'headline') {
-    const list = document.getElementById(t + '_headline_list');
-    keyword = list?.children[0]?.querySelector('[data-role="text"]')?.value || '';
-  } else if (type === 'desc') {
-    const list = document.getElementById(t + '_desc_list');
-    keyword = list?.children[0]?.querySelector('[data-role="text"]')?.value || '';
-  } else if (type === 'longheadline') {
-    const list = document.getElementById(t + '_longheadline_list');
-    keyword = list?.children[0]?.querySelector('[data-role="text"]')?.value || '';
-  }
-
-  const cached = gCopySuggestions[t][type] || [];
-  if (cached.length > 0) {
-    dropdown.innerHTML = cached.map(s =>
-      '<div class="copy-suggest-item" onclick="gSelectCopySuggest(this)">' + s + '</div>'
-    ).join('');
-    dropdown.classList.add('show');
-  } else if (keyword.length >= 4) {
-    clearTimeout(gCopySuggestTimer);
-    gCopySuggestTimer = setTimeout(() => gGenerateCopySuggestions(t, keyword, type, 'suggest_' + blockId), 800);
-    dropdown.innerHTML = '<div class="copy-suggest-loading">✨ AI 카피 생성 중...</div>';
-    dropdown.classList.add('show');
-  }
-}
-
-function gHideCopySuggest(blockId) {
-  const dropdown = document.getElementById(`suggest_${blockId}`);
-  if (dropdown) dropdown.classList.remove('show');
-}
-
-function gSelectCopySuggest(el) {
-  const block = el.closest('.repeat-block');
-  if (!block) return;
-  const input = block.querySelector('[data-role="text"]') || block.querySelector('input[type="text"]');
-  if (input) input.value = el.textContent;
-  const dropdown = el.closest('.copy-suggest-dropdown');
-  if (dropdown) dropdown.classList.remove('show');
-}
-
-// 1번 헤드라인 입력 시 캐시 초기화 + 재생성 트리거
-function gOnFirstHeadlineInput(t) {
-  gCopySuggestions[t].headline = []; // 캐시 초기화
-  clearTimeout(gCopySuggestTimer);
-}
-function gOnFirstDescInput(t) {
-  gCopySuggestions[t].desc = [];
-  clearTimeout(gCopySuggestTimer);
-}
-function gOnFirstLongHeadlineInput(t) {
-  gCopySuggestions[t].longheadline = [];
-  clearTimeout(gCopySuggestTimer);
 }
 
 async function loadData() {
@@ -859,11 +469,7 @@ async function loadData() {
   bar.className = 'sync-bar';
   document.getElementById('syncMsg').innerHTML = '<span>참조 데이터 불러오는 중...</span>';
   try {
-    const [refRows, pageRows, gRefRows] = await Promise.all([
-      fetchSheet('메타참조'),
-      fetchSheet('페이지_리드폼DB'),
-      fetchSheet('구글참조').catch(() => [['']])
-    ]);
+    const [refRows, pageRows] = await Promise.all([fetchSheet('참조'), fetchSheet('페이지_리드폼DB')]);
 
     const parse = (arr, keyFn, seen = new Set()) => {
       const result = [];
@@ -887,45 +493,6 @@ async function loadData() {
     DB.fbPositions = parse(refRows, r => r[35] ? { key: r[35], data: { value: r[35], label: r[36] } } : null);
     DB.igPositions = parse(refRows, r => r[38] ? { key: r[38], data: { value: r[38], label: r[39] } } : null);
     DB.ctaTypes = parse(refRows, r => r[41] ? { key: r[41], data: { value: r[41], label: r[42] } } : null);
-    DB.baseRegions = {};
-    refRows.slice(1).forEach(r => { if (r[1] && r[5]) DB.baseRegions[r[1]] = r[5]; });
-
-    GDB.accounts = parse(gRefRows, r => r[0] && r[1] ? { key: r[0], data: { name: r[0], id: r[1], campaignName: r[9] || '', setName: r[10] || '', clinicName: r[10] || '' } } : null);
-    GDB.staff = parse(gRefRows, r => r[11] ? { key: r[11], data: { name: r[11], id: r[12] || '' } } : null);
-    GDB.googleRegions = parse(gRefRows, r => r[2] ? { key: r[2], data: { name: r[2], criterionId: r[3] || '', refName: r[4] || '' } } : null);
-    GDB.clinicToShortName = {};
-    gRefRows.slice(1).forEach(r => { if (r[10] && r[9]) GDB.clinicToShortName[r[10]] = r[9]; });
-    const clinicSeen = new Set();
-    GDB.clinicNames = [];
-    gRefRows.slice(1).forEach(r => { if (r[10] && !clinicSeen.has(r[10])) { clinicSeen.add(r[10]); GDB.clinicNames.push(r[10]); } });
-    GDB.youtubeChannelsByAccount = {};
-    gRefRows.slice(1).forEach(r => {
-      const accName = r[0]; const chName = r[13]; const chId = r[14];
-      if (accName && chId) GDB.youtubeChannelsByAccount[accName] = { channelName: chName || '', channelId: chId };
-    });
-    gRefRows.slice(1).forEach(r => {
-      const accName = r[5]; const audName = r[7]; const audId = r[8];
-      if (accName && audName && audId) {
-        if (!GDB.audiencesByAccount[accName]) GDB.audiencesByAccount[accName] = [];
-        GDB.audiencesByAccount[accName].push({ name: audName, id: audId });
-      }
-    });
-
-    // ✅ CTA 목록 (구글참조 P열=15: 화면표시, Q열=16: API값)
-    GDB.ctaTypes = [];
-    const ctaSeen = new Set();
-    gRefRows.slice(1).forEach(r => {
-      if (r[15] && r[16] && !ctaSeen.has(r[16])) {
-        ctaSeen.add(r[16]);
-        GDB.ctaTypes.push({ label: r[15], value: r[16] });
-      }
-    });
-
-    // 로고 파일ID (구글참조 R열=채널명, S열=파일ID)
-    GDB.logoByChannel = {};
-    gRefRows.slice(1).forEach(r => {
-      if (r[17] && r[18]) GDB.logoByChannel[r[17]] = r[18];
-    });
 
     const seenPages = new Set();
     DB.pages = []; DB.forms = [];
@@ -936,7 +503,6 @@ async function loadData() {
     }
 
     populateDropdowns();
-    gLoadLearnedCopies();
     const now = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
     bar.className = 'sync-bar ok';
     document.getElementById('syncMsg').textContent = `✓ 데이터 연동 완료 (${now}) — 계정 ${DB.accounts.length}개 · 페이지 ${DB.pages.length}개`;
@@ -955,9 +521,9 @@ function populateDropdowns() {
       if (!sel) return;
       const prev = sel.value;
       sel.innerHTML = '<option value="">선택</option>';
-      selectedExcludes[t] = [];
-      renderExcludeTags(t);
-      updateExcludeIds(t);
+  selectedExcludes[t] = [];
+  renderExcludeTags(t);
+  updateExcludeIds(t);
       items.forEach(item => {
         const o = document.createElement('option');
         o.value = item[valKey || 'value']; o.textContent = item[labelKey || 'label'];
@@ -966,20 +532,27 @@ function populateDropdowns() {
       if (defaultVal) sel.value = defaultVal;
       else if (prev) sel.value = prev;
     };
+
+    // 계정명
     const accSel = document.getElementById(`${t}_계정명`);
-    if (accSel) {
-      accSel.innerHTML = '<option value="">선택</option>';
-      DB.accounts.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; accSel.appendChild(o); });
-    }
+    accSel.innerHTML = '<option value="">선택</option>';
+    DB.accounts.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; accSel.appendChild(o); });
+
+    // 페이지
     const pageSel = document.getElementById(`${t}_페이지`);
     pageSel.innerHTML = '<option value="">선택</option>';
     DB.pages.forEach(p => { const o = document.createElement('option'); o.value = p.name; o.textContent = p.name; pageSel.appendChild(o); });
+
+    // 지역구분자
     const regSel = document.getElementById(`${t}_지역구분자`);
     regSel.innerHTML = '<option value="">선택</option>';
     DB.regions.forEach(r => { const o = document.createElement('option'); o.value = r.name; o.textContent = r.name; regSel.appendChild(o); });
+
+    // 인스타계정
     const instaSel = document.getElementById(`${t}_인스타계정`);
     instaSel.innerHTML = '<option value="">선택 안함 (Facebook 페이지 사용)</option>';
     DB.instaAccounts.forEach(a => { const o = document.createElement('option'); o.value = a.id; o.textContent = a.name; instaSel.appendChild(o); });
+
     fill('전환위치', DB.destinations, 'value', 'label', 'ON_AD');
     fill('성과목표', DB.optimizations, 'value', 'label', 'LEAD_GENERATION');
     fill('노출위치1', DB.platforms, 'value', 'label', DB.platforms[0]?.value);
@@ -987,54 +560,12 @@ function populateDropdowns() {
     fill('인스타지면', DB.igPositions, 'value', 'label', DB.igPositions[0]?.value);
     fill('CTA버튼', DB.ctaTypes, 'value', 'label', 'LEARN_MORE');
   });
+
+  // 탭1만
   const buySel = document.getElementById('t1_구매유형');
   if (buySel) { buySel.innerHTML = ''; DB.buyingTypes.forEach(b => { const o = document.createElement('option'); o.value = b.value; o.textContent = b.label; if (b.value === 'AUCTION') o.selected = true; buySel.appendChild(o); }); }
   const objSel = document.getElementById('t1_캠페인목표');
   if (objSel) { objSel.innerHTML = ''; DB.objectives.forEach(ob => { const o = document.createElement('option'); o.value = ob.value; o.textContent = ob.label; if (ob.value === 'OUTCOME_LEADS') o.selected = true; objSel.appendChild(o); }); }
-  const campAccSel = document.getElementById('t2_캠페인선택계정');
-  if (campAccSel) {
-    const prev = campAccSel.value;
-    campAccSel.innerHTML = '<option value="">계정을 선택하세요</option>';
-    DB.accounts.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; campAccSel.appendChild(o); });
-    if (prev) campAccSel.value = prev;
-  }
-  if (typeof gPopulateDropdowns === 'function') gPopulateDropdowns();
-}
-
-async function onCampaignAccountSelect(t) {
-  const accName = document.getElementById(`${t}_캠페인선택계정`).value;
-  const listBox = document.getElementById(`${t}_캠페인목록`);
-  if (!listBox) return;
-  if (!accName) { listBox.classList.remove('show'); listBox.innerHTML = ''; return; }
-  const acc = DB.accounts.find(a => a.name === accName);
-  if (!acc || !acc.id) { showToast('선택한 계정의 광고계정 ID를 찾을 수 없어요', 'error'); return; }
-  listBox.innerHTML = '<div class="copy-suggest-loading">진행중인 캠페인 불러오는 중...</div>';
-  listBox.classList.add('show');
-  try {
-    const campaigns = await fetchActiveCampaigns(acc.id);
-    if (campaigns.length === 0) {
-      listBox.innerHTML = '<div class="copy-suggest-loading">진행중인(ACTIVE) 캠페인이 없어요</div>';
-      return;
-    }
-    listBox.innerHTML = campaigns.map(c =>
-      `<div class="copy-suggest-item" onclick="selectCampaignFromList('${t}','${c.id}')">${(c.name || '(이름 없음)').replace(/</g,'&lt;')}</div>`
-    ).join('');
-  } catch (err) {
-    listBox.innerHTML = `<div class="copy-suggest-loading">불러오기 실패: ${err.message}</div>`;
-  }
-}
-
-function selectCampaignFromList(t, campaignId) {
-  document.getElementById(`${t}_캠페인ID`).value = campaignId;
-  const listBox = document.getElementById(`${t}_캠페인목록`);
-  if (listBox) listBox.classList.remove('show');
-  onCampaignId(t);
-}
-
-function toggleManualCampaignId(t) {
-  const wrap = document.getElementById(`${t}_manual_wrap`);
-  if (!wrap) return;
-  wrap.style.display = (wrap.style.display === 'none' || !wrap.style.display) ? 'block' : 'none';
 }
 
 function extractDriveId(el) {
@@ -1042,20 +573,22 @@ function extractDriveId(el) {
   const match = val.match(/\/d\/([a-zA-Z0-9_-]+)/) || val.match(/id=([a-zA-Z0-9_-]+)/);
   if (match && match[1]) el.value = match[1];
 }
-function toArray(str) { if (!str) return []; return str.split(',').map(s => s.trim()).filter(Boolean); }
-const selectedAccount = { t1: '', t2: '' };
-function getAccountName(t) { if (t === 't1') return document.getElementById('t1_계정명').value; return selectedAccount.t2; }
-function setAccountName(t, name) {
-  if (t === 't1') { document.getElementById('t1_계정명').value = name; }
-  else { selectedAccount.t2 = name; document.getElementById('t2_계정명_display').value = name; }
+
+// 콤마로 구분된 문자열 → 배열 변환
+function toArray(str) {
+  if (!str) return [];
+  return str.split(',').map(s => s.trim()).filter(Boolean);
 }
+
 function onAccount(t) {
-  const name = getAccountName(t);
+  const name = document.getElementById(`${t}_계정명`).value;
   const acc = DB.accounts.find(a => a.name === name);
   document.getElementById(`${t}_광고계정ID`).value = acc ? acc.id : '';
   const sel = document.getElementById(`${t}_제외타겟`);
   sel.innerHTML = '<option value="">선택</option>';
-  selectedExcludes[t] = []; renderExcludeTags(t); updateExcludeIds(t);
+  selectedExcludes[t] = [];
+  renderExcludeTags(t);
+  updateExcludeIds(t);
   document.getElementById(`${t}_제외타겟ID`).value = '';
   autoGenNames(t);
   if (acc) {
@@ -1064,86 +597,86 @@ function onAccount(t) {
     });
   }
 }
-const nextSetNumber = { t2: 1 };
+
 function autoGenNames(t) {
-  const acc = DB.accounts.find(a => a.name === getAccountName(t));
+  const acc = DB.accounts.find(a => a.name === document.getElementById(`${t}_계정명`).value);
   if (!acc) return;
   const region = DB.regions.find(r => r.name === document.getElementById(`${t}_지역구분자`).value);
   const staffName = document.getElementById(`${t}_제작자`).value;
   const staffObj = DB.staff.find(s => s.name === staffName);
-  const dateEl = document.getElementById(`${t}_날짜`);
-  const date = dateEl ? dateEl.value : '';
+  const date = document.getElementById(`${t}_날짜`).value;
   const type = document.getElementById(`${t}_유형`).value;
   const refName = region ? (region.refName || '') : '';
   const staffId = staffObj ? staffObj.id : '';
-  const seqLabel = t === 't2' ? `${nextSetNumber.t2}A` : '1A';
   const campaignName = [acc.campaignName, acc.subjectName, type, date ? `(${date})` : '', staffName, refName, '예비용'].filter(Boolean).join(' ');
-  const setName = [acc.setName, acc.subjectName, type, refName, seqLabel, staffId].filter(Boolean).join(' ');
+  const setName = [acc.setName, acc.subjectName, type, refName, '1A', staffId].filter(Boolean).join(' ');
   if (t === 't1') document.getElementById('t1_캠페인명').value = campaignName;
   document.getElementById(`${t}_광고세트명`).value = setName;
   document.getElementById(`${t}_광고명`).value = setName;
 }
+
+// 선택된 제외타겟 저장소
 const selectedExcludes = { t1: [], t2: [] };
+
 function onExclude(t) {
   const sel = document.getElementById(`${t}_제외타겟`);
   const opt = sel.options[sel.selectedIndex];
   if (!opt || !opt.value) return;
-  if (selectedExcludes[t].find(e => e.name === opt.value)) { sel.value = ''; return; }
+
+  // 중복 체크
+  if (selectedExcludes[t].find(e => e.name === opt.value)) {
+    sel.value = '';
+    return;
+  }
+
+  // 추가
   selectedExcludes[t].push({ name: opt.value, id: opt.dataset.id || '' });
-  sel.value = ''; renderExcludeTags(t); updateExcludeIds(t);
+  sel.value = '';
+  renderExcludeTags(t);
+  updateExcludeIds(t);
 }
-function removeExclude(t, name) { selectedExcludes[t] = selectedExcludes[t].filter(e => e.name !== name); renderExcludeTags(t); updateExcludeIds(t); }
+
+function removeExclude(t, name) {
+  selectedExcludes[t] = selectedExcludes[t].filter(e => e.name !== name);
+  renderExcludeTags(t);
+  updateExcludeIds(t);
+}
+
 function renderExcludeTags(t) {
   const container = document.getElementById(`${t}_제외타겟_tags`);
-  container.innerHTML = selectedExcludes[t].map(e => `<span style="display:inline-flex;align-items:center;gap:4px;background:var(--blue-bg);color:var(--blue);border:1px solid #c8dffe;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:500;">${e.name}<span onclick="removeExclude('${t}', '${e.name}')" style="cursor:pointer;font-size:14px;line-height:1;color:var(--text3);">×</span></span>`).join('');
+  container.innerHTML = selectedExcludes[t].map(e => `
+    <span style="display:inline-flex;align-items:center;gap:4px;background:var(--blue-bg);color:var(--blue);border:1px solid #c8dffe;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:500;">
+      ${e.name}
+      <span onclick="removeExclude('${t}', '${e.name}')" style="cursor:pointer;font-size:14px;line-height:1;color:var(--text3);">×</span>
+    </span>
+  `).join('');
 }
-function updateExcludeIds(t) { document.getElementById(`${t}_제외타겟ID`).value = selectedExcludes[t].map(e => e.id).join(','); }
+
+function updateExcludeIds(t) {
+  document.getElementById(`${t}_제외타겟ID`).value = selectedExcludes[t].map(e => e.id).join(',');
+}
+
 function onPage(t) {
   const name = document.getElementById(`${t}_페이지`).value;
   const page = DB.pages.find(p => p.name === name);
   document.getElementById(`${t}_페이지ID`).value = page ? page.pageId : '';
   const sel = document.getElementById(`${t}_인스턴트양식`);
   sel.innerHTML = '<option value="">선택</option>';
-  selectedExcludes[t] = []; renderExcludeTags(t); updateExcludeIds(t);
+  selectedExcludes[t] = [];
+  renderExcludeTags(t);
+  updateExcludeIds(t);
   document.getElementById(`${t}_인스턴트양식ID`).value = '';
   DB.forms.filter(f => f.pageName === name).forEach(f => {
     const o = document.createElement('option'); o.value = f.formName; o.dataset.id = f.formId; o.textContent = f.formName; sel.appendChild(o);
   });
 }
+
 function onRegion(t) {
   autoGenNames(t);
   const region = DB.regions.find(r => r.name === document.getElementById(`${t}_지역구분자`).value);
   document.getElementById(`${t}_타겟국가`).value = region ? (region.id || '') : '';
 }
-async function onCampaignId(t) {
-  const campaignId = document.getElementById(`${t}_캠페인ID`).value.trim();
-  if (!campaignId) return;
-  showToast('캠페인 정보 조회 중...', 'info');
-  try {
-    const info = await fetchCampaignInfo(campaignId);
-    const accountId = info.account_id;
-    const campaignName = info.name || '';
-    const nameDisplay = document.getElementById(`${t}_캠페인명_display`);
-    if (nameDisplay) nameDisplay.textContent = campaignName ? `📌 ${campaignName}` : '';
-    if (t === 't2') {
-      try { nextSetNumber.t2 = await fetchNextSetNumber(campaignId); } catch (e) { nextSetNumber.t2 = 1; }
-    }
-    const acc = DB.accounts.find(a => a.id === accountId);
-    if (acc) { setAccountName(t, acc.name); onAccount(t); }
-    else { document.getElementById(`${t}_광고계정ID`).value = accountId || ''; }
-    const regionMatch = campaignName.match(/([가-힣]+)타겟/);
-    let regionName = '';
-    if (regionMatch) { regionName = regionMatch[1]; }
-    else if (accountId && DB.baseRegions[accountId]) { regionName = DB.baseRegions[accountId]; }
-    if (regionName) {
-      const regSel = document.getElementById(`${t}_지역구분자`);
-      const exists = Array.from(regSel.options).some(o => o.value === regionName);
-      if (exists) { regSel.value = regionName; onRegion(t); }
-    }
-    autoGenNames(t);
-    showToast('캠페인 정보를 불러왔어요', 'success');
-  } catch (err) { showToast('캠페인 조회 실패: ' + err.message, 'error'); }
-}
+
 function onDragOver(e, t) { e.preventDefault(); const dz = document.getElementById(`${t}_dropzone`); dz.style.borderColor = 'var(--blue)'; dz.style.background = 'var(--blue-bg)'; }
 function onDragLeave(e, t) { const dz = document.getElementById(`${t}_dropzone`); dz.style.borderColor = 'var(--border2)'; dz.style.background = 'var(--bg)'; }
 function onDrop(e, t) {
@@ -1164,15 +697,17 @@ function onForm(t) {
   const sel = document.getElementById(`${t}_인스턴트양식`); const opt = sel.options[sel.selectedIndex];
   document.getElementById(`${t}_인스턴트양식ID`).value = opt ? (opt.dataset.id || '') : '';
 }
+
 function switchTab(n) {
-  if (currentPlatform !== 'meta') switchPlatform('meta');
   [1,2].forEach(i => { document.getElementById(`tab${i}-btn`).classList.toggle('active', i===n); document.getElementById(`tab${i}-panel`).classList.toggle('active', i===n); });
 }
-function g(id) { const el = document.getElementById(id); return el ? el.value : ''; }
+
+function g(id) { return document.getElementById(id).value; }
+
 function getData(t) {
   const d = {
     제작자: g(`${t}_제작자`), 날짜: g(`${t}_날짜`), 유형: g(`${t}_유형`), 상태: '대기중',
-    계정명: getAccountName(t), 광고계정ID: g(`${t}_광고계정ID`),
+    계정명: g(`${t}_계정명`), 광고계정ID: g(`${t}_광고계정ID`),
     광고세트명: g(`${t}_광고세트명`), 전환위치: g(`${t}_전환위치`), 성과목표: g(`${t}_성과목표`), 세트예산: g(`${t}_세트예산`),
     페이지: g(`${t}_페이지`), 페이지ID: g(`${t}_페이지ID`), 인스타계정: g(`${t}_인스타계정`),
     시작일: g(`${t}_시작일`), 종료일: g(`${t}_종료일`),
@@ -1182,6 +717,7 @@ function getData(t) {
     제외타겟IDs: selectedExcludes[t].map(e => e.id).filter(Boolean),
     어드밴티지타겟: g(`${t}_어드밴티지타겟`), 언어: g(`${t}_언어`),
     최소나이: g(`${t}_최소나이`), 최대나이: g(`${t}_최대나이`), 성별: g(`${t}_성별`),
+    // ✅ targeting JSON 완성해서 전송
     노출위치1: toArray(g(`${t}_노출위치1`)),
     페이스북지면: toArray(g(`${t}_페이스북지면`)),
     인스타지면: toArray(g(`${t}_인스타지면`)),
@@ -1189,31 +725,54 @@ function getData(t) {
       const regionName = g(`${t}_지역구분자`);
       const regionKey = g(`${t}_타겟국가`);
       let geoLocations;
+
+      // 울주는 좌표 기반 타겟팅
       if (regionName === '울주') {
-        geoLocations = { custom_locations: [{ latitude: 35.4491, longitude: 129.1587, radius: 6, distance_unit: 'mile' }, { latitude: 35.5184, longitude: 129.0763, radius: 5, distance_unit: 'mile' }, { latitude: 35.5519, longitude: 129.0228, radius: 5, distance_unit: 'mile' }] };
-      } else { geoLocations = { cities: [{ key: regionKey }] }; }
+        geoLocations = {
+          custom_locations: [
+            { latitude: 35.4491, longitude: 129.1587, radius: 6, distance_unit: 'mile' },
+            { latitude: 35.5184, longitude: 129.0763, radius: 5, distance_unit: 'mile' },
+            { latitude: 35.5519, longitude: 129.0228, radius: 5, distance_unit: 'mile' }
+          ]
+        };
+      } else {
+        geoLocations = { cities: [{ key: regionKey }] };
+      }
+
       const ageMin = parseInt(g(`${t}_최소나이`)) || 35;
       const ageMax = parseInt(g(`${t}_최대나이`)) || 65;
       const langVal = g(`${t}_언어`).trim();
       const langMap = { 'ko': 12, 'en': 6, 'ja': 11, 'zh': 20 };
-      const langCode = langMap[langVal] || 12;
+      const langCode = Number(langMap[langVal] || 12);
+
+      // 제외타겟 IDs
       const excludeIds = selectedExcludes[t].map(e => e.id).filter(Boolean);
+
       const targetingObj = {
-        age_min: 25, age_max: 65, age_range: [ageMin, ageMax],
+        age_min: 25,
+        age_max: 65,
+        age_range: [ageMin, ageMax],
         geo_locations: geoLocations,
         publisher_platforms: toArray(g(`${t}_노출위치1`)),
         facebook_positions: toArray(g(`${t}_페이스북지면`)),
         instagram_positions: toArray(g(`${t}_인스타지면`)),
-        locales: [Number(langCode)],
-        targeting_automation: { advantage_audience: 1 },
+        locales: [langCode],
       };
-      if (excludeIds.length > 0) targetingObj.excluded_custom_audiences = excludeIds.map(id => ({ id }));
+
+      // 제외타겟 있을 때만 추가
+      if (excludeIds.length > 0) {
+        targetingObj.excluded_custom_audiences = excludeIds.map(id => ({ id }));
+      }
+
       return JSON.stringify(targetingObj);
     })(),
     광고명: g(`${t}_광고명`), 파일ID: g(`${t}_파일ID`),
     파일유형: (() => {
       const method = document.getElementById(`${t}_파일방식`).value;
-      if (method === 'upload') { const file = document.getElementById(`${t}_파일첨부`).files[0]; if (file) return file.type.startsWith('image/') ? '이미지' : '영상'; }
+      if (method === 'upload') {
+        const file = document.getElementById(`${t}_파일첨부`).files[0];
+        if (file) return file.type.startsWith('image/') ? '이미지' : '영상';
+      }
       return 'drive';
     })(),
     기본문구: g(`${t}_기본문구`), 제목: g(`${t}_제목`), 설명: g(`${t}_설명`), CTA버튼: g(`${t}_CTA버튼`),
@@ -1223,7 +782,9 @@ function getData(t) {
   else { d.캠페인ID = g('t2_캠페인ID'); }
   return d;
 }
+
 const rows = { t1: [], t2: [] };
+
 function addCard(t, data) {
   const idx = rows[t].length; rows[t].push(data);
   document.getElementById(`${t}_empty`).style.display = 'none';
@@ -1236,11 +797,13 @@ function addCard(t, data) {
   document.getElementById(`${t}_count`).textContent = `총 ${rows[t].length}${isT2?'개 세트 추가됨':'건 등록됨'}`;
   return idx;
 }
+
 function updateCard(t, idx, status, msg) {
   const badge = document.getElementById(`badge_${t}_${idx}`); const result = document.getElementById(`result_${t}_${idx}`);
   if (status === '완료') { badge.className = 'badge badge-done'; badge.textContent = '완료'; result.className = 'card-result success'; result.textContent = msg; }
   else { badge.className = 'badge badge-fail'; badge.textContent = '실패'; result.className = 'card-result fail'; result.textContent = msg; }
 }
+
 async function submitAd(t) {
   const data = getData(t); const isT2 = t === 't2';
   if (!data.계정명 || !data.광고세트명) { showToast('계정명과 광고세트명은 필수입니다', 'error'); return; }
@@ -1253,53 +816,40 @@ async function submitAd(t) {
     const method = document.getElementById(`${t}_파일방식`).value;
     const fileInput = document.getElementById(`${t}_파일첨부`);
     const hasFile = method === 'upload' && fileInput && fileInput.files.length > 0;
-    if (hasFile) {
-      const file = fileInput.files[0];
-      if (file.type.startsWith('image/')) {
-        showToast('이미지 업로드 중...', 'info');
-        data.이미지해시 = await uploadImageToMeta(file, data.광고계정ID); data.파일ID = '';
-      } else {
-        showToast('영상 업로드 중... 잠시 기다려주세요', 'info');
-        data.videoId = await uploadVideoToMeta(file, data.광고계정ID); data.파일ID = '';
-      }
-    }
+    if (hasFile) { showToast('이미지 업로드 중...', 'info'); data.이미지해시 = await uploadImageToMeta(fileInput.files[0], data.광고계정ID); data.파일ID = ''; }
     const res = await fetch(WEBHOOKS[t], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-    if (res.ok) { updateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중'); showToast(isT2?'세트 추가 요청 완료!':'광고 등록 요청 완료!', 'success'); }
+    if (res.ok) { updateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중'); showToast(isT2?'세트 추가 요청 완료!':'광고 등록 요청 완료!', 'success'); clearForm(t); }
     else { updateCard(t, idx, '실패', `HTTP ${res.status}`); showToast(`전송 실패 (${res.status})`, 'error'); }
   } catch (err) { updateCard(t, idx, '실패', '오류: ' + err.message); showToast('오류: ' + err.message, 'error'); }
   btn.disabled = false; btn.textContent = isT2 ? '세트 추가하기' : '광고 등록하기';
 }
+
 function clearForm(t) {
   ['제작자','날짜','유형','계정명','페이지','인스타계정','지역구분자','파일ID','기본문구','제목','설명','세트예산','시작일','종료일','언어'].forEach(field => { const el = document.getElementById(`${t}_${field}`); if (el) el.value = ''; });
   document.getElementById(`${t}_언어`).value = 'ko';
   const cb = document.getElementById(`${t}_캠페인예산`); if (cb) cb.value = 30000;
-  document.getElementById(`${t}_최소나이`).value = 35;
+  document.getElementById(`${t}_최소나이`).value = 25;
   document.getElementById(`${t}_최대나이`).value = 65;
   document.getElementById(`${t}_시작일`).value = new Date().toISOString().split('T')[0];
   document.getElementById(`${t}_타겟국가`).value = '';
   document.getElementById(`${t}_제외타겟`).innerHTML = '<option value="">선택</option>';
-  selectedExcludes[t] = []; renderExcludeTags(t); updateExcludeIds(t);
+  selectedExcludes[t] = [];
+  renderExcludeTags(t);
+  updateExcludeIds(t);
   document.getElementById(`${t}_인스턴트양식`).innerHTML = '<option value="">페이지 선택 후 사용 가능</option>';
   document.getElementById(`${t}_제외타겟ID`).value = '';
   const fi = document.getElementById(`${t}_파일첨부`); if (fi) fi.value = '';
   const dz = document.getElementById(`${t}_dropzone_text`); if (dz) dz.innerHTML = '📎 클릭하거나 파일을 여기에 드래그하세요<br><span style="font-size:11px;color:var(--text3);">이미지 · 영상 파일 지원</span>';
   ['광고계정ID','캠페인명','광고세트명','광고명','페이지ID','인스턴트양식ID'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
-  if (t === 't2') {
-    selectedAccount.t2 = ''; nextSetNumber.t2 = 1;
-    const accDisp = document.getElementById('t2_계정명_display'); if (accDisp) accDisp.value = '';
-    const campDisp = document.getElementById('t2_캠페인명_display'); if (campDisp) campDisp.textContent = '';
-    const campIdEl = document.getElementById('t2_캠페인ID'); if (campIdEl) campIdEl.value = '';
-    const campAccSel = document.getElementById('t2_캠페인선택계정'); if (campAccSel) campAccSel.value = '';
-    const campListBox = document.getElementById('t2_캠페인목록'); if (campListBox) { campListBox.classList.remove('show'); campListBox.innerHTML = ''; }
-    const manualWrap = document.getElementById('t2_manual_wrap'); if (manualWrap) manualWrap.style.display = 'none';
-  }
   populateDropdowns();
 }
+
 function showToast(msg, type='info') {
   const t = document.getElementById('toast'); t.className = `toast ${type} show`;
   t.innerHTML = type==='info' ? `<div class="spinner"></div>${msg}` : msg;
   clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 3000);
 }
+
 ['t1','t2'].forEach(t => {
   document.getElementById(`${t}_시작일`).value = new Date().toISOString().split('T')[0];
   ['유형','날짜','제작자'].forEach(field => {
@@ -1307,508 +857,6 @@ function showToast(msg, type='info') {
     if (el) { el.addEventListener('input', () => autoGenNames(t)); el.addEventListener('change', () => autoGenNames(t)); }
   });
 });
-
-/* ===================== GOOGLE 로직 ===================== */
-const G_WEBHOOKS = {
-  g1: 'https://hook.eu1.make.com/feqfvpytm8fr92wgp1yha705vfnz944c',
-  g2: 'https://hook.eu1.make.com/feqfvpytm8fr92wgp1yha705vfnz944c',
-};
-const COPY_SUGGEST_WEBHOOK = 'https://hook.eu1.make.com/m2o5gs9ms2iewctp68enxcs7ipesgneg';
-
-// 구글 드라이브 업로드 (upload 방식 영상용)
-const GDRIVE_CLIENT_ID = '907431503239-ijcprs8pppon0r7eh0q4nj5pvimpes9m.apps.googleusercontent.com';
-let gDriveAccessToken = null;
-
-async function gDriveSignIn() {
-  return new Promise((resolve, reject) => {
-    if (gDriveAccessToken) { resolve(gDriveAccessToken); return; }
-    const popup = window.open(
-      `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GDRIVE_CLIENT_ID}&redirect_uri=${encodeURIComponent(location.origin + '/oauth2callback')}&response_type=token&scope=https://www.googleapis.com/auth/drive.file%20https://www.googleapis.com/auth/spreadsheets`,
-      'googleAuth', 'width=500,height=600'
-    );
-    const handler = (e) => {
-      if (e.data && e.data.type === 'GOOGLE_TOKEN') {
-        window.removeEventListener('message', handler);
-        gDriveAccessToken = e.data.token;
-        resolve(gDriveAccessToken);
-      }
-    };
-    window.addEventListener('message', handler);
-    // fallback: token_hash 파싱
-    const timer = setInterval(() => {
-      try {
-        if (popup.closed) { clearInterval(timer); reject(new Error('로그인 창이 닫혔어요')); return; }
-        const hash = popup.location.hash;
-        if (hash && hash.includes('access_token')) {
-          clearInterval(timer);
-          const params = new URLSearchParams(hash.slice(1));
-          gDriveAccessToken = params.get('access_token');
-          popup.close();
-          resolve(gDriveAccessToken);
-        }
-      } catch(e) {}
-    }, 500);
-  });
-}
-
-async function uploadFileToDrive(file) {
-  const token = await gDriveSignIn();
-  const metadata = { name: file.name, mimeType: file.type };
-  const form = new FormData();
-  form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-  form.append('file', file);
-  const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
-    body: form
-  });
-  if (!res.ok) throw new Error(`드라이브 업로드 실패: ${res.status}`);
-  const json = await res.json();
-  // 공개 접근 권한 설정
-  await fetch(`https://www.googleapis.com/drive/v3/files/${json.id}/permissions`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ role: 'reader', type: 'anyone' })
-  });
-  return json.id;
-}
-
-let GDB = {
-  accounts: [],
-  staff: [],
-  googleRegions: [],
-  audiencesByAccount: {},
-  clinicNames: [],
-  clinicToShortName: {},
-  youtubeChannelsByAccount: {},
-  ctaTypes: [],  // ✅ 추가: CTA 버튼 목록 (구글참조 P열=label, Q열=value)
-  logoByChannel: {},  // 채널명 → 로고 파일ID (구글참조 R열=채널명, S열=파일ID)
-};
-
-const gSelectedAccount = { g1: '', g2: '' };
-const gNextSetNumber = { g2: 1 };
-
-function gGetAccountName(t) {
-  if (t === 'g1') return document.getElementById('g1_계정명').value;
-  const sel = document.getElementById('g2_계정명');
-  return sel ? sel.value : gSelectedAccount.g2;
-}
-function gSetAccountName(t, name) {
-  if (t === 'g1') document.getElementById('g1_계정명').value = name;
-  else {
-    gSelectedAccount.g2 = name;
-    const sel = document.getElementById('g2_계정명'); if (sel) sel.value = name;
-    const disp = document.getElementById('g2_계정명_display'); if (disp) disp.value = name;
-  }
-}
-
-function gPopulateDropdowns() {
-  ['g1','g2'].forEach(t => {
-    const accSel = document.getElementById(`${t}_계정명`);
-    if (accSel) {
-      accSel.innerHTML = '<option value="">선택</option>';
-      GDB.accounts.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; accSel.appendChild(o); });
-    }
-    const regSel = document.getElementById(`${t}_지역구분자`);
-    if (regSel) {
-      regSel.innerHTML = '<option value="">선택</option>';
-      GDB.googleRegions.forEach(r => { const o = document.createElement('option'); o.value = r.name; o.textContent = r.name; regSel.appendChild(o); });
-    }
-    const clinicSel = document.getElementById(`${t}_치과명`);
-    if (clinicSel) {
-      clinicSel.innerHTML = '<option value="">선택</option>';
-      GDB.clinicNames.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; clinicSel.appendChild(o); });
-    }
-    gPopulateYoutubeChannels(t);
-
-    // ✅ CTA 버튼 동적으로 채우기 (구글참조 P열=화면표시, Q열=API값)
-    const ctaSel = document.getElementById(`${t}_CTA`);
-    if (ctaSel) {
-      const prev = ctaSel.value;
-      ctaSel.innerHTML = '<option value="">자동</option>';
-      GDB.ctaTypes.forEach(c => {
-        const o = document.createElement('option');
-        o.value = c.value;
-        o.textContent = c.label;
-        ctaSel.appendChild(o);
-      });
-      ctaSel.value = prev || 'CONTACT_US';
-    }
-  });
-}
-
-function gOnAccount(t) {
-  const name = gGetAccountName(t);
-  const acc = GDB.accounts.find(a => a.name === name);
-  document.getElementById(`${t}_광고계정ID`).value = acc ? acc.id : '';
-  gAutoGenNames(t);
-  const audSel = document.getElementById(`${t}_잠재고객`);
-  if (audSel) {
-    audSel.innerHTML = '<option value="">선택 안함</option>';
-    const list = GDB.audiencesByAccount[name] || [];
-    list.forEach(a => { const o = document.createElement('option'); o.value = a.id; o.textContent = a.name; audSel.appendChild(o); });
-  }
-  gPopulateYoutubeChannels(t);
-  const ch = GDB.youtubeChannelsByAccount[name];
-  const chSel = document.getElementById(`${t}_유튜브채널`);
-  if (ch && chSel) {
-    chSel.value = ch.channelId;
-    const bizEl = document.getElementById(`${t}_업체명`); if (bizEl) bizEl.value = ch.channelName || '';
-  } else { gOnYoutubeChannel(t); }
-}
-function gOnClinic(t) { gAutoGenNames(t); }
-function gOnRegion(t) { gAutoGenNames(t); }
-function gToggleChip(input) { const chip = input.closest('.chip'); if (chip) chip.classList.toggle('checked', input.checked); }
-function gOnYoutubeChannel(t) {
-  const sel = document.getElementById(`${t}_유튜브채널`); if (!sel) return;
-  const selectedText = sel.options[sel.selectedIndex]?.text || '';
-  const bizEl = document.getElementById(`${t}_업체명`); if (bizEl) bizEl.value = selectedText;
-  // 로고 파일ID 자동 세팅
-  if (!window._logoFileId) window._logoFileId = {};
-  window._logoFileId[t] = GDB.logoByChannel[selectedText] || '';
-}
-function gPopulateYoutubeChannels(t) {
-  const sel = document.getElementById(`${t}_유튜브채널`); if (!sel) return;
-  const prev = sel.value;
-  sel.innerHTML = '<option value="UChg_3mq-CO2kFPkbXlTR3pw">오늘의병원</option>';
-  const seen = new Set(['UChg_3mq-CO2kFPkbXlTR3pw']);
-  Object.values(GDB.youtubeChannelsByAccount).forEach(ch => {
-    if (ch.channelId && !seen.has(ch.channelId)) {
-      seen.add(ch.channelId);
-      const o = document.createElement('option'); o.value = ch.channelId; o.textContent = ch.channelName || ch.channelId; sel.appendChild(o);
-    }
-  });
-  sel.value = prev || 'UChg_3mq-CO2kFPkbXlTR3pw';
-}
-function gAutoGenNames(t) {
-  const acc = GDB.accounts.find(a => a.name === gGetAccountName(t)); if (!acc) return;
-  const region = GDB.googleRegions.find(r => r.name === document.getElementById(`${t}_지역구분자`).value);
-  const staffName = document.getElementById(`${t}_제작자`).value;
-  const staffObj = GDB.staff.find(s => s.name === staffName);
-  const dateEl = document.getElementById(`${t}_날짜`);
-  const date = dateEl ? dateEl.value : '';
-  const refName = region ? (region.refName || '') : '';
-  const staffId = staffObj ? staffObj.id : '';
-  const seqLabel = t === 'g2' ? `${gNextSetNumber.g2}U` : '1U';
-  const clinicName = document.getElementById(`${t}_치과명`)?.value || '';
-  const shortName = GDB.clinicToShortName[clinicName] || acc.campaignName || '';
-  const accNameLabel = gGetAccountName(t) ? `[${gGetAccountName(t)}]` : '';
-  const campaignName = [shortName, '디맨드젠', date ? `(${date})` : '', staffName, refName, accNameLabel, '예비용'].filter(Boolean).join(' ');
-  const groupName = [clinicName, '임플란트', seqLabel, staffId].filter(Boolean).join(' ');
-  if (t === 'g1') document.getElementById('g1_캠페인명').value = campaignName;
-  document.getElementById(`${t}_광고그룹명`).value = groupName;
-}
-async function gOnCampaignId(t) {
-  const campaignId = document.getElementById(`${t}_캠페인ID`).value.trim(); if (!campaignId) return;
-  const nameDisplay = document.getElementById(`${t}_캠페인명_display`);
-  if (nameDisplay) nameDisplay.textContent = '📌 캠페인 조회는 Make 연동 후 자동화됩니다. 계정을 직접 선택해주세요.';
-}
-
-let gVideoBlockSeq = { g1: 0, g2: 0 };
-function gAddVideoBlock(t) {
-  const list = document.getElementById(`${t}_video_list`);
-  if (list.children.length >= 5) { showToast('영상은 최대 5개까지 추가할 수 있어요', 'error'); return; }
-  const id = `${t}_video_${gVideoBlockSeq[t]++}`;
-  const idx = list.children.length + 1;
-  const block = document.createElement('div');
-  block.className = 'repeat-block'; block.id = id;
-  block.innerHTML = `
-    <div class="repeat-block-head"><span class="repeat-block-title">영상 ${idx}</span><button type="button" class="repeat-remove" onclick="gRemoveBlock('${t}','video_list','${id}')">삭제</button></div>
-    <div class="field"><label>파일 업로드 방식</label><select onchange="gOnVideoFileMethod('${id}')"><option value="drive">Drive 파일ID</option><option value="upload">직접 첨부</option></select></div>
-    <div class="field" data-role="drive_wrap"><label>파일ID (Google Drive)</label><input type="text" data-role="파일ID" placeholder="Drive 전체 링크 복사 후 붙여넣기" oninput="extractDriveId(this)"></div>
-    <div class="field" data-role="upload_wrap" style="display:none;"><label>파일 첨부</label><input type="file" data-role="파일첨부" accept="video/*"></div>
-    <div class="field" data-role="title_wrap"><label>YouTube 제목</label><input type="text" data-role="유튜브제목" placeholder="YouTube 영상 제목" oninput="gSyncVideoCommon('${t}')"></div>
-    <div class="field" data-role="desc_wrap"><label>YouTube 설명</label><textarea data-role="유튜브설명" placeholder="#shorts 등 설명/해시태그" oninput="gSyncVideoCommon('${t}')"></textarea></div>
-  `;
-  list.appendChild(block);
-  gApplyVideoCommonState(t);
-}
-function gOnVideoFileMethod(blockId) {
-  const block = document.getElementById(blockId);
-  const method = block.querySelector('select').value;
-  block.querySelector('[data-role="drive_wrap"]').style.display = method === 'drive' ? 'block' : 'none';
-  block.querySelector('[data-role="upload_wrap"]').style.display = method === 'upload' ? 'block' : 'none';
-  // upload 선택 시 파일ID 초기화
-  if (method === 'upload') block.querySelector('[data-role="파일ID"]').value = '';
-  // 1번 블록이면 나머지도 동일하게 변경
-  const list = block.parentElement;
-  if (list && list.children[0] === block) {
-    Array.from(list.children).forEach((b, i) => {
-      if (i === 0) return;
-      const sel = b.querySelector('select');
-      if (!sel) return;
-      sel.value = method;
-      b.querySelector('[data-role="drive_wrap"]').style.display = method === 'drive' ? 'block' : 'none';
-      b.querySelector('[data-role="upload_wrap"]').style.display = method === 'upload' ? 'block' : 'none';
-      if (method === 'upload') b.querySelector('[data-role="파일ID"]').value = '';
-    });
-  }
-}
-function gToggleVideoCommon(t) { gApplyVideoCommonState(t); gSyncVideoCommon(t); }
-function gApplyVideoCommonState(t) {
-  const isCommon = document.getElementById(`${t}_video_common`).checked;
-  const list = document.getElementById(`${t}_video_list`);
-  Array.from(list.children).forEach((block, i) => {
-    const titleWrap = block.querySelector('[data-role="title_wrap"]');
-    const descWrap = block.querySelector('[data-role="desc_wrap"]');
-    if (!titleWrap || !descWrap) return;
-    if (isCommon && i > 0) { titleWrap.style.display = 'none'; descWrap.style.display = 'none'; }
-    else { titleWrap.style.display = 'block'; descWrap.style.display = 'block'; }
-  });
-}
-function gSyncVideoCommon(t) {
-  const isCommon = document.getElementById(`${t}_video_common`).checked; if (!isCommon) return;
-  const list = document.getElementById(`${t}_video_list`);
-  const first = list.children[0]; if (!first) return;
-  const titleVal = first.querySelector('[data-role="유튜브제목"]').value;
-  const descVal = first.querySelector('[data-role="유튜브설명"]').value;
-  Array.from(list.children).forEach((block, i) => {
-    if (i === 0) return;
-    block.querySelector('[data-role="유튜브제목"]').value = titleVal;
-    block.querySelector('[data-role="유튜브설명"]').value = descVal;
-  });
-}
-function gRemoveBlock(t, listKey, id) {
-  const el = document.getElementById(id); if (el) el.remove();
-  const list = document.getElementById(`${t}_${listKey}`);
-  Array.from(list.children).forEach((child, i) => {
-    const titleEl = child.querySelector('.repeat-block-title');
-    if (titleEl) { const label = listKey === 'video_list' ? '영상' : (child.dataset.kind === 'desc' ? '설명' : '광고제목'); titleEl.textContent = `${label} ${i+1}`; }
-  });
-  if (listKey === 'video_list') gApplyVideoCommonState(t);
-}
-
-let gTextBlockSeq = { g1: 0, g2: 0 };
-function gAddTextBlock(t, kind) {
-  const listKey = kind === 'desc' ? 'desc_list' : 'headline_list';
-  const list = document.getElementById(`${t}_${listKey}`);
-  if (list.children.length >= 5) { showToast('최대 5개까지 추가할 수 있어요', 'error'); return; }
-  const id = `${t}_${kind}_${gTextBlockSeq[t]++}`;
-  const idx = list.children.length + 1;
-  const label = kind === 'desc' ? '설명' : '광고제목';
-  const maxLen = kind === 'desc' ? 90 : 40;
-  const block = document.createElement('div');
-  block.className = 'repeat-block'; block.id = id; block.dataset.kind = kind;
-  const removeBtn = `<button type="button" class="repeat-remove" onclick="gRemoveBlock('${t}','${listKey}','${id}')">삭제</button>`;
-  const head = `<div class="repeat-block-head"><span class="repeat-block-title">${label} ${idx}</span>${removeBtn}</div>`;
-  if ((kind === 'headline' || kind === 'desc') && idx === 1) {
-    const onInput = kind === 'headline' ? `gOnFirstHeadlineInput('${t}')` : `gOnFirstDescInput('${t}')`;
-    block.innerHTML = head + `<input type="text" data-role="text" maxlength="${maxLen}" placeholder="${label} 입력 (최대 ${maxLen}자)" oninput="${onInput}">`;
-  } else if (kind === 'headline' || kind === 'desc') {
-    block.innerHTML = head + `<div class="copy-suggest-wrap"><input type="text" data-role="text" maxlength="${maxLen}" placeholder="${label} 입력 (최대 ${maxLen}자)" onfocus="gShowCopySuggest('${t}','${id}','${kind}')" oninput="gShowCopySuggest('${t}','${id}','${kind}')" onblur="setTimeout(function(){gHideCopySuggest('${id}')},200)" autocomplete="off"><div class="copy-suggest-dropdown" id="suggest_${id}"></div></div>`;
-  } else {
-    block.innerHTML = head + `<input type="text" data-role="text" maxlength="${maxLen}" placeholder="${label} 입력 (최대 ${maxLen}자)">`;
-  }
-  list.appendChild(block);
-}
-
-function gCollectVideos(t) {
-  const list = document.getElementById(`${t}_video_list`);
-  const isCommon = document.getElementById(`${t}_video_common`)?.checked;
-  const firstTitle = list.children[0]?.querySelector('[data-role="유튜브제목"]')?.value || '';
-  const firstDesc = list.children[0]?.querySelector('[data-role="유튜브설명"]')?.value || '';
-  return Array.from(list.children).map((block, i) => {
-    const method = block.querySelector('select').value;
-    const fileInput = block.querySelector('[data-role="파일첨부"]');
-    return {
-      파일유형: method,
-      파일ID: block.querySelector('[data-role="파일ID"]').value,
-      파일첨부: (fileInput && fileInput.files[0]) ? fileInput.files[0] : null,
-      유튜브제목: (isCommon && i > 0) ? firstTitle : block.querySelector('[data-role="유튜브제목"]').value,
-      유튜브설명: (isCommon && i > 0) ? firstDesc : block.querySelector('[data-role="유튜브설명"]').value,
-      공개상태: 'unlisted',
-      아동용: 'false',
-    };
-  }).filter(v => v.파일ID && v.파일ID.trim() !== '');
-}
-let gLongHeadlineSeq = { g1: 0, g2: 0 };
-function gAddLongHeadlineBlock(t) {
-  const list = document.getElementById(`${t}_longheadline_list`);
-  if (list.children.length >= 5) { showToast('긴 광고제목은 최대 5개까지 추가할 수 있어요', 'error'); return; }
-  const seq = gLongHeadlineSeq[t]++;
-  const id = `${t}_longheadline_${seq}`;
-  const idx = list.children.length + 1;
-  const block = document.createElement('div');
-  block.className = 'repeat-block'; block.id = id; block.dataset.kind = 'longheadline';
-  const head = `<div class="repeat-block-head"><span class="repeat-block-title">긴 광고제목 ${idx}</span><button type="button" class="repeat-remove" onclick="gRemoveBlock('${t}','longheadline_list','${id}')">삭제</button></div>`;
-  if (idx === 1) {
-    block.innerHTML = head + `<input type="text" data-role="text" maxlength="90" placeholder="긴 광고 제목 입력 (최대 90자)" oninput="gOnFirstLongHeadlineInput('${t}')">`;
-  } else {
-    block.innerHTML = head + `<div class="copy-suggest-wrap"><input type="text" data-role="text" maxlength="90" placeholder="긴 광고 제목 입력 (최대 90자)" onfocus="gShowCopySuggest('${t}','${id}','longheadline')" oninput="gShowCopySuggest('${t}','${id}','longheadline')" onblur="setTimeout(function(){gHideCopySuggest('${id}')},200)" autocomplete="off"><div class="copy-suggest-dropdown" id="suggest_${id}"></div></div>`;
-  }
-  list.appendChild(block);
-}
-
-function gCollectTexts(t, kind) {
-  const listKey = kind === 'desc' ? 'desc_list' : 'headline_list';
-  const list = document.getElementById(`${t}_${listKey}`);
-  return Array.from(list.children).map(b => b.querySelector('[data-role="text"]').value).filter(Boolean);
-}
-function gCollectChannels(t) {
-  const channels = ['YOUTUBE'];
-  if (document.getElementById(`${t}_ch_discover`)?.checked) channels.push('DISCOVER');
-  if (document.getElementById(`${t}_ch_gmail`)?.checked) channels.push('GMAIL');
-  if (document.getElementById(`${t}_ch_display`)?.checked) channels.push('DISPLAY');
-  if (document.getElementById(`${t}_ch_maps`)?.checked) channels.push('MAPS');
-  return channels;
-}
-function gGetData(t) {
-  const isT2 = t === 'g2';
-  const regionName = document.getElementById(`${t}_지역구분자`).value;
-  const gRegion = GDB.googleRegions.find(r => r.name === regionName);
-  const d = {
-    플랫폼: 'google',
-    제작자: g(`${t}_제작자`), 날짜: g(`${t}_날짜`), 유형: '디맨드젠', 상태: '대기중',
-    계정명: gGetAccountName(t), 광고계정ID: g(`${t}_광고계정ID`),
-    치과명: g(`${t}_치과명`), 광고그룹명: g(`${t}_광고그룹명`),
-    지역구분자: regionName,
-    구글지역ID: gRegion ? (gRegion.criterionId || '') : '',
-    언어: 'ko',
-    채널: gCollectChannels(t),
-    잠재고객ID: g(`${t}_잠재고객`),
-    유튜브채널ID: g(`${t}_유튜브채널`) || 'UChg_3mq-CO2kFPkbXlTR3pw',
-    기기: g(`${t}_기기`),
-    기기제외목록: (() => {
-      const device = document.getElementById(`${t}_기기`)?.value || 'ALL';
-      const excluded = ['TABLET', 'CONNECTED_TV'];
-      if (device === 'DESKTOP') excluded.push('MOBILE');
-      if (device === 'MOBILE') excluded.push('DESKTOP');
-      return excluded;
-    })(),
-    영상목록: gCollectVideos(t).map(v => ({ ...v, 파일첨부: undefined })),
-    최종URL: g(`${t}_최종URL`),
-    광고제목목록: gCollectTexts(t, 'headline'),
-    긴광고제목목록: (() => {
-      const list = document.getElementById(t + '_longheadline_list');
-      if (!list) return [g(t + '_긴광고제목')].filter(Boolean);
-      return Array.from(list.children).map(b => b.querySelector('[data-role="text"]')?.value || '').filter(Boolean);
-    })(),
-    설명목록: gCollectTexts(t, 'desc'),
-    업체명: g(`${t}_업체명`),
-    CTA버튼: g(`${t}_CTA`),
-    로고파일ID: (() => {
-      const sel = document.getElementById(`${t}_유튜브채널`);
-      const channelName = sel ? (sel.options[sel.selectedIndex]?.text || '') : '';
-      return GDB.logoByChannel[channelName] || '';
-    })(),
-  };
-  if (!isT2) {
-    d.캠페인명 = g('g1_캠페인명'); d.캠페인목표 = 'LEADS';
-    d.일일예산 = g('g1_일일예산'); d.시작일 = g('g1_시작일');
-  } else { d.캠페인ID = g('g2_캠페인ID'); }
-  return d;
-}
-
-const gRows = { g1: [], g2: [] };
-function gAddCard(t, data) {
-  const idx = gRows[t].length; gRows[t].push(data);
-  document.getElementById(`${t}_empty`).style.display = 'none';
-  const list = document.getElementById(`${t}_cards`); list.style.display = 'flex';
-  const isT2 = t === 'g2';
-  const title = isT2 ? (data.광고그룹명||'그룹명 없음') : (data.캠페인명||'캠페인명 없음');
-  const card = document.createElement('div'); card.className = 'card'; card.id = `gcard_${t}_${idx}`;
-  card.innerHTML = `<div class="card-top"><div class="card-title-wrap"><span class="card-type type-g-new">${isT2?'세트 추가':'신규 등록'}</span><span class="card-title">${title}</span></div><span class="badge badge-sending" id="gbadge_${t}_${idx}">전송중</span></div><div class="card-meta"><span class="meta-item"><span class="meta-label">계정</span>${data.계정명||'-'}</span><span class="meta-item"><span class="meta-label">광고그룹</span>${data.광고그룹명||'-'}</span><span class="meta-item"><span class="meta-label">영상</span>${(data.영상목록||[]).length}개</span></div><div class="card-result" id="gresult_${t}_${idx}">Make로 전송 중...</div>`;
-  list.appendChild(card);
-  document.getElementById(`${t}_count`).textContent = `총 ${gRows[t].length}${isT2?'개 세트 추가됨':'건 등록됨'}`;
-  return idx;
-}
-function gUpdateCard(t, idx, status, msg) {
-  const badge = document.getElementById(`gbadge_${t}_${idx}`); const result = document.getElementById(`gresult_${t}_${idx}`);
-  if (status === '완료') { badge.className = 'badge badge-done'; badge.textContent = '완료'; result.className = 'card-result success'; result.textContent = msg; }
-  else { badge.className = 'badge badge-fail'; badge.textContent = '실패'; result.className = 'card-result fail'; result.textContent = msg; }
-}
-async function gSubmitAd(t) {
-  const data = gGetData(t); const isT2 = t === 'g2';
-  if (!data.계정명 || !data.광고그룹명) { showToast('계정명과 광고그룹명은 필수입니다', 'error'); return; }
-  if (isT2 && !data.캠페인ID) { showToast('캠페인 ID를 입력해주세요', 'error'); return; }
-  if (!isT2 && !data.캠페인명) { showToast('캠페인명을 입력해주세요', 'error'); return; }
-  if ((data.영상목록||[]).length === 0) { showToast('영상을 1개 이상 추가해주세요', 'error'); return; }
-  const btn = document.getElementById(`${t}_submitBtn`); btn.disabled = true; btn.textContent = '전송 중...';
-  showToast('Make로 전송 중...', 'info');
-
-  // upload 방식 영상 → 구글 드라이브 업로드 후 파일ID로 교체
-  const videoList = document.getElementById(`${t}_video_list`);
-  const uploadBlocks = Array.from(videoList.children).filter(block => {
-    const method = block.querySelector('select').value;
-    const fileInput = block.querySelector('[data-role="파일첨부"]');
-    return method === 'upload' && fileInput && fileInput.files[0];
-  });
-  if (uploadBlocks.length > 0) {
-    showToast('영상 드라이브 업로드 중...', 'info');
-    for (const block of uploadBlocks) {
-      try {
-        const fileInput = block.querySelector('[data-role="파일첨부"]');
-        const fileIdInput = block.querySelector('[data-role="파일ID"]');
-        const fileId = await uploadFileToDrive(fileInput.files[0]);
-        fileIdInput.value = fileId;
-        // 파일유형을 drive로 변경
-        block.querySelector('select').value = 'drive';
-      } catch(err) {
-        showToast('드라이브 업로드 실패: ' + err.message, 'error');
-        btn.disabled = false; btn.textContent = isT2 ? '세트 추가하기' : '캠페인 등록하기';
-        return;
-      }
-    }
-    // 업로드 후 데이터 재수집
-    data.영상목록 = gCollectVideos(t).map(v => ({ ...v, 파일첨부: undefined }));
-  }
-
-  const idx = gAddCard(t, data);
-  try {
-    const res = await fetch(G_WEBHOOKS[t], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-    if (res.ok) {
-      gUpdateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중');
-      showToast(isT2?'세트 추가 요청 완료!':'캠페인 등록 요청 완료!', 'success');
-      // 사용된 카피 시트에 저장
-      const usedCopies = gCollectTexts(t, 'headline').concat(gCollectTexts(t, 'desc'));
-      gSaveCopies(usedCopies).catch(() => {});
-    }
-    else { gUpdateCard(t, idx, '실패', `HTTP ${res.status}`); showToast(`전송 실패 (${res.status})`, 'error'); }
-  } catch (err) { gUpdateCard(t, idx, '실패', '오류: ' + err.message); showToast('오류: ' + err.message, 'error'); }
-  btn.disabled = false; btn.textContent = isT2 ? '세트 추가하기' : '캠페인 등록하기';
-}
-function gClearForm(t) {
-  ['제작자','날짜','지역구분자'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
-  const clinicSel = document.getElementById(`${t}_치과명`); if (clinicSel) clinicSel.innerHTML = '<option value="">계정 선택 후 사용 가능</option>';
-  const bizEl = document.getElementById(`${t}_업체명`); if (bizEl) bizEl.value = '';
-  const deviceEl = document.getElementById(`${t}_기기`); if (deviceEl) deviceEl.value = 'ALL';
-  ['ch_discover','ch_gmail','ch_display','ch_maps'].forEach(k => { const el = document.getElementById(`${t}_${k}`); if (el) { el.checked = false; gToggleChip(el); } });
-  const audSel = document.getElementById(`${t}_잠재고객`); if (audSel) audSel.innerHTML = '<option value="">선택 안함</option>';
-  document.getElementById(`${t}_video_list`).innerHTML = '';
-  document.getElementById(`${t}_headline_list`).innerHTML = '';
-  document.getElementById(`${t}_desc_list`).innerHTML = '';
-  gAddVideoBlock(t); gAddVideoBlock(t); gAddVideoBlock(t);
-  const commonEl = document.getElementById(`${t}_video_common`); if (commonEl) { commonEl.checked = true; gToggleVideoCommon(t); }
-  gAddTextBlock(t,'headline'); gAddTextBlock(t,'desc');
-  ['최종URL','업체명'].forEach(f => { const el = document.getElementById(t + '_' + f); if (el) el.value = ''; });
-  const longList = document.getElementById(t + '_longheadline_list'); if (longList) { longList.innerHTML = ''; gLongHeadlineSeq[t] = 0; gAddLongHeadlineBlock(t); }
-  const ctaEl = document.getElementById(`${t}_CTA`); if (ctaEl) ctaEl.value = 'CONTACT_US';
-  const chSel = document.getElementById(`${t}_유튜브채널`); if (chSel) chSel.value = 'UChg_3mq-CO2kFPkbXlTR3pw';
-  ['광고계정ID','캠페인명','광고그룹명'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
-  if (t === 'g1') { document.getElementById('g1_계정명').value = ''; document.getElementById('g1_시작일').value = new Date().toISOString().split('T')[0]; }
-  else {
-    gSelectedAccount.g2 = ''; gNextSetNumber.g2 = 1;
-    const accSel = document.getElementById('g2_계정명'); if (accSel) accSel.value = '';
-    const accDisp = document.getElementById('g2_계정명_display'); if (accDisp) accDisp.value = '';
-    const campDisp = document.getElementById('g2_캠페인명_display'); if (campDisp) campDisp.textContent = '';
-    const campIdEl = document.getElementById('g2_캠페인ID'); if (campIdEl) campIdEl.value = '';
-  }
-  gPopulateDropdowns();
-}
-
-['g1','g2'].forEach(t => {
-  gAddVideoBlock(t); gAddVideoBlock(t); gAddVideoBlock(t);
-  const commonEl = document.getElementById(`${t}_video_common`);
-  if (commonEl) { commonEl.checked = true; gToggleVideoCommon(t); }
-  gAddTextBlock(t, 'headline'); gAddTextBlock(t, 'desc');
-  gAddLongHeadlineBlock(t);
-  ['유형','날짜','제작자'].forEach(field => {
-    const el = document.getElementById(`${t}_${field}`);
-    if (el) { el.addEventListener('input', () => gAutoGenNames(t)); el.addEventListener('change', () => gAutoGenNames(t)); }
-  });
-});
-document.getElementById('g1_시작일').value = new Date().toISOString().split('T')[0];
-
 loadData();
 </script>
 </body>
