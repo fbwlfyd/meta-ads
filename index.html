@@ -291,7 +291,12 @@
     <div class="panel-head"><h2>세트 추가</h2><p>기존 캠페인에 광고세트 · 광고 추가</p></div>
     <div class="panel-body">
       <div class="campaign-id-box">
-        <label>기존 캠페인 ID</label>
+        <label>계정에서 캠페인 선택</label>
+        <select id="t2_캠페인선택계정" onchange="onCampaignAccountSelect('t2')">
+          <option value="">계정을 선택하세요</option>
+        </select>
+        <div id="t2_캠페인목록" style="display:none;max-height:220px;overflow-y:auto;background:var(--white);border:1px solid #ffe0a0;border-radius:8px;margin-top:8px;"></div>
+        <label style="margin-top:12px;">또는 캠페인 ID 직접 입력</label>
         <input type="text" id="t2_캠페인ID" placeholder="캠페인 ID를 입력하세요" onblur="onCampaignId('t2')">
         <div id="t2_캠페인명_display" style="margin-top:8px;font-size:12px;color:var(--text2);min-height:16px;"></div>
       </div>
@@ -652,6 +657,16 @@ async function fetchCampaignInfo(campaignId) {
   if (json.error) throw new Error(json.error.message);
   return json;
 }
+async function fetchActiveCampaigns(accountId) {
+  const cleanId = String(accountId).replace('act_', '');
+  const statusFilter = encodeURIComponent(JSON.stringify(['ACTIVE']));
+  const url = `https://graph.facebook.com/v25.0/act_${cleanId}/campaigns?fields=id,name&effective_status=${statusFilter}&limit=200&access_token=${META_ACCESS_TOKEN}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`캠페인 목록 조회 실패: ${res.status}`);
+  const json = await res.json();
+  if (json.error) throw new Error(json.error.message);
+  return json.data || [];
+}
 async function fetchNextSetNumber(campaignId) {
   const url = `https://graph.facebook.com/v25.0/${campaignId}/adsets?fields=name&limit=200&access_token=${META_ACCESS_TOKEN}`;
   const res = await fetch(url);
@@ -898,7 +913,7 @@ async function loadData() {
       }
     });
 
-    // 로고 파일ID (구글참조 R열=17: 채널명, S열=18: 파일ID)
+    // 로고 파일ID (구글참조 R열=채널명, S열=파일ID)
     GDB.logoByChannel = {};
     gRefRows.slice(1).forEach(r => {
       if (r[17] && r[18]) GDB.logoByChannel[r[17]] = r[18];
@@ -968,7 +983,44 @@ function populateDropdowns() {
   if (buySel) { buySel.innerHTML = ''; DB.buyingTypes.forEach(b => { const o = document.createElement('option'); o.value = b.value; o.textContent = b.label; if (b.value === 'AUCTION') o.selected = true; buySel.appendChild(o); }); }
   const objSel = document.getElementById('t1_캠페인목표');
   if (objSel) { objSel.innerHTML = ''; DB.objectives.forEach(ob => { const o = document.createElement('option'); o.value = ob.value; o.textContent = ob.label; if (ob.value === 'OUTCOME_LEADS') o.selected = true; objSel.appendChild(o); }); }
+  const campAccSel = document.getElementById('t2_캠페인선택계정');
+  if (campAccSel) {
+    const prev = campAccSel.value;
+    campAccSel.innerHTML = '<option value="">계정을 선택하세요</option>';
+    DB.accounts.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; campAccSel.appendChild(o); });
+    if (prev) campAccSel.value = prev;
+  }
   if (typeof gPopulateDropdowns === 'function') gPopulateDropdowns();
+}
+
+async function onCampaignAccountSelect(t) {
+  const accName = document.getElementById(`${t}_캠페인선택계정`).value;
+  const listBox = document.getElementById(`${t}_캠페인목록`);
+  if (!listBox) return;
+  if (!accName) { listBox.style.display = 'none'; listBox.innerHTML = ''; return; }
+  const acc = DB.accounts.find(a => a.name === accName);
+  if (!acc || !acc.id) { showToast('선택한 계정의 광고계정 ID를 찾을 수 없어요', 'error'); return; }
+  listBox.style.display = 'block';
+  listBox.innerHTML = '<div class="copy-suggest-loading">진행중인 캠페인 불러오는 중...</div>';
+  try {
+    const campaigns = await fetchActiveCampaigns(acc.id);
+    if (campaigns.length === 0) {
+      listBox.innerHTML = '<div class="copy-suggest-loading">진행중인(ACTIVE) 캠페인이 없어요</div>';
+      return;
+    }
+    listBox.innerHTML = campaigns.map(c =>
+      `<div class="copy-suggest-item" onclick="selectCampaignFromList('${t}','${c.id}')">${(c.name || '(이름 없음)').replace(/</g,'&lt;')}</div>`
+    ).join('');
+  } catch (err) {
+    listBox.innerHTML = `<div class="copy-suggest-loading">불러오기 실패: ${err.message}</div>`;
+  }
+}
+
+function selectCampaignFromList(t, campaignId) {
+  document.getElementById(`${t}_캠페인ID`).value = campaignId;
+  const listBox = document.getElementById(`${t}_캠페인목록`);
+  if (listBox) listBox.style.display = 'none';
+  onCampaignId(t);
 }
 
 function extractDriveId(el) {
@@ -1223,6 +1275,8 @@ function clearForm(t) {
     const accDisp = document.getElementById('t2_계정명_display'); if (accDisp) accDisp.value = '';
     const campDisp = document.getElementById('t2_캠페인명_display'); if (campDisp) campDisp.textContent = '';
     const campIdEl = document.getElementById('t2_캠페인ID'); if (campIdEl) campIdEl.value = '';
+    const campAccSel = document.getElementById('t2_캠페인선택계정'); if (campAccSel) campAccSel.value = '';
+    const campListBox = document.getElementById('t2_캠페인목록'); if (campListBox) { campListBox.style.display = 'none'; campListBox.innerHTML = ''; }
   }
   populateDropdowns();
 }
