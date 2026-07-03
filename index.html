@@ -61,10 +61,6 @@
   .campaign-id-box label { display: block; font-size: 12px; font-weight: 600; color: var(--yellow); margin-bottom: 6px; }
   .campaign-id-box input { width: 100%; height: 40px; background: var(--white); border: 1px solid #ffe0a0; border-radius: var(--radius-sm); color: var(--text1); font-family: inherit; font-size: 13px; padding: 0 12px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
   .campaign-id-box input:focus { border-color: var(--yellow); box-shadow: 0 0 0 3px rgba(255,149,0,0.15); }
-  .campaign-id-box select { width: 100%; height: 40px; background: var(--white); border: 1px solid #ffe0a0; border-radius: var(--radius-sm); color: var(--text1); font-family: inherit; font-size: 13px; padding: 0 32px 0 12px; outline: none; appearance: none; -webkit-appearance: none; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23c2760a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
-  .campaign-id-box select:focus { border-color: var(--yellow); box-shadow: 0 0 0 3px rgba(255,149,0,0.15); }
-  .campaign-id-box .manual-toggle { display: inline-block; margin-top: 10px; font-size: 11px; font-weight: 500; color: #c2760a; text-decoration: underline; cursor: pointer; }
-  .campaign-id-box .manual-toggle:hover { color: var(--yellow); }
   .btn-primary { width: 100%; height: 48px; background: var(--blue); border: none; border-radius: var(--radius); color: white; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.15s; letter-spacing: -0.2px; }
   .btn-primary:hover { background: #0066dd; }
   .btn-primary:active { transform: scale(0.99); }
@@ -295,18 +291,9 @@
     <div class="panel-head"><h2>세트 추가</h2><p>기존 캠페인에 광고세트 · 광고 추가</p></div>
     <div class="panel-body">
       <div class="campaign-id-box">
-        <label>기존 캠페인 불러오기</label>
-        <div class="copy-suggest-wrap">
-          <select id="t2_캠페인선택계정" onchange="onCampaignAccountSelect('t2')">
-            <option value="">계정을 선택하세요</option>
-          </select>
-          <div class="copy-suggest-dropdown" id="t2_캠페인목록" style="max-height:240px;"></div>
-        </div>
+        <label>기존 캠페인 ID</label>
+        <input type="text" id="t2_캠페인ID" placeholder="캠페인 ID를 입력하세요" onblur="onCampaignId('t2')">
         <div id="t2_캠페인명_display" style="margin-top:8px;font-size:12px;color:var(--text2);min-height:16px;"></div>
-        <span class="manual-toggle" onclick="toggleManualCampaignId('t2')">캠페인 ID를 직접 입력할래요</span>
-        <div id="t2_manual_wrap" style="display:none;margin-top:8px;">
-          <input type="text" id="t2_캠페인ID" placeholder="캠페인 ID를 입력하세요" onblur="onCampaignId('t2')">
-        </div>
       </div>
       <div class="section"><div class="sec-label">기본 정보</div>
         <div class="field"><label>제작자</label><input type="text" id="t2_제작자" placeholder="이름 입력" oninput="autoGenNames('t2')"></div>
@@ -522,20 +509,19 @@
     <div class="panel-head"><h2>Google 세트 추가</h2><p>기존 캠페인에 광고그룹 · 광고 추가</p></div>
     <div class="panel-body">
       <div class="campaign-id-box">
-        <label>기존 캠페인 ID</label>
-        <input type="text" id="g2_캠페인ID" placeholder="캠페인 리소스 ID를 입력하세요" onblur="gOnCampaignId('g2')">
-        <div id="g2_캠페인명_display" style="margin-top:8px;font-size:12px;color:var(--text2);min-height:16px;"></div>
+        <label>지역 선택</label>
+        <div class="field" style="margin-bottom:8px;">
+          <select id="g2_검색키워드" onchange="gSearchCampaigns('g2')"><option value="">선택</option></select>
+        </div>
+        <div class="field" style="margin-bottom:8px;">
+          <label style="font-size:12px;color:var(--text2);">캠페인 선택</label>
+          <select id="g2_캠페인선택" onchange="gSelectCampaignDrop('g2')" style="display:none;"><option value="">캠페인 선택</option></select>
+        </div>
+        <input type="hidden" id="g2_캠페인ID">
+        <div id="g2_캠페인명_display" style="margin-top:4px;font-size:12px;color:var(--blue);min-height:16px;font-weight:600;"></div>
       </div>
       <div class="section"><div class="sec-label">기본 정보</div>
-        <div class="row2">
-          <div class="field"><label>제작자</label><input type="text" id="g2_제작자" placeholder="이름 입력" oninput="gAutoGenNames('g2')"></div>
-          <div class="field"><label>날짜</label><input type="text" id="g2_날짜" placeholder="예: 260605" oninput="gAutoGenNames('g2')"></div>
-        </div>
-        <div class="row2">
-          <div class="field"><label>계정명</label><select id="g2_계정명" onchange="gOnAccount('g2')"><option value="">선택</option></select></div>
-          <div class="field"><label>치과명</label><select id="g2_치과명" onchange="gOnClinic('g2')"><option value="">계정 선택 후 사용 가능</option></select></div>
-        </div>
-        <div class="field"><label>지역구분자</label><select id="g2_지역구분자" onchange="gOnRegion('g2')"><option value="">선택</option></select></div>
+        <div class="field"><label>제작자</label><input type="text" id="g2_제작자" placeholder="이름 입력" oninput="gAutoGenNames('g2')"></div>
       </div>
       <div class="divider"></div>
       <div class="section"><div class="sec-label">광고그룹 설정</div>
@@ -664,16 +650,6 @@ async function fetchCampaignInfo(campaignId) {
   const json = await res.json();
   if (json.error) throw new Error(json.error.message);
   return json;
-}
-async function fetchActiveCampaigns(accountId) {
-  const cleanId = String(accountId).replace('act_', '');
-  const statusFilter = encodeURIComponent(JSON.stringify(['ACTIVE']));
-  const url = `https://graph.facebook.com/v25.0/act_${cleanId}/campaigns?fields=id,name&effective_status=${statusFilter}&limit=200&access_token=${META_ACCESS_TOKEN}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`캠페인 목록 조회 실패: ${res.status}`);
-  const json = await res.json();
-  if (json.error) throw new Error(json.error.message);
-  return json.data || [];
 }
 async function fetchNextSetNumber(campaignId) {
   const url = `https://graph.facebook.com/v25.0/${campaignId}/adsets?fields=name&limit=200&access_token=${META_ACCESS_TOKEN}`;
@@ -890,6 +866,7 @@ async function loadData() {
     DB.baseRegions = {};
     refRows.slice(1).forEach(r => { if (r[1] && r[5]) DB.baseRegions[r[1]] = r[5]; });
 
+    GDB.gRefRows = gRefRows;
     GDB.accounts = parse(gRefRows, r => r[0] && r[1] ? { key: r[0], data: { name: r[0], id: r[1], campaignName: r[9] || '', setName: r[10] || '', clinicName: r[10] || '' } } : null);
     GDB.staff = parse(gRefRows, r => r[11] ? { key: r[11], data: { name: r[11], id: r[12] || '' } } : null);
     GDB.googleRegions = parse(gRefRows, r => r[2] ? { key: r[2], data: { name: r[2], criterionId: r[3] || '', refName: r[4] || '' } } : null);
@@ -921,7 +898,7 @@ async function loadData() {
       }
     });
 
-    // 로고 파일ID (구글참조 R열=채널명, S열=파일ID)
+    // 로고 파일ID (구글참조 R열=17: 채널명, S열=18: 파일ID)
     GDB.logoByChannel = {};
     gRefRows.slice(1).forEach(r => {
       if (r[17] && r[18]) GDB.logoByChannel[r[17]] = r[18];
@@ -991,50 +968,7 @@ function populateDropdowns() {
   if (buySel) { buySel.innerHTML = ''; DB.buyingTypes.forEach(b => { const o = document.createElement('option'); o.value = b.value; o.textContent = b.label; if (b.value === 'AUCTION') o.selected = true; buySel.appendChild(o); }); }
   const objSel = document.getElementById('t1_캠페인목표');
   if (objSel) { objSel.innerHTML = ''; DB.objectives.forEach(ob => { const o = document.createElement('option'); o.value = ob.value; o.textContent = ob.label; if (ob.value === 'OUTCOME_LEADS') o.selected = true; objSel.appendChild(o); }); }
-  const campAccSel = document.getElementById('t2_캠페인선택계정');
-  if (campAccSel) {
-    const prev = campAccSel.value;
-    campAccSel.innerHTML = '<option value="">계정을 선택하세요</option>';
-    DB.accounts.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; campAccSel.appendChild(o); });
-    if (prev) campAccSel.value = prev;
-  }
   if (typeof gPopulateDropdowns === 'function') gPopulateDropdowns();
-}
-
-async function onCampaignAccountSelect(t) {
-  const accName = document.getElementById(`${t}_캠페인선택계정`).value;
-  const listBox = document.getElementById(`${t}_캠페인목록`);
-  if (!listBox) return;
-  if (!accName) { listBox.classList.remove('show'); listBox.innerHTML = ''; return; }
-  const acc = DB.accounts.find(a => a.name === accName);
-  if (!acc || !acc.id) { showToast('선택한 계정의 광고계정 ID를 찾을 수 없어요', 'error'); return; }
-  listBox.innerHTML = '<div class="copy-suggest-loading">진행중인 캠페인 불러오는 중...</div>';
-  listBox.classList.add('show');
-  try {
-    const campaigns = await fetchActiveCampaigns(acc.id);
-    if (campaigns.length === 0) {
-      listBox.innerHTML = '<div class="copy-suggest-loading">진행중인(ACTIVE) 캠페인이 없어요</div>';
-      return;
-    }
-    listBox.innerHTML = campaigns.map(c =>
-      `<div class="copy-suggest-item" onclick="selectCampaignFromList('${t}','${c.id}')">${(c.name || '(이름 없음)').replace(/</g,'&lt;')}</div>`
-    ).join('');
-  } catch (err) {
-    listBox.innerHTML = `<div class="copy-suggest-loading">불러오기 실패: ${err.message}</div>`;
-  }
-}
-
-function selectCampaignFromList(t, campaignId) {
-  document.getElementById(`${t}_캠페인ID`).value = campaignId;
-  const listBox = document.getElementById(`${t}_캠페인목록`);
-  if (listBox) listBox.classList.remove('show');
-  onCampaignId(t);
-}
-
-function toggleManualCampaignId(t) {
-  const wrap = document.getElementById(`${t}_manual_wrap`);
-  if (!wrap) return;
-  wrap.style.display = (wrap.style.display === 'none' || !wrap.style.display) ? 'block' : 'none';
 }
 
 function extractDriveId(el) {
@@ -1129,34 +1063,8 @@ async function onCampaignId(t) {
       try { nextSetNumber.t2 = await fetchNextSetNumber(campaignId); } catch (e) { nextSetNumber.t2 = 1; }
     }
     const acc = DB.accounts.find(a => a.id === accountId);
-    if (acc) {
-      setAccountName(t, acc.name);
-      document.getElementById(`${t}_광고계정ID`).value = acc.id || accountId || '';
-      // 제외타겟 드롭다운 갱신
-      const sel = document.getElementById(`${t}_제외타겟`);
-      if (sel) {
-        sel.innerHTML = '<option value="">선택</option>';
-        selectedExcludes[t] = []; renderExcludeTags(t); updateExcludeIds(t);
-        DB.excludes.filter(e => e.accountId === acc.id).forEach(x => {
-          const o = document.createElement('option');
-          o.value = x.name; o.dataset.id = x.targetId; o.textContent = x.name;
-          sel.appendChild(o);
-        });
-      }
-    } else {
-      document.getElementById(`${t}_광고계정ID`).value = accountId || '';
-      // accountId로 직접 제외타겟 찾기
-      const sel = document.getElementById(`${t}_제외타겟`);
-      if (sel) {
-        sel.innerHTML = '<option value="">선택</option>';
-        selectedExcludes[t] = []; renderExcludeTags(t); updateExcludeIds(t);
-        DB.excludes.filter(e => e.accountId === accountId).forEach(x => {
-          const o = document.createElement('option');
-          o.value = x.name; o.dataset.id = x.targetId; o.textContent = x.name;
-          sel.appendChild(o);
-        });
-      }
-    }
+    if (acc) { setAccountName(t, acc.name); onAccount(t); }
+    else { document.getElementById(`${t}_광고계정ID`).value = accountId || ''; }
     const regionMatch = campaignName.match(/([가-힣]+)타겟/);
     let regionName = '';
     if (regionMatch) { regionName = regionMatch[1]; }
@@ -1167,7 +1075,7 @@ async function onCampaignId(t) {
       if (exists) { regSel.value = regionName; onRegion(t); }
     }
     autoGenNames(t);
-    showToast('캠페인 정보 + 제외타겟 자동 설정 완료!', 'success');
+    showToast('캠페인 정보를 불러왔어요', 'success');
   } catch (err) { showToast('캠페인 조회 실패: ' + err.message, 'error'); }
 }
 function onDragOver(e, t) { e.preventDefault(); const dz = document.getElementById(`${t}_dropzone`); dz.style.borderColor = 'var(--blue)'; dz.style.background = 'var(--blue-bg)'; }
@@ -1315,9 +1223,6 @@ function clearForm(t) {
     const accDisp = document.getElementById('t2_계정명_display'); if (accDisp) accDisp.value = '';
     const campDisp = document.getElementById('t2_캠페인명_display'); if (campDisp) campDisp.textContent = '';
     const campIdEl = document.getElementById('t2_캠페인ID'); if (campIdEl) campIdEl.value = '';
-    const campAccSel = document.getElementById('t2_캠페인선택계정'); if (campAccSel) campAccSel.value = '';
-    const campListBox = document.getElementById('t2_캠페인목록'); if (campListBox) { campListBox.classList.remove('show'); campListBox.innerHTML = ''; }
-    const manualWrap = document.getElementById('t2_manual_wrap'); if (manualWrap) manualWrap.style.display = 'none';
   }
   populateDropdowns();
 }
@@ -1461,6 +1366,14 @@ function gPopulateDropdowns() {
       ctaSel.value = prev || 'CONTACT_US';
     }
   });
+
+  // g2 검색 드롭다운 채우기 (U열(20): 줄인치과명_지역 형태에서 지역명만 추출)
+  const g2KwSel = document.getElementById('g2_검색키워드');
+  if (g2KwSel) {
+    g2KwSel.innerHTML = '<option value="">선택</option>';
+    const keywords = [...new Set((GDB.gRefRows || []).slice(1).map(r => r[20]).filter(Boolean))];
+    keywords.forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = k; g2KwSel.appendChild(o); });
+  }
 }
 
 function gOnAccount(t) {
@@ -1524,6 +1437,77 @@ function gAutoGenNames(t) {
   if (t === 'g1') document.getElementById('g1_캠페인명').value = campaignName;
   document.getElementById(`${t}_광고그룹명`).value = groupName;
 }
+
+// ===== 캠페인 검색 (세트 추가용) =====
+async function gSearchCampaigns(t) {
+  const kwSel = document.getElementById(`${t}_검색키워드`);
+  const keyword = kwSel?.value || '';
+  if (!keyword) return;
+
+  // U열(20) 기준으로 매칭되는 행 찾기
+  const matchRow = (GDB.gRefRows || []).slice(1).find(r => r[20] === keyword);
+  if (!matchRow) { showToast('계정 정보를 찾을 수 없어요', 'error'); return; }
+  const customerId = matchRow[1];
+  // U열 값에서 지역명 추출 (언더스코어 기준 뒷부분)
+  const parts = keyword.split('_');
+  const clinicName = parts[0] || '';
+  const region = parts.slice(1).join('_') || keyword;
+
+  const dropSel = document.getElementById(`${t}_캠페인선택`);
+  dropSel.style.display = 'none';
+  dropSel.innerHTML = '<option value="">캠페인 검색 중...</option>';
+
+  try {
+    const token = await gDriveSignIn();
+
+    // 검색 조건: 양산이면 타겟 미포함, 나머지는 지역명 포함
+    let whereClause = `campaign.status = 'ENABLED' AND campaign.name LIKE '%${clinicName}%'`;
+    if (region === '양산') {
+      whereClause += ` AND campaign.name NOT LIKE '%타겟%'`;
+    } else {
+      whereClause += ` AND campaign.name LIKE '%${region}%'`;
+    }
+
+    const res = await fetch(`https://googleads.googleapis.com/v24/customers/${customerId}/googleAds:searchStream`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'developer-token': 'h5fjThKhbZXjdRgOcaK6rQ'
+      },
+      body: JSON.stringify({ query: `SELECT campaign.resourceName, campaign.name FROM campaign WHERE ${whereClause}` })
+    });
+    const data = await res.json();
+    const campaigns = [];
+    (data || []).forEach(d => {
+      (d.results || []).forEach(r => {
+        campaigns.push({ id: r.campaign.resourceName, name: r.campaign.name });
+      });
+    });
+
+    if (campaigns.length === 0) {
+      dropSel.innerHTML = '<option value="">해당 캠페인 없음</option>';
+      dropSel.style.display = 'block';
+      return;
+    }
+
+    dropSel.innerHTML = '<option value="">캠페인 선택</option>' +
+      campaigns.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    dropSel.style.display = 'block';
+  } catch(e) {
+    showToast('캠페인 검색 실패: ' + e.message, 'error');
+  }
+}
+
+function gSelectCampaignDrop(t) {
+  const dropSel = document.getElementById(`${t}_캠페인선택`);
+  const campaignId = dropSel.value;
+  const campaignName = dropSel.options[dropSel.selectedIndex]?.text || '';
+  document.getElementById(`${t}_캠페인ID`).value = campaignId;
+  const nameDisplay = document.getElementById(`${t}_캠페인명_display`);
+  if (nameDisplay) nameDisplay.textContent = campaignId ? '✅ ' + campaignName : '';
+}
+
 async function gOnCampaignId(t) {
   const campaignId = document.getElementById(`${t}_캠페인ID`).value.trim(); if (!campaignId) return;
   const nameDisplay = document.getElementById(`${t}_캠페인명_display`);
