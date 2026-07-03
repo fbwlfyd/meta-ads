@@ -509,11 +509,12 @@
     <div class="panel-head"><h2>Google 세트 추가</h2><p>기존 캠페인에 광고그룹 · 광고 추가</p></div>
     <div class="panel-body">
       <div class="campaign-id-box">
-        <label>캠페인 검색</label>
+        <label>지역 선택</label>
         <div class="field" style="margin-bottom:8px;">
           <select id="g2_검색키워드" onchange="gSearchCampaigns('g2')"><option value="">선택</option></select>
         </div>
         <div class="field" style="margin-bottom:8px;">
+          <label style="font-size:12px;color:var(--text2);">캠페인 선택</label>
           <select id="g2_캠페인선택" onchange="gSelectCampaignDrop('g2')" style="display:none;"><option value="">캠페인 선택</option></select>
         </div>
         <input type="hidden" id="g2_캠페인ID">
@@ -1365,12 +1366,11 @@ function gPopulateDropdowns() {
     }
   });
 
-  // g2 검색 드롭다운 채우기 (J열: 줄인치과명_지역 형태)
+  // g2 검색 드롭다운 채우기 (U열(20): 줄인치과명_지역 형태에서 지역명만 추출)
   const g2KwSel = document.getElementById('g2_검색키워드');
   if (g2KwSel) {
     g2KwSel.innerHTML = '<option value="">선택</option>';
-    // J열(9)에서 고유값 추출
-    const keywords = [...new Set((GDB.gRefRows || []).slice(1).map(r => r[9]).filter(Boolean))];
+    const keywords = [...new Set((GDB.gRefRows || []).slice(1).map(r => r[20]).filter(Boolean))];
     keywords.forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = k; g2KwSel.appendChild(o); });
   }
 }
@@ -1443,14 +1443,14 @@ async function gSearchCampaigns(t) {
   const keyword = kwSel?.value || '';
   if (!keyword) return;
 
+  // U열(20) 기준으로 매칭되는 행 찾기
+  const matchRow = (GDB.gRefRows || []).slice(1).find(r => r[20] === keyword);
+  if (!matchRow) { showToast('계정 정보를 찾을 수 없어요', 'error'); return; }
+  const customerId = matchRow[1];
+  // U열 값에서 지역명 추출 (언더스코어 기준 뒷부분)
   const parts = keyword.split('_');
   const clinicName = parts[0] || '';
-  const region = parts[1] || '';
-
-  // 광고계정 찾기 (구글참조 J열 기준으로 B열 계정ID 가져오기)
-  const accountRow = (GDB.gRefRows || []).slice(1).find(r => r[9] === clinicName);
-  if (!accountRow) { showToast('계정 정보를 찾을 수 없어요', 'error'); return; }
-  const customerId = accountRow[1];
+  const region = parts.slice(1).join('_') || keyword;
 
   const dropSel = document.getElementById(`${t}_캠페인선택`);
   dropSel.style.display = 'none';
