@@ -866,6 +866,7 @@ async function loadData() {
     DB.baseRegions = {};
     refRows.slice(1).forEach(r => { if (r[1] && r[5]) DB.baseRegions[r[1]] = r[5]; });
 
+    GDB.gRefRows = gRefRows;
     GDB.accounts = parse(gRefRows, r => r[0] && r[1] ? { key: r[0], data: { name: r[0], id: r[1], campaignName: r[9] || '', setName: r[10] || '', clinicName: r[10] || '' } } : null);
     GDB.staff = parse(gRefRows, r => r[11] ? { key: r[11], data: { name: r[11], id: r[12] || '' } } : null);
     GDB.googleRegions = parse(gRefRows, r => r[2] ? { key: r[2], data: { name: r[2], criterionId: r[3] || '', refName: r[4] || '' } } : null);
