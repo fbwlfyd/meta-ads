@@ -510,13 +510,14 @@
     <div class="panel-body">
       <div class="campaign-id-box">
         <label>캠페인 검색</label>
-        <div class="row2" style="margin-bottom:8px;">
-          <div class="field"><label>치과명</label><select id="g2_검색치과명" onchange="gSearchCampaigns('g2')"><option value="">선택</option></select></div>
-          <div class="field"><label>지역구분자</label><select id="g2_검색지역" onchange="gSearchCampaigns('g2')"><option value="">선택</option></select></div>
+        <div class="field" style="margin-bottom:8px;">
+          <select id="g2_검색키워드" onchange="gSearchCampaigns('g2')"><option value="">선택</option></select>
         </div>
-        <div id="g2_캠페인목록" style="max-height:200px;overflow-y:auto;"></div>
+        <div class="field" style="margin-bottom:8px;">
+          <select id="g2_캠페인선택" onchange="gSelectCampaignDrop('g2')" style="display:none;"><option value="">캠페인 선택</option></select>
+        </div>
         <input type="hidden" id="g2_캠페인ID">
-        <div id="g2_캠페인명_display" style="margin-top:8px;font-size:12px;color:var(--blue);min-height:16px;font-weight:600;"></div>
+        <div id="g2_캠페인명_display" style="margin-top:4px;font-size:12px;color:var(--blue);min-height:16px;font-weight:600;"></div>
       </div>
       <div class="section"><div class="sec-label">기본 정보</div>
         <div class="field"><label>제작자</label><input type="text" id="g2_제작자" placeholder="이름 입력" oninput="gAutoGenNames('g2')"></div>
@@ -1364,17 +1365,13 @@ function gPopulateDropdowns() {
     }
   });
 
-  // g2 검색 드롭다운 채우기
-  const g2ClinicSel = document.getElementById('g2_검색치과명');
-  if (g2ClinicSel) {
-    g2ClinicSel.innerHTML = '<option value="">선택</option>';
-    const clinics = [...new Set((GDB.gRefRows || []).slice(1).map(r => r[10]).filter(Boolean))];
-    clinics.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; g2ClinicSel.appendChild(o); });
-  }
-  const g2RegionSel = document.getElementById('g2_검색지역');
-  if (g2RegionSel) {
-    g2RegionSel.innerHTML = '<option value="">선택</option>';
-    (GDB.googleRegions || []).forEach(r => { const o = document.createElement('option'); o.value = r.name; o.textContent = r.name; g2RegionSel.appendChild(o); });
+  // g2 검색 드롭다운 채우기 (J열: 줄인치과명_지역 형태)
+  const g2KwSel = document.getElementById('g2_검색키워드');
+  if (g2KwSel) {
+    g2KwSel.innerHTML = '<option value="">선택</option>';
+    // J열(9)에서 고유값 추출
+    const keywords = [...new Set((GDB.gRefRows || []).slice(1).map(r => r[9]).filter(Boolean))];
+    keywords.forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = k; g2KwSel.appendChild(o); });
   }
 }
 
@@ -1442,23 +1439,34 @@ function gAutoGenNames(t) {
 
 // ===== 캠페인 검색 (세트 추가용) =====
 async function gSearchCampaigns(t) {
-  const clinicSel = document.getElementById(`${t}_검색치과명`);
-  const regionSel = document.getElementById(`${t}_검색지역`);
-  const listEl = document.getElementById(`${t}_캠페인목록`);
-  const clinic = clinicSel?.options[clinicSel.selectedIndex]?.text || '';
-  const region = regionSel?.options[regionSel.selectedIndex]?.text || '';
+  const kwSel = document.getElementById(`${t}_검색키워드`);
+  const keyword = kwSel?.value || '';
+  if (!keyword) return;
 
-  if (!clinic || clinic === '선택' || !region || region === '선택') return;
+  const parts = keyword.split('_');
+  const clinicName = parts[0] || '';
+  const region = parts[1] || '';
 
-  // 광고계정 찾기 (구글참조에서 치과명 기준)
-  const accountRow = GDB.gRefRows?.find(r => r[10] === clinic);
-  if (!accountRow) { listEl.innerHTML = '<div style="color:var(--red);font-size:12px;padding:8px;">계정 정보를 찾을 수 없어요</div>'; return; }
+  // 광고계정 찾기 (구글참조 J열 기준으로 B열 계정ID 가져오기)
+  const accountRow = (GDB.gRefRows || []).slice(1).find(r => r[9] === clinicName);
+  if (!accountRow) { showToast('계정 정보를 찾을 수 없어요', 'error'); return; }
   const customerId = accountRow[1];
 
-  listEl.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px;">🔍 캠페인 검색 중...</div>';
+  const dropSel = document.getElementById(`${t}_캠페인선택`);
+  dropSel.style.display = 'none';
+  dropSel.innerHTML = '<option value="">캠페인 검색 중...</option>';
 
   try {
     const token = await gDriveSignIn();
+
+    // 검색 조건: 양산이면 타겟 미포함, 나머지는 지역명 포함
+    let whereClause = `campaign.status = 'ENABLED' AND campaign.name LIKE '%${clinicName}%'`;
+    if (region === '양산') {
+      whereClause += ` AND campaign.name NOT LIKE '%타겟%'`;
+    } else {
+      whereClause += ` AND campaign.name LIKE '%${region}%'`;
+    }
+
     const res = await fetch(`https://googleads.googleapis.com/v24/customers/${customerId}/googleAds:searchStream`, {
       method: 'POST',
       headers: {
@@ -1466,9 +1474,7 @@ async function gSearchCampaigns(t) {
         'Content-Type': 'application/json',
         'developer-token': 'h5fjThKhbZXjdRgOcaK6rQ'
       },
-      body: JSON.stringify({
-        query: `SELECT campaign.id, campaign.name, campaign.status FROM campaign WHERE campaign.status = 'ENABLED' AND campaign.name LIKE '%${clinic}%' AND campaign.name LIKE '%${region}%'`
-      })
+      body: JSON.stringify({ query: `SELECT campaign.resourceName, campaign.name FROM campaign WHERE ${whereClause}` })
     });
     const data = await res.json();
     const campaigns = [];
@@ -1479,37 +1485,26 @@ async function gSearchCampaigns(t) {
     });
 
     if (campaigns.length === 0) {
-      listEl.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px;">해당 캠페인이 없어요</div>';
+      dropSel.innerHTML = '<option value="">해당 캠페인 없음</option>';
+      dropSel.style.display = 'block';
       return;
     }
 
-    listEl.innerHTML = campaigns.map(c => `
-      <div class="campaign-search-item" onclick="gSelectCampaign('${t}', '${c.id}', this)" style="padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:4px;cursor:pointer;font-size:12px;color:var(--text1);">
-        ${c.name}
-      </div>
-    `).join('');
+    dropSel.innerHTML = '<option value="">캠페인 선택</option>' +
+      campaigns.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    dropSel.style.display = 'block';
   } catch(e) {
-    listEl.innerHTML = `<div style="color:var(--red);font-size:12px;padding:8px;">검색 실패: ${e.message}</div>`;
+    showToast('캠페인 검색 실패: ' + e.message, 'error');
   }
 }
 
-function gSelectCampaign(t, campaignId, el) {
-  // 이전 선택 해제
-  const listEl = document.getElementById(`${t}_캠페인목록`);
-  listEl.querySelectorAll('.campaign-search-item').forEach(item => {
-    item.style.background = '';
-    item.style.borderColor = 'var(--border)';
-    item.style.color = 'var(--text1)';
-  });
-  // 선택 표시
-  el.style.background = 'var(--blue-bg)';
-  el.style.borderColor = 'var(--blue)';
-  el.style.color = 'var(--blue)';
-
-  // 캠페인 ID 저장
+function gSelectCampaignDrop(t) {
+  const dropSel = document.getElementById(`${t}_캠페인선택`);
+  const campaignId = dropSel.value;
+  const campaignName = dropSel.options[dropSel.selectedIndex]?.text || '';
   document.getElementById(`${t}_캠페인ID`).value = campaignId;
   const nameDisplay = document.getElementById(`${t}_캠페인명_display`);
-  if (nameDisplay) nameDisplay.textContent = '✅ ' + el.textContent.trim();
+  if (nameDisplay) nameDisplay.textContent = campaignId ? '✅ ' + campaignName : '';
 }
 
 async function gOnCampaignId(t) {
