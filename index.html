@@ -69,6 +69,10 @@
   .btn-primary.g:hover { background: var(--g-red-dark); }
   .btn-ghost { width: 100%; height: 36px; background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text2); font-family: inherit; font-size: 13px; cursor: pointer; transition: all 0.15s; }
   .btn-ghost:hover { background: var(--bg); color: var(--text1); }
+  .selected-campaign { display: flex; align-items: center; justify-content: space-between; background: var(--white); border: 1px solid #ffe0a0; border-radius: var(--radius-sm); padding: 8px 12px; margin-top: 8px; }
+  .selected-campaign-name { font-size: 12px; font-weight: 600; color: var(--text1); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .selected-campaign-clear { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 16px; line-height: 1; padding: 0 0 0 8px; flex-shrink: 0; }
+  .selected-campaign-clear:hover { color: var(--red); }
   .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
   .main-head { padding: 18px 28px 14px; background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
   .main-head h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
@@ -292,17 +296,25 @@
     <div class="panel-body">
       <div class="campaign-id-box">
         <label>기존 캠페인 불러오기</label>
-        <div class="copy-suggest-wrap">
-          <select id="t2_캠페인선택계정" onchange="onCampaignAccountSelect('t2')">
-            <option value="">계정을 선택하세요</option>
-          </select>
-          <div class="copy-suggest-dropdown" id="t2_캠페인목록" style="max-height:240px;"></div>
+        <div id="t2_캠페인선택_wrap">
+          <div class="copy-suggest-wrap">
+            <select id="t2_캠페인선택계정" onchange="onCampaignAccountSelect('t2')" style="width:100%;height:40px;background:var(--white);border:1px solid #ffe0a0;border-radius:var(--radius-sm);color:var(--text1);font-family:inherit;font-size:13px;padding:0 32px 0 12px;outline:none;appearance:none;-webkit-appearance:none;cursor:pointer;background-image:url('data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23c2760a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 10px center;">
+              <option value="">계정을 선택하세요</option>
+            </select>
+            <div class="copy-suggest-dropdown" id="t2_캠페인목록" style="max-height:240px;"></div>
+          </div>
+          <span class="manual-toggle" onclick="toggleManualCampaignId('t2')">캠페인 ID를 직접 입력할래요</span>
+          <div id="t2_manual_wrap" style="display:none;margin-top:8px;">
+            <input type="text" id="t2_캠페인ID_input" placeholder="캠페인 ID를 입력하세요" onblur="onCampaignIdManual('t2')">
+          </div>
         </div>
-        <div id="t2_캠페인명_display" style="margin-top:8px;font-size:12px;color:var(--text2);min-height:16px;"></div>
-        <span class="manual-toggle" onclick="toggleManualCampaignId('t2')">캠페인 ID를 직접 입력할래요</span>
-        <div id="t2_manual_wrap" style="display:none;margin-top:8px;">
-          <input type="text" id="t2_캠페인ID" placeholder="캠페인 ID를 입력하세요" onblur="onCampaignId('t2')">
+        <div id="t2_선택된캠페인" style="display:none;">
+          <div class="selected-campaign">
+            <span class="selected-campaign-name" id="t2_선택된캠페인명">-</span>
+            <button class="selected-campaign-clear" onclick="clearSelectedCampaign('t2')" title="선택 취소">×</button>
+          </div>
         </div>
+        <input type="hidden" id="t2_캠페인ID">
       </div>
       <div class="section"><div class="sec-label">기본 정보</div>
         <div class="field"><label>제작자</label><input type="text" id="t2_제작자" placeholder="이름 입력" oninput="autoGenNames('t2')"></div>
@@ -1013,19 +1025,45 @@ async function onCampaignAccountSelect(t) {
       return;
     }
     listBox.innerHTML = campaigns.map(c =>
-      `<div class="copy-suggest-item" onclick="selectCampaignFromList('${t}','${c.id}')">${(c.name || '(이름 없음)').replace(/</g,'&lt;')}</div>`
+      `<div class="copy-suggest-item" onclick="selectCampaignFromList('${t}','${c.id}','${(c.name||'').replace(/'/g,"\'")}')">${(c.name || '(이름 없음)').replace(/</g,'&lt;')}</div>`
     ).join('');
   } catch (err) {
     listBox.innerHTML = `<div class="copy-suggest-loading">불러오기 실패: ${err.message}</div>`;
   }
 }
-function selectCampaignFromList(t, campaignId) {
-  const manualWrap = document.getElementById(`${t}_manual_wrap`);
-  if (manualWrap) manualWrap.style.display = 'block';
+function selectCampaignFromList(t, campaignId, campaignName) {
   const campIdEl = document.getElementById(`${t}_캠페인ID`);
   if (campIdEl) campIdEl.value = campaignId;
   const listBox = document.getElementById(`${t}_캠페인목록`);
   if (listBox) listBox.classList.remove('show');
+  // 선택된 캠페인 표시
+  const selectWrap = document.getElementById(`${t}_캠페인선택_wrap`);
+  const selectedWrap = document.getElementById(`${t}_선택된캠페인`);
+  const selectedName = document.getElementById(`${t}_선택된캠페인명`);
+  if (selectWrap) selectWrap.style.display = 'none';
+  if (selectedWrap) selectedWrap.style.display = 'block';
+  if (selectedName) selectedName.textContent = campaignName || campaignId;
+  onCampaignId(t);
+}
+function clearSelectedCampaign(t) {
+  const campIdEl = document.getElementById(`${t}_캠페인ID`);
+  if (campIdEl) campIdEl.value = '';
+  const selectWrap = document.getElementById(`${t}_캠페인선택_wrap`);
+  const selectedWrap = document.getElementById(`${t}_선택된캠페인`);
+  if (selectWrap) selectWrap.style.display = 'block';
+  if (selectedWrap) selectedWrap.style.display = 'none';
+  const campAccSel = document.getElementById(`${t}_캠페인선택계정`);
+  if (campAccSel) campAccSel.value = '';
+  const listBox = document.getElementById(`${t}_캠페인목록`);
+  if (listBox) { listBox.classList.remove('show'); listBox.innerHTML = ''; }
+  const campDisp = document.getElementById(`${t}_캠페인명_display`);
+  if (campDisp) campDisp.textContent = '';
+}
+function onCampaignIdManual(t) {
+  const inputEl = document.getElementById(`${t}_캠페인ID_input`);
+  const campIdEl = document.getElementById(`${t}_캠페인ID`);
+  if (!inputEl || !inputEl.value.trim()) return;
+  if (campIdEl) campIdEl.value = inputEl.value.trim();
   onCampaignId(t);
 }
 function toggleManualCampaignId(t) {
@@ -1288,6 +1326,7 @@ function clearForm(t) {
     const campAccSel = document.getElementById('t2_캠페인선택계정'); if (campAccSel) campAccSel.value = '';
     const campListBox = document.getElementById('t2_캠페인목록'); if (campListBox) { campListBox.classList.remove('show'); campListBox.innerHTML = ''; }
     const manualWrap = document.getElementById('t2_manual_wrap'); if (manualWrap) manualWrap.style.display = 'none';
+    clearSelectedCampaign('t2');
   }
   populateDropdowns();
 }
