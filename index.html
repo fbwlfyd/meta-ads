@@ -291,9 +291,18 @@
     <div class="panel-head"><h2>세트 추가</h2><p>기존 캠페인에 광고세트 · 광고 추가</p></div>
     <div class="panel-body">
       <div class="campaign-id-box">
-        <label>기존 캠페인 ID</label>
-        <input type="text" id="t2_캠페인ID" placeholder="캠페인 ID를 입력하세요" onblur="onCampaignId('t2')">
+        <label>기존 캠페인 불러오기</label>
+        <div class="copy-suggest-wrap">
+          <select id="t2_캠페인선택계정" onchange="onCampaignAccountSelect('t2')">
+            <option value="">계정을 선택하세요</option>
+          </select>
+          <div class="copy-suggest-dropdown" id="t2_캠페인목록" style="max-height:240px;"></div>
+        </div>
         <div id="t2_캠페인명_display" style="margin-top:8px;font-size:12px;color:var(--text2);min-height:16px;"></div>
+        <span class="manual-toggle" onclick="toggleManualCampaignId('t2')">캠페인 ID를 직접 입력할래요</span>
+        <div id="t2_manual_wrap" style="display:none;margin-top:8px;">
+          <input type="text" id="t2_캠페인ID" placeholder="캠페인 ID를 입력하세요" onblur="onCampaignId('t2')">
+        </div>
       </div>
       <div class="section"><div class="sec-label">기본 정보</div>
         <div class="field"><label>제작자</label><input type="text" id="t2_제작자" placeholder="이름 입력" oninput="autoGenNames('t2')"></div>
@@ -651,6 +660,16 @@ async function fetchCampaignInfo(campaignId) {
   if (json.error) throw new Error(json.error.message);
   return json;
 }
+async function fetchActiveCampaigns(accountId) {
+  const cleanId = String(accountId).replace('act_', '');
+  const statusFilter = encodeURIComponent(JSON.stringify(['ACTIVE']));
+  const url = `https://graph.facebook.com/v25.0/act_${cleanId}/campaigns?fields=id,name&effective_status=${statusFilter}&limit=200&access_token=${META_ACCESS_TOKEN}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`캠페인 목록 조회 실패: ${res.status}`);
+  const json = await res.json();
+  if (json.error) throw new Error(json.error.message);
+  return json.data || [];
+}
 async function fetchNextSetNumber(campaignId) {
   const url = `https://graph.facebook.com/v25.0/${campaignId}/adsets?fields=name&limit=200&access_token=${META_ACCESS_TOKEN}`;
   const res = await fetch(url);
@@ -968,9 +987,52 @@ function populateDropdowns() {
   if (buySel) { buySel.innerHTML = ''; DB.buyingTypes.forEach(b => { const o = document.createElement('option'); o.value = b.value; o.textContent = b.label; if (b.value === 'AUCTION') o.selected = true; buySel.appendChild(o); }); }
   const objSel = document.getElementById('t1_캠페인목표');
   if (objSel) { objSel.innerHTML = ''; DB.objectives.forEach(ob => { const o = document.createElement('option'); o.value = ob.value; o.textContent = ob.label; if (ob.value === 'OUTCOME_LEADS') o.selected = true; objSel.appendChild(o); }); }
+  const campAccSel = document.getElementById('t2_캠페인선택계정');
+  if (campAccSel) {
+    const prev = campAccSel.value;
+    campAccSel.innerHTML = '<option value="">계정을 선택하세요</option>';
+    DB.accounts.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; campAccSel.appendChild(o); });
+    if (prev) campAccSel.value = prev;
+  }
   if (typeof gPopulateDropdowns === 'function') gPopulateDropdowns();
 }
 
+async function onCampaignAccountSelect(t) {
+  const accName = document.getElementById(`${t}_캠페인선택계정`).value;
+  const listBox = document.getElementById(`${t}_캠페인목록`);
+  if (!listBox) return;
+  if (!accName) { listBox.classList.remove('show'); listBox.innerHTML = ''; return; }
+  const acc = DB.accounts.find(a => a.name === accName);
+  if (!acc || !acc.id) { showToast('선택한 계정의 광고계정 ID를 찾을 수 없어요', 'error'); return; }
+  listBox.innerHTML = '<div class="copy-suggest-loading">진행중인 캠페인 불러오는 중...</div>';
+  listBox.classList.add('show');
+  try {
+    const campaigns = await fetchActiveCampaigns(acc.id);
+    if (campaigns.length === 0) {
+      listBox.innerHTML = '<div class="copy-suggest-loading">진행중인(ACTIVE) 캠페인이 없어요</div>';
+      return;
+    }
+    listBox.innerHTML = campaigns.map(c =>
+      `<div class="copy-suggest-item" onclick="selectCampaignFromList('${t}','${c.id}')">${(c.name || '(이름 없음)').replace(/</g,'&lt;')}</div>`
+    ).join('');
+  } catch (err) {
+    listBox.innerHTML = `<div class="copy-suggest-loading">불러오기 실패: ${err.message}</div>`;
+  }
+}
+function selectCampaignFromList(t, campaignId) {
+  const manualWrap = document.getElementById(`${t}_manual_wrap`);
+  if (manualWrap) manualWrap.style.display = 'block';
+  const campIdEl = document.getElementById(`${t}_캠페인ID`);
+  if (campIdEl) campIdEl.value = campaignId;
+  const listBox = document.getElementById(`${t}_캠페인목록`);
+  if (listBox) listBox.classList.remove('show');
+  onCampaignId(t);
+}
+function toggleManualCampaignId(t) {
+  const wrap = document.getElementById(`${t}_manual_wrap`);
+  if (!wrap) return;
+  wrap.style.display = (wrap.style.display === 'none' || !wrap.style.display) ? 'block' : 'none';
+}
 function extractDriveId(el) {
   const val = el.value.trim();
   const match = val.match(/\/d\/([a-zA-Z0-9_-]+)/) || val.match(/id=([a-zA-Z0-9_-]+)/);
@@ -1223,6 +1285,9 @@ function clearForm(t) {
     const accDisp = document.getElementById('t2_계정명_display'); if (accDisp) accDisp.value = '';
     const campDisp = document.getElementById('t2_캠페인명_display'); if (campDisp) campDisp.textContent = '';
     const campIdEl = document.getElementById('t2_캠페인ID'); if (campIdEl) campIdEl.value = '';
+    const campAccSel = document.getElementById('t2_캠페인선택계정'); if (campAccSel) campAccSel.value = '';
+    const campListBox = document.getElementById('t2_캠페인목록'); if (campListBox) { campListBox.classList.remove('show'); campListBox.innerHTML = ''; }
+    const manualWrap = document.getElementById('t2_manual_wrap'); if (manualWrap) manualWrap.style.display = 'none';
   }
   populateDropdowns();
 }
