@@ -1592,9 +1592,12 @@ async function gSearchCampaigns(t) {
     const data = await res.json();
     console.log('캠페인 검색 응답:', data);
     const campaigns = [];
+    console.log('파싱 데이터:', JSON.stringify(data).slice(0, 500));
     (data || []).forEach(d => {
       (d.results || []).forEach(r => {
-        campaigns.push({ id: r.campaign.resourceName, name: r.campaign.name });
+        const id = r.campaign?.resourceName || r.campaign?.resource_name || '';
+        const name = r.campaign?.name || '';
+        if (id) campaigns.push({ id, name });
       });
     });
 
