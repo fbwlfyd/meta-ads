@@ -1676,10 +1676,11 @@ async function gSelectCampaignDrop(t) {
           'login-customer-id': MCC_ID
         },
         body: JSON.stringify({
-          query: `SELECT user_list.resource_name, user_list.name FROM user_list WHERE user_list.access_reason.reason = 'OWNED'`
+          query: `SELECT user_list.resource_name, user_list.name FROM user_list LIMIT 100`
         })
       });
       const data = await res.json();
+      console.log('잠재고객 응답:', JSON.stringify(data).slice(0, 500));
       const audSel = document.getElementById(`${t}_잠재고객`);
       if (audSel) {
         audSel.innerHTML = '<option value="">선택 안함</option>';
