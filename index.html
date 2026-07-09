@@ -1564,12 +1564,17 @@ async function gSearchCampaigns(t) {
   try {
     const token = await gDriveSignIn();
 
-    // 검색 조건: 양산이면 타겟 미포함, 나머지는 지역명 포함
+    // 지역명 → 검색 키워드 매핑
+    const regionKeywordMap = {
+      '밀양': '밀양타겟', '김해': '김해타겟', '부산': '부산타겟',
+      '울주': '울주', '양산': null
+    };
+    const targetKeyword = regionKeywordMap.hasOwnProperty(region) ? regionKeywordMap[region] : region + '타겟';
     let whereClause = `campaign.status = 'ENABLED' AND campaign.name LIKE '%${clinicName}%'`;
     if (region === '양산') {
       whereClause += ` AND campaign.name NOT LIKE '%타겟%'`;
-    } else {
-      whereClause += ` AND campaign.name LIKE '%${region}%'`;
+    } else if (targetKeyword) {
+      whereClause += ` AND campaign.name LIKE '%${targetKeyword}%'`;
     }
 
     const res = await fetch(`https://googleads.googleapis.com/v24/customers/${customerId}/googleAds:searchStream`, {
@@ -1577,9 +1582,10 @@ async function gSearchCampaigns(t) {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
-        'developer-token': 'h5fjThKhbZXjdRgOcaK6rQ'
+        'developer-token': 'h5fjThKhbZXjdRgOcaK6rQ',
+        'login-customer-id': customerId
       },
-      body: JSON.stringify({ query: `SELECT campaign.resourceName, campaign.name FROM campaign WHERE ${whereClause}` })
+      body: JSON.stringify({ query: `SELECT campaign.resource_name, campaign.name FROM campaign WHERE ${whereClause}` })
     });
     const data = await res.json();
     const campaigns = [];
