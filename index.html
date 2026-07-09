@@ -1357,19 +1357,21 @@ let gDriveAccessToken = null;
 async function gDriveSignIn() {
   return new Promise((resolve, reject) => {
     if (gDriveAccessToken) { resolve(gDriveAccessToken); return; }
-    const popup = window.open(
-      `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GDRIVE_CLIENT_ID}&redirect_uri=${encodeURIComponent(location.origin)}&response_type=token&scope=https://www.googleapis.com/auth/drive.file%20https://www.googleapis.com/auth/spreadsheets%20https://www.googleapis.com/auth/adwords`,
-      'googleAuth', 'width=500,height=600'
-    );
-    const handler = (e) => {
-      if (e.data && e.data.type === 'GOOGLE_TOKEN') {
-        window.removeEventListener('message', handler);
-        gDriveAccessToken = e.data.token;
-        resolve(gDriveAccessToken);
-      }
-    };
-    window.addEventListener('message', handler);
-    // fallback: token_hash 파싱
+    // 현재 페이지 URL에서 access_token 파라미터 확인 (리다이렉트 후)
+    const hashParams = new URLSearchParams(window.location.hash.slice(1));
+    const existingToken = hashParams.get('access_token');
+    if (existingToken) {
+      gDriveAccessToken = existingToken;
+      // URL에서 토큰 제거
+      history.replaceState(null, '', window.location.pathname);
+      resolve(gDriveAccessToken);
+      return;
+    }
+    // 팝업 방식으로 OAuth 인증
+    const redirectUri = location.origin + '/';
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GDRIVE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent('https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/adwords')}&prompt=consent`;
+    const popup = window.open(authUrl, 'googleAuth', 'width=500,height=600');
+    if (!popup) { reject(new Error('팝업이 차단됐어요. 팝업 허용 후 다시 시도해줘요.')); return; }
     const timer = setInterval(() => {
       try {
         if (popup.closed) { clearInterval(timer); reject(new Error('로그인 창이 닫혔어요')); return; }
@@ -1381,8 +1383,12 @@ async function gDriveSignIn() {
           popup.close();
           resolve(gDriveAccessToken);
         }
-      } catch(e) {}
+      } catch(e) {
+        // 크로스 오리진 접근 오류는 무시 (리다이렉트 전)
+      }
     }, 500);
+    // 타임아웃 60초
+    setTimeout(() => { clearInterval(timer); if (!gDriveAccessToken) reject(new Error('로그인 시간 초과')); }, 60000);
   });
 }
 
@@ -1577,15 +1583,16 @@ async function gSearchCampaigns(t) {
       whereClause += ` AND campaign.name LIKE '%${targetKeyword}%'`;
     }
 
-    const query = `SELECT campaign.resource_name, campaign.name FROM campaign WHERE ${whereClause}`;
-    console.log('캠페인 검색 쿼리:', query, 'customerId:', customerId);
-    const res = await fetch(`https://googleads.googleapis.com/v24/customers/${customerId}/googleAds:searchStream`, {
+    const MCC_ID = '2191005843';
+    const query = `SELECT campaign.resource_name, campaign.name, customer.id FROM campaign WHERE ${whereClause}`;
+    console.log('캠페인 검색 쿼리:', query);
+    const res = await fetch(`https://googleads.googleapis.com/v24/customers/${MCC_ID}/googleAds:searchStream`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         'developer-token': 'h5fjThKhbZXjdRgOcaK6rQ',
-        'login-customer-id': '2191005843'
+        'login-customer-id': MCC_ID
       },
       body: JSON.stringify({ query })
     });
