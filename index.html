@@ -531,12 +531,20 @@
     <div class="panel-body">
       <div class="campaign-id-box">
         <label>지역 선택</label>
-        <div class="field" style="margin-bottom:8px;">
-          <select id="g2_검색키워드" onchange="gSearchCampaigns('g2')"><option value="">선택</option></select>
+        <div id="g2_캠페인검색_wrap">
+          <div class="field" style="margin-bottom:8px;">
+            <select id="g2_검색키워드" onchange="gSearchCampaigns('g2')"><option value="">선택</option></select>
+          </div>
+          <div class="field" style="margin-bottom:8px;">
+            <label style="font-size:12px;color:var(--text2);">캠페인 선택</label>
+            <select id="g2_캠페인선택" onchange="gSelectCampaignDrop('g2')" style="display:none;"><option value="">캠페인 선택</option></select>
+          </div>
         </div>
-        <div class="field" style="margin-bottom:8px;">
-          <label style="font-size:12px;color:var(--text2);">캠페인 선택</label>
-          <select id="g2_캠페인선택" onchange="gSelectCampaignDrop('g2')" style="display:none;"><option value="">캠페인 선택</option></select>
+        <div id="g2_선택된캠페인" style="display:none;">
+          <div class="selected-campaign">
+            <span class="selected-campaign-name" id="g2_선택된캠페인명">-</span>
+            <button class="selected-campaign-clear" onclick="gClearSelectedCampaign('g2')" title="선택 취소">×</button>
+          </div>
         </div>
         <input type="hidden" id="g2_캠페인ID">
         <div id="g2_캠페인명_display" style="margin-top:4px;font-size:12px;color:var(--blue);min-height:16px;font-weight:600;"></div>
@@ -1643,9 +1651,30 @@ function gSelectCampaignDrop(t) {
   const dropSel = document.getElementById(`${t}_캠페인선택`);
   const campaignId = dropSel.value;
   const campaignName = dropSel.options[dropSel.selectedIndex]?.text || '';
+  if (!campaignId) return;
   document.getElementById(`${t}_캠페인ID`).value = campaignId;
+  // 선택된 캠페인 표시
+  const searchWrap = document.getElementById(`${t}_캠페인검색_wrap`);
+  const selectedWrap = document.getElementById(`${t}_선택된캠페인`);
+  const selectedName = document.getElementById(`${t}_선택된캠페인명`);
+  if (searchWrap) searchWrap.style.display = 'none';
+  if (selectedWrap) selectedWrap.style.display = 'block';
+  if (selectedName) selectedName.textContent = campaignName;
   const nameDisplay = document.getElementById(`${t}_캠페인명_display`);
-  if (nameDisplay) nameDisplay.textContent = campaignId ? '✅ ' + campaignName : '';
+  if (nameDisplay) nameDisplay.textContent = '';
+}
+function gClearSelectedCampaign(t) {
+  document.getElementById(`${t}_캠페인ID`).value = '';
+  const searchWrap = document.getElementById(`${t}_캠페인검색_wrap`);
+  const selectedWrap = document.getElementById(`${t}_선택된캠페인`);
+  if (searchWrap) searchWrap.style.display = 'block';
+  if (selectedWrap) selectedWrap.style.display = 'none';
+  const dropSel = document.getElementById(`${t}_캠페인선택`);
+  if (dropSel) { dropSel.value = ''; dropSel.style.display = 'none'; }
+  const kwSel = document.getElementById(`${t}_검색키워드`);
+  if (kwSel) kwSel.value = '';
+  const nameDisplay = document.getElementById(`${t}_캠페인명_display`);
+  if (nameDisplay) nameDisplay.textContent = '';
 }
 
 async function gOnCampaignId(t) {
@@ -1942,6 +1971,7 @@ function gClearForm(t) {
     const accDisp = document.getElementById('g2_계정명_display'); if (accDisp) accDisp.value = '';
     const campDisp = document.getElementById('g2_캠페인명_display'); if (campDisp) campDisp.textContent = '';
     const campIdEl = document.getElementById('g2_캠페인ID'); if (campIdEl) campIdEl.value = '';
+    gClearSelectedCampaign('g2');
   }
   gPopulateDropdowns();
 }
