@@ -1577,6 +1577,8 @@ async function gSearchCampaigns(t) {
       whereClause += ` AND campaign.name LIKE '%${targetKeyword}%'`;
     }
 
+    const query = `SELECT campaign.resource_name, campaign.name FROM campaign WHERE ${whereClause}`;
+    console.log('캠페인 검색 쿼리:', query, 'customerId:', customerId);
     const res = await fetch(`https://googleads.googleapis.com/v24/customers/${customerId}/googleAds:searchStream`, {
       method: 'POST',
       headers: {
@@ -1585,9 +1587,10 @@ async function gSearchCampaigns(t) {
         'developer-token': 'h5fjThKhbZXjdRgOcaK6rQ',
         'login-customer-id': customerId
       },
-      body: JSON.stringify({ query: `SELECT campaign.resource_name, campaign.name FROM campaign WHERE ${whereClause}` })
+      body: JSON.stringify({ query })
     });
     const data = await res.json();
+    console.log('캠페인 검색 응답:', data);
     const campaigns = [];
     (data || []).forEach(d => {
       (d.results || []).forEach(r => {
