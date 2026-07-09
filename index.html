@@ -1660,42 +1660,25 @@ async function gSelectCampaignDrop(t) {
   if (selectedWrap) selectedWrap.style.display = 'block';
   if (selectedName) selectedName.textContent = campaignName;
 
-  // 계정 ID로 광고계정ID 자동 세팅
+  // 계정 ID로 광고계정ID 자동 세팅 + 참조시트에서 잠재고객 가져오기
   if (accountId) {
     document.getElementById(`${t}_광고계정ID`).value = accountId;
-    // 잠재고객 목록 가져오기
-    try {
-      const token = await gDriveSignIn();
-      const MCC_ID = '2191005843';
-      const res = await fetch(`https://googleads.googleapis.com/v24/customers/${accountId}/googleAds:searchStream`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'developer-token': 'h5fjThKhbZXjdRgOcaK6rQ',
-          'login-customer-id': MCC_ID
-        },
-        body: JSON.stringify({
-          query: `SELECT user_list.resource_name, user_list.name FROM user_list LIMIT 100`
-        })
-      });
-      const data = await res.json();
-      console.log('잠재고객 응답:', JSON.stringify(data).slice(0, 500));
+    // 계정 ID로 계정명 찾기
+    const accObj = GDB.accounts.find(a => a.id === accountId);
+    const accName = accObj ? accObj.name : '';
+    if (accName) {
+      gSetAccountName(t, accName);
+      // 참조시트 GDB.audiencesByAccount에서 잠재고객 가져오기
       const audSel = document.getElementById(`${t}_잠재고객`);
       if (audSel) {
         audSel.innerHTML = '<option value="">선택 안함</option>';
-        (data || []).forEach(d => {
-          (d.results || []).forEach(r => {
-            const o = document.createElement('option');
-            o.value = r.userList?.resourceName || r.user_list?.resource_name || '';
-            o.textContent = r.userList?.name || r.user_list?.name || '';
-            if (o.value) audSel.appendChild(o);
-          });
+        const list = GDB.audiencesByAccount[accName] || [];
+        list.forEach(a => {
+          const o = document.createElement('option');
+          o.value = a.id; o.textContent = a.name;
+          audSel.appendChild(o);
         });
       }
-      showToast('잠재고객 목록을 불러왔어요', 'success');
-    } catch(e) {
-      showToast('잠재고객 불러오기 실패: ' + e.message, 'error');
     }
   }
 }
@@ -2023,3 +2006,4 @@ loadData();
 </script>
 </body>
 </html>
+
