@@ -69,8 +69,8 @@
   .btn-primary.g:hover { background: var(--g-red-dark); }
   .btn-ghost { width: 100%; height: 36px; background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text2); font-family: inherit; font-size: 13px; cursor: pointer; transition: all 0.15s; }
   .btn-ghost:hover { background: var(--bg); color: var(--text1); }
-  .selected-campaign { display: flex; align-items: center; justify-content: space-between; background: var(--white); border: 1px solid #ffe0a0; border-radius: var(--radius-sm); padding: 8px 12px; margin-top: 8px; }
-  .selected-campaign-name { font-size: 12px; font-weight: 600; color: var(--text1); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .selected-campaign { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+  .selected-campaign-name { font-size: 12px; font-weight: 600; color: var(--blue); flex: 1; line-height: 1.4; }
   .selected-campaign-clear { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 16px; line-height: 1; padding: 0 0 0 8px; flex-shrink: 0; }
   .selected-campaign-clear:hover { color: var(--red); }
   .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
@@ -1644,16 +1644,59 @@ async function gSearchCampaigns(t) {
   }
 }
 
-function gSelectCampaignDrop(t) {
+async function gSelectCampaignDrop(t) {
   const dropSel = document.getElementById(`${t}_캠페인선택`);
-  const campaignId = dropSel.value;
+  const resourceName = dropSel.value;
   const campaignName = dropSel.options[dropSel.selectedIndex]?.text || '';
-  if (!campaignId) return;
-  document.getElementById(`${t}_캠페인ID`).value = campaignId;
+  if (!resourceName) return;
+  document.getElementById(`${t}_캠페인ID`).value = resourceName;
+
+  // resourceName에서 계정 ID 추출 (customers/계정ID/campaigns/캠페인ID)
+  const match = resourceName.match(/customers\/(\d+)\//);
+  const accountId = match ? match[1] : '';
+
   const selectedWrap = document.getElementById(`${t}_선택된캠페인`);
   const selectedName = document.getElementById(`${t}_선택된캠페인명`);
   if (selectedWrap) selectedWrap.style.display = 'block';
   if (selectedName) selectedName.textContent = campaignName;
+
+  // 계정 ID로 광고계정ID 자동 세팅
+  if (accountId) {
+    document.getElementById(`${t}_광고계정ID`).value = accountId;
+    // 잠재고객 목록 가져오기
+    try {
+      const token = await gDriveSignIn();
+      const MCC_ID = '2191005843';
+      const res = await fetch(`https://googleads.googleapis.com/v24/customers/${accountId}/googleAds:searchStream`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'developer-token': 'h5fjThKhbZXjdRgOcaK6rQ',
+          'login-customer-id': MCC_ID
+        },
+        body: JSON.stringify({
+          query: `SELECT user_list.resource_name, user_list.name FROM user_list WHERE user_list.access_reason.reason = 'OWNED'`
+        })
+      });
+      const data = await res.json();
+      const audSel = document.getElementById(`${t}_잠재고객`);
+      if (audSel) {
+        audSel.innerHTML = '<option value="">선택 안함</option>';
+        (data || []).forEach(d => {
+          (d.results || []).forEach(r => {
+            const o = document.createElement('option');
+            o.value = r.userList?.resourceName || r.user_list?.resource_name || '';
+            o.textContent = r.userList?.name || r.user_list?.name || '';
+            if (o.value) audSel.appendChild(o);
+          });
+        });
+      }
+      showToast('잠재고객 목록을 불러왔어요', 'success');
+    } catch(e) {
+      showToast('잠재고객 불러오기 실패: ' + e.message, 'error');
+    }
+  }
 }
 function gClearSelectedCampaign(t) {
   document.getElementById(`${t}_캠페인ID`).value = '';
