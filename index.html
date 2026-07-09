@@ -1584,29 +1584,50 @@ async function gSearchCampaigns(t) {
     }
 
     const MCC_ID = '2191005843';
-    const query = `SELECT campaign.resource_name, campaign.name, customer.id FROM campaign WHERE ${whereClause}`;
+    const query = `SELECT campaign.resource_name, campaign.name FROM campaign WHERE ${whereClause}`;
     console.log('캠페인 검색 쿼리:', query);
-    const res = await fetch(`https://googleads.googleapis.com/v24/customers/${MCC_ID}/googleAds:searchStream`, {
-      method: 'POST',
+
+    // 1. MCC 하위 계정 목록 가져오기
+    const accListRes = await fetch(`https://googleads.googleapis.com/v24/customers:listAccessibleCustomers`, {
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
         'developer-token': 'h5fjThKhbZXjdRgOcaK6rQ',
         'login-customer-id': MCC_ID
-      },
-      body: JSON.stringify({ query })
+      }
     });
-    const data = await res.json();
-    console.log('캠페인 검색 응답:', data);
+    const accListData = await accListRes.json();
+    const customerIds = (accListData.resourceNames || [])
+      .map(r => r.replace('customers/', ''))
+      .filter(id => id !== MCC_ID);
+    console.log('하위 계정 목록:', customerIds);
+
+    // 2. 각 계정마다 캠페인 검색
     const campaigns = [];
-    console.log('파싱 데이터:', JSON.stringify(data).slice(0, 500));
-    (data || []).forEach(d => {
-      (d.results || []).forEach(r => {
-        const id = r.campaign?.resourceName || r.campaign?.resource_name || '';
-        const name = r.campaign?.name || '';
-        if (id) campaigns.push({ id, name });
-      });
-    });
+    await Promise.all(customerIds.map(async (cid) => {
+      try {
+        const res = await fetch(`https://googleads.googleapis.com/v24/customers/${cid}/googleAds:searchStream`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'developer-token': 'h5fjThKhbZXjdRgOcaK6rQ',
+            'login-customer-id': MCC_ID
+          },
+          body: JSON.stringify({ query })
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        (data || []).forEach(d => {
+          (d.results || []).forEach(r => {
+            const id = r.campaign?.resourceName || r.campaign?.resource_name || '';
+            const name = r.campaign?.name || '';
+            if (id) campaigns.push({ id, name });
+          });
+        });
+      } catch(e) {}
+    }));
+    console.log('검색된 캠페인:', campaigns);
 
     if (campaigns.length === 0) {
       dropSel.innerHTML = '<option value="">해당 캠페인 없음</option>';
