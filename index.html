@@ -1358,7 +1358,7 @@ async function gDriveSignIn() {
   return new Promise((resolve, reject) => {
     if (gDriveAccessToken) { resolve(gDriveAccessToken); return; }
     const popup = window.open(
-      `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GDRIVE_CLIENT_ID}&redirect_uri=${encodeURIComponent(location.origin + '/oauth2callback')}&response_type=token&scope=https://www.googleapis.com/auth/drive.file%20https://www.googleapis.com/auth/spreadsheets%20https://www.googleapis.com/auth/adwords`,
+      `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GDRIVE_CLIENT_ID}&redirect_uri=${encodeURIComponent(location.origin)}&response_type=token&scope=https://www.googleapis.com/auth/drive.file%20https://www.googleapis.com/auth/spreadsheets%20https://www.googleapis.com/auth/adwords`,
       'googleAuth', 'width=500,height=600'
     );
     const handler = (e) => {
