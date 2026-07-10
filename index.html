@@ -1985,7 +1985,6 @@ async function gSubmitAd(t) {
   showToast('Make로 전송 중...', 'info');
 
   // upload 방식 영상 → 구글 드라이브 업로드 후 파일ID로 교체
-  const videoList = document.getElementById(`${t}_video_list`);
   const uploadBlocks = Array.from(videoList.children).filter(block => {
     const method = block.querySelector('select').value;
     const fileInput = block.querySelector('[data-role="파일첨부"]');
@@ -2072,4 +2071,3 @@ loadData();
 </script>
 </body>
 </html>
-
