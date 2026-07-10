@@ -1990,6 +1990,7 @@ async function gSubmitAd(t) {
     const fileInput = block.querySelector('[data-role="파일첨부"]');
     return method === 'upload' && fileInput && fileInput.files[0];
   });
+  const 업로드파일IDs = [];
   if (uploadBlocks.length > 0) {
     showToast('영상 드라이브 업로드 중...', 'info');
     for (const block of uploadBlocks) {
@@ -1998,6 +1999,7 @@ async function gSubmitAd(t) {
         const fileIdInput = block.querySelector('[data-role="파일ID"]');
         const fileId = await uploadFileToDrive(fileInput.files[0]);
         fileIdInput.value = fileId;
+        업로드파일IDs.push(fileId);
         // 파일유형을 drive로 변경
         block.querySelector('select').value = 'drive';
       } catch(err) {
@@ -2009,6 +2011,7 @@ async function gSubmitAd(t) {
     // 업로드 후 데이터 재수집
     data.영상목록 = gCollectVideos(t).map(v => ({ ...v, 파일첨부: undefined }));
   }
+  data.업로드파일IDs = 업로드파일IDs;
 
   const idx = gAddCard(t, data);
   try {
