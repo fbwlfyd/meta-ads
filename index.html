@@ -1555,7 +1555,10 @@ function gAutoGenNames(t) {
   const campaignName = [shortName, '디맨드젠', date ? `(${date})` : '', staffName, refName, accNameLabel, '예비용'].filter(Boolean).join(' ');
   const groupName = [clinicName, '임플란트', seqLabel, staffId].filter(Boolean).join(' ');
   if (t === 'g1') { const el = document.getElementById('g1_캠페인명'); if (el) el.value = campaignName; }
-  const groupEl = document.getElementById(`${t}_광고그룹명`); if (groupEl) groupEl.value = groupName;
+  // g2는 캠페인 선택 시 광고그룹명 자동생성하므로 여기서 덮어쓰지 않음
+  if (t !== 'g2') {
+    const groupEl = document.getElementById(`${t}_광고그룹명`); if (groupEl) groupEl.value = groupName;
+  }
 }
 
 // ===== 캠페인 검색 (세트 추가용) =====
