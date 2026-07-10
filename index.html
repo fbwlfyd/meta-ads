@@ -1973,7 +1973,14 @@ async function gSubmitAd(t) {
   if (!data.계정명 || !data.광고그룹명) { showToast('계정명과 광고그룹명은 필수입니다', 'error'); return; }
   if (isT2 && !data.캠페인ID) { showToast('캠페인 ID를 입력해주세요', 'error'); return; }
   if (!isT2 && !data.캠페인명) { showToast('캠페인명을 입력해주세요', 'error'); return; }
-  if ((data.영상목록||[]).length === 0) { showToast('영상을 1개 이상 추가해주세요', 'error'); return; }
+  // upload 방식 파일 첨부 여부도 체크
+  const videoList = document.getElementById(`${t}_video_list`);
+  const hasUploadFile = Array.from(videoList.children).some(block => {
+    const method = block.querySelector('select')?.value;
+    const fileInput = block.querySelector('[data-role="파일첨부"]');
+    return method === 'upload' && fileInput && fileInput.files[0];
+  });
+  if ((data.영상목록||[]).length === 0 && !hasUploadFile) { showToast('영상을 1개 이상 추가해주세요', 'error'); return; }
   const btn = document.getElementById(`${t}_submitBtn`); btn.disabled = true; btn.textContent = '전송 중...';
   showToast('Make로 전송 중...', 'info');
 
