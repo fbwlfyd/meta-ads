@@ -1729,10 +1729,10 @@ async function gSelectCampaignDrop(t) {
       const clinicName = window._g2ClinicName || '';
       const staffEl = document.getElementById(`${t}_제작자`);
       const staffName = staffEl ? staffEl.value : '';
-      const staffObj = GDB.staff.find(s => s.name === staffName);
-      const staffId = staffObj ? staffObj.id : '';
-      const today = new Date().toISOString().slice(2,10).replace(/-/g,'');
-      const groupName = [clinicName, '임플란트', `${gNextSetNumber.g2}U`, staffId, today].filter(Boolean).join(' ');
+      // L열(11)에서 사원명 매핑 → M열(12) 사원ID 가져오기
+      const staffRow = (GDB.gRefRows || []).slice(1).find(r => r[11] === staffName);
+      const staffId = staffRow ? (staffRow[12] || '') : '';
+      const groupName = [clinicName, '임플란트', `${gNextSetNumber.g2}U`, staffId].filter(Boolean).join(' ');
       const groupEl = document.getElementById(`${t}_광고그룹명`);
       if (groupEl) groupEl.value = groupName;
     } catch(e) {
