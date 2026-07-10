@@ -1303,7 +1303,11 @@ async function submitAd(t) {
       }
     }
     const res = await fetch(WEBHOOKS[t], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-    if (res.ok) { updateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중'); showToast(isT2?'세트 추가 요청 완료!':'광고 등록 요청 완료!', 'success'); }
+    if (res.ok) {
+      updateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중');
+      showToast(isT2?'세트 추가 요청 완료!':'광고 등록 요청 완료!', 'success');
+      if (isT2) nextSetNumber.t2++;
+    }
     else { updateCard(t, idx, '실패', `HTTP ${res.status}`); showToast(`전송 실패 (${res.status})`, 'error'); }
   } catch (err) { updateCard(t, idx, '실패', '오류: ' + err.message); showToast('오류: ' + err.message, 'error'); }
   btn.disabled = false; btn.textContent = isT2 ? '세트 추가하기' : '광고 등록하기';
@@ -2000,8 +2004,6 @@ async function gSubmitAd(t) {
         const fileId = await uploadFileToDrive(fileInput.files[0]);
         fileIdInput.value = fileId;
         업로드파일IDs.push(fileId);
-        // 파일유형을 drive로 변경
-        block.querySelector('select').value = 'drive';
       } catch(err) {
         showToast('드라이브 업로드 실패: ' + err.message, 'error');
         btn.disabled = false; btn.textContent = isT2 ? '세트 추가하기' : '캠페인 등록하기';
@@ -2019,6 +2021,18 @@ async function gSubmitAd(t) {
     if (res.ok) {
       gUpdateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중');
       showToast(isT2?'세트 추가 요청 완료!':'캠페인 등록 요청 완료!', 'success');
+      // 세트 추가 시 다음 그룹번호로 증가
+      if (isT2) {
+        gNextSetNumber.g2++;
+        // 광고그룹명 업데이트
+        const clinicName = window._g2ClinicName || '';
+        const staffEl = document.getElementById(`${t}_제작자`);
+        const staffName = staffEl ? staffEl.value : '';
+        const staffRow = (GDB.gRefRows || []).slice(1).find(r => r[11] === staffName);
+        const staffId = staffRow ? (staffRow[12] || '') : '';
+        const groupName = [clinicName, '임플란트', `${gNextSetNumber.g2}U`, staffId].filter(Boolean).join(' ');
+        const groupEl = document.getElementById(`${t}_광고그룹명`); if (groupEl) groupEl.value = groupName;
+      }
       // 사용된 카피 시트에 저장
       const usedCopies = gCollectTexts(t, 'headline').concat(gCollectTexts(t, 'desc'));
       gSaveCopies(usedCopies).catch(() => {});
