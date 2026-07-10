@@ -1869,7 +1869,7 @@ function gCollectVideos(t) {
       공개상태: 'unlisted',
       아동용: 'false',
     };
-  }).filter(v => v.파일ID && v.파일ID.trim() !== '');
+  }).filter(v => (v.파일ID && v.파일ID.trim() !== '') || (v.파일유형 === 'upload' && v.파일첨부));
 }
 let gLongHeadlineSeq = { g1: 0, g2: 0 };
 function gAddLongHeadlineBlock(t) {
