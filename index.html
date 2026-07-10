@@ -547,7 +547,10 @@
         <input type="hidden" id="g2_캠페인ID">
       </div>
       <div class="section"><div class="sec-label">기본 정보</div>
-        <div class="field"><label>제작자</label><input type="text" id="g2_제작자" placeholder="이름 입력" oninput="gAutoGenNames('g2')"></div>
+        <div class="row2">
+          <div class="field"><label>제작자</label><input type="text" id="g2_제작자" placeholder="이름 입력" oninput="gAutoGenNames('g2')"></div>
+          <div class="field"><label id="g2_지역구분자_label">지역구분자</label><select id="g2_지역구분자" disabled><option value="">캠페인 선택 후 자동</option></select></div>
+        </div>
       </div>
       <div class="divider"></div>
       <div class="section"><div class="sec-label">광고그룹 설정</div>
@@ -1742,6 +1745,51 @@ async function gSelectCampaignDrop(t) {
     } catch(e) {
       console.warn('광고그룹 조회 실패:', e.message);
     }
+
+    // 캠페인 지역 설정 레벨 확인
+    try {
+      const resGeo = await fetch(`https://googleads.googleapis.com/v24/customers/${accountId}/googleAds:searchStream`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'developer-token': 'h5fjThKhbZXjdRgOcaK6rQ',
+          'login-customer-id': '2191005843'
+        },
+        body: JSON.stringify({
+          query: `SELECT campaign.geo_target_type_setting.positive_geo_target_type FROM campaign WHERE campaign.resource_name = '${resourceName}'`
+        })
+      });
+      const geoData = await resGeo.json();
+      const geoType = geoData?.[0]?.results?.[0]?.campaign?.geoTargetTypeSetting?.positiveGeoTargetType || '';
+      console.log('지역설정타입:', geoType);
+
+      const regionSel = document.getElementById('g2_지역구분자');
+      const regionLabel = document.getElementById('g2_지역구분자_label');
+      const needsGeo = geoType === 'PRESENCE_OR_INTEREST' || geoType === '' || geoType === 'PRESENCE';
+
+      // 지역구분자 드롭다운 채우기
+      if (regionSel) {
+        regionSel.innerHTML = '<option value="">선택</option>';
+        GDB.googleRegions.forEach(r => {
+          const o = document.createElement('option');
+          o.value = r.name; o.textContent = r.name;
+          regionSel.appendChild(o);
+        });
+      }
+
+      if (needsGeo) {
+        if (regionLabel) regionLabel.textContent = '지역구분자 (지역설정필요)';
+        if (regionSel) regionSel.disabled = false;
+        window._g2NeedsGeo = true;
+      } else {
+        if (regionLabel) regionLabel.textContent = '지역구분자 (지역설정불필요)';
+        if (regionSel) { regionSel.disabled = true; regionSel.value = ''; }
+        window._g2NeedsGeo = false;
+      }
+    } catch(e) {
+      console.warn('지역설정 확인 실패:', e.message);
+    }
   }
 }
 function gClearSelectedCampaign(t) {
@@ -1750,6 +1798,11 @@ function gClearSelectedCampaign(t) {
   if (selectedWrap) selectedWrap.style.display = 'none';
   const dropSel = document.getElementById(`${t}_캠페인선택`);
   if (dropSel) { dropSel.value = ''; }
+  const regionLabel = document.getElementById(`${t}_지역구분자_label`);
+  if (regionLabel) regionLabel.textContent = '지역구분자';
+  const regionSel = document.getElementById(`${t}_지역구분자`);
+  if (regionSel) { regionSel.disabled = true; regionSel.innerHTML = '<option value="">캠페인 선택 후 자동</option>'; }
+  window._g2NeedsGeo = false;
 }
 
 async function gOnCampaignId(t) {
@@ -1918,6 +1971,7 @@ function gGetData(t) {
     치과명: g(`${t}_치과명`), 광고그룹명: g(`${t}_광고그룹명`),
     지역구분자: regionName,
     구글지역ID: gRegion ? (gRegion.criterionId || '') : '',
+    지역설정필요: isT2 ? (window._g2NeedsGeo || false) : true,
     언어: 'ko',
     채널: gCollectChannels(t),
     잠재고객ID: g(`${t}_잠재고객`),
