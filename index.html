@@ -1538,21 +1538,24 @@ function gPopulateYoutubeChannels(t) {
 }
 function gAutoGenNames(t) {
   const acc = GDB.accounts.find(a => a.name === gGetAccountName(t)); if (!acc) return;
-  const region = GDB.googleRegions.find(r => r.name === document.getElementById(`${t}_지역구분자`).value);
-  const staffName = document.getElementById(`${t}_제작자`).value;
+  const regionEl = document.getElementById(`${t}_지역구분자`);
+  const region = GDB.googleRegions.find(r => r.name === (regionEl ? regionEl.value : ''));
+  const staffEl = document.getElementById(`${t}_제작자`);
+  const staffName = staffEl ? staffEl.value : '';
   const staffObj = GDB.staff.find(s => s.name === staffName);
   const dateEl = document.getElementById(`${t}_날짜`);
   const date = dateEl ? dateEl.value : '';
   const refName = region ? (region.refName || '') : '';
   const staffId = staffObj ? staffObj.id : '';
   const seqLabel = t === 'g2' ? `${gNextSetNumber.g2}U` : '1U';
-  const clinicName = document.getElementById(`${t}_치과명`)?.value || '';
+  const clinicEl = document.getElementById(`${t}_치과명`);
+  const clinicName = clinicEl ? (clinicEl.value || '') : '';
   const shortName = GDB.clinicToShortName[clinicName] || acc.campaignName || '';
   const accNameLabel = gGetAccountName(t) ? `[${gGetAccountName(t)}]` : '';
   const campaignName = [shortName, '디맨드젠', date ? `(${date})` : '', staffName, refName, accNameLabel, '예비용'].filter(Boolean).join(' ');
   const groupName = [clinicName, '임플란트', seqLabel, staffId].filter(Boolean).join(' ');
-  if (t === 'g1') document.getElementById('g1_캠페인명').value = campaignName;
-  document.getElementById(`${t}_광고그룹명`).value = groupName;
+  if (t === 'g1') { const el = document.getElementById('g1_캠페인명'); if (el) el.value = campaignName; }
+  const groupEl = document.getElementById(`${t}_광고그룹명`); if (groupEl) groupEl.value = groupName;
 }
 
 // ===== 캠페인 검색 (세트 추가용) =====
@@ -1565,6 +1568,13 @@ async function gSearchCampaigns(t) {
   const parts = keyword.split('_');
   const clinicName = parts[0] || '';
   const region = parts.slice(1).join('_') || keyword;
+
+  // U열 키워드로 J열(줄인치과명) 매핑 → K열(치과명) 가져오기
+  const matchedRow = (GDB.gRefRows || []).slice(1).find(r => r[9] === clinicName);
+  if (matchedRow) {
+    const fullClinicName = matchedRow[10] || '';
+    window._g2ClinicName = fullClinicName;
+  }
 
   const dropSel = document.getElementById(`${t}_캠페인선택`);
   dropSel.style.display = 'none';
@@ -1681,6 +1691,49 @@ async function gSelectCampaignDrop(t) {
           audSel.appendChild(o);
         });
       }
+    }
+
+    // 캠페인 내 광고그룹 조회해서 다음 번호 계산
+    try {
+      const token = await gDriveSignIn();
+      const MCC_ID = '2191005843';
+      const campaignResourceName = resourceName;
+      const res = await fetch(`https://googleads.googleapis.com/v24/customers/${accountId}/googleAds:searchStream`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'developer-token': 'h5fjThKhbZXjdRgOcaK6rQ',
+          'login-customer-id': MCC_ID
+        },
+        body: JSON.stringify({
+          query: `SELECT ad_group.name FROM ad_group WHERE campaign.resource_name = '${campaignResourceName}'`
+        })
+      });
+      const data = await res.json();
+      let maxNum = 0;
+      (data || []).forEach(d => {
+        (d.results || []).forEach(r => {
+          const name = r.adGroup?.name || r.ad_group?.name || '';
+          const m = name.match(/(\d+)U/);
+          if (m) { const n = parseInt(m[1]); if (n > maxNum) maxNum = n; }
+        });
+      });
+      gNextSetNumber.g2 = maxNum + 1;
+      console.log('다음 광고그룹 번호:', gNextSetNumber.g2);
+
+      // 광고그룹명 자동생성
+      const clinicName = window._g2ClinicName || '';
+      const staffEl = document.getElementById(`${t}_제작자`);
+      const staffName = staffEl ? staffEl.value : '';
+      const staffObj = GDB.staff.find(s => s.name === staffName);
+      const staffId = staffObj ? staffObj.id : '';
+      const today = new Date().toISOString().slice(2,10).replace(/-/g,'');
+      const groupName = [clinicName, '임플란트', `${gNextSetNumber.g2}U`, staffId, today].filter(Boolean).join(' ');
+      const groupEl = document.getElementById(`${t}_광고그룹명`);
+      if (groupEl) groupEl.value = groupName;
+    } catch(e) {
+      console.warn('광고그룹 조회 실패:', e.message);
     }
   }
 }
@@ -1848,7 +1901,8 @@ function gCollectChannels(t) {
 }
 function gGetData(t) {
   const isT2 = t === 'g2';
-  const regionName = document.getElementById(`${t}_지역구분자`).value;
+  const regionEl = document.getElementById(`${t}_지역구분자`);
+  const regionName = regionEl ? regionEl.value : '';
   const gRegion = GDB.googleRegions.find(r => r.name === regionName);
   const d = {
     플랫폼: 'google',
