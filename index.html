@@ -1357,7 +1357,7 @@ const COPY_SUGGEST_WEBHOOK = 'https://hook.eu1.make.com/m2o5gs9ms2iewctp68enxcs7
 
 // 구글 드라이브 업로드 (upload 방식 영상용)
 const GDRIVE_CLIENT_ID = '907431503239-ijcprs8pppon0r7eh0q4nj5pvimpes9m.apps.googleusercontent.com';
-let gDriveAccessToken = sessionStorage.getItem('gDriveAccessToken') || null;
+let gDriveAccessToken = localStorage.getItem('gDriveAccessToken') || null;
 
 async function gDriveSignIn() {
   return new Promise((resolve, reject) => {
@@ -1367,7 +1367,7 @@ async function gDriveSignIn() {
     const existingToken = hashParams.get('access_token');
     if (existingToken) {
       gDriveAccessToken = existingToken;
-      sessionStorage.setItem('gDriveAccessToken', existingToken);
+      localStorage.setItem('gDriveAccessToken', existingToken);
       // URL에서 토큰 제거
       history.replaceState(null, '', window.location.pathname);
       resolve(gDriveAccessToken);
@@ -1386,7 +1386,7 @@ async function gDriveSignIn() {
           clearInterval(timer);
           const params = new URLSearchParams(hash.slice(1));
           gDriveAccessToken = params.get('access_token');
-          sessionStorage.setItem('gDriveAccessToken', gDriveAccessToken);
+          localStorage.setItem('gDriveAccessToken', gDriveAccessToken);
           popup.close();
           resolve(gDriveAccessToken);
         }
