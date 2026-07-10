@@ -138,6 +138,7 @@
   .chip input { display: none; }
   .chip.checked { background: var(--g-red-bg); border-color: var(--g-red-border); color: var(--g-red-dark); font-weight: 600; }
 </style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -1364,48 +1365,49 @@ const COPY_SUGGEST_WEBHOOK = 'https://hook.eu1.make.com/m2o5gs9ms2iewctp68enxcs7
 
 // 구글 드라이브 업로드 (upload 방식 영상용)
 const GDRIVE_CLIENT_ID = '907431503239-ijcprs8pppon0r7eh0q4nj5pvimpes9m.apps.googleusercontent.com';
-let gDriveAccessToken = localStorage.getItem('gDriveAccessToken') || null;
+let gDriveAccessToken = null;
+let gTokenClient = null;
 
-async function gDriveSignIn() {
-  return new Promise((resolve, reject) => {
-    if (gDriveAccessToken) { resolve(gDriveAccessToken); return; }
-    // 현재 페이지 URL에서 access_token 파라미터 확인 (리다이렉트 후)
-    const hashParams = new URLSearchParams(window.location.hash.slice(1));
-    const existingToken = hashParams.get('access_token');
-    if (existingToken) {
-      gDriveAccessToken = existingToken;
-      localStorage.setItem('gDriveAccessToken', existingToken);
-      // URL에서 토큰 제거
-      history.replaceState(null, '', window.location.pathname);
-      resolve(gDriveAccessToken);
-      return;
-    }
-    // 팝업 방식으로 OAuth 인증
-    const redirectUri = location.origin + '/';
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GDRIVE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent('https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/adwords')}&prompt=consent`;
-    const popup = window.open(authUrl, 'googleAuth', 'width=500,height=600');
-    if (!popup) { reject(new Error('팝업이 차단됐어요. 팝업 허용 후 다시 시도해줘요.')); return; }
-    const timer = setInterval(() => {
-      try {
-        if (popup.closed) { clearInterval(timer); reject(new Error('로그인 창이 닫혔어요')); return; }
-        const hash = popup.location.hash;
-        if (hash && hash.includes('access_token')) {
-          clearInterval(timer);
-          const params = new URLSearchParams(hash.slice(1));
-          gDriveAccessToken = params.get('access_token');
-          localStorage.setItem('gDriveAccessToken', gDriveAccessToken);
-          popup.close();
-          resolve(gDriveAccessToken);
-        }
-      } catch(e) {
-        // 크로스 오리진 접근 오류는 무시 (리다이렉트 전)
-      }
-    }, 500);
-    // 타임아웃 60초
-    setTimeout(() => { clearInterval(timer); if (!gDriveAccessToken) reject(new Error('로그인 시간 초과')); }, 60000);
+function gInitTokenClient() {
+  if (gTokenClient) return;
+  gTokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GDRIVE_CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/adwords',
+    callback: (response) => {
+      if (response.access_token) gDriveAccessToken = response.access_token;
+    },
   });
 }
 
+async function gDriveSignIn() {
+  return new Promise((resolve, reject) => {
+    const tryInit = () => {
+      if (typeof google === 'undefined' || !google.accounts) { setTimeout(tryInit, 200); return; }
+      gInitTokenClient();
+      if (gDriveAccessToken) { resolve(gDriveAccessToken); return; }
+      gTokenClient.callback = (response) => {
+        if (response.error) { reject(new Error(response.error)); return; }
+        gDriveAccessToken = response.access_token;
+        resolve(gDriveAccessToken);
+      };
+      gTokenClient.requestAccessToken({ prompt: '' });
+    };
+    tryInit();
+  });
+}
+
+async function gDriveSignInForce() {
+  gDriveAccessToken = null;
+  return new Promise((resolve, reject) => {
+    gInitTokenClient();
+    gTokenClient.callback = (response) => {
+      if (response.error) { reject(new Error(response.error)); return; }
+      gDriveAccessToken = response.access_token;
+      resolve(gDriveAccessToken);
+    };
+    gTokenClient.requestAccessToken({ prompt: 'consent' });
+  });
+}
 async function uploadFileToDrive(file) {
   const token = await gDriveSignIn();
   const metadata = { name: file.name, mimeType: file.type };
