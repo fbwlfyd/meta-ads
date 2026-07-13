@@ -1769,7 +1769,7 @@ async function gSelectCampaignDrop(t) {
 
       const regionSel = document.getElementById('g2_지역구분자');
       const regionLabel = document.getElementById('g2_지역구분자_label');
-      const needsGeo = geoType === 'PRESENCE_OR_INTEREST' || geoType === '' || geoType === 'PRESENCE';
+      const needsGeo = geoType === '' || geoType === 'PRESENCE_OR_INTEREST';
 
       // 지역구분자 드롭다운 채우기
       if (regionSel) {
