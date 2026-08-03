@@ -146,7 +146,10 @@
   .adset-picker-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
   .adset-picker-head strong { font-size: 13px; font-weight: 600; }
   .adset-picker-head span { font-size: 11px; color: var(--text3); }
-  .adset-list { max-height: 220px; overflow-y: auto; }
+  .adset-cols { display: flex; align-items: stretch; }
+  .adset-col { flex: 1 1 50%; min-width: 0; display: flex; flex-direction: column; }
+  .adset-col.right { border-left: 1px solid var(--border); }
+  .adset-list { flex: 1; }
   .adset-row { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.12s; }
   .adset-row:last-child { border-bottom: none; }
   .adset-row:hover { background: var(--bg); }
@@ -158,6 +161,11 @@
   .adset-row.selected .adset-name { font-weight: 600; color: var(--blue); }
   .adset-status { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; background: var(--bg); color: var(--text2); flex-shrink: 0; }
   .adset-status.on { background: var(--green-bg); color: #047857; }
+  .ad-subrow { display: flex; align-items: center; gap: 8px; padding: 10px 16px; font-size: 12px; color: var(--text2); border-bottom: 1px solid var(--border); }
+  .ad-subrow:last-child { border-bottom: none; }
+  .ad-subrow .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
+  .ad-subrow .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ad-subloading { padding: 14px 16px; font-size: 12px; color: var(--text3); text-align: center; }
   .adset-empty { padding: 16px; font-size: 12px; color: var(--text3); text-align: center; }
   .mode-banner { padding: 10px 14px; border-radius: var(--radius-sm); font-size: 12px; line-height: 1.5; margin-bottom: 14px; }
   .mode-banner.new { background: var(--blue-bg); color: #1d4ed8; border: 1px solid #c8dffe; }
@@ -502,12 +510,25 @@
       <div class="main-head"><div><h3>추가 현황</h3><p id="t2_count">추가된 세트가 없습니다</p></div><div class="live-pill"><div class="live-dot"></div>실시간</div></div>
       <div class="content">
         <div class="adset-picker" id="t2_adset_picker">
-          <div class="adset-picker-head">
-            <strong>기존 광고세트</strong>
-            <span id="t2_adset_hint">캠페인을 불러오면 목록이 표시돼요</span>
-          </div>
-          <div class="adset-list" id="t2_adset_list">
-            <div class="adset-empty">위에서 캠페인을 먼저 선택하세요</div>
+          <div class="adset-cols">
+            <div class="adset-col">
+              <div class="adset-picker-head">
+                <strong>기존 광고세트</strong>
+                <span id="t2_adset_hint">캠페인을 불러오면 목록이 표시돼요</span>
+              </div>
+              <div class="adset-list" id="t2_adset_list">
+                <div class="adset-empty">위에서 캠페인을 먼저 선택하세요</div>
+              </div>
+            </div>
+            <div class="adset-col right">
+              <div class="adset-picker-head">
+                <strong>세트 내 광고</strong>
+                <span id="t2_ad_hint"></span>
+              </div>
+              <div class="adset-list" id="t2_ad_list">
+                <div class="adset-empty">광고세트를 선택하면 표시돼요</div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="empty" id="t2_empty"><div class="empty-icon">➕</div><h4>아직 추가된 내역이 없어요</h4><p>광고세트를 고르면 광고만 추가하고, 안 고르면 새 세트를 만들어요</p></div>
@@ -807,7 +828,7 @@ function maxSeqFrom(list) {
 }
 function nextSetNumberFrom(list) { return maxSeqFrom(list) + 1; }
 async function fetchAdsInAdset(adsetId) {
-  const url = `https://graph.facebook.com/v25.0/${adsetId}/ads?fields=name&limit=200&access_token=${META_ACCESS_TOKEN}`;
+  const url = `https://graph.facebook.com/v25.0/${adsetId}/ads?fields=name,effective_status&limit=200&access_token=${META_ACCESS_TOKEN}`;
   const res = await fetch(url);
   const json = await res.json();
   if (json.error) throw new Error(json.error.message);
@@ -845,6 +866,9 @@ async function toggleAdsetSelect(id, name) {
   document.querySelectorAll('#t2_adset_list .adset-row').forEach(r => r.classList.remove('selected'));
   if (already) {
     selectedAdset.t2 = null; adSeqStart.t2 = 1;
+    clearAdSublist();
+    const h = document.getElementById('t2_adset_hint');
+    if (h) h.textContent = '클릭하면 그 세트에 광고만 추가돼요';
     applyT2Mode(); updateAdNames('t2');
     return;
   }
@@ -852,20 +876,41 @@ async function toggleAdsetSelect(id, name) {
   document.getElementById(`adset_${id}`)?.classList.add('selected');
   adSeqStart.t2 = 1;
   applyT2Mode(); updateAdNames('t2');
-  // 세트 안의 기존 광고명을 훑어 다음 번호부터 이어간다
+  // 세트 안의 기존 광고를 보여주고, 광고명 번호도 이어받는다
   const hint = document.getElementById('t2_adset_hint');
-  if (hint) hint.textContent = '기존 광고 번호 확인 중...';
+  if (hint) hint.textContent = '기존 광고 확인 중...';
+  renderAdSublist(null, '<div class="ad-subloading">불러오는 중...</div>');
   try {
     const ads = await fetchAdsInAdset(id);
     adSeqStart.t2 = maxSeqFrom(ads) + 1;
     updateAdNames('t2');
-    if (hint) hint.textContent = ads.length
-      ? `기존 광고 ${ads.length}개 · 새 광고는 ${adSeqStart.t2}A부터 만들어져요`
-      : '기존 광고가 없어 1A부터 시작해요';
+    renderAdSublist(null, ads.length
+      ? ads.map(a => {
+          const on = a.effective_status === 'ACTIVE';
+          const nm = (a.name || '(이름 없음)').replace(/</g, '&lt;');
+          return `<div class="ad-subrow"><span class="dot"></span><span class="nm" title="${nm}">${nm}</span><span class="adset-status ${on ? 'on' : ''}">${on ? '게재중' : (a.effective_status || '')}</span></div>`;
+        }).join('')
+      : '<div class="ad-subloading">이 세트에 광고가 없어요</div>',
+      ads.length ? `${ads.length}개 · 새 광고는 ${adSeqStart.t2}A부터` : '광고 없음 · 1A부터 시작');
+    if (hint) hint.textContent = `선택됨 · ${name}`;
   } catch (err) {
     adSeqStart.t2 = 1; updateAdNames('t2');
+    renderAdSublist(null, `<div class="ad-subloading">조회 실패: ${err.message}</div>`);
     if (hint) hint.textContent = '광고 번호 조회 실패 — 1A부터 시작합니다';
   }
+}
+// 오른쪽 칸에 선택한 세트의 광고 목록 표시
+function renderAdSublist(row, html, hintText) {
+  const box = document.getElementById('t2_ad_list');
+  if (box) box.innerHTML = html;
+  const hint = document.getElementById('t2_ad_hint');
+  if (hint) hint.textContent = hintText || '';
+}
+function clearAdSublist() {
+  const box = document.getElementById('t2_ad_list');
+  if (box) box.innerHTML = '<div class="adset-empty">광고세트를 선택하면 표시돼요</div>';
+  const hint = document.getElementById('t2_ad_hint');
+  if (hint) hint.textContent = '';
 }
 
 function applyT2Mode() {
@@ -1404,7 +1449,7 @@ function clearCampaignSelection(t) {
   const disp = document.getElementById(`${t}_캠페인명_display`); if (disp) disp.textContent = '';
   const accSel = document.getElementById(`${t}_캠페인선택계정`); if (accSel) accSel.value = '';
   const listBox = document.getElementById(`${t}_캠페인목록`); if (listBox) { listBox.classList.remove('show'); listBox.innerHTML = ''; }
-  selectedAdset.t2 = null; adSeqStart.t2 = 1; applyT2Mode();
+  selectedAdset.t2 = null; adSeqStart.t2 = 1; clearAdSublist(); applyT2Mode();
   const adsetBox = document.getElementById('t2_adset_list');
   if (adsetBox) adsetBox.innerHTML = '<div class="adset-empty">위에서 캠페인을 먼저 선택하세요</div>';
   const adsetHint = document.getElementById('t2_adset_hint');
@@ -1554,7 +1599,7 @@ async function onCampaignId(t) {
     const nameDisplay = document.getElementById(`${t}_캠페인명_display`);
     if (nameDisplay) nameDisplay.textContent = campaignName ? `📌 ${campaignName}` : '';
     if (t === 't2') {
-      selectedAdset.t2 = null; adSeqStart.t2 = 1; applyT2Mode();
+      selectedAdset.t2 = null; adSeqStart.t2 = 1; clearAdSublist(); applyT2Mode();
       try {
         const adsets = await fetchAdsets(campaignId);
         nextSetNumber.t2 = nextSetNumberFrom(adsets);
@@ -2019,7 +2064,7 @@ function clearForm(t) {
     const campAccSel = document.getElementById('t2_캠페인선택계정'); if (campAccSel) campAccSel.value = '';
     const campListBox = document.getElementById('t2_캠페인목록'); if (campListBox) { campListBox.classList.remove('show'); campListBox.innerHTML = ''; }
     const manualWrap = document.getElementById('t2_manual_wrap'); if (manualWrap) manualWrap.style.display = 'none';
-    selectedAdset.t2 = null; adSeqStart.t2 = 1; applyT2Mode(); toggleCampaignClear('t2', false);
+    selectedAdset.t2 = null; adSeqStart.t2 = 1; clearAdSublist(); applyT2Mode(); toggleCampaignClear('t2', false);
     const adsetBox = document.getElementById('t2_adset_list');
     if (adsetBox) adsetBox.innerHTML = '<div class="adset-empty">위에서 캠페인을 먼저 선택하세요</div>';
     const adsetHint = document.getElementById('t2_adset_hint');
