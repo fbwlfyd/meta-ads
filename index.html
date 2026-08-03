@@ -1192,20 +1192,20 @@ function getData(t) {
       if (regionName === '울주') {
         geoLocations = { custom_locations: [{ latitude: 35.4491, longitude: 129.1587, radius: 6, distance_unit: 'mile' }, { latitude: 35.5184, longitude: 129.0763, radius: 5, distance_unit: 'mile' }, { latitude: 35.5519, longitude: 129.0228, radius: 5, distance_unit: 'mile' }] };
       } else { geoLocations = { cities: [{ key: regionKey }] }; }
-      const ageMin = parseInt(g(`${t}_최소나이`)) || 50;
+      const ageMin = parseInt(g(`${t}_최소나이`)) || 35;
       const ageMax = parseInt(g(`${t}_최대나이`)) || 65;
       const langVal = g(`${t}_언어`).trim();
       const langMap = { 'ko': 12, 'en': 6, 'ja': 11, 'zh': 20 };
       const langCode = langMap[langVal] || 12;
       const excludeIds = selectedExcludes[t].map(e => e.id).filter(Boolean);
       const targetingObj = {
-        age_min: 25, age_max: 65, age_range: [ageMin, ageMax],
+        age_min: ageMin,
+        age_max: ageMax,
         geo_locations: geoLocations,
         publisher_platforms: toArray(g(`${t}_노출위치1`)),
         facebook_positions: toArray(g(`${t}_페이스북지면`)),
         instagram_positions: toArray(g(`${t}_인스타지면`)),
         locales: [Number(langCode)],
-        targeting_automation: { advantage_audience: 0 },
       };
       if (excludeIds.length > 0) targetingObj.excluded_custom_audiences = excludeIds.map(id => ({ id }));
       return JSON.stringify(targetingObj);
