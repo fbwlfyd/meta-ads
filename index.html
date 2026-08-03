@@ -203,6 +203,14 @@
           <select id="t1_제외타겟" onchange="onExclude('t1')"><option value="">선택</option></select>
           <div id="t1_제외타겟_tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>
         </div>
+        <div class="field"><label>어드밴티지 타겟</label>
+          <div class="conv-type-wrap" style="margin-bottom:0;">
+            <button type="button" class="conv-type-btn" id="t1_adv_off" onclick="onAdvantage('t1',0)">사용 안 함</button>
+            <button type="button" class="conv-type-btn active" id="t1_adv_on" onclick="onAdvantage('t1',1)">사용</button>
+          </div>
+          <input type="hidden" id="t1_어드밴티지타겟" value="1">
+          <div class="field-hint" id="t1_adv_hint"></div>
+        </div>
       </div>
       <div class="divider"></div>
       <div class="section">
@@ -303,14 +311,6 @@
           <div class="field"><label>성별</label><select id="t1_성별"><option value="">전체</option><option value="1">남성</option><option value="2">여성</option></select></div>
           <div class="field"><label>언어</label><input type="text" id="t1_언어" placeholder="ko"></div>
         </div>
-        <div class="field"><label>어드밴티지 타겟</label>
-          <div class="conv-type-wrap" style="margin-bottom:0;">
-            <button type="button" class="conv-type-btn" id="t1_adv_off" onclick="onAdvantage('t1',0)">사용 안 함</button>
-            <button type="button" class="conv-type-btn active" id="t1_adv_on" onclick="onAdvantage('t1',1)">사용</button>
-          </div>
-          <input type="hidden" id="t1_어드밴티지타겟" value="1">
-          <div class="field-hint" id="t1_adv_hint"></div>
-        </div>
       </div>
       <div class="divider"></div>
       <div class="section"><div class="sec-label">자동생성 값</div>
@@ -372,6 +372,14 @@
         <div class="field"><label>제외타겟</label>
           <select id="t2_제외타겟" onchange="onExclude('t2')"><option value="">선택</option></select>
           <div id="t2_제외타겟_tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>
+        </div>
+        <div class="field"><label>어드밴티지 타겟</label>
+          <div class="conv-type-wrap" style="margin-bottom:0;">
+            <button type="button" class="conv-type-btn" id="t2_adv_off" onclick="onAdvantage('t2',0)">사용 안 함</button>
+            <button type="button" class="conv-type-btn active" id="t2_adv_on" onclick="onAdvantage('t2',1)">사용</button>
+          </div>
+          <input type="hidden" id="t2_어드밴티지타겟" value="1">
+          <div class="field-hint" id="t2_adv_hint"></div>
         </div>
       </div>
       <div class="divider"></div>
@@ -464,14 +472,6 @@
         <div class="row2">
           <div class="field"><label>성별</label><select id="t2_성별"><option value="">전체</option><option value="1">남성</option><option value="2">여성</option></select></div>
           <div class="field"><label>언어</label><input type="text" id="t2_언어" placeholder="ko"></div>
-        </div>
-        <div class="field"><label>어드밴티지 타겟</label>
-          <div class="conv-type-wrap" style="margin-bottom:0;">
-            <button type="button" class="conv-type-btn" id="t2_adv_off" onclick="onAdvantage('t2',0)">사용 안 함</button>
-            <button type="button" class="conv-type-btn active" id="t2_adv_on" onclick="onAdvantage('t2',1)">사용</button>
-          </div>
-          <input type="hidden" id="t2_어드밴티지타겟" value="1">
-          <div class="field-hint" id="t2_adv_hint"></div>
         </div>
       </div>
       <div class="divider"></div>
