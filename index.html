@@ -61,6 +61,10 @@
   .campaign-id-box label { display: block; font-size: 12px; font-weight: 600; color: var(--yellow); margin-bottom: 6px; }
   .campaign-id-box input { width: 100%; height: 40px; background: var(--white); border: 1px solid #ffe0a0; border-radius: var(--radius-sm); color: var(--text1); font-family: inherit; font-size: 13px; padding: 0 12px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
   .campaign-id-box input:focus { border-color: var(--yellow); box-shadow: 0 0 0 3px rgba(255,149,0,0.15); }
+  .campaign-id-box select { width: 100%; height: 40px; background: var(--white); border: 1px solid #ffe0a0; border-radius: var(--radius-sm); color: var(--text1); font-family: inherit; font-size: 13px; padding: 0 32px 0 12px; outline: none; appearance: none; -webkit-appearance: none; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23c2760a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
+  .campaign-id-box select:focus { border-color: var(--yellow); box-shadow: 0 0 0 3px rgba(255,149,0,0.15); }
+  .campaign-id-box .manual-toggle { display: inline-block; margin-top: 10px; font-size: 11px; font-weight: 500; color: #c2760a; text-decoration: underline; cursor: pointer; }
+  .campaign-id-box .manual-toggle:hover { color: var(--yellow); }
   .btn-primary { width: 100%; height: 48px; background: var(--blue); border: none; border-radius: var(--radius); color: white; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.15s; letter-spacing: -0.2px; }
   .btn-primary:hover { background: #0066dd; }
   .btn-primary:active { transform: scale(0.99); }
@@ -69,10 +73,6 @@
   .btn-primary.g:hover { background: var(--g-red-dark); }
   .btn-ghost { width: 100%; height: 36px; background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text2); font-family: inherit; font-size: 13px; cursor: pointer; transition: all 0.15s; }
   .btn-ghost:hover { background: var(--bg); color: var(--text1); }
-  .selected-campaign { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
-  .selected-campaign-name { font-size: 12px; font-weight: 600; color: var(--blue); flex: 1; line-height: 1.4; }
-  .selected-campaign-clear { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 16px; line-height: 1; padding: 0 0 0 8px; flex-shrink: 0; }
-  .selected-campaign-clear:hover { color: var(--red); }
   .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
   .main-head { padding: 18px 28px 14px; background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
   .main-head h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
@@ -138,7 +138,6 @@
   .chip input { display: none; }
   .chip.checked { background: var(--g-red-bg); border-color: var(--g-red-border); color: var(--g-red-dark); font-weight: 600; }
 </style>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -204,14 +203,14 @@
         <div class="field"><label>파일 업로드 방식</label>
           <select id="t1_파일방식" onchange="onFileMethod('t1')">
             <option value="drive">Drive 파일ID</option>
-            <option value="upload">직접 첨부</option>
+            <option value="upload" selected>직접 첨부</option>
           </select>
         </div>
-        <div class="field" id="t1_drive_wrap">
+        <div class="field" id="t1_drive_wrap" style="display:none;">
           <label>파일ID (Google Drive)</label>
           <input type="text" id="t1_파일ID" placeholder="Drive 전체 링크 복사 후 붙여넣기" oninput="extractDriveId(this)">
         </div>
-        <div class="field" id="t1_upload_wrap" style="display:none;">
+        <div class="field" id="t1_upload_wrap">
           <label>파일 첨부</label>
           <div id="t1_dropzone" style="border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg);"
             ondragover="onDragOver(event,'t1')" ondragleave="onDragLeave(event,'t1')" ondrop="onDrop(event,'t1')"
@@ -255,14 +254,14 @@
           <div class="field"><label>종료일</label><input type="date" id="t1_종료일"></div>
         </div>
         <div class="row2">
-          <div class="field"><label>최소나이</label><input type="number" id="t1_최소나이" value="35" min="1" max="65"></div>
+          <div class="field"><label>최소나이</label><input type="number" id="t1_최소나이" value="50" min="1" max="65"></div>
           <div class="field"><label>최대나이</label><input type="number" id="t1_최대나이" value="65" min="1" max="65"></div>
         </div>
         <div class="row2">
           <div class="field"><label>성별</label><select id="t1_성별"><option value="">전체</option><option value="1">남성</option><option value="2">여성</option></select></div>
           <div class="field"><label>언어</label><input type="text" id="t1_언어" placeholder="ko"></div>
         </div>
-        <div class="field"><label>어드밴티지 타겟</label><input type="text" id="t1_어드밴티지타겟" value="0" readonly></div>
+        <div class="field"><label>어드밴티지 타겟</label><input type="text" id="t1_어드밴티지타겟" value="OFF" readonly></div>
       </div>
       <div class="divider"></div>
       <div class="section"><div class="sec-label">자동생성 값</div>
@@ -297,25 +296,17 @@
     <div class="panel-body">
       <div class="campaign-id-box">
         <label>기존 캠페인 불러오기</label>
-        <div id="t2_캠페인선택_wrap">
-          <div class="copy-suggest-wrap">
-            <select id="t2_캠페인선택계정" onchange="onCampaignAccountSelect('t2')" style="width:100%;height:40px;background:var(--white);border:1px solid #ffe0a0;border-radius:var(--radius-sm);color:var(--text1);font-family:inherit;font-size:13px;padding:0 32px 0 12px;outline:none;appearance:none;-webkit-appearance:none;cursor:pointer;background-image:url('data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23c2760a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 10px center;">
-              <option value="">계정을 선택하세요</option>
-            </select>
-            <div class="copy-suggest-dropdown" id="t2_캠페인목록" style="max-height:240px;"></div>
-          </div>
-          <span class="manual-toggle" onclick="toggleManualCampaignId('t2')">캠페인 ID를 직접 입력할래요</span>
-          <div id="t2_manual_wrap" style="display:none;margin-top:8px;">
-            <input type="text" id="t2_캠페인ID_input" placeholder="캠페인 ID를 입력하세요" onblur="onCampaignIdManual('t2')">
-          </div>
+        <div class="copy-suggest-wrap">
+          <select id="t2_캠페인선택계정" onchange="onCampaignAccountSelect('t2')">
+            <option value="">계정을 선택하세요</option>
+          </select>
+          <div class="copy-suggest-dropdown" id="t2_캠페인목록" style="max-height:240px;"></div>
         </div>
-        <div id="t2_선택된캠페인" style="display:none;">
-          <div class="selected-campaign">
-            <span class="selected-campaign-name" id="t2_선택된캠페인명">-</span>
-            <button class="selected-campaign-clear" onclick="clearSelectedCampaign('t2')" title="선택 취소">×</button>
-          </div>
+        <div id="t2_캠페인명_display" style="margin-top:8px;font-size:12px;color:var(--text2);min-height:16px;"></div>
+        <span class="manual-toggle" onclick="toggleManualCampaignId('t2')">캠페인 ID를 직접 입력할래요</span>
+        <div id="t2_manual_wrap" style="display:none;margin-top:8px;">
+          <input type="text" id="t2_캠페인ID" placeholder="캠페인 ID를 입력하세요" onblur="onCampaignId('t2')">
         </div>
-        <input type="hidden" id="t2_캠페인ID">
       </div>
       <div class="section"><div class="sec-label">기본 정보</div>
         <div class="field"><label>제작자</label><input type="text" id="t2_제작자" placeholder="이름 입력" oninput="autoGenNames('t2')"></div>
@@ -343,14 +334,14 @@
         <div class="field"><label>파일 업로드 방식</label>
           <select id="t2_파일방식" onchange="onFileMethod('t2')">
             <option value="drive">Drive 파일ID</option>
-            <option value="upload">직접 첨부</option>
+            <option value="upload" selected>직접 첨부</option>
           </select>
         </div>
-        <div class="field" id="t2_drive_wrap">
+        <div class="field" id="t2_drive_wrap" style="display:none;">
           <label>파일ID (Google Drive)</label>
           <input type="text" id="t2_파일ID" placeholder="Drive 전체 링크 복사 후 붙여넣기" oninput="extractDriveId(this)">
         </div>
-        <div class="field" id="t2_upload_wrap" style="display:none;">
+        <div class="field" id="t2_upload_wrap">
           <label>파일 첨부</label>
           <div id="t2_dropzone" style="border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg);"
             ondragover="onDragOver(event,'t2')" ondragleave="onDragLeave(event,'t2')" ondrop="onDrop(event,'t2')"
@@ -386,14 +377,14 @@
           <div class="field"><label>종료일</label><input type="date" id="t2_종료일"></div>
         </div>
         <div class="row2">
-          <div class="field"><label>최소나이</label><input type="number" id="t2_최소나이" value="35" min="1" max="65"></div>
+          <div class="field"><label>최소나이</label><input type="number" id="t2_최소나이" value="50" min="1" max="65"></div>
           <div class="field"><label>최대나이</label><input type="number" id="t2_최대나이" value="65" min="1" max="65"></div>
         </div>
         <div class="row2">
           <div class="field"><label>성별</label><select id="t2_성별"><option value="">전체</option><option value="1">남성</option><option value="2">여성</option></select></div>
           <div class="field"><label>언어</label><input type="text" id="t2_언어" placeholder="ko"></div>
         </div>
-        <div class="field"><label>어드밴티지 타겟</label><input type="text" id="t2_어드밴티지타겟" value="0" readonly></div>
+        <div class="field"><label>어드밴티지 타겟</label><input type="text" id="t2_어드밴티지타겟" value="OFF" readonly></div>
       </div>
       <div class="divider"></div>
       <div class="section"><div class="sec-label">자동생성 값</div>
@@ -531,27 +522,20 @@
     <div class="panel-head"><h2>Google 세트 추가</h2><p>기존 캠페인에 광고그룹 · 광고 추가</p></div>
     <div class="panel-body">
       <div class="campaign-id-box">
-        <label>지역 선택</label>
-        <div class="field" style="margin-bottom:8px;">
-          <select id="g2_검색키워드" onchange="gSearchCampaigns('g2')"><option value="">선택</option></select>
-        </div>
-        <div class="field" style="margin-bottom:8px;">
-          <label style="font-size:12px;color:var(--text2);">캠페인 선택</label>
-          <select id="g2_캠페인선택" onchange="gSelectCampaignDrop('g2')" style="display:none;"><option value="">캠페인 선택</option></select>
-        </div>
-        <div id="g2_선택된캠페인" style="display:none;">
-          <div class="selected-campaign">
-            <span class="selected-campaign-name" id="g2_선택된캠페인명">-</span>
-            <button class="selected-campaign-clear" onclick="gClearSelectedCampaign('g2')" title="선택 취소">×</button>
-          </div>
-        </div>
-        <input type="hidden" id="g2_캠페인ID">
+        <label>기존 캠페인 ID</label>
+        <input type="text" id="g2_캠페인ID" placeholder="캠페인 리소스 ID를 입력하세요" onblur="gOnCampaignId('g2')">
+        <div id="g2_캠페인명_display" style="margin-top:8px;font-size:12px;color:var(--text2);min-height:16px;"></div>
       </div>
       <div class="section"><div class="sec-label">기본 정보</div>
         <div class="row2">
           <div class="field"><label>제작자</label><input type="text" id="g2_제작자" placeholder="이름 입력" oninput="gAutoGenNames('g2')"></div>
-          <div class="field"><label id="g2_지역구분자_label">지역구분자</label><select id="g2_지역구분자" disabled><option value="">캠페인 선택 후 자동</option></select></div>
+          <div class="field"><label>날짜</label><input type="text" id="g2_날짜" placeholder="예: 260605" oninput="gAutoGenNames('g2')"></div>
         </div>
+        <div class="row2">
+          <div class="field"><label>계정명</label><select id="g2_계정명" onchange="gOnAccount('g2')"><option value="">선택</option></select></div>
+          <div class="field"><label>치과명</label><select id="g2_치과명" onchange="gOnClinic('g2')"><option value="">계정 선택 후 사용 가능</option></select></div>
+        </div>
+        <div class="field"><label>지역구분자</label><select id="g2_지역구분자" onchange="gOnRegion('g2')"><option value="">선택</option></select></div>
       </div>
       <div class="divider"></div>
       <div class="section"><div class="sec-label">광고그룹 설정</div>
@@ -906,7 +890,6 @@ async function loadData() {
     DB.baseRegions = {};
     refRows.slice(1).forEach(r => { if (r[1] && r[5]) DB.baseRegions[r[1]] = r[5]; });
 
-    GDB.gRefRows = gRefRows;
     GDB.accounts = parse(gRefRows, r => r[0] && r[1] ? { key: r[0], data: { name: r[0], id: r[1], campaignName: r[9] || '', setName: r[10] || '', clinicName: r[10] || '' } } : null);
     GDB.staff = parse(gRefRows, r => r[11] ? { key: r[11], data: { name: r[11], id: r[12] || '' } } : null);
     GDB.googleRegions = parse(gRefRows, r => r[2] ? { key: r[2], data: { name: r[2], criterionId: r[3] || '', refName: r[4] || '' } } : null);
@@ -938,7 +921,7 @@ async function loadData() {
       }
     });
 
-    // 로고 파일ID (구글참조 R열=17: 채널명, S열=18: 파일ID)
+    // 로고 파일ID (구글참조 R열=채널명, S열=파일ID)
     GDB.logoByChannel = {};
     gRefRows.slice(1).forEach(r => {
       if (r[17] && r[18]) GDB.logoByChannel[r[17]] = r[18];
@@ -1034,52 +1017,26 @@ async function onCampaignAccountSelect(t) {
       return;
     }
     listBox.innerHTML = campaigns.map(c =>
-      `<div class="copy-suggest-item" onclick="selectCampaignFromList('${t}','${c.id}','${(c.name||'').replace(/'/g,"\'")}')">${(c.name || '(이름 없음)').replace(/</g,'&lt;')}</div>`
+      `<div class="copy-suggest-item" onclick="selectCampaignFromList('${t}','${c.id}')">${(c.name || '(이름 없음)').replace(/</g,'&lt;')}</div>`
     ).join('');
   } catch (err) {
     listBox.innerHTML = `<div class="copy-suggest-loading">불러오기 실패: ${err.message}</div>`;
   }
 }
-function selectCampaignFromList(t, campaignId, campaignName) {
-  const campIdEl = document.getElementById(`${t}_캠페인ID`);
-  if (campIdEl) campIdEl.value = campaignId;
+
+function selectCampaignFromList(t, campaignId) {
+  document.getElementById(`${t}_캠페인ID`).value = campaignId;
   const listBox = document.getElementById(`${t}_캠페인목록`);
   if (listBox) listBox.classList.remove('show');
-  // 선택된 캠페인 표시
-  const selectWrap = document.getElementById(`${t}_캠페인선택_wrap`);
-  const selectedWrap = document.getElementById(`${t}_선택된캠페인`);
-  const selectedName = document.getElementById(`${t}_선택된캠페인명`);
-  if (selectWrap) selectWrap.style.display = 'none';
-  if (selectedWrap) selectedWrap.style.display = 'block';
-  if (selectedName) selectedName.textContent = campaignName || campaignId;
   onCampaignId(t);
 }
-function clearSelectedCampaign(t) {
-  const campIdEl = document.getElementById(`${t}_캠페인ID`);
-  if (campIdEl) campIdEl.value = '';
-  const selectWrap = document.getElementById(`${t}_캠페인선택_wrap`);
-  const selectedWrap = document.getElementById(`${t}_선택된캠페인`);
-  if (selectWrap) selectWrap.style.display = 'block';
-  if (selectedWrap) selectedWrap.style.display = 'none';
-  const campAccSel = document.getElementById(`${t}_캠페인선택계정`);
-  if (campAccSel) campAccSel.value = '';
-  const listBox = document.getElementById(`${t}_캠페인목록`);
-  if (listBox) { listBox.classList.remove('show'); listBox.innerHTML = ''; }
-  const campDisp = document.getElementById(`${t}_캠페인명_display`);
-  if (campDisp) campDisp.textContent = '';
-}
-function onCampaignIdManual(t) {
-  const inputEl = document.getElementById(`${t}_캠페인ID_input`);
-  const campIdEl = document.getElementById(`${t}_캠페인ID`);
-  if (!inputEl || !inputEl.value.trim()) return;
-  if (campIdEl) campIdEl.value = inputEl.value.trim();
-  onCampaignId(t);
-}
+
 function toggleManualCampaignId(t) {
   const wrap = document.getElementById(`${t}_manual_wrap`);
   if (!wrap) return;
   wrap.style.display = (wrap.style.display === 'none' || !wrap.style.display) ? 'block' : 'none';
 }
+
 function extractDriveId(el) {
   const val = el.value.trim();
   const match = val.match(/\/d\/([a-zA-Z0-9_-]+)/) || val.match(/id=([a-zA-Z0-9_-]+)/);
@@ -1235,7 +1192,7 @@ function getData(t) {
       if (regionName === '울주') {
         geoLocations = { custom_locations: [{ latitude: 35.4491, longitude: 129.1587, radius: 6, distance_unit: 'mile' }, { latitude: 35.5184, longitude: 129.0763, radius: 5, distance_unit: 'mile' }, { latitude: 35.5519, longitude: 129.0228, radius: 5, distance_unit: 'mile' }] };
       } else { geoLocations = { cities: [{ key: regionKey }] }; }
-      const ageMin = parseInt(g(`${t}_최소나이`)) || 35;
+      const ageMin = parseInt(g(`${t}_최소나이`)) || 50;
       const ageMax = parseInt(g(`${t}_최대나이`)) || 65;
       const langVal = g(`${t}_언어`).trim();
       const langMap = { 'ko': 12, 'en': 6, 'ja': 11, 'zh': 20 };
@@ -1248,7 +1205,7 @@ function getData(t) {
         facebook_positions: toArray(g(`${t}_페이스북지면`)),
         instagram_positions: toArray(g(`${t}_인스타지면`)),
         locales: [Number(langCode)],
-        targeting_automation: { advantage_audience: 1 },
+        targeting_automation: { advantage_audience: 0 },
       };
       if (excludeIds.length > 0) targetingObj.excluded_custom_audiences = excludeIds.map(id => ({ id }));
       return JSON.stringify(targetingObj);
@@ -1307,11 +1264,7 @@ async function submitAd(t) {
       }
     }
     const res = await fetch(WEBHOOKS[t], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-    if (res.ok) {
-      updateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중');
-      showToast(isT2?'세트 추가 요청 완료!':'광고 등록 요청 완료!', 'success');
-      if (isT2) nextSetNumber.t2++;
-    }
+    if (res.ok) { updateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중'); showToast(isT2?'세트 추가 요청 완료!':'광고 등록 요청 완료!', 'success'); }
     else { updateCard(t, idx, '실패', `HTTP ${res.status}`); showToast(`전송 실패 (${res.status})`, 'error'); }
   } catch (err) { updateCard(t, idx, '실패', '오류: ' + err.message); showToast('오류: ' + err.message, 'error'); }
   btn.disabled = false; btn.textContent = isT2 ? '세트 추가하기' : '광고 등록하기';
@@ -1320,7 +1273,7 @@ function clearForm(t) {
   ['제작자','날짜','유형','계정명','페이지','인스타계정','지역구분자','파일ID','기본문구','제목','설명','세트예산','시작일','종료일','언어'].forEach(field => { const el = document.getElementById(`${t}_${field}`); if (el) el.value = ''; });
   document.getElementById(`${t}_언어`).value = 'ko';
   const cb = document.getElementById(`${t}_캠페인예산`); if (cb) cb.value = 30000;
-  document.getElementById(`${t}_최소나이`).value = 35;
+  document.getElementById(`${t}_최소나이`).value = 50;
   document.getElementById(`${t}_최대나이`).value = 65;
   document.getElementById(`${t}_시작일`).value = new Date().toISOString().split('T')[0];
   document.getElementById(`${t}_타겟국가`).value = '';
@@ -1339,7 +1292,6 @@ function clearForm(t) {
     const campAccSel = document.getElementById('t2_캠페인선택계정'); if (campAccSel) campAccSel.value = '';
     const campListBox = document.getElementById('t2_캠페인목록'); if (campListBox) { campListBox.classList.remove('show'); campListBox.innerHTML = ''; }
     const manualWrap = document.getElementById('t2_manual_wrap'); if (manualWrap) manualWrap.style.display = 'none';
-    clearSelectedCampaign('t2');
   }
   populateDropdowns();
 }
@@ -1366,48 +1318,39 @@ const COPY_SUGGEST_WEBHOOK = 'https://hook.eu1.make.com/m2o5gs9ms2iewctp68enxcs7
 // 구글 드라이브 업로드 (upload 방식 영상용)
 const GDRIVE_CLIENT_ID = '907431503239-ijcprs8pppon0r7eh0q4nj5pvimpes9m.apps.googleusercontent.com';
 let gDriveAccessToken = null;
-let gTokenClient = null;
-
-function gInitTokenClient() {
-  if (gTokenClient) return;
-  gTokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: GDRIVE_CLIENT_ID,
-    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/adwords',
-    callback: (response) => {
-      if (response.access_token) gDriveAccessToken = response.access_token;
-    },
-  });
-}
 
 async function gDriveSignIn() {
   return new Promise((resolve, reject) => {
-    const tryInit = () => {
-      if (typeof google === 'undefined' || !google.accounts) { setTimeout(tryInit, 200); return; }
-      gInitTokenClient();
-      if (gDriveAccessToken) { resolve(gDriveAccessToken); return; }
-      gTokenClient.callback = (response) => {
-        if (response.error) { reject(new Error(response.error)); return; }
-        gDriveAccessToken = response.access_token;
+    if (gDriveAccessToken) { resolve(gDriveAccessToken); return; }
+    const popup = window.open(
+      `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GDRIVE_CLIENT_ID}&redirect_uri=${encodeURIComponent(location.origin + '/oauth2callback')}&response_type=token&scope=https://www.googleapis.com/auth/drive.file%20https://www.googleapis.com/auth/spreadsheets`,
+      'googleAuth', 'width=500,height=600'
+    );
+    const handler = (e) => {
+      if (e.data && e.data.type === 'GOOGLE_TOKEN') {
+        window.removeEventListener('message', handler);
+        gDriveAccessToken = e.data.token;
         resolve(gDriveAccessToken);
-      };
-      gTokenClient.requestAccessToken({ prompt: '' });
+      }
     };
-    tryInit();
+    window.addEventListener('message', handler);
+    // fallback: token_hash 파싱
+    const timer = setInterval(() => {
+      try {
+        if (popup.closed) { clearInterval(timer); reject(new Error('로그인 창이 닫혔어요')); return; }
+        const hash = popup.location.hash;
+        if (hash && hash.includes('access_token')) {
+          clearInterval(timer);
+          const params = new URLSearchParams(hash.slice(1));
+          gDriveAccessToken = params.get('access_token');
+          popup.close();
+          resolve(gDriveAccessToken);
+        }
+      } catch(e) {}
+    }, 500);
   });
 }
 
-async function gDriveSignInForce() {
-  gDriveAccessToken = null;
-  return new Promise((resolve, reject) => {
-    gInitTokenClient();
-    gTokenClient.callback = (response) => {
-      if (response.error) { reject(new Error(response.error)); return; }
-      gDriveAccessToken = response.access_token;
-      resolve(gDriveAccessToken);
-    };
-    gTokenClient.requestAccessToken({ prompt: 'consent' });
-  });
-}
 async function uploadFileToDrive(file) {
   const token = await gDriveSignIn();
   const metadata = { name: file.name, mimeType: file.type };
@@ -1492,14 +1435,6 @@ function gPopulateDropdowns() {
       ctaSel.value = prev || 'CONTACT_US';
     }
   });
-
-  // g2 검색 드롭다운 채우기 (U열(20): 줄인치과명_지역 형태에서 지역명만 추출)
-  const g2KwSel = document.getElementById('g2_검색키워드');
-  if (g2KwSel) {
-    g2KwSel.innerHTML = '<option value="">선택</option>';
-    const keywords = [...new Set((GDB.gRefRows || []).slice(1).map(r => r[20]).filter(Boolean))];
-    keywords.forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = k; g2KwSel.appendChild(o); });
-  }
 }
 
 function gOnAccount(t) {
@@ -1547,267 +1482,22 @@ function gPopulateYoutubeChannels(t) {
 }
 function gAutoGenNames(t) {
   const acc = GDB.accounts.find(a => a.name === gGetAccountName(t)); if (!acc) return;
-  const regionEl = document.getElementById(`${t}_지역구분자`);
-  const region = GDB.googleRegions.find(r => r.name === (regionEl ? regionEl.value : ''));
-  const staffEl = document.getElementById(`${t}_제작자`);
-  const staffName = staffEl ? staffEl.value : '';
+  const region = GDB.googleRegions.find(r => r.name === document.getElementById(`${t}_지역구분자`).value);
+  const staffName = document.getElementById(`${t}_제작자`).value;
   const staffObj = GDB.staff.find(s => s.name === staffName);
   const dateEl = document.getElementById(`${t}_날짜`);
   const date = dateEl ? dateEl.value : '';
   const refName = region ? (region.refName || '') : '';
   const staffId = staffObj ? staffObj.id : '';
   const seqLabel = t === 'g2' ? `${gNextSetNumber.g2}U` : '1U';
-  const clinicEl = document.getElementById(`${t}_치과명`);
-  const clinicName = clinicEl ? (clinicEl.value || '') : '';
+  const clinicName = document.getElementById(`${t}_치과명`)?.value || '';
   const shortName = GDB.clinicToShortName[clinicName] || acc.campaignName || '';
   const accNameLabel = gGetAccountName(t) ? `[${gGetAccountName(t)}]` : '';
   const campaignName = [shortName, '디맨드젠', date ? `(${date})` : '', staffName, refName, accNameLabel, '예비용'].filter(Boolean).join(' ');
   const groupName = [clinicName, '임플란트', seqLabel, staffId].filter(Boolean).join(' ');
-  if (t === 'g1') { const el = document.getElementById('g1_캠페인명'); if (el) el.value = campaignName; }
-  // g2는 캠페인 선택 시 광고그룹명 자동생성하므로 여기서 덮어쓰지 않음
-  if (t !== 'g2') {
-    const groupEl = document.getElementById(`${t}_광고그룹명`); if (groupEl) groupEl.value = groupName;
-  }
+  if (t === 'g1') document.getElementById('g1_캠페인명').value = campaignName;
+  document.getElementById(`${t}_광고그룹명`).value = groupName;
 }
-
-// ===== 캠페인 검색 (세트 추가용) =====
-async function gSearchCampaigns(t) {
-  const kwSel = document.getElementById(`${t}_검색키워드`);
-  const keyword = kwSel?.value || '';
-  if (!keyword) return;
-
-  // U열 값에서 치과명/지역명 추출 (언더스코어 기준)
-  const parts = keyword.split('_');
-  const clinicName = parts[0] || '';
-  const region = parts.slice(1).join('_') || keyword;
-
-  // U열 키워드로 J열(줄인치과명) 매핑 → K열(치과명) 가져오기
-  const matchedRow = (GDB.gRefRows || []).slice(1).find(r => r[9] === clinicName);
-  if (matchedRow) {
-    const fullClinicName = matchedRow[10] || '';
-    window._g2ClinicName = fullClinicName;
-  }
-
-  const dropSel = document.getElementById(`${t}_캠페인선택`);
-  dropSel.style.display = 'none';
-  dropSel.innerHTML = '<option value="">캠페인 검색 중...</option>';
-
-  try {
-    const token = await gDriveSignIn();
-
-    // 지역명 → 검색 키워드 매핑
-    const regionKeywordMap = {
-      '밀양': '밀양타겟', '김해': '김해타겟', '부산': '부산타겟',
-      '울주': '울주', '양산': null
-    };
-    const targetKeyword = regionKeywordMap.hasOwnProperty(region) ? regionKeywordMap[region] : region + '타겟';
-    let whereClause = `campaign.status = 'ENABLED' AND campaign.name LIKE '%${clinicName}%'`;
-    if (region === '양산') {
-      whereClause += ` AND campaign.name NOT LIKE '%타겟%'`;
-    } else if (targetKeyword) {
-      whereClause += ` AND campaign.name LIKE '%${targetKeyword}%'`;
-    }
-
-    const MCC_ID = '2191005843';
-    const query = `SELECT campaign.resource_name, campaign.name FROM campaign WHERE ${whereClause}`;
-    console.log('캠페인 검색 쿼리:', query);
-
-    // 1. MCC 하위 계정 목록 가져오기
-    const accListRes = await fetch(`https://googleads.googleapis.com/v24/customers:listAccessibleCustomers`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'developer-token': 'h5fjThKhbZXjdRgOcaK6rQ',
-        'login-customer-id': MCC_ID
-      }
-    });
-    const accListData = await accListRes.json();
-    const customerIds = (accListData.resourceNames || [])
-      .map(r => r.replace('customers/', ''))
-      .filter(id => id !== MCC_ID);
-    console.log('하위 계정 목록:', customerIds);
-
-    // 2. 각 계정마다 캠페인 검색
-    const campaigns = [];
-    await Promise.all(customerIds.map(async (cid) => {
-      try {
-        const res = await fetch(`https://googleads.googleapis.com/v24/customers/${cid}/googleAds:searchStream`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'developer-token': 'h5fjThKhbZXjdRgOcaK6rQ',
-            'login-customer-id': MCC_ID
-          },
-          body: JSON.stringify({ query })
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        (data || []).forEach(d => {
-          (d.results || []).forEach(r => {
-            const id = r.campaign?.resourceName || r.campaign?.resource_name || '';
-            const name = r.campaign?.name || '';
-            if (id) campaigns.push({ id, name });
-          });
-        });
-      } catch(e) {}
-    }));
-    console.log('검색된 캠페인:', campaigns);
-
-    if (campaigns.length === 0) {
-      dropSel.innerHTML = '<option value="">해당 캠페인 없음</option>';
-      dropSel.style.display = 'block';
-      return;
-    }
-
-    dropSel.innerHTML = '<option value="">캠페인 선택</option>' +
-      campaigns.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-    dropSel.style.display = 'block';
-  } catch(e) {
-    showToast('캠페인 검색 실패: ' + e.message, 'error');
-  }
-}
-
-async function gSelectCampaignDrop(t) {
-  const dropSel = document.getElementById(`${t}_캠페인선택`);
-  const resourceName = dropSel.value;
-  const campaignName = dropSel.options[dropSel.selectedIndex]?.text || '';
-  if (!resourceName) return;
-  document.getElementById(`${t}_캠페인ID`).value = resourceName;
-
-  // resourceName에서 계정 ID 추출 (customers/계정ID/campaigns/캠페인ID)
-  const match = resourceName.match(/customers\/(\d+)\//);
-  const accountId = match ? match[1] : '';
-
-  const selectedWrap = document.getElementById(`${t}_선택된캠페인`);
-  const selectedName = document.getElementById(`${t}_선택된캠페인명`);
-  if (selectedWrap) selectedWrap.style.display = 'block';
-  if (selectedName) selectedName.textContent = campaignName;
-
-  // 계정 ID로 광고계정ID 자동 세팅 + 참조시트에서 잠재고객 가져오기
-  if (accountId) {
-    document.getElementById(`${t}_광고계정ID`).value = accountId;
-    // 계정 ID로 계정명 찾기
-    const accObj = GDB.accounts.find(a => a.id === accountId);
-    const accName = accObj ? accObj.name : '';
-    if (accName) {
-      gSetAccountName(t, accName);
-      // 참조시트 GDB.audiencesByAccount에서 잠재고객 가져오기
-      const audSel = document.getElementById(`${t}_잠재고객`);
-      if (audSel) {
-        audSel.innerHTML = '<option value="">선택 안함</option>';
-        const list = GDB.audiencesByAccount[accName] || [];
-        list.forEach(a => {
-          const o = document.createElement('option');
-          o.value = a.id; o.textContent = a.name;
-          audSel.appendChild(o);
-        });
-      }
-    }
-
-    // 캠페인 내 광고그룹 조회해서 다음 번호 계산
-    let token;
-    try {
-      token = await gDriveSignIn();
-      const MCC_ID = '2191005843';
-      const campaignResourceName = resourceName;
-      const res = await fetch(`https://googleads.googleapis.com/v24/customers/${accountId}/googleAds:searchStream`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'developer-token': 'h5fjThKhbZXjdRgOcaK6rQ',
-          'login-customer-id': MCC_ID
-        },
-        body: JSON.stringify({
-          query: `SELECT ad_group.name FROM ad_group WHERE campaign.resource_name = '${campaignResourceName}'`
-        })
-      });
-      const data = await res.json();
-      let maxNum = 0;
-      (data || []).forEach(d => {
-        (d.results || []).forEach(r => {
-          const name = r.adGroup?.name || r.ad_group?.name || '';
-          const m = name.match(/(\d+)U/);
-          if (m) { const n = parseInt(m[1]); if (n > maxNum) maxNum = n; }
-        });
-      });
-      gNextSetNumber.g2 = maxNum + 1;
-      console.log('다음 광고그룹 번호:', gNextSetNumber.g2);
-
-      // 광고그룹명 자동생성
-      const clinicName = window._g2ClinicName || '';
-      const staffEl = document.getElementById(`${t}_제작자`);
-      const staffName = staffEl ? staffEl.value : '';
-      // L열(11)에서 사원명 매핑 → M열(12) 사원ID 가져오기
-      const staffRow = (GDB.gRefRows || []).slice(1).find(r => r[11] === staffName);
-      const staffId = staffRow ? (staffRow[12] || '') : '';
-      const groupName = [clinicName, '임플란트', `${gNextSetNumber.g2}U`, staffId].filter(Boolean).join(' ');
-      const groupEl = document.getElementById(`${t}_광고그룹명`);
-      if (groupEl) groupEl.value = groupName;
-    } catch(e) {
-      console.warn('광고그룹 조회 실패:', e.message);
-    }
-
-    // 캠페인 지역 설정 레벨 확인
-    try {
-      const resGeo = await fetch(`https://googleads.googleapis.com/v24/customers/${accountId}/googleAds:searchStream`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'developer-token': 'h5fjThKhbZXjdRgOcaK6rQ',
-          'login-customer-id': '2191005843'
-        },
-        body: JSON.stringify({
-          query: `SELECT campaign.geo_target_type_setting.positive_geo_target_type FROM campaign WHERE campaign.resource_name = '${resourceName}'`
-        })
-      });
-      const geoData = await resGeo.json();
-      const geoType = geoData?.[0]?.results?.[0]?.campaign?.geoTargetTypeSetting?.positiveGeoTargetType || '';
-      console.log('지역설정타입:', geoType);
-
-      const regionSel = document.getElementById('g2_지역구분자');
-      const regionLabel = document.getElementById('g2_지역구분자_label');
-      const needsGeo = geoType === '' || geoType === 'PRESENCE_OR_INTEREST';
-
-      // 지역구분자 드롭다운 채우기
-      if (regionSel) {
-        regionSel.innerHTML = '<option value="">선택</option>';
-        GDB.googleRegions.forEach(r => {
-          const o = document.createElement('option');
-          o.value = r.name; o.textContent = r.name;
-          regionSel.appendChild(o);
-        });
-      }
-
-      if (needsGeo) {
-        if (regionLabel) regionLabel.textContent = '지역구분자 (지역설정필요)';
-        if (regionSel) regionSel.disabled = false;
-        window._g2NeedsGeo = true;
-      } else {
-        if (regionLabel) regionLabel.textContent = '지역구분자 (지역설정불필요)';
-        if (regionSel) { regionSel.disabled = true; regionSel.value = ''; }
-        window._g2NeedsGeo = false;
-      }
-    } catch(e) {
-      console.warn('지역설정 확인 실패:', e.message);
-    }
-  }
-}
-function gClearSelectedCampaign(t) {
-  document.getElementById(`${t}_캠페인ID`).value = '';
-  const selectedWrap = document.getElementById(`${t}_선택된캠페인`);
-  if (selectedWrap) selectedWrap.style.display = 'none';
-  const dropSel = document.getElementById(`${t}_캠페인선택`);
-  if (dropSel) { dropSel.value = ''; }
-  const regionLabel = document.getElementById(`${t}_지역구분자_label`);
-  if (regionLabel) regionLabel.textContent = '지역구분자';
-  const regionSel = document.getElementById(`${t}_지역구분자`);
-  if (regionSel) { regionSel.disabled = true; regionSel.innerHTML = '<option value="">캠페인 선택 후 자동</option>'; }
-  window._g2NeedsGeo = false;
-}
-
 async function gOnCampaignId(t) {
   const campaignId = document.getElementById(`${t}_캠페인ID`).value.trim(); if (!campaignId) return;
   const nameDisplay = document.getElementById(`${t}_캠페인명_display`);
@@ -1929,7 +1619,7 @@ function gCollectVideos(t) {
       공개상태: 'unlisted',
       아동용: 'false',
     };
-  }).filter(v => (v.파일ID && v.파일ID.trim() !== '') || (v.파일유형 === 'upload' && v.파일첨부));
+  }).filter(v => v.파일ID && v.파일ID.trim() !== '');
 }
 let gLongHeadlineSeq = { g1: 0, g2: 0 };
 function gAddLongHeadlineBlock(t) {
@@ -1964,8 +1654,7 @@ function gCollectChannels(t) {
 }
 function gGetData(t) {
   const isT2 = t === 'g2';
-  const regionEl = document.getElementById(`${t}_지역구분자`);
-  const regionName = regionEl ? regionEl.value : '';
+  const regionName = document.getElementById(`${t}_지역구분자`).value;
   const gRegion = GDB.googleRegions.find(r => r.name === regionName);
   const d = {
     플랫폼: 'google',
@@ -1974,7 +1663,6 @@ function gGetData(t) {
     치과명: g(`${t}_치과명`), 광고그룹명: g(`${t}_광고그룹명`),
     지역구분자: regionName,
     구글지역ID: gRegion ? (gRegion.criterionId || '') : '',
-    지역설정필요: isT2 ? (window._g2NeedsGeo || false) : true,
     언어: 'ko',
     채널: gCollectChannels(t),
     잠재고객ID: g(`${t}_잠재고객`),
@@ -2034,24 +1722,17 @@ async function gSubmitAd(t) {
   if (!data.계정명 || !data.광고그룹명) { showToast('계정명과 광고그룹명은 필수입니다', 'error'); return; }
   if (isT2 && !data.캠페인ID) { showToast('캠페인 ID를 입력해주세요', 'error'); return; }
   if (!isT2 && !data.캠페인명) { showToast('캠페인명을 입력해주세요', 'error'); return; }
-  // upload 방식 파일 첨부 여부도 체크
-  const videoList = document.getElementById(`${t}_video_list`);
-  const hasUploadFile = Array.from(videoList.children).some(block => {
-    const method = block.querySelector('select')?.value;
-    const fileInput = block.querySelector('[data-role="파일첨부"]');
-    return method === 'upload' && fileInput && fileInput.files[0];
-  });
-  if ((data.영상목록||[]).length === 0 && !hasUploadFile) { showToast('영상을 1개 이상 추가해주세요', 'error'); return; }
+  if ((data.영상목록||[]).length === 0) { showToast('영상을 1개 이상 추가해주세요', 'error'); return; }
   const btn = document.getElementById(`${t}_submitBtn`); btn.disabled = true; btn.textContent = '전송 중...';
   showToast('Make로 전송 중...', 'info');
 
   // upload 방식 영상 → 구글 드라이브 업로드 후 파일ID로 교체
+  const videoList = document.getElementById(`${t}_video_list`);
   const uploadBlocks = Array.from(videoList.children).filter(block => {
     const method = block.querySelector('select').value;
     const fileInput = block.querySelector('[data-role="파일첨부"]');
     return method === 'upload' && fileInput && fileInput.files[0];
   });
-  const 업로드파일IDs = [];
   if (uploadBlocks.length > 0) {
     showToast('영상 드라이브 업로드 중...', 'info');
     for (const block of uploadBlocks) {
@@ -2060,7 +1741,8 @@ async function gSubmitAd(t) {
         const fileIdInput = block.querySelector('[data-role="파일ID"]');
         const fileId = await uploadFileToDrive(fileInput.files[0]);
         fileIdInput.value = fileId;
-        업로드파일IDs.push(fileId);
+        // 파일유형을 drive로 변경
+        block.querySelector('select').value = 'drive';
       } catch(err) {
         showToast('드라이브 업로드 실패: ' + err.message, 'error');
         btn.disabled = false; btn.textContent = isT2 ? '세트 추가하기' : '캠페인 등록하기';
@@ -2070,7 +1752,6 @@ async function gSubmitAd(t) {
     // 업로드 후 데이터 재수집
     data.영상목록 = gCollectVideos(t).map(v => ({ ...v, 파일첨부: undefined }));
   }
-  data.업로드파일IDs = 업로드파일IDs;
 
   const idx = gAddCard(t, data);
   try {
@@ -2078,18 +1759,6 @@ async function gSubmitAd(t) {
     if (res.ok) {
       gUpdateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중');
       showToast(isT2?'세트 추가 요청 완료!':'캠페인 등록 요청 완료!', 'success');
-      // 세트 추가 시 다음 그룹번호로 증가
-      if (isT2) {
-        gNextSetNumber.g2++;
-        // 광고그룹명 업데이트
-        const clinicName = window._g2ClinicName || '';
-        const staffEl = document.getElementById(`${t}_제작자`);
-        const staffName = staffEl ? staffEl.value : '';
-        const staffRow = (GDB.gRefRows || []).slice(1).find(r => r[11] === staffName);
-        const staffId = staffRow ? (staffRow[12] || '') : '';
-        const groupName = [clinicName, '임플란트', `${gNextSetNumber.g2}U`, staffId].filter(Boolean).join(' ');
-        const groupEl = document.getElementById(`${t}_광고그룹명`); if (groupEl) groupEl.value = groupName;
-      }
       // 사용된 카피 시트에 저장
       const usedCopies = gCollectTexts(t, 'headline').concat(gCollectTexts(t, 'desc'));
       gSaveCopies(usedCopies).catch(() => {});
@@ -2123,7 +1792,6 @@ function gClearForm(t) {
     const accDisp = document.getElementById('g2_계정명_display'); if (accDisp) accDisp.value = '';
     const campDisp = document.getElementById('g2_캠페인명_display'); if (campDisp) campDisp.textContent = '';
     const campIdEl = document.getElementById('g2_캠페인ID'); if (campIdEl) campIdEl.value = '';
-    gClearSelectedCampaign('g2');
   }
   gPopulateDropdowns();
 }
