@@ -205,10 +205,10 @@
         </div>
         <div class="field"><label>어드밴티지 타겟</label>
           <div class="conv-type-wrap" style="margin-bottom:0;">
-            <button type="button" class="conv-type-btn" id="t1_adv_off" onclick="onAdvantage('t1',0)">사용 안 함</button>
-            <button type="button" class="conv-type-btn active" id="t1_adv_on" onclick="onAdvantage('t1',1)">사용</button>
+            <button type="button" class="conv-type-btn active" id="t1_adv_off" onclick="onAdvantage('t1',0)">사용 안 함</button>
+            <button type="button" class="conv-type-btn" id="t1_adv_on" onclick="onAdvantage('t1',1)">사용</button>
           </div>
-          <input type="hidden" id="t1_어드밴티지타겟" value="1">
+          <input type="hidden" id="t1_어드밴티지타겟" value="0">
           <div class="field-hint" id="t1_adv_hint"></div>
         </div>
       </div>
@@ -375,10 +375,10 @@
         </div>
         <div class="field"><label>어드밴티지 타겟</label>
           <div class="conv-type-wrap" style="margin-bottom:0;">
-            <button type="button" class="conv-type-btn" id="t2_adv_off" onclick="onAdvantage('t2',0)">사용 안 함</button>
-            <button type="button" class="conv-type-btn active" id="t2_adv_on" onclick="onAdvantage('t2',1)">사용</button>
+            <button type="button" class="conv-type-btn active" id="t2_adv_off" onclick="onAdvantage('t2',0)">사용 안 함</button>
+            <button type="button" class="conv-type-btn" id="t2_adv_on" onclick="onAdvantage('t2',1)">사용</button>
           </div>
-          <input type="hidden" id="t2_어드밴티지타겟" value="1">
+          <input type="hidden" id="t2_어드밴티지타겟" value="0">
           <div class="field-hint" id="t2_adv_hint"></div>
         </div>
       </div>
@@ -1452,8 +1452,8 @@ function onAdvantage(t, val) {
   if (offBtn) offBtn.classList.toggle('active', v === '0');
   const hint = document.getElementById(`${t}_adv_hint`);
   if (hint) hint.textContent = v === '1'
-    ? '설정한 지역·나이 조건 밖으로도 노출될 수 있어요'
-    : '입력한 타겟 조건만 사용합니다';
+    ? '나이·성별은 제안으로만 쓰여요 (범위 밖 노출 가능). 지역·제외타겟은 그대로 적용됩니다'
+    : '입력한 나이·성별 범위를 그대로 지킵니다';
 }
 function onForm(t) {
   const sel = document.getElementById(`${t}_인스턴트양식`); const opt = sel.options[sel.selectedIndex];
@@ -1632,7 +1632,7 @@ function clearForm(t) {
   ['제작자','날짜','유형','계정명','페이지','인스타계정','지역구분자','파일ID','기본문구','제목','설명','세트예산','시작일','종료일','언어'].forEach(field => { const el = document.getElementById(`${t}_${field}`); if (el) el.value = ''; });
   document.getElementById(`${t}_언어`).value = 'ko';
   const cb = document.getElementById(`${t}_캠페인예산`); if (cb) cb.value = 30000;
-  onAdvantage(t, 1);
+  onAdvantage(t, 0);
   document.getElementById(`${t}_최소나이`).value = 35;
   document.getElementById(`${t}_최대나이`).value = 65;
   document.getElementById(`${t}_시작일`).value = new Date().toISOString().split('T')[0];
@@ -1674,7 +1674,7 @@ function showToast(msg, type='info') {
 }
 ['t1','t2'].forEach(t => {
   document.getElementById(`${t}_시작일`).value = new Date().toISOString().split('T')[0];
-  onAdvantage(t, 1);
+  onAdvantage(t, 0);
   ['유형','날짜','제작자'].forEach(field => {
     const el = document.getElementById(`${t}_${field}`);
     if (el) { el.addEventListener('input', () => autoGenNames(t)); el.addEventListener('change', () => autoGenNames(t)); }
