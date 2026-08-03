@@ -235,14 +235,9 @@
               <input type="text" id="t1_데이터세트ID" placeholder="픽셀 ID 입력" oninput="onPixelManual('t1')">
             </div>
           </div>
-          <div class="field"><label>전환 이벤트</label>
+          <div class="field"><label>전환 이벤트 (맞춤 전환)</label>
             <select id="t1_전환이벤트">
-              <option value="LEAD">리드 (Lead)</option>
-              <option value="COMPLETE_REGISTRATION">완료 등록 (CompleteRegistration)</option>
-              <option value="CONTACT">연락처 (Contact)</option>
-              <option value="SUBMIT_APPLICATION">신청서 제출 (SubmitApplication)</option>
-              <option value="PURCHASE">구매 (Purchase)</option>
-              <option value="VIEW_CONTENT">콘텐츠 보기 (ViewContent)</option>
+              <option value="">계정 선택 후 사용 가능</option>
             </select>
             <div class="field-hint" id="t1_이벤트_hint"></div>
           </div>
@@ -405,14 +400,9 @@
               <input type="text" id="t2_데이터세트ID" placeholder="픽셀 ID 입력" oninput="onPixelManual('t2')">
             </div>
           </div>
-          <div class="field"><label>전환 이벤트</label>
+          <div class="field"><label>전환 이벤트 (맞춤 전환)</label>
             <select id="t2_전환이벤트">
-              <option value="LEAD">리드 (Lead)</option>
-              <option value="COMPLETE_REGISTRATION">완료 등록 (CompleteRegistration)</option>
-              <option value="CONTACT">연락처 (Contact)</option>
-              <option value="SUBMIT_APPLICATION">신청서 제출 (SubmitApplication)</option>
-              <option value="PURCHASE">구매 (Purchase)</option>
-              <option value="VIEW_CONTENT">콘텐츠 보기 (ViewContent)</option>
+              <option value="">계정 선택 후 사용 가능</option>
             </select>
             <div class="field-hint" id="t2_이벤트_hint"></div>
           </div>
@@ -778,38 +768,7 @@ async function fetchNextSetNumber(campaignId) {
   return maxNum + 1;
 }
 
-/* ===== 픽셀(데이터세트) 조회 & 전환이벤트 ===== */
-// 픽셀 이벤트명 → Meta 광고 API custom_event_type 매핑
-const PIXEL_EVENT_MAP = {
-  'Lead': 'LEAD',
-  'CompleteRegistration': 'COMPLETE_REGISTRATION',
-  'Contact': 'CONTACT',
-  'SubmitApplication': 'SUBMIT_APPLICATION',
-  'Schedule': 'SCHEDULE',
-  'Purchase': 'PURCHASE',
-  'ViewContent': 'VIEW_CONTENT',
-  'AddToCart': 'ADD_TO_CART',
-  'AddToWishlist': 'ADD_TO_WISHLIST',
-  'AddPaymentInfo': 'ADD_PAYMENT_INFO',
-  'InitiateCheckout': 'INITIATE_CHECKOUT',
-  'Search': 'SEARCH',
-  'PageView': 'PAGE_VIEW',
-  'StartTrial': 'START_TRIAL',
-  'Subscribe': 'SUBSCRIBE',
-  'Donate': 'DONATE',
-  'FindLocation': 'FIND_LOCATION',
-  'CustomizeProduct': 'CUSTOMIZE_PRODUCT',
-};
-const EVENT_LABEL_KO = {
-  'LEAD': '리드', 'COMPLETE_REGISTRATION': '완료 등록', 'CONTACT': '연락처',
-  'SUBMIT_APPLICATION': '신청서 제출', 'SCHEDULE': '예약', 'PURCHASE': '구매',
-  'VIEW_CONTENT': '콘텐츠 보기', 'ADD_TO_CART': '장바구니 담기', 'ADD_TO_WISHLIST': '위시리스트 추가',
-  'ADD_PAYMENT_INFO': '결제 정보 추가', 'INITIATE_CHECKOUT': '결제 시작', 'SEARCH': '검색',
-  'PAGE_VIEW': '페이지 조회', 'START_TRIAL': '체험 시작', 'SUBSCRIBE': '구독',
-  'DONATE': '기부', 'FIND_LOCATION': '위치 찾기', 'CUSTOMIZE_PRODUCT': '제품 맞춤 설정',
-};
-const DEFAULT_EVENTS = ['LEAD','COMPLETE_REGISTRATION','CONTACT','SUBMIT_APPLICATION','PURCHASE','VIEW_CONTENT'];
-
+/* ===== 픽셀(데이터세트) 조회 & 맞춤 전환 ===== */
 async function fetchAdPixels(accountId) {
   const cleanId = String(accountId).replace('act_', '');
   const url = `https://graph.facebook.com/v25.0/act_${cleanId}/adspixels?fields=id,name,last_fired_time&limit=100&access_token=${META_ACCESS_TOKEN}`;
@@ -820,23 +779,33 @@ async function fetchAdPixels(accountId) {
   return json.data || [];
 }
 
-async function fetchPixelEvents(pixelId) {
-  const url = `https://graph.facebook.com/v25.0/${pixelId}/stats?aggregation=event&access_token=${META_ACCESS_TOKEN}`;
+// 맞춤 전환은 픽셀이 아니라 광고계정에 붙어 있음 — 별도 엔드포인트
+async function fetchCustomConversions(accountId) {
+  const cleanId = String(accountId).replace('act_', '');
+  const url = `https://graph.facebook.com/v25.0/act_${cleanId}/customconversions?fields=id,name,custom_event_type,is_archived&limit=200&access_token=${META_ACCESS_TOKEN}`;
   const res = await fetch(url);
   const json = await res.json();
   if (json.error) throw new Error(json.error.message);
-  const counts = {};
-  (json.data || []).forEach(row => {
-    const v = row.value || {};
-    Object.keys(v).forEach(name => {
-      const n = Number(v[name]) || 0;
-      counts[name] = (counts[name] || 0) + n;
-    });
-  });
-  return Object.keys(counts).map(name => ({ name, count: counts[name] })).sort((a, b) => b.count - a.count);
+  if (!res.ok) throw new Error(`맞춤 전환 조회 실패: ${res.status}`);
+  return (json.data || []).filter(c => !c.is_archived);
 }
 
 const pixelState = { t1: [], t2: [] };
+const customConvState = { t1: [], t2: [] };
+const customConvError = { t1: '', t2: '' };
+
+async function loadCustomConversions(t) {
+  const accountId = document.getElementById(`${t}_광고계정ID`).value;
+  customConvState[t] = []; customConvError[t] = '';
+  if (!accountId) return;
+  setEventHint(t, '맞춤 전환을 불러오는 중이에요');
+  try {
+    customConvState[t] = await fetchCustomConversions(accountId);
+  } catch (err) {
+    customConvError[t] = err.message;
+  }
+  renderConversionEvents(t);
+}
 
 function setPixelHint(t, msg, isErr) {
   const el = document.getElementById(`${t}_픽셀_hint`);
@@ -862,12 +831,13 @@ function onPixelManual(t) {
     const match = Array.from(sel.options).some(o => o.value === val);
     sel.value = match ? val : '';
   }
-  if (val) { setPixelHint(t, '직접 입력한 픽셀 ID를 사용합니다'); loadPixelEvents(t, val); }
+  if (val) setPixelHint(t, '직접 입력한 픽셀 ID를 사용합니다');
 }
 function resetPixelSelect(t, placeholder) {
   const sel = document.getElementById(`${t}_픽셀선택`);
   if (sel) sel.innerHTML = `<option value="">${placeholder}</option>`;
   pixelState[t] = [];
+  customConvState[t] = []; customConvError[t] = '';
   setPixelHint(t, '');
   setEventHint(t, '');
 }
@@ -878,6 +848,7 @@ async function loadPixels(t) {
   if (!accountId) { resetPixelSelect(t, '계정을 먼저 선택하세요'); return; }
   sel.innerHTML = '<option value="">불러오는 중...</option>';
   setPixelHint(t, '픽셀 목록을 불러오는 중이에요');
+  loadCustomConversions(t);
   try {
     const pixels = await fetchAdPixels(accountId);
     pixelState[t] = pixels;
@@ -905,47 +876,41 @@ function onPixelSelect(t) {
   const pixelId = document.getElementById(`${t}_픽셀선택`).value;
   const manual = document.getElementById(`${t}_데이터세트ID`);
   if (manual) manual.value = pixelId;
-  if (!pixelId) { setEventHint(t, ''); return; }
+  if (!pixelId) return;
   const p = pixelState[t].find(x => x.id === pixelId);
   setPixelHint(t, p && p.last_fired_time ? `마지막 이벤트 수신: ${new Date(p.last_fired_time).toLocaleString('ko-KR')}` : '');
-  loadPixelEvents(t, pixelId);
 }
-async function loadPixelEvents(t, pixelId) {
+// 맞춤 전환 목록만 표시 (표준 이벤트는 사용하지 않음)
+function renderConversionEvents(t) {
   const sel = document.getElementById(`${t}_전환이벤트`);
-  if (!sel || !pixelId) return;
-  const prev = sel.value;
-  setEventHint(t, '이 픽셀에서 수신한 이벤트를 확인하는 중이에요');
-  try {
-    const events = await fetchPixelEvents(pixelId);
-    if (events.length === 0) { setEventHint(t, '최근 수신된 이벤트가 없어 표준 이벤트를 표시합니다', true); return; }
-    sel.innerHTML = '';
-    const usedEnums = new Set();
-    events.forEach(ev => {
-      const mapped = PIXEL_EVENT_MAP[ev.name] || 'OTHER';
-      const o = document.createElement('option');
-      o.value = mapped;
-      o.dataset.raw = ev.name;
-      const ko = EVENT_LABEL_KO[mapped];
-      o.textContent = `${ko ? ko + ' (' + ev.name + ')' : ev.name} · ${ev.count.toLocaleString('ko-KR')}건`;
-      sel.appendChild(o);
-      usedEnums.add(mapped);
-    });
-    // 픽셀에 없더라도 자주 쓰는 표준 이벤트는 남겨둠
-    DEFAULT_EVENTS.forEach(en => {
-      if (usedEnums.has(en)) return;
-      const o = document.createElement('option');
-      o.value = en;
-      o.dataset.raw = Object.keys(PIXEL_EVENT_MAP).find(k => PIXEL_EVENT_MAP[k] === en) || '';
-      o.textContent = `${EVENT_LABEL_KO[en] || en} (수신 기록 없음)`;
-      sel.appendChild(o);
-    });
-    const keep = Array.from(sel.options).some(o => o.value === prev);
-    sel.value = keep ? prev : (Array.from(sel.options).find(o => o.value === 'LEAD')?.value || sel.options[0].value);
-    setEventHint(t, '최근 28일 수신 건수 기준으로 정렬했어요');
-  } catch (err) {
-    setEventHint(t, '이벤트 조회 실패: ' + err.message + ' — 표준 이벤트에서 선택하세요', true);
+  if (!sel) return;
+  const prevCc = sel.options[sel.selectedIndex]?.dataset.ccid || '';
+  const customs = customConvState[t] || [];
+
+  if (customs.length === 0) {
+    sel.innerHTML = `<option value="">${customConvError[t] ? '불러오기 실패' : '맞춤 전환이 없습니다'}</option>`;
+    setEventHint(t, customConvError[t]
+      ? '맞춤 전환 조회 실패: ' + customConvError[t]
+      : '이 광고계정에 사용 가능한 맞춤 전환이 없어요', true);
+    return;
   }
+
+  sel.innerHTML = '';
+  customs.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c.custom_event_type || 'OTHER';
+    o.dataset.ccid = c.id;
+    o.dataset.raw = c.name || '';
+    o.textContent = `${c.name || '이름 없음'} (ID ${c.id})`;
+    sel.appendChild(o);
+  });
+
+  const all = Array.from(sel.options);
+  const restored = prevCc ? all.find(o => o.dataset.ccid === prevCc) : null;
+  sel.selectedIndex = restored ? all.indexOf(restored) : 0;
+  setEventHint(t, `맞춤 전환 ${customs.length}개를 불러왔어요`);
 }
+
 
 let DB = {
   accounts: [], excludes: [], pages: [], forms: [], regions: [], staff: [],
@@ -1499,13 +1464,13 @@ function switchTab(n) {
   [1,2].forEach(i => { document.getElementById(`tab${i}-btn`).classList.toggle('active', i===n); document.getElementById(`tab${i}-panel`).classList.toggle('active', i===n); });
 }
 function g(id) { const el = document.getElementById(id); return el ? el.value : ''; }
-function getEventRawName(t) {
+function getSelectedEventOption(t) {
   const sel = document.getElementById(`${t}_전환이벤트`);
-  if (!sel) return '';
-  const opt = sel.options[sel.selectedIndex];
-  if (!opt) return '';
-  if (opt.dataset.raw) return opt.dataset.raw;
-  return Object.keys(PIXEL_EVENT_MAP).find(k => PIXEL_EVENT_MAP[k] === opt.value) || '';
+  return sel ? sel.options[sel.selectedIndex] : null;
+}
+function getEventRawName(t) {
+  const opt = getSelectedEventOption(t);
+  return opt ? (opt.dataset.raw || '') : '';
 }
 function getData(t) {
   const d = {
@@ -1573,6 +1538,9 @@ function getData(t) {
     })(),
     전환이벤트: g(`${t}_전환이벤트`),
     전환이벤트명: getEventRawName(t),
+    // 맞춤 전환이면 custom_conversion_id로, 표준 이벤트면 pixel_id + custom_event_type으로 등록
+    전환유형: (getSelectedEventOption(t)?.dataset.ccid) ? 'CUSTOM_CONVERSION' : 'STANDARD',
+    맞춤전환ID: getSelectedEventOption(t)?.dataset.ccid || '',
   };
   if (t === 't1') { d.캠페인명 = g('t1_캠페인명'); d.구매유형 = g('t1_구매유형'); d.캠페인목표 = g('t1_캠페인목표'); d.캠페인예산 = g('t1_캠페인예산'); }
   else { d.캠페인ID = g('t2_캠페인ID'); }
@@ -1604,6 +1572,7 @@ async function submitAd(t) {
   if (data.전환위치타입 === 'WEBSITE') {
     if (!data.웹사이트URL) { showToast('웹사이트 URL을 입력해주세요', 'error'); return; }
     if (!data.데이터세트ID) { showToast('픽셀(데이터세트)을 선택해주세요', 'error'); return; }
+    if (!data.맞춤전환ID) { showToast('맞춤 전환을 선택해주세요', 'error'); return; }
   } else if (!data.인스턴트양식ID) { showToast('인스턴트 양식을 선택해주세요', 'error'); return; }
   const btn = document.getElementById(`${t}_submitBtn`); btn.disabled = true; btn.textContent = '전송 중...';
   showToast('Make로 전송 중...', 'info');
@@ -1647,10 +1616,7 @@ function clearForm(t) {
   resetPixelSelect(t, t === 't1' ? '계정을 먼저 선택하세요' : '캠페인을 먼저 불러오세요');
   const pmanual = document.getElementById(`${t}_픽셀_manual`); if (pmanual) pmanual.style.display = 'none';
   const cevt = document.getElementById(`${t}_전환이벤트`);
-  if (cevt) {
-    cevt.innerHTML = '<option value="LEAD">리드 (Lead)</option><option value="COMPLETE_REGISTRATION">완료 등록 (CompleteRegistration)</option><option value="CONTACT">연락처 (Contact)</option><option value="SUBMIT_APPLICATION">신청서 제출 (SubmitApplication)</option><option value="PURCHASE">구매 (Purchase)</option><option value="VIEW_CONTENT">콘텐츠 보기 (ViewContent)</option>';
-    cevt.value = 'LEAD';
-  }
+  if (cevt) cevt.innerHTML = '<option value="">계정 선택 후 사용 가능</option>';
   document.getElementById(`${t}_제외타겟ID`).value = '';
   const fi = document.getElementById(`${t}_파일첨부`); if (fi) fi.value = '';
   const fm = document.getElementById(`${t}_파일방식`); if (fm) { fm.value = 'upload'; onFileMethod(t); }
