@@ -163,8 +163,8 @@
   .mode-banner.new { background: var(--blue-bg); color: #1d4ed8; border: 1px solid #c8dffe; }
   .mode-banner.existing { background: var(--yellow-bg); color: #b45309; border: 1px solid #ffe0a0; }
   .section.dimmed { opacity: 0.4; pointer-events: none; }
-  .main-top { flex: 1 1 38%; display: flex; flex-direction: column; overflow: hidden; min-height: 140px; }
-  .creative-pane { flex: 1 1 62%; min-height: 0; border-top: 1px solid var(--border); background: var(--white); display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+  .main-top { flex: 1 1 38%; display: flex; flex-direction: column; overflow: hidden; min-height: 120px; }
+  .creative-pane { flex: 1 1 62%; min-height: 260px; border-top: 1px solid var(--border); background: var(--white); display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
   .creative-head { padding: 11px 28px 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); flex-shrink: 0; }
   .creative-head h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
   .creative-head p { font-size: 12px; color: var(--text2); margin-top: 2px; }
@@ -172,10 +172,12 @@
   .common-toggle { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; color: var(--text2); cursor: pointer; white-space: nowrap; }
   .btn-add-creative { height: 32px; padding: 0 14px; border: 1px dashed var(--border2); border-radius: var(--radius-sm); background: none; font-family: inherit; font-size: 12px; font-weight: 500; color: var(--text2); cursor: pointer; white-space: nowrap; }
   .btn-add-creative:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); }
-  .creative-strip { flex: 1; display: flex; gap: 12px; overflow-x: auto; overflow-y: auto; padding: 12px 28px; align-items: stretch; }
-  .creative-strip::-webkit-scrollbar { height: 6px; width: 6px; }
-  .creative-strip::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-  .creative-card { flex: 0 0 300px; align-self: stretch; overflow-y: auto; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+  .creative-strip { flex: 1 1 auto; min-height: 0; display: flex; gap: 12px; overflow: auto; padding: 12px 28px 16px; align-items: flex-start; }
+  .creative-strip::-webkit-scrollbar { height: 9px; width: 9px; }
+  .creative-strip::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 5px; border: 2px solid var(--white); }
+  .creative-strip::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+  .creative-strip { scrollbar-width: thin; }
+  .creative-card { flex: 0 0 300px; align-self: flex-start; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
   .creative-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
   .creative-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   .creative-card-title { font-size: 12px; font-weight: 600; color: var(--text1); }
@@ -382,7 +384,10 @@
           <div class="copy-suggest-dropdown" id="t2_캠페인목록" style="max-height:240px;"></div>
         </div>
         <div id="t2_캠페인명_display" style="margin-top:8px;font-size:12px;color:var(--text2);min-height:16px;"></div>
-        <span class="manual-toggle" onclick="toggleManualCampaignId('t2')">캠페인 ID를 직접 입력할래요</span>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span class="manual-toggle" onclick="toggleManualCampaignId('t2')">캠페인 ID를 직접 입력할래요</span>
+          <span class="manual-toggle" id="t2_campaign_clear" style="display:none;color:var(--red);" onclick="clearCampaignSelection('t2')">✕ 선택한 캠페인 해제</span>
+        </div>
         <div id="t2_manual_wrap" style="display:none;margin-top:8px;">
           <input type="text" id="t2_캠페인ID" placeholder="캠페인 ID를 입력하세요" onblur="onCampaignId('t2')">
         </div>
@@ -1365,6 +1370,32 @@ function selectCampaignFromList(t, campaignId) {
   onCampaignId(t);
 }
 
+// 세트 추가 탭: 불러온 캠페인 선택 해제
+function clearCampaignSelection(t) {
+  const campIdEl = document.getElementById(`${t}_캠페인ID`); if (campIdEl) campIdEl.value = '';
+  const disp = document.getElementById(`${t}_캠페인명_display`); if (disp) disp.textContent = '';
+  const accSel = document.getElementById(`${t}_캠페인선택계정`); if (accSel) accSel.value = '';
+  const listBox = document.getElementById(`${t}_캠페인목록`); if (listBox) { listBox.classList.remove('show'); listBox.innerHTML = ''; }
+  selectedAdset.t2 = null; applyT2Mode();
+  const adsetBox = document.getElementById('t2_adset_list');
+  if (adsetBox) adsetBox.innerHTML = '<div class="adset-empty">위에서 캠페인을 먼저 선택하세요</div>';
+  const adsetHint = document.getElementById('t2_adset_hint');
+  if (adsetHint) adsetHint.textContent = '캠페인을 불러오면 목록이 표시돼요';
+  nextSetNumber.t2 = 1;
+  setAccountName(t, '');
+  document.getElementById(`${t}_광고계정ID`).value = '';
+  const exSel = document.getElementById(`${t}_제외타겟`); if (exSel) exSel.innerHTML = '<option value="">선택</option>';
+  selectedExcludes[t] = []; renderExcludeTags(t); updateExcludeIds(t);
+  resetPixelSelect(t, '캠페인을 먼저 불러오세요');
+  renderConversionEvents(t);
+  toggleCampaignClear(t, false);
+  autoGenNames(t);
+  showToast('캠페인 선택을 해제했어요', 'info');
+}
+function toggleCampaignClear(t, show) {
+  const el = document.getElementById(`${t}_campaign_clear`);
+  if (el) el.style.display = show ? 'inline-block' : 'none';
+}
 function toggleManualCampaignId(t) {
   const wrap = document.getElementById(`${t}_manual_wrap`);
   if (!wrap) return;
@@ -1521,6 +1552,7 @@ async function onCampaignId(t) {
       if (exists) { regSel.value = regionName; onRegion(t); }
     }
     autoGenNames(t);
+    toggleCampaignClear(t, true);
     showToast('캠페인 정보를 불러왔어요', 'success');
   } catch (err) { showToast('캠페인 조회 실패: ' + err.message, 'error'); }
 }
@@ -1958,7 +1990,7 @@ function clearForm(t) {
     const campAccSel = document.getElementById('t2_캠페인선택계정'); if (campAccSel) campAccSel.value = '';
     const campListBox = document.getElementById('t2_캠페인목록'); if (campListBox) { campListBox.classList.remove('show'); campListBox.innerHTML = ''; }
     const manualWrap = document.getElementById('t2_manual_wrap'); if (manualWrap) manualWrap.style.display = 'none';
-    selectedAdset.t2 = null; applyT2Mode();
+    selectedAdset.t2 = null; applyT2Mode(); toggleCampaignClear('t2', false);
     const adsetBox = document.getElementById('t2_adset_list');
     if (adsetBox) adsetBox.innerHTML = '<div class="adset-empty">위에서 캠페인을 먼저 선택하세요</div>';
     const adsetHint = document.getElementById('t2_adset_hint');
