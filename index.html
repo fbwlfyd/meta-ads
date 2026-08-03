@@ -137,6 +137,12 @@
   .chip { display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border: 1px solid var(--border2); border-radius: 20px; font-size: 12px; cursor: pointer; user-select: none; background: var(--white); }
   .chip input { display: none; }
   .chip.checked { background: var(--g-red-bg); border-color: var(--g-red-border); color: var(--g-red-dark); font-weight: 600; }
+
+  .conv-type-wrap { display: flex; gap: 8px; margin-bottom: 10px; }
+  .conv-type-btn { flex: 1; height: 40px; border: 1px solid var(--border2); border-radius: var(--radius-sm); background: var(--white); color: var(--text2); font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+  .conv-type-btn.active { border-color: var(--blue); background: var(--blue-bg); color: var(--blue); font-weight: 600; }
+  .conv-section { display: none; }
+  .conv-section.show { display: block; }
 </style>
 </head>
 <body>
@@ -195,22 +201,45 @@
         </div>
       </div>
       <div class="divider"></div>
-      <div class="section"><div class="sec-label">인스턴트양식</div>
-        <div class="field"><label>인스턴트양식</label><select id="t1_인스턴트양식" onchange="onForm('t1')"><option value="">페이지 선택 후 사용 가능</option></select></div>
+      <div class="section">
+        <div class="sec-label">전환 설정</div>
+        <div class="conv-type-wrap">
+          <button type="button" class="conv-type-btn active" id="t1_conv_lead" onclick="onConvType('t1','ON_AD')">📋 인스턴트 양식</button>
+          <button type="button" class="conv-type-btn" id="t1_conv_web" onclick="onConvType('t1','WEBSITE')">🌐 웹사이트</button>
+        </div>
+        <!-- 인스턴트양식 섹션 -->
+        <div class="conv-section show" id="t1_conv_lead_section">
+          <div class="field"><label>인스턴트양식</label><select id="t1_인스턴트양식" onchange="onForm('t1')"><option value="">페이지 선택 후 사용 가능</option></select></div>
+        </div>
+        <!-- 웹사이트 섹션 -->
+        <div class="conv-section" id="t1_conv_web_section">
+          <div class="field"><label>웹사이트 URL</label><input type="text" id="t1_웹사이트URL" placeholder="https://..."></div>
+          <div class="field"><label>데이터세트 (픽셀 ID)</label><input type="text" id="t1_데이터세트ID" placeholder="픽셀 ID 입력"></div>
+          <div class="field"><label>전환 이벤트</label>
+            <select id="t1_전환이벤트">
+              <option value="LEAD">리드</option>
+              <option value="COMPLETE_REGISTRATION">완료 등록</option>
+              <option value="CONTACT">연락처</option>
+              <option value="SUBMIT_APPLICATION">신청서 제출</option>
+              <option value="PURCHASE">구매</option>
+              <option value="VIEW_CONTENT">콘텐츠 보기</option>
+            </select>
+          </div>
+        </div>
       </div>
       <div class="divider"></div>
       <div class="section"><div class="sec-label">광고 소재</div>
         <div class="field"><label>파일 업로드 방식</label>
           <select id="t1_파일방식" onchange="onFileMethod('t1')">
             <option value="drive">Drive 파일ID</option>
-            <option value="upload" selected>직접 첨부</option>
+            <option value="upload">직접 첨부</option>
           </select>
         </div>
-        <div class="field" id="t1_drive_wrap" style="display:none;">
+        <div class="field" id="t1_drive_wrap">
           <label>파일ID (Google Drive)</label>
           <input type="text" id="t1_파일ID" placeholder="Drive 전체 링크 복사 후 붙여넣기" oninput="extractDriveId(this)">
         </div>
-        <div class="field" id="t1_upload_wrap">
+        <div class="field" id="t1_upload_wrap" style="display:none;">
           <label>파일 첨부</label>
           <div id="t1_dropzone" style="border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg);"
             ondragover="onDragOver(event,'t1')" ondragleave="onDragLeave(event,'t1')" ondrop="onDrop(event,'t1')"
@@ -254,14 +283,14 @@
           <div class="field"><label>종료일</label><input type="date" id="t1_종료일"></div>
         </div>
         <div class="row2">
-          <div class="field"><label>최소나이</label><input type="number" id="t1_최소나이" value="50" min="1" max="65"></div>
+          <div class="field"><label>최소나이</label><input type="number" id="t1_최소나이" value="35" min="1" max="65"></div>
           <div class="field"><label>최대나이</label><input type="number" id="t1_최대나이" value="65" min="1" max="65"></div>
         </div>
         <div class="row2">
           <div class="field"><label>성별</label><select id="t1_성별"><option value="">전체</option><option value="1">남성</option><option value="2">여성</option></select></div>
           <div class="field"><label>언어</label><input type="text" id="t1_언어" placeholder="ko"></div>
         </div>
-        <div class="field"><label>어드밴티지 타겟</label><input type="text" id="t1_어드밴티지타겟" value="OFF" readonly></div>
+        <div class="field"><label>어드밴티지 타겟</label><input type="text" id="t1_어드밴티지타겟" value="0" readonly></div>
       </div>
       <div class="divider"></div>
       <div class="section"><div class="sec-label">자동생성 값</div>
@@ -326,22 +355,45 @@
         </div>
       </div>
       <div class="divider"></div>
-      <div class="section"><div class="sec-label">인스턴트양식</div>
-        <div class="field"><label>인스턴트양식</label><select id="t2_인스턴트양식" onchange="onForm('t2')"><option value="">페이지 선택 후 사용 가능</option></select></div>
+      <div class="section">
+        <div class="sec-label">전환 설정</div>
+        <div class="conv-type-wrap">
+          <button type="button" class="conv-type-btn active" id="t2_conv_lead" onclick="onConvType('t2','ON_AD')">📋 인스턴트 양식</button>
+          <button type="button" class="conv-type-btn" id="t2_conv_web" onclick="onConvType('t2','WEBSITE')">🌐 웹사이트</button>
+        </div>
+        <!-- 인스턴트양식 섹션 -->
+        <div class="conv-section show" id="t2_conv_lead_section">
+          <div class="field"><label>인스턴트양식</label><select id="t2_인스턴트양식" onchange="onForm('t2')"><option value="">페이지 선택 후 사용 가능</option></select></div>
+        </div>
+        <!-- 웹사이트 섹션 -->
+        <div class="conv-section" id="t2_conv_web_section">
+          <div class="field"><label>웹사이트 URL</label><input type="text" id="t2_웹사이트URL" placeholder="https://..."></div>
+          <div class="field"><label>데이터세트 (픽셀 ID)</label><input type="text" id="t2_데이터세트ID" placeholder="픽셀 ID 입력"></div>
+          <div class="field"><label>전환 이벤트</label>
+            <select id="t2_전환이벤트">
+              <option value="LEAD">리드</option>
+              <option value="COMPLETE_REGISTRATION">완료 등록</option>
+              <option value="CONTACT">연락처</option>
+              <option value="SUBMIT_APPLICATION">신청서 제출</option>
+              <option value="PURCHASE">구매</option>
+              <option value="VIEW_CONTENT">콘텐츠 보기</option>
+            </select>
+          </div>
+        </div>
       </div>
       <div class="divider"></div>
       <div class="section"><div class="sec-label">광고 소재</div>
         <div class="field"><label>파일 업로드 방식</label>
           <select id="t2_파일방식" onchange="onFileMethod('t2')">
             <option value="drive">Drive 파일ID</option>
-            <option value="upload" selected>직접 첨부</option>
+            <option value="upload">직접 첨부</option>
           </select>
         </div>
-        <div class="field" id="t2_drive_wrap" style="display:none;">
+        <div class="field" id="t2_drive_wrap">
           <label>파일ID (Google Drive)</label>
           <input type="text" id="t2_파일ID" placeholder="Drive 전체 링크 복사 후 붙여넣기" oninput="extractDriveId(this)">
         </div>
-        <div class="field" id="t2_upload_wrap">
+        <div class="field" id="t2_upload_wrap" style="display:none;">
           <label>파일 첨부</label>
           <div id="t2_dropzone" style="border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg);"
             ondragover="onDragOver(event,'t2')" ondragleave="onDragLeave(event,'t2')" ondrop="onDrop(event,'t2')"
@@ -377,14 +429,14 @@
           <div class="field"><label>종료일</label><input type="date" id="t2_종료일"></div>
         </div>
         <div class="row2">
-          <div class="field"><label>최소나이</label><input type="number" id="t2_최소나이" value="50" min="1" max="65"></div>
+          <div class="field"><label>최소나이</label><input type="number" id="t2_최소나이" value="35" min="1" max="65"></div>
           <div class="field"><label>최대나이</label><input type="number" id="t2_최대나이" value="65" min="1" max="65"></div>
         </div>
         <div class="row2">
           <div class="field"><label>성별</label><select id="t2_성별"><option value="">전체</option><option value="1">남성</option><option value="2">여성</option></select></div>
           <div class="field"><label>언어</label><input type="text" id="t2_언어" placeholder="ko"></div>
         </div>
-        <div class="field"><label>어드밴티지 타겟</label><input type="text" id="t2_어드밴티지타겟" value="OFF" readonly></div>
+        <div class="field"><label>어드밴티지 타겟</label><input type="text" id="t2_어드밴티지타겟" value="0" readonly></div>
       </div>
       <div class="divider"></div>
       <div class="section"><div class="sec-label">자동생성 값</div>
@@ -1164,6 +1216,20 @@ function onForm(t) {
   const sel = document.getElementById(`${t}_인스턴트양식`); const opt = sel.options[sel.selectedIndex];
   document.getElementById(`${t}_인스턴트양식ID`).value = opt ? (opt.dataset.id || '') : '';
 }
+// 전환위치 타입 전환 (ON_AD vs WEBSITE)
+const convTypeState = { t1: 'ON_AD', t2: 'ON_AD' };
+function onConvType(t, type) {
+  convTypeState[t] = type;
+  // 버튼 활성화
+  document.getElementById(`${t}_conv_lead`).classList.toggle('active', type === 'ON_AD');
+  document.getElementById(`${t}_conv_web`).classList.toggle('active', type === 'WEBSITE');
+  // 섹션 표시/숨김
+  document.getElementById(`${t}_conv_lead_section`).classList.toggle('show', type === 'ON_AD');
+  document.getElementById(`${t}_conv_web_section`).classList.toggle('show', type === 'WEBSITE');
+  // 전환위치 드롭다운도 동기화
+  const destSel = document.getElementById(`${t}_전환위치`);
+  if (destSel) destSel.value = type;
+}
 function switchTab(n) {
   if (currentPlatform !== 'meta') switchPlatform('meta');
   [1,2].forEach(i => { document.getElementById(`tab${i}-btn`).classList.toggle('active', i===n); document.getElementById(`tab${i}-panel`).classList.toggle('active', i===n); });
@@ -1199,13 +1265,13 @@ function getData(t) {
       const langCode = langMap[langVal] || 12;
       const excludeIds = selectedExcludes[t].map(e => e.id).filter(Boolean);
       const targetingObj = {
-        age_min: ageMin,
-        age_max: ageMax,
+        age_min: 25, age_max: 65, age_range: [ageMin, ageMax],
         geo_locations: geoLocations,
         publisher_platforms: toArray(g(`${t}_노출위치1`)),
         facebook_positions: toArray(g(`${t}_페이스북지면`)),
         instagram_positions: toArray(g(`${t}_인스타지면`)),
         locales: [Number(langCode)],
+        targeting_automation: { advantage_audience: 1 },
       };
       if (excludeIds.length > 0) targetingObj.excluded_custom_audiences = excludeIds.map(id => ({ id }));
       return JSON.stringify(targetingObj);
@@ -1218,6 +1284,11 @@ function getData(t) {
     })(),
     기본문구: g(`${t}_기본문구`), 제목: g(`${t}_제목`), 설명: g(`${t}_설명`), CTA버튼: g(`${t}_CTA버튼`),
     인스턴트양식: g(`${t}_인스턴트양식`), 인스턴트양식ID: g(`${t}_인스턴트양식ID`),
+    // 전환위치 타입에 따른 분기
+    전환위치타입: convTypeState[t] || 'ON_AD',
+    웹사이트URL: g(`${t}_웹사이트URL`),
+    데이터세트ID: g(`${t}_데이터세트ID`),
+    전환이벤트: g(`${t}_전환이벤트`),
   };
   if (t === 't1') { d.캠페인명 = g('t1_캠페인명'); d.구매유형 = g('t1_구매유형'); d.캠페인목표 = g('t1_캠페인목표'); d.캠페인예산 = g('t1_캠페인예산'); }
   else { d.캠페인ID = g('t2_캠페인ID'); }
@@ -1273,13 +1344,18 @@ function clearForm(t) {
   ['제작자','날짜','유형','계정명','페이지','인스타계정','지역구분자','파일ID','기본문구','제목','설명','세트예산','시작일','종료일','언어'].forEach(field => { const el = document.getElementById(`${t}_${field}`); if (el) el.value = ''; });
   document.getElementById(`${t}_언어`).value = 'ko';
   const cb = document.getElementById(`${t}_캠페인예산`); if (cb) cb.value = 30000;
-  document.getElementById(`${t}_최소나이`).value = 50;
+  document.getElementById(`${t}_최소나이`).value = 35;
   document.getElementById(`${t}_최대나이`).value = 65;
   document.getElementById(`${t}_시작일`).value = new Date().toISOString().split('T')[0];
   document.getElementById(`${t}_타겟국가`).value = '';
   document.getElementById(`${t}_제외타겟`).innerHTML = '<option value="">선택</option>';
   selectedExcludes[t] = []; renderExcludeTags(t); updateExcludeIds(t);
   document.getElementById(`${t}_인스턴트양식`).innerHTML = '<option value="">페이지 선택 후 사용 가능</option>';
+  // 전환위치 타입 초기화
+  onConvType(t, 'ON_AD');
+  const wurl = document.getElementById(`${t}_웹사이트URL`); if (wurl) wurl.value = '';
+  const dsid = document.getElementById(`${t}_데이터세트ID`); if (dsid) dsid.value = '';
+  const cevt = document.getElementById(`${t}_전환이벤트`); if (cevt) cevt.value = 'LEAD';
   document.getElementById(`${t}_제외타겟ID`).value = '';
   const fi = document.getElementById(`${t}_파일첨부`); if (fi) fi.value = '';
   const dz = document.getElementById(`${t}_dropzone_text`); if (dz) dz.innerHTML = '📎 클릭하거나 파일을 여기에 드래그하세요<br><span style="font-size:11px;color:var(--text3);">이미지 · 영상 파일 지원</span>';
