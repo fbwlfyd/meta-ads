@@ -163,8 +163,8 @@
   .mode-banner.new { background: var(--blue-bg); color: #1d4ed8; border: 1px solid #c8dffe; }
   .mode-banner.existing { background: var(--yellow-bg); color: #b45309; border: 1px solid #ffe0a0; }
   .section.dimmed { opacity: 0.4; pointer-events: none; }
-  .main-top { flex: 1 1 38%; display: flex; flex-direction: column; overflow: hidden; min-height: 120px; }
-  .creative-pane { flex: 1 1 62%; min-height: 260px; border-top: 1px solid var(--border); background: var(--white); display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+  .main-top { flex: 1 1 34%; display: flex; flex-direction: column; overflow: hidden; min-height: 120px; }
+  .creative-pane { flex: 1 1 66%; min-height: 260px; border-top: 1px solid var(--border); background: var(--white); display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
   .creative-head { padding: 11px 28px 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); flex-shrink: 0; }
   .creative-head h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
   .creative-head p { font-size: 12px; color: var(--text2); margin-top: 2px; }
@@ -172,7 +172,7 @@
   .common-toggle { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; color: var(--text2); cursor: pointer; white-space: nowrap; }
   .btn-add-creative { height: 32px; padding: 0 14px; border: 1px dashed var(--border2); border-radius: var(--radius-sm); background: none; font-family: inherit; font-size: 12px; font-weight: 500; color: var(--text2); cursor: pointer; white-space: nowrap; }
   .btn-add-creative:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); }
-  .creative-strip { flex: 1 1 auto; min-height: 0; display: flex; gap: 12px; overflow: auto; padding: 12px 28px 16px; align-items: flex-start; }
+  .creative-strip { flex: 1 1 auto; min-height: 0; display: flex; flex-wrap: nowrap; gap: 12px; overflow-x: auto; overflow-y: auto; padding: 12px 28px 14px; align-items: flex-start; }
   .creative-strip::-webkit-scrollbar { height: 9px; width: 9px; }
   .creative-strip::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 5px; border: 2px solid var(--white); }
   .creative-strip::-webkit-scrollbar-thumb:hover { background: var(--text3); }
@@ -186,12 +186,12 @@
   .creative-adname { font-size: 11px; line-height: 1.3; color: var(--text2); margin-bottom: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .creative-adname strong { color: var(--blue); font-weight: 600; }
   .creative-adname.is-empty { color: var(--text3); }
-  .creative-card .field { margin-bottom: 7px; }
+  .creative-card .field { margin-bottom: 6px; }
   .creative-card .field label { margin-bottom: 3px; font-size: 11px; }
-  .creative-card input, .creative-card select { height: 34px; font-size: 12px; }
-  .creative-card textarea { height: 46px; font-size: 12px; padding: 7px 10px; }
+  .creative-card input, .creative-card select { height: 32px; font-size: 12px; }
+  .creative-card textarea { height: 40px; font-size: 12px; padding: 6px 10px; }
   .creative-card .row2 { gap: 6px; }
-  .creative-drop { border: 2px dashed var(--border2); border-radius: var(--radius-sm); padding: 9px; text-align: center; cursor: pointer; background: var(--bg); font-size: 12px; color: var(--text2); line-height: 1.45; transition: all 0.2s; word-break: break-all; }
+  .creative-drop { border: 2px dashed var(--border2); border-radius: var(--radius-sm); padding: 8px; text-align: center; cursor: pointer; background: var(--bg); font-size: 12px; color: var(--text2); line-height: 1.45; transition: all 0.2s; word-break: break-all; }
   .creative-drop:hover { border-color: var(--blue); color: var(--blue); }
 
   .conv-type-wrap { display: flex; gap: 8px; margin-bottom: 10px; }
@@ -796,17 +796,28 @@ async function fetchAdsets(campaignId) {
   if (json.error) throw new Error(json.error.message);
   return json.data || [];
 }
-function nextSetNumberFrom(list) {
+// 이름 어디에 있든 '숫자+A' 패턴을 훑어 가장 큰 번호를 찾는다
+function maxSeqFrom(list) {
   let maxNum = 0;
   (list || []).forEach(item => {
-    const m = (item.name || '').match(/(\d+)A\s*$/);
-    if (m) { const n = parseInt(m[1], 10); if (n > maxNum) maxNum = n; }
+    const matches = (item.name || '').match(/(\d+)A(?![0-9A-Za-z가-힣])/g) || [];
+    matches.forEach(m => { const n = parseInt(m, 10); if (n > maxNum) maxNum = n; });
   });
-  return maxNum + 1;
+  return maxNum;
+}
+function nextSetNumberFrom(list) { return maxSeqFrom(list) + 1; }
+async function fetchAdsInAdset(adsetId) {
+  const url = `https://graph.facebook.com/v25.0/${adsetId}/ads?fields=name&limit=200&access_token=${META_ACCESS_TOKEN}`;
+  const res = await fetch(url);
+  const json = await res.json();
+  if (json.error) throw new Error(json.error.message);
+  if (!res.ok) throw new Error(`광고 목록 조회 실패: ${res.status}`);
+  return json.data || [];
 }
 
 /* ===== 세트 추가 탭: 기존 광고세트 선택 ===== */
 const selectedAdset = { t2: null };
+const adSeqStart = { t1: 1, t2: 1 };
 
 function renderAdsetList(list) {
   const box = document.getElementById('t2_adset_list');
@@ -829,15 +840,32 @@ function renderAdsetList(list) {
   if (hint) hint.textContent = `${list.length}개 · 클릭하면 그 세트에 광고만 추가돼요`;
 }
 
-function toggleAdsetSelect(id, name) {
+async function toggleAdsetSelect(id, name) {
   const already = selectedAdset.t2 && selectedAdset.t2.id === id;
   document.querySelectorAll('#t2_adset_list .adset-row').forEach(r => r.classList.remove('selected'));
-  if (already) { selectedAdset.t2 = null; }
-  else {
-    selectedAdset.t2 = { id, name };
-    document.getElementById(`adset_${id}`)?.classList.add('selected');
+  if (already) {
+    selectedAdset.t2 = null; adSeqStart.t2 = 1;
+    applyT2Mode(); updateAdNames('t2');
+    return;
   }
-  applyT2Mode();
+  selectedAdset.t2 = { id, name };
+  document.getElementById(`adset_${id}`)?.classList.add('selected');
+  adSeqStart.t2 = 1;
+  applyT2Mode(); updateAdNames('t2');
+  // 세트 안의 기존 광고명을 훑어 다음 번호부터 이어간다
+  const hint = document.getElementById('t2_adset_hint');
+  if (hint) hint.textContent = '기존 광고 번호 확인 중...';
+  try {
+    const ads = await fetchAdsInAdset(id);
+    adSeqStart.t2 = maxSeqFrom(ads) + 1;
+    updateAdNames('t2');
+    if (hint) hint.textContent = ads.length
+      ? `기존 광고 ${ads.length}개 · 새 광고는 ${adSeqStart.t2}A부터 만들어져요`
+      : '기존 광고가 없어 1A부터 시작해요';
+  } catch (err) {
+    adSeqStart.t2 = 1; updateAdNames('t2');
+    if (hint) hint.textContent = '광고 번호 조회 실패 — 1A부터 시작합니다';
+  }
 }
 
 function applyT2Mode() {
@@ -1376,7 +1404,7 @@ function clearCampaignSelection(t) {
   const disp = document.getElementById(`${t}_캠페인명_display`); if (disp) disp.textContent = '';
   const accSel = document.getElementById(`${t}_캠페인선택계정`); if (accSel) accSel.value = '';
   const listBox = document.getElementById(`${t}_캠페인목록`); if (listBox) { listBox.classList.remove('show'); listBox.innerHTML = ''; }
-  selectedAdset.t2 = null; applyT2Mode();
+  selectedAdset.t2 = null; adSeqStart.t2 = 1; applyT2Mode();
   const adsetBox = document.getElementById('t2_adset_list');
   if (adsetBox) adsetBox.innerHTML = '<div class="adset-empty">위에서 캠페인을 먼저 선택하세요</div>';
   const adsetHint = document.getElementById('t2_adset_hint');
@@ -1452,7 +1480,7 @@ function buildNames(t, seq) {
 }
 // 소재 n번 → 광고명의 순번이 nA 로 바뀐다
 function adNameFor(t, n) {
-  const built = buildNames(t, n);
+  const built = buildNames(t, (adSeqStart[t] || 1) + n - 1);
   return built ? built.setName : '';
 }
 function updateAdNames(t) {
@@ -1460,7 +1488,8 @@ function updateAdNames(t) {
   const n = blocks.length;
   const first = adNameFor(t, 1);
   const el = document.getElementById(`${t}_광고명`);
-  if (el) el.value = !first ? '' : (n > 1 ? `${first} 외 ${n - 1}개 (2A~${n}A)` : first);
+  const start = adSeqStart[t] || 1;
+  if (el) el.value = !first ? '' : (n > 1 ? `${first} 외 ${n - 1}개 (${start + 1}A~${start + n - 1}A)` : first);
   // 카드마다 자기 광고명 표기
   blocks.forEach((b, i) => {
     const box = b.querySelector('[data-role="광고명"]');
@@ -1525,7 +1554,7 @@ async function onCampaignId(t) {
     const nameDisplay = document.getElementById(`${t}_캠페인명_display`);
     if (nameDisplay) nameDisplay.textContent = campaignName ? `📌 ${campaignName}` : '';
     if (t === 't2') {
-      selectedAdset.t2 = null; applyT2Mode();
+      selectedAdset.t2 = null; adSeqStart.t2 = 1; applyT2Mode();
       try {
         const adsets = await fetchAdsets(campaignId);
         nextSetNumber.t2 = nextSetNumberFrom(adsets);
@@ -1990,7 +2019,7 @@ function clearForm(t) {
     const campAccSel = document.getElementById('t2_캠페인선택계정'); if (campAccSel) campAccSel.value = '';
     const campListBox = document.getElementById('t2_캠페인목록'); if (campListBox) { campListBox.classList.remove('show'); campListBox.innerHTML = ''; }
     const manualWrap = document.getElementById('t2_manual_wrap'); if (manualWrap) manualWrap.style.display = 'none';
-    selectedAdset.t2 = null; applyT2Mode(); toggleCampaignClear('t2', false);
+    selectedAdset.t2 = null; adSeqStart.t2 = 1; applyT2Mode(); toggleCampaignClear('t2', false);
     const adsetBox = document.getElementById('t2_adset_list');
     if (adsetBox) adsetBox.innerHTML = '<div class="adset-empty">위에서 캠페인을 먼저 선택하세요</div>';
     const adsetHint = document.getElementById('t2_adset_hint');
