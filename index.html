@@ -142,6 +142,50 @@
   .chip input { display: none; }
   .chip.checked { background: var(--g-red-bg); border-color: var(--g-red-border); color: var(--g-red-dark); font-weight: 600; }
 
+  .adset-picker { border: 1px solid var(--border); border-radius: var(--radius); background: var(--white); margin-bottom: 16px; overflow: hidden; }
+  .adset-picker-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .adset-picker-head strong { font-size: 13px; font-weight: 600; }
+  .adset-picker-head span { font-size: 11px; color: var(--text3); }
+  .adset-list { max-height: 220px; overflow-y: auto; }
+  .adset-row { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.12s; }
+  .adset-row:last-child { border-bottom: none; }
+  .adset-row:hover { background: var(--bg); }
+  .adset-row.selected { background: var(--blue-bg); }
+  .adset-radio { width: 16px; height: 16px; border: 2px solid var(--border2); border-radius: 50%; flex-shrink: 0; position: relative; }
+  .adset-row.selected .adset-radio { border-color: var(--blue); }
+  .adset-row.selected .adset-radio::after { content: ''; position: absolute; inset: 2px; border-radius: 50%; background: var(--blue); }
+  .adset-name { font-size: 13px; color: var(--text1); flex: 1; }
+  .adset-row.selected .adset-name { font-weight: 600; color: var(--blue); }
+  .adset-status { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; background: var(--bg); color: var(--text2); flex-shrink: 0; }
+  .adset-status.on { background: var(--green-bg); color: #047857; }
+  .adset-empty { padding: 16px; font-size: 12px; color: var(--text3); text-align: center; }
+  .mode-banner { padding: 10px 14px; border-radius: var(--radius-sm); font-size: 12px; line-height: 1.5; margin-bottom: 14px; }
+  .mode-banner.new { background: var(--blue-bg); color: #1d4ed8; border: 1px solid #c8dffe; }
+  .mode-banner.existing { background: var(--yellow-bg); color: #b45309; border: 1px solid #ffe0a0; }
+  .section.dimmed { opacity: 0.4; pointer-events: none; }
+  .main-top { flex: 1 1 50%; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+  .creative-pane { flex: 1 1 50%; border-top: 1px solid var(--border); background: var(--white); display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+  .creative-head { padding: 14px 28px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .creative-head h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
+  .creative-head p { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .creative-actions { display: flex; align-items: center; gap: 10px; }
+  .common-toggle { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; color: var(--text2); cursor: pointer; white-space: nowrap; }
+  .btn-add-creative { height: 32px; padding: 0 14px; border: 1px dashed var(--border2); border-radius: var(--radius-sm); background: none; font-family: inherit; font-size: 12px; font-weight: 500; color: var(--text2); cursor: pointer; white-space: nowrap; }
+  .btn-add-creative:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); }
+  .creative-strip { flex: 1; display: flex; gap: 12px; overflow-x: auto; overflow-y: auto; padding: 16px 28px 20px; align-items: flex-start; }
+  .creative-strip::-webkit-scrollbar { height: 6px; width: 6px; }
+  .creative-strip::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  .creative-card { flex: 0 0 264px; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+  .creative-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
+  .creative-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .creative-card-title { font-size: 12px; font-weight: 600; color: var(--text1); }
+  .creative-remove { background: none; border: none; font-size: 12px; color: var(--text3); cursor: pointer; font-family: inherit; }
+  .creative-remove:hover { color: var(--red); }
+  .creative-card .field { margin-bottom: 8px; }
+  .creative-card textarea { height: 60px; }
+  .creative-drop { border: 2px dashed var(--border2); border-radius: var(--radius-sm); padding: 14px 10px; text-align: center; cursor: pointer; background: var(--bg); font-size: 12px; color: var(--text2); line-height: 1.5; transition: all 0.2s; word-break: break-all; }
+  .creative-drop:hover { border-color: var(--blue); color: var(--blue); }
+
   .conv-type-wrap { display: flex; gap: 8px; margin-bottom: 10px; }
   .conv-type-btn { flex: 1; height: 40px; border: 1px solid var(--border2); border-radius: var(--radius-sm); background: var(--white); color: var(--text2); font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
   .conv-type-btn.active { border-color: var(--blue); background: var(--blue-bg); color: var(--blue); font-weight: 600; }
@@ -244,32 +288,6 @@
         </div>
       </div>
       <div class="divider"></div>
-      <div class="section"><div class="sec-label">광고 소재</div>
-        <div class="field"><label>파일 업로드 방식</label>
-          <select id="t1_파일방식" onchange="onFileMethod('t1')">
-            <option value="upload" selected>직접 첨부</option>
-            <option value="drive">Drive 파일ID</option>
-          </select>
-        </div>
-        <div class="field" id="t1_drive_wrap" style="display:none;">
-          <label>파일ID (Google Drive)</label>
-          <input type="text" id="t1_파일ID" placeholder="Drive 전체 링크 복사 후 붙여넣기" oninput="extractDriveId(this)">
-        </div>
-        <div class="field" id="t1_upload_wrap">
-          <label>파일 첨부</label>
-          <div id="t1_dropzone" style="border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg);"
-            ondragover="onDragOver(event,'t1')" ondragleave="onDragLeave(event,'t1')" ondrop="onDrop(event,'t1')"
-            onclick="document.getElementById('t1_파일첨부').click()">
-            <div id="t1_dropzone_text" style="font-size:13px;color:var(--text2);">📎 클릭하거나 파일을 여기에 드래그하세요<br><span style="font-size:11px;color:var(--text3);">이미지 · 영상 파일 지원</span></div>
-          </div>
-          <input type="file" id="t1_파일첨부" accept="image/*,video/*" style="display:none;" onchange="onFileSelected('t1')">
-        </div>
-        <div class="field"><label>기본문구</label><textarea id="t1_기본문구" placeholder="광고 기본문구 입력"></textarea></div>
-        <div class="field"><label>제목</label><input type="text" id="t1_제목" placeholder="광고 제목"></div>
-        <div class="field"><label>설명</label><input type="text" id="t1_설명" placeholder="광고 설명"></div>
-        <div class="field"><label>CTA버튼</label><select id="t1_CTA버튼"></select></div>
-      </div>
-      <div class="divider"></div>
       <div class="section"><div class="sec-label">캠페인 설정</div>
         <div class="field"><label>광고계정 ID <span class="auto-tag">자동</span></label><input type="text" id="t1_광고계정ID" readonly placeholder="계정 선택 시 자동입력"></div>
         <div class="field"><label>캠페인명 <span class="auto-tag">자동</span></label><input type="text" id="t1_캠페인명" readonly placeholder="자동생성"></div>
@@ -326,10 +344,22 @@
     </div>
   </div>
   <div class="main">
-    <div class="main-head"><div><h3>등록 현황</h3><p id="t1_count">등록된 광고가 없습니다</p></div><div class="live-pill"><div class="live-dot"></div>실시간</div></div>
-    <div class="content">
-      <div class="empty" id="t1_empty"><div class="empty-icon">📋</div><h4>아직 등록된 광고가 없어요</h4><p>왼쪽에서 광고 정보를 입력하세요</p></div>
-      <div class="cards" id="t1_cards" style="display:none;"></div>
+    <div class="main-top">
+      <div class="main-head"><div><h3>등록 현황</h3><p id="t1_count">등록된 광고가 없습니다</p></div><div class="live-pill"><div class="live-dot"></div>실시간</div></div>
+      <div class="content">
+        <div class="empty" id="t1_empty"><div class="empty-icon">📋</div><h4>아직 등록된 광고가 없어요</h4><p>왼쪽에서 광고 정보를 입력하세요</p></div>
+        <div class="cards" id="t1_cards" style="display:none;"></div>
+      </div>
+    </div>
+    <div class="creative-pane">
+      <div class="creative-head">
+        <div><h3>광고 소재</h3><p id="t1_creative_count">소재 1개 · 광고세트 1개에 광고 1개가 만들어져요</p></div>
+        <div class="creative-actions">
+          <label class="common-toggle"><input type="checkbox" id="t1_creative_common" onchange="toggleCreativeCommon('t1')"> 문구 공통</label>
+          <button type="button" class="btn-add-creative" onclick="addCreativeBlock('t1')">+ 소재 추가</button>
+        </div>
+      </div>
+      <div class="creative-strip" id="t1_creative_list"></div>
     </div>
   </div>
 </div>
@@ -352,6 +382,7 @@
           <input type="text" id="t2_캠페인ID" placeholder="캠페인 ID를 입력하세요" onblur="onCampaignId('t2')">
         </div>
       </div>
+      <div class="mode-banner new" id="t2_mode_banner">🆕 새 광고세트를 만들고 그 안에 광고를 추가합니다</div>
       <div class="section"><div class="sec-label">기본 정보</div>
         <div class="field"><label>제작자</label><input type="text" id="t2_제작자" placeholder="이름 입력" oninput="autoGenNames('t2')"></div>
         <div class="field"><label>유형</label><input type="text" id="t2_유형" placeholder="예: 비용혜택" oninput="autoGenNames('t2')"></div>
@@ -362,7 +393,7 @@
         <div class="field"><label>인스타계정</label><select id="t2_인스타계정"></select></div>
       </div>
       <div class="divider"></div>
-      <div class="section"><div class="sec-label">타겟</div>
+      <div class="section" id="t2_sec_target"><div class="sec-label">타겟</div>
         <div class="field"><label>지역구분자</label><select id="t2_지역구분자" onchange="onRegion('t2')"><option value="">선택</option></select></div>
         <div class="field"><label>제외타겟</label>
           <select id="t2_제외타겟" onchange="onExclude('t2')"><option value="">선택</option></select>
@@ -409,33 +440,7 @@
         </div>
       </div>
       <div class="divider"></div>
-      <div class="section"><div class="sec-label">광고 소재</div>
-        <div class="field"><label>파일 업로드 방식</label>
-          <select id="t2_파일방식" onchange="onFileMethod('t2')">
-            <option value="upload" selected>직접 첨부</option>
-            <option value="drive">Drive 파일ID</option>
-          </select>
-        </div>
-        <div class="field" id="t2_drive_wrap" style="display:none;">
-          <label>파일ID (Google Drive)</label>
-          <input type="text" id="t2_파일ID" placeholder="Drive 전체 링크 복사 후 붙여넣기" oninput="extractDriveId(this)">
-        </div>
-        <div class="field" id="t2_upload_wrap">
-          <label>파일 첨부</label>
-          <div id="t2_dropzone" style="border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg);"
-            ondragover="onDragOver(event,'t2')" ondragleave="onDragLeave(event,'t2')" ondrop="onDrop(event,'t2')"
-            onclick="document.getElementById('t2_파일첨부').click()">
-            <div id="t2_dropzone_text" style="font-size:13px;color:var(--text2);">📎 클릭하거나 파일을 여기에 드래그하세요<br><span style="font-size:11px;color:var(--text3);">이미지 · 영상 파일 지원</span></div>
-          </div>
-          <input type="file" id="t2_파일첨부" accept="image/*,video/*" style="display:none;" onchange="onFileSelected('t2')">
-        </div>
-        <div class="field"><label>기본문구</label><textarea id="t2_기본문구" placeholder="광고 기본문구 입력"></textarea></div>
-        <div class="field"><label>제목</label><input type="text" id="t2_제목" placeholder="광고 제목"></div>
-        <div class="field"><label>설명</label><input type="text" id="t2_설명" placeholder="광고 설명"></div>
-        <div class="field"><label>CTA버튼</label><select id="t2_CTA버튼"></select></div>
-      </div>
-      <div class="divider"></div>
-      <div class="section"><div class="sec-label">광고세트 설정</div>
+      <div class="section" id="t2_sec_adset"><div class="sec-label">광고세트 설정</div>
         <div class="field"><label>광고계정 ID <span class="auto-tag">자동</span></label><input type="text" id="t2_광고계정ID" readonly placeholder="계정 선택 시 자동입력"></div>
         <div class="field"><label>광고세트명 <span class="auto-tag">자동</span></label><input type="text" id="t2_광고세트명" readonly placeholder="자동생성"></div>
         <div class="row2">
@@ -484,10 +489,31 @@
     </div>
   </div>
   <div class="main">
-    <div class="main-head"><div><h3>추가 현황</h3><p id="t2_count">추가된 세트가 없습니다</p></div><div class="live-pill"><div class="live-dot"></div>실시간</div></div>
-    <div class="content">
-      <div class="empty" id="t2_empty"><div class="empty-icon">➕</div><h4>아직 추가된 세트가 없어요</h4><p>캠페인 ID와 세트 정보를 입력하세요</p></div>
-      <div class="cards" id="t2_cards" style="display:none;"></div>
+    <div class="main-top">
+      <div class="main-head"><div><h3>추가 현황</h3><p id="t2_count">추가된 세트가 없습니다</p></div><div class="live-pill"><div class="live-dot"></div>실시간</div></div>
+      <div class="content">
+        <div class="adset-picker" id="t2_adset_picker">
+          <div class="adset-picker-head">
+            <strong>기존 광고세트</strong>
+            <span id="t2_adset_hint">캠페인을 불러오면 목록이 표시돼요</span>
+          </div>
+          <div class="adset-list" id="t2_adset_list">
+            <div class="adset-empty">위에서 캠페인을 먼저 선택하세요</div>
+          </div>
+        </div>
+        <div class="empty" id="t2_empty"><div class="empty-icon">➕</div><h4>아직 추가된 내역이 없어요</h4><p>광고세트를 고르면 광고만 추가하고, 안 고르면 새 세트를 만들어요</p></div>
+        <div class="cards" id="t2_cards" style="display:none;"></div>
+      </div>
+    </div>
+    <div class="creative-pane">
+      <div class="creative-head">
+        <div><h3>광고 소재</h3><p id="t2_creative_count">소재 1개 · 광고세트 1개에 광고 1개가 만들어져요</p></div>
+        <div class="creative-actions">
+          <label class="common-toggle"><input type="checkbox" id="t2_creative_common" onchange="toggleCreativeCommon('t2')"> 문구 공통</label>
+          <button type="button" class="btn-add-creative" onclick="addCreativeBlock('t2')">+ 소재 추가</button>
+        </div>
+      </div>
+      <div class="creative-strip" id="t2_creative_list"></div>
     </div>
   </div>
 </div>
@@ -753,20 +779,74 @@ async function fetchActiveCampaigns(accountId) {
   if (json.error) throw new Error(json.error.message);
   return json.data || [];
 }
-async function fetchNextSetNumber(campaignId) {
-  const url = `https://graph.facebook.com/v25.0/${campaignId}/adsets?fields=name&limit=200&access_token=${META_ACCESS_TOKEN}`;
+async function fetchAdsets(campaignId) {
+  const url = `https://graph.facebook.com/v25.0/${campaignId}/adsets?fields=name,effective_status&limit=200&access_token=${META_ACCESS_TOKEN}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`광고세트 조회 실패: ${res.status}`);
   const json = await res.json();
   if (json.error) throw new Error(json.error.message);
-  const list = json.data || [];
+  return json.data || [];
+}
+function nextSetNumberFrom(list) {
   let maxNum = 0;
-  list.forEach(item => {
+  (list || []).forEach(item => {
     const m = (item.name || '').match(/(\d+)A\s*$/);
     if (m) { const n = parseInt(m[1], 10); if (n > maxNum) maxNum = n; }
   });
   return maxNum + 1;
 }
+
+/* ===== 세트 추가 탭: 기존 광고세트 선택 ===== */
+const selectedAdset = { t2: null };
+
+function renderAdsetList(list) {
+  const box = document.getElementById('t2_adset_list');
+  const hint = document.getElementById('t2_adset_hint');
+  if (!box) return;
+  if (!list || list.length === 0) {
+    box.innerHTML = '<div class="adset-empty">이 캠페인에 광고세트가 없어요 — 새로 만들어집니다</div>';
+    if (hint) hint.textContent = '';
+    return;
+  }
+  box.innerHTML = list.map(a => {
+    const on = a.effective_status === 'ACTIVE';
+    const nm = (a.name || '(이름 없음)').replace(/</g, '&lt;').replace(/'/g, '&#39;');
+    return `<div class="adset-row" id="adset_${a.id}" onclick="toggleAdsetSelect('${a.id}','${nm}')">
+      <div class="adset-radio"></div>
+      <span class="adset-name">${nm}</span>
+      <span class="adset-status ${on ? 'on' : ''}">${on ? '게재중' : (a.effective_status || '')}</span>
+    </div>`;
+  }).join('');
+  if (hint) hint.textContent = `${list.length}개 · 클릭하면 그 세트에 광고만 추가돼요`;
+}
+
+function toggleAdsetSelect(id, name) {
+  const already = selectedAdset.t2 && selectedAdset.t2.id === id;
+  document.querySelectorAll('#t2_adset_list .adset-row').forEach(r => r.classList.remove('selected'));
+  if (already) { selectedAdset.t2 = null; }
+  else {
+    selectedAdset.t2 = { id, name };
+    document.getElementById(`adset_${id}`)?.classList.add('selected');
+  }
+  applyT2Mode();
+}
+
+function applyT2Mode() {
+  const sel = selectedAdset.t2;
+  const banner = document.getElementById('t2_mode_banner');
+  const btn = document.getElementById('t2_submitBtn');
+  ['t2_sec_target', 't2_sec_adset'].forEach(id => {
+    document.getElementById(id)?.classList.toggle('dimmed', !!sel);
+  });
+  if (sel) {
+    if (banner) { banner.className = 'mode-banner existing'; banner.innerHTML = `➕ <strong>${sel.name}</strong> 에 광고만 추가합니다 (타겟·예산 설정은 기존 세트를 따릅니다)`; }
+    if (btn) btn.textContent = '선택한 세트에 광고 추가';
+  } else {
+    if (banner) { banner.className = 'mode-banner new'; banner.textContent = '🆕 새 광고세트를 만들고 그 안에 광고를 추가합니다'; }
+    if (btn) btn.textContent = '세트 추가하기';
+  }
+}
+
 
 /* ===== 픽셀(데이터세트) 조회 & 맞춤 전환 ===== */
 async function fetchAdPixels(accountId) {
@@ -1232,7 +1312,7 @@ function populateDropdowns() {
     fill('노출위치1', DB.platforms, 'value', 'label', DB.platforms[0]?.value);
     fill('페이스북지면', DB.fbPositions, 'value', 'label', DB.fbPositions[0]?.value);
     fill('인스타지면', DB.igPositions, 'value', 'label', DB.igPositions[0]?.value);
-    fill('CTA버튼', DB.ctaTypes, 'value', 'label', 'LEARN_MORE');
+
     // 전환위치 목록에 현재 모드 값이 없으면 채워 넣고 동기화
     syncDestinationSelect(t, convTypeState[t] || 'ON_AD');
   });
@@ -1247,6 +1327,7 @@ function populateDropdowns() {
     DB.accounts.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; campAccSel.appendChild(o); });
     if (prev) campAccSel.value = prev;
   }
+  refreshCreativeCtas();
   if (typeof gPopulateDropdowns === 'function') gPopulateDropdowns();
 }
 
@@ -1380,7 +1461,16 @@ async function onCampaignId(t) {
     const nameDisplay = document.getElementById(`${t}_캠페인명_display`);
     if (nameDisplay) nameDisplay.textContent = campaignName ? `📌 ${campaignName}` : '';
     if (t === 't2') {
-      try { nextSetNumber.t2 = await fetchNextSetNumber(campaignId); } catch (e) { nextSetNumber.t2 = 1; }
+      selectedAdset.t2 = null; applyT2Mode();
+      try {
+        const adsets = await fetchAdsets(campaignId);
+        nextSetNumber.t2 = nextSetNumberFrom(adsets);
+        renderAdsetList(adsets);
+      } catch (e) {
+        nextSetNumber.t2 = 1;
+        const box = document.getElementById('t2_adset_list');
+        if (box) box.innerHTML = `<div class="adset-empty">광고세트 목록 조회 실패: ${e.message}</div>`;
+      }
     }
     const acc = DB.accounts.find(a => a.id === accountId);
     if (acc) { setAccountName(t, acc.name); onAccount(t); }
@@ -1401,21 +1491,155 @@ async function onCampaignId(t) {
     showToast('캠페인 정보를 불러왔어요', 'success');
   } catch (err) { showToast('캠페인 조회 실패: ' + err.message, 'error'); }
 }
-function onDragOver(e, t) { e.preventDefault(); const dz = document.getElementById(`${t}_dropzone`); dz.style.borderColor = 'var(--blue)'; dz.style.background = 'var(--blue-bg)'; }
-function onDragLeave(e, t) { const dz = document.getElementById(`${t}_dropzone`); dz.style.borderColor = 'var(--border2)'; dz.style.background = 'var(--bg)'; }
-function onDrop(e, t) {
-  e.preventDefault();
-  const dz = document.getElementById(`${t}_dropzone`); dz.style.borderColor = 'var(--border2)'; dz.style.background = 'var(--bg)';
-  const file = e.dataTransfer.files[0]; if (!file) return;
-  const input = document.getElementById(`${t}_파일첨부`); const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files;
-  updateDropzoneText(t, file.name);
+/* ===== 광고 소재 카드 (1세트 · 여러 소재) ===== */
+const CREATIVE_MAX = 5;
+const creativeSeq = { t1: 0, t2: 0 };
+
+function creativeBlocks(t) {
+  const list = document.getElementById(`${t}_creative_list`);
+  return list ? Array.from(list.children) : [];
 }
-function onFileSelected(t) { const input = document.getElementById(`${t}_파일첨부`); if (input.files.length > 0) updateDropzoneText(t, input.files[0].name); }
-function updateDropzoneText(t, name) { document.getElementById(`${t}_dropzone_text`).innerHTML = `✅ <strong>${name}</strong><br><span style="font-size:11px;color:var(--text3);">클릭하면 다시 선택할 수 있어요</span>`; }
-function onFileMethod(t) {
-  const method = document.getElementById(`${t}_파일방식`).value;
-  document.getElementById(`${t}_drive_wrap`).style.display = method === 'drive' ? 'block' : 'none';
-  document.getElementById(`${t}_upload_wrap`).style.display = method === 'upload' ? 'block' : 'none';
+function updateCreativeCount(t) {
+  const n = creativeBlocks(t).length;
+  const el = document.getElementById(`${t}_creative_count`);
+  if (el) el.textContent = `소재 ${n}개 · 광고세트 1개에 광고 ${n}개가 만들어져요`;
+}
+function fillCreativeCta(block) {
+  const sel = block.querySelector('[data-role="CTA버튼"]');
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '';
+  (DB.ctaTypes || []).forEach(c => {
+    const o = document.createElement('option');
+    o.value = c.value; o.textContent = c.label;
+    sel.appendChild(o);
+  });
+  if (prev && Array.from(sel.options).some(o => o.value === prev)) sel.value = prev;
+  else if (Array.from(sel.options).some(o => o.value === 'LEARN_MORE')) sel.value = 'LEARN_MORE';
+}
+function refreshCreativeCtas() {
+  ['t1','t2'].forEach(t => creativeBlocks(t).forEach(fillCreativeCta));
+}
+function addCreativeBlock(t) {
+  const list = document.getElementById(`${t}_creative_list`);
+  if (!list) return;
+  if (list.children.length >= CREATIVE_MAX) { showToast(`소재는 최대 ${CREATIVE_MAX}개까지 추가할 수 있어요`, 'error'); return; }
+  const id = `${t}_cr_${creativeSeq[t]++}`;
+  const idx = list.children.length + 1;
+  const block = document.createElement('div');
+  block.className = 'creative-card'; block.id = id;
+  block.innerHTML = `
+    <div class="creative-card-head"><span class="creative-card-title">소재 ${idx}</span><button type="button" class="creative-remove" onclick="removeCreativeBlock('${t}','${id}')">삭제</button></div>
+    <div class="field"><label>파일 업로드 방식</label>
+      <select data-role="파일방식" onchange="onCreativeFileMethod('${t}','${id}')">
+        <option value="upload" selected>직접 첨부</option>
+        <option value="drive">Drive 파일ID</option>
+      </select>
+    </div>
+    <div class="field" data-role="upload_wrap">
+      <div class="creative-drop" data-role="dropzone" onclick="openCreativeFile(this)" ondragover="onCreativeDragOver(event,this)" ondragleave="onCreativeDragLeave(this)" ondrop="onCreativeDrop(event,this)">📎 클릭하거나 드래그<br><span style="font-size:11px;color:var(--text3);">이미지 · 영상</span></div>
+      <input type="file" data-role="파일첨부" accept="image/*,video/*" style="display:none;" onchange="onCreativeFileSelected(this)">
+    </div>
+    <div class="field" data-role="drive_wrap" style="display:none;"><label>파일ID (Google Drive)</label><input type="text" data-role="파일ID" placeholder="Drive 링크 붙여넣기" oninput="extractDriveId(this)"></div>
+    <div data-role="text_wrap">
+      <div class="field"><label>기본문구</label><textarea data-role="기본문구" placeholder="광고 기본문구" oninput="syncCreativeCommon('${t}')"></textarea></div>
+      <div class="field"><label>제목</label><input type="text" data-role="제목" placeholder="광고 제목" oninput="syncCreativeCommon('${t}')"></div>
+      <div class="field"><label>설명</label><input type="text" data-role="설명" placeholder="광고 설명" oninput="syncCreativeCommon('${t}')"></div>
+      <div class="field"><label>CTA버튼</label><select data-role="CTA버튼" onchange="syncCreativeCommon('${t}')"></select></div>
+    </div>`;
+  list.appendChild(block);
+  fillCreativeCta(block);
+  applyCreativeCommon(t);
+  syncCreativeCommon(t);
+  updateCreativeCount(t);
+}
+function removeCreativeBlock(t, id) {
+  const list = document.getElementById(`${t}_creative_list`);
+  if (list.children.length <= 1) { showToast('소재는 1개 이상 있어야 해요', 'error'); return; }
+  const el = document.getElementById(id); if (el) el.remove();
+  creativeBlocks(t).forEach((b, i) => {
+    const title = b.querySelector('.creative-card-title');
+    if (title) title.textContent = `소재 ${i + 1}`;
+  });
+  applyCreativeCommon(t);
+  updateCreativeCount(t);
+}
+function onCreativeFileMethod(t, id) {
+  const block = document.getElementById(id); if (!block) return;
+  const method = block.querySelector('[data-role="파일방식"]').value;
+  block.querySelector('[data-role="upload_wrap"]').style.display = method === 'upload' ? 'block' : 'none';
+  block.querySelector('[data-role="drive_wrap"]').style.display = method === 'drive' ? 'block' : 'none';
+}
+function openCreativeFile(dz) {
+  const input = dz.parentElement.querySelector('[data-role="파일첨부"]');
+  if (input) input.click();
+}
+function onCreativeDragOver(e, dz) { e.preventDefault(); dz.style.borderColor = 'var(--blue)'; dz.style.background = 'var(--blue-bg)'; }
+function onCreativeDragLeave(dz) { dz.style.borderColor = 'var(--border2)'; dz.style.background = 'var(--bg)'; }
+function onCreativeDrop(e, dz) {
+  e.preventDefault();
+  onCreativeDragLeave(dz);
+  const file = e.dataTransfer.files[0]; if (!file) return;
+  const input = dz.parentElement.querySelector('[data-role="파일첨부"]');
+  const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files;
+  setCreativeDropText(dz, file.name);
+}
+function onCreativeFileSelected(input) {
+  const dz = input.parentElement.querySelector('[data-role="dropzone"]');
+  if (input.files[0]) setCreativeDropText(dz, input.files[0].name);
+}
+function setCreativeDropText(dz, name) {
+  dz.innerHTML = `✅ <strong>${name}</strong><br><span style="font-size:11px;color:var(--text3);">클릭하면 다시 선택</span>`;
+}
+function toggleCreativeCommon(t) { applyCreativeCommon(t); syncCreativeCommon(t); }
+function applyCreativeCommon(t) {
+  const isCommon = document.getElementById(`${t}_creative_common`)?.checked;
+  creativeBlocks(t).forEach((b, i) => {
+    const wrap = b.querySelector('[data-role="text_wrap"]');
+    if (wrap) wrap.style.display = (isCommon && i > 0) ? 'none' : 'block';
+  });
+}
+function syncCreativeCommon(t) {
+  const isCommon = document.getElementById(`${t}_creative_common`)?.checked;
+  if (!isCommon) return;
+  const blocks = creativeBlocks(t);
+  const first = blocks[0]; if (!first) return;
+  ['기본문구','제목','설명','CTA버튼'].forEach(role => {
+    const val = first.querySelector(`[data-role="${role}"]`)?.value || '';
+    blocks.forEach((b, i) => {
+      if (i === 0) return;
+      const el = b.querySelector(`[data-role="${role}"]`);
+      if (el) el.value = val;
+    });
+  });
+}
+// 카드 → 데이터 (파일 객체 포함)
+function collectCreatives(t) {
+  return creativeBlocks(t).map(b => {
+    const method = b.querySelector('[data-role="파일방식"]').value;
+    const fileInput = b.querySelector('[data-role="파일첨부"]');
+    const file = (method === 'upload' && fileInput && fileInput.files[0]) ? fileInput.files[0] : null;
+    return {
+      block: b,
+      방식: method,
+      파일ID: (b.querySelector('[data-role="파일ID"]').value || '').trim(),
+      파일: file,
+      기본문구: b.querySelector('[data-role="기본문구"]').value,
+      제목: b.querySelector('[data-role="제목"]').value,
+      설명: b.querySelector('[data-role="설명"]').value,
+      CTA버튼: b.querySelector('[data-role="CTA버튼"]').value,
+    };
+  });
+}
+// 카드 → Make로 보낼 형태
+function collectCreativePayload(t) {
+  return collectCreatives(t).map((c, i) => ({
+    순번: i + 1,
+    파일유형: c.파일 ? (c.파일.type.startsWith('image/') ? '이미지' : '영상') : 'drive',
+    파일ID: c.파일ID,
+    파일명: c.파일 ? c.파일.name : '',
+    기본문구: c.기본문구, 제목: c.제목, 설명: c.설명, CTA버튼: c.CTA버튼,
+  }));
 }
 // 어드밴티지+ 타겟 On/Off — 값이 그대로 targeting_automation에 들어감
 function onAdvantage(t, val) {
@@ -1530,13 +1754,9 @@ function getData(t) {
       if (excludeIds.length > 0) targetingObj.excluded_custom_audiences = excludeIds.map(id => ({ id }));
       return JSON.stringify(targetingObj);
     })(),
-    광고명: g(`${t}_광고명`), 파일ID: g(`${t}_파일ID`),
-    파일유형: (() => {
-      const method = document.getElementById(`${t}_파일방식`).value;
-      if (method === 'upload') { const file = document.getElementById(`${t}_파일첨부`).files[0]; if (file) return file.type.startsWith('image/') ? '이미지' : '영상'; }
-      return 'drive';
-    })(),
-    기본문구: g(`${t}_기본문구`), 제목: g(`${t}_제목`), 설명: g(`${t}_설명`), CTA버튼: g(`${t}_CTA버튼`),
+    광고명: g(`${t}_광고명`),
+    소재목록: collectCreativePayload(t),
+    소재수: creativeBlocks(t).length,
     인스턴트양식: g(`${t}_인스턴트양식`), 인스턴트양식ID: g(`${t}_인스턴트양식ID`),
     // 전환위치 타입에 따른 분기
     전환위치타입: convTypeState[t] || 'ON_AD',
@@ -1553,8 +1773,22 @@ function getData(t) {
     전환유형: (getSelectedEventOption(t)?.dataset.ccid) ? 'CUSTOM_CONVERSION' : 'STANDARD',
     맞춤전환ID: getSelectedEventOption(t)?.dataset.ccid || '',
   };
-  if (t === 't1') { d.캠페인명 = g('t1_캠페인명'); d.구매유형 = g('t1_구매유형'); d.캠페인목표 = g('t1_캠페인목표'); d.캠페인예산 = g('t1_캠페인예산'); }
-  else { d.캠페인ID = g('t2_캠페인ID'); }
+  // 하위호환: 기존 Make 매핑이 참조하던 단일 소재 필드 = 1번 소재
+  const first = d.소재목록[0] || {};
+  d.파일ID = first.파일ID || '';
+  d.파일유형 = first.파일유형 || 'drive';
+  d.기본문구 = first.기본문구 || '';
+  d.제목 = first.제목 || '';
+  d.설명 = first.설명 || '';
+  d.CTA버튼 = first.CTA버튼 || '';
+  if (t === 't1') { d.캠페인명 = g('t1_캠페인명'); d.구매유형 = g('t1_구매유형'); d.캠페인목표 = g('t1_캠페인목표'); d.캠페인예산 = g('t1_캠페인예산'); d.등록모드 = 'NEW_ADSET'; }
+  else {
+    d.캠페인ID = g('t2_캠페인ID');
+    const sel = selectedAdset.t2;
+    d.등록모드 = sel ? 'EXISTING_ADSET' : 'NEW_ADSET';
+    d.광고세트ID = sel ? sel.id : '';
+    if (sel) d.광고세트명 = sel.name;
+  }
   return d;
 }
 const rows = { t1: [], t2: [] };
@@ -1563,11 +1797,12 @@ function addCard(t, data) {
   document.getElementById(`${t}_empty`).style.display = 'none';
   const list = document.getElementById(`${t}_cards`); list.style.display = 'flex';
   const isT2 = t === 't2';
+  const toExisting = data.등록모드 === 'EXISTING_ADSET';
   const title = isT2 ? (data.광고세트명||'세트명 없음') : (data.캠페인명||'캠페인명 없음');
   const card = document.createElement('div'); card.className = 'card'; card.id = `card_${t}_${idx}`;
-  card.innerHTML = `<div class="card-top"><div class="card-title-wrap"><span class="card-type ${isT2?'type-add':'type-new'}">${isT2?'세트 추가':'신규 등록'}</span><span class="card-title">${title}</span></div><span class="badge badge-sending" id="badge_${t}_${idx}">전송중</span></div><div class="card-meta"><span class="meta-item"><span class="meta-label">계정</span>${data.계정명||'-'}</span><span class="meta-item"><span class="meta-label">광고세트</span>${data.광고세트명||'-'}</span><span class="meta-item"><span class="meta-label">페이지</span>${data.페이지||'-'}</span><span class="meta-item"><span class="meta-label">기간</span>${data.시작일||'-'} ~ ${data.종료일||'-'}</span></div><div class="card-result" id="result_${t}_${idx}">Make로 전송 중...</div>`;
+  card.innerHTML = `<div class="card-top"><div class="card-title-wrap"><span class="card-type ${isT2?'type-add':'type-new'}">${toExisting ? '광고 추가' : (isT2 ? '세트 추가' : '신규 등록')}</span><span class="card-title">${title}</span></div><span class="badge badge-sending" id="badge_${t}_${idx}">전송중</span></div><div class="card-meta"><span class="meta-item"><span class="meta-label">계정</span>${data.계정명||'-'}</span><span class="meta-item"><span class="meta-label">광고세트</span>${data.광고세트명||'-'}</span><span class="meta-item"><span class="meta-label">소재</span>${(data.소재목록||[]).length}개</span><span class="meta-item"><span class="meta-label">페이지</span>${data.페이지||'-'}</span><span class="meta-item"><span class="meta-label">기간</span>${data.시작일||'-'} ~ ${data.종료일||'-'}</span></div><div class="card-result" id="result_${t}_${idx}">Make로 전송 중...</div>`;
   list.appendChild(card);
-  document.getElementById(`${t}_count`).textContent = `총 ${rows[t].length}${isT2?'개 세트 추가됨':'건 등록됨'}`;
+  document.getElementById(`${t}_count`).textContent = `총 ${rows[t].length}${isT2?'건 처리됨':'건 등록됨'}`;
   return idx;
 }
 function updateCard(t, idx, status, msg) {
@@ -1577,7 +1812,9 @@ function updateCard(t, idx, status, msg) {
 }
 async function submitAd(t) {
   const data = getData(t); const isT2 = t === 't2';
-  if (!data.계정명 || !data.광고세트명) { showToast('계정명과 광고세트명은 필수입니다', 'error'); return; }
+  const toExisting = data.등록모드 === 'EXISTING_ADSET';
+  if (!data.계정명) { showToast('계정명은 필수입니다', 'error'); return; }
+  if (!toExisting && !data.광고세트명) { showToast('광고세트명은 필수입니다', 'error'); return; }
   if (!data.페이지ID) { showToast('페이지를 선택해주세요 (페이지ID가 비어 있으면 소재 생성이 실패해요)', 'error'); return; }
   if (isT2 && !data.캠페인ID) { showToast('캠페인 ID를 입력해주세요', 'error'); return; }
   if (!isT2 && !data.캠페인명) { showToast('캠페인명을 입력해주세요', 'error'); return; }
@@ -1586,31 +1823,36 @@ async function submitAd(t) {
     if (!data.데이터세트ID) { showToast('픽셀(데이터세트)을 선택해주세요', 'error'); return; }
     if (!data.맞춤전환ID) { showToast('맞춤 전환을 선택해주세요', 'error'); return; }
   } else if (!data.인스턴트양식ID) { showToast('인스턴트 양식을 선택해주세요', 'error'); return; }
+  const creatives = collectCreatives(t);
+  const empty = creatives.findIndex(c => !c.파일 && !c.파일ID);
+  if (empty >= 0) { showToast(`소재 ${empty + 1}에 파일이 없어요`, 'error'); return; }
   const btn = document.getElementById(`${t}_submitBtn`); btn.disabled = true; btn.textContent = '전송 중...';
   showToast('Make로 전송 중...', 'info');
   const idx = addCard(t, data);
   try {
-    const method = document.getElementById(`${t}_파일방식`).value;
-    const fileInput = document.getElementById(`${t}_파일첨부`);
-    const hasFile = method === 'upload' && fileInput && fileInput.files.length > 0;
-    if (hasFile) {
-      const file = fileInput.files[0];
-      if (file.type.startsWith('image/')) {
-        showToast('이미지 업로드 중...', 'info');
-        data.이미지해시 = await uploadImageToMeta(file, data.광고계정ID); data.파일ID = '';
-      } else {
-        showToast('영상 업로드 중... 잠시 기다려주세요', 'info');
-        data.videoId = await uploadVideoToMeta(file, data.광고계정ID); data.파일ID = '';
-      }
+    // 소재별로 첨부파일을 Meta에 올리고 결과를 소재목록에 채운다
+    for (let n = 0; n < creatives.length; n++) {
+      const c = creatives[n];
+      if (!c.파일) continue;
+      const isImage = c.파일.type.startsWith('image/');
+      showToast(`소재 ${n + 1} ${isImage ? '이미지' : '영상'} 업로드 중...`, 'info');
+      if (isImage) data.소재목록[n].이미지해시 = await uploadImageToMeta(c.파일, data.광고계정ID);
+      else data.소재목록[n].videoId = await uploadVideoToMeta(c.파일, data.광고계정ID);
+      data.소재목록[n].파일ID = '';
     }
+    // 하위호환: 1번 소재 결과를 최상위에도 유지
+    const f = data.소재목록[0] || {};
+    if (f.이미지해시) { data.이미지해시 = f.이미지해시; data.파일ID = ''; }
+    if (f.videoId) { data.videoId = f.videoId; data.파일ID = ''; }
     const res = await fetch(WEBHOOKS[t], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-    if (res.ok) { updateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중'); showToast(isT2?'세트 추가 요청 완료!':'광고 등록 요청 완료!', 'success'); }
+    if (res.ok) { updateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중'); showToast(toExisting ? '광고 추가 요청 완료!' : (isT2 ? '세트 추가 요청 완료!' : '광고 등록 요청 완료!'), 'success'); }
     else { updateCard(t, idx, '실패', `HTTP ${res.status}`); showToast(`전송 실패 (${res.status})`, 'error'); }
   } catch (err) { updateCard(t, idx, '실패', '오류: ' + err.message); showToast('오류: ' + err.message, 'error'); }
-  btn.disabled = false; btn.textContent = isT2 ? '세트 추가하기' : '광고 등록하기';
+  btn.disabled = false;
+  btn.textContent = isT2 ? (selectedAdset.t2 ? '선택한 세트에 광고 추가' : '세트 추가하기') : '광고 등록하기';
 }
 function clearForm(t) {
-  ['제작자','날짜','유형','계정명','페이지','인스타계정','지역구분자','파일ID','기본문구','제목','설명','세트예산','시작일','종료일','언어'].forEach(field => { const el = document.getElementById(`${t}_${field}`); if (el) el.value = ''; });
+  ['제작자','날짜','유형','계정명','페이지','인스타계정','지역구분자','세트예산','시작일','종료일','언어'].forEach(field => { const el = document.getElementById(`${t}_${field}`); if (el) el.value = ''; });
   document.getElementById(`${t}_언어`).value = 'ko';
   const cb = document.getElementById(`${t}_캠페인예산`); if (cb) cb.value = 30000;
   onAdvantage(t, 0);
@@ -1630,9 +1872,8 @@ function clearForm(t) {
   const cevt = document.getElementById(`${t}_전환이벤트`);
   if (cevt) cevt.innerHTML = '<option value="">계정 선택 후 사용 가능</option>';
   document.getElementById(`${t}_제외타겟ID`).value = '';
-  const fi = document.getElementById(`${t}_파일첨부`); if (fi) fi.value = '';
-  const fm = document.getElementById(`${t}_파일방식`); if (fm) { fm.value = 'upload'; onFileMethod(t); }
-  const dz = document.getElementById(`${t}_dropzone_text`); if (dz) dz.innerHTML = '📎 클릭하거나 파일을 여기에 드래그하세요<br><span style="font-size:11px;color:var(--text3);">이미지 · 영상 파일 지원</span>';
+  const clist = document.getElementById(`${t}_creative_list`);
+  if (clist) { clist.innerHTML = ''; addCreativeBlock(t); }
   ['광고계정ID','캠페인명','광고세트명','광고명','페이지ID','인스턴트양식ID'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
   if (t === 't2') {
     selectedAccount.t2 = ''; nextSetNumber.t2 = 1;
@@ -1642,6 +1883,11 @@ function clearForm(t) {
     const campAccSel = document.getElementById('t2_캠페인선택계정'); if (campAccSel) campAccSel.value = '';
     const campListBox = document.getElementById('t2_캠페인목록'); if (campListBox) { campListBox.classList.remove('show'); campListBox.innerHTML = ''; }
     const manualWrap = document.getElementById('t2_manual_wrap'); if (manualWrap) manualWrap.style.display = 'none';
+    selectedAdset.t2 = null; applyT2Mode();
+    const adsetBox = document.getElementById('t2_adset_list');
+    if (adsetBox) adsetBox.innerHTML = '<div class="adset-empty">위에서 캠페인을 먼저 선택하세요</div>';
+    const adsetHint = document.getElementById('t2_adset_hint');
+    if (adsetHint) adsetHint.textContent = '캠페인을 불러오면 목록이 표시돼요';
   }
   populateDropdowns();
 }
@@ -1653,6 +1899,7 @@ function showToast(msg, type='info') {
 ['t1','t2'].forEach(t => {
   document.getElementById(`${t}_시작일`).value = new Date().toISOString().split('T')[0];
   onAdvantage(t, 0);
+  addCreativeBlock(t);
   ['유형','날짜','제작자'].forEach(field => {
     const el = document.getElementById(`${t}_${field}`);
     if (el) { el.addEventListener('input', () => autoGenNames(t)); el.addEventListener('change', () => autoGenNames(t)); }
