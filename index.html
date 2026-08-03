@@ -183,7 +183,7 @@
   .creative-remove:hover { color: var(--red); }
   .creative-adname { font-size: 11px; line-height: 1.3; color: var(--text2); margin-bottom: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .creative-adname strong { color: var(--blue); font-weight: 600; }
-  .creative-adname.empty { color: var(--text3); }
+  .creative-adname.is-empty { color: var(--text3); }
   .creative-card .field { margin-bottom: 7px; }
   .creative-card .field label { margin-bottom: 3px; font-size: 11px; }
   .creative-card input, .creative-card select { height: 34px; font-size: 12px; }
@@ -1436,11 +1436,11 @@ function updateAdNames(t) {
     if (!box) return;
     const name = adNameFor(t, i + 1);
     if (name) {
-      box.classList.remove('empty');
+      box.classList.remove('is-empty');
       box.innerHTML = `<strong>${name.replace(/</g, '&lt;')}</strong>`;
       box.title = name;
     } else {
-      box.classList.add('empty');
+      box.classList.add('is-empty');
       box.textContent = '계정 선택 시 광고명 자동생성';
       box.title = '';
     }
@@ -1586,7 +1586,7 @@ function addCreativeBlock(t) {
   block.className = 'creative-card'; block.id = id;
   block.innerHTML = `
     <div class="creative-card-head"><span class="creative-card-title">소재 ${idx}</span><button type="button" class="creative-remove" onclick="removeCreativeBlock('${t}','${id}')">삭제</button></div>
-    <div class="creative-adname empty" data-role="광고명">계정 선택 시 광고명 자동생성</div>
+    <div class="creative-adname is-empty" data-role="광고명">계정 선택 시 광고명 자동생성</div>
     <div class="field"><label>파일 업로드 방식</label>
       <select data-role="파일방식" onchange="onCreativeFileMethod('${t}','${id}')">
         <option value="upload" selected>직접 첨부</option>
