@@ -303,7 +303,14 @@
           <div class="field"><label>성별</label><select id="t1_성별"><option value="">전체</option><option value="1">남성</option><option value="2">여성</option></select></div>
           <div class="field"><label>언어</label><input type="text" id="t1_언어" placeholder="ko"></div>
         </div>
-        <div class="field"><label>어드밴티지 타겟</label><input type="text" id="t1_어드밴티지타겟" value="0" readonly></div>
+        <div class="field"><label>어드밴티지 타겟</label>
+          <div class="conv-type-wrap" style="margin-bottom:0;">
+            <button type="button" class="conv-type-btn" id="t1_adv_off" onclick="onAdvantage('t1',0)">사용 안 함</button>
+            <button type="button" class="conv-type-btn active" id="t1_adv_on" onclick="onAdvantage('t1',1)">사용</button>
+          </div>
+          <input type="hidden" id="t1_어드밴티지타겟" value="1">
+          <div class="field-hint" id="t1_adv_hint"></div>
+        </div>
       </div>
       <div class="divider"></div>
       <div class="section"><div class="sec-label">자동생성 값</div>
@@ -458,7 +465,14 @@
           <div class="field"><label>성별</label><select id="t2_성별"><option value="">전체</option><option value="1">남성</option><option value="2">여성</option></select></div>
           <div class="field"><label>언어</label><input type="text" id="t2_언어" placeholder="ko"></div>
         </div>
-        <div class="field"><label>어드밴티지 타겟</label><input type="text" id="t2_어드밴티지타겟" value="0" readonly></div>
+        <div class="field"><label>어드밴티지 타겟</label>
+          <div class="conv-type-wrap" style="margin-bottom:0;">
+            <button type="button" class="conv-type-btn" id="t2_adv_off" onclick="onAdvantage('t2',0)">사용 안 함</button>
+            <button type="button" class="conv-type-btn active" id="t2_adv_on" onclick="onAdvantage('t2',1)">사용</button>
+          </div>
+          <input type="hidden" id="t2_어드밴티지타겟" value="1">
+          <div class="field-hint" id="t2_adv_hint"></div>
+        </div>
       </div>
       <div class="divider"></div>
       <div class="section"><div class="sec-label">자동생성 값</div>
@@ -1427,6 +1441,20 @@ function onFileMethod(t) {
   document.getElementById(`${t}_drive_wrap`).style.display = method === 'drive' ? 'block' : 'none';
   document.getElementById(`${t}_upload_wrap`).style.display = method === 'upload' ? 'block' : 'none';
 }
+// 어드밴티지+ 타겟 On/Off — 값이 그대로 targeting_automation에 들어감
+function onAdvantage(t, val) {
+  const v = String(val) === '1' ? '1' : '0';
+  const input = document.getElementById(`${t}_어드밴티지타겟`);
+  if (input) input.value = v;
+  const onBtn = document.getElementById(`${t}_adv_on`);
+  const offBtn = document.getElementById(`${t}_adv_off`);
+  if (onBtn) onBtn.classList.toggle('active', v === '1');
+  if (offBtn) offBtn.classList.toggle('active', v === '0');
+  const hint = document.getElementById(`${t}_adv_hint`);
+  if (hint) hint.textContent = v === '1'
+    ? '설정한 지역·나이 조건 밖으로도 노출될 수 있어요'
+    : '입력한 타겟 조건만 사용합니다';
+}
 function onForm(t) {
   const sel = document.getElementById(`${t}_인스턴트양식`); const opt = sel.options[sel.selectedIndex];
   document.getElementById(`${t}_인스턴트양식ID`).value = opt ? (opt.dataset.id || '') : '';
@@ -1520,7 +1548,7 @@ function getData(t) {
         facebook_positions: toArray(g(`${t}_페이스북지면`)),
         instagram_positions: toArray(g(`${t}_인스타지면`)),
         locales: [Number(langCode)],
-        targeting_automation: { advantage_audience: 1 },
+        targeting_automation: { advantage_audience: g(`${t}_어드밴티지타겟`) === '1' ? 1 : 0 },
       };
       if (genderVal) targetingObj.genders = [Number(genderVal)];
       if (excludeIds.length > 0) targetingObj.excluded_custom_audiences = excludeIds.map(id => ({ id }));
@@ -1604,6 +1632,7 @@ function clearForm(t) {
   ['제작자','날짜','유형','계정명','페이지','인스타계정','지역구분자','파일ID','기본문구','제목','설명','세트예산','시작일','종료일','언어'].forEach(field => { const el = document.getElementById(`${t}_${field}`); if (el) el.value = ''; });
   document.getElementById(`${t}_언어`).value = 'ko';
   const cb = document.getElementById(`${t}_캠페인예산`); if (cb) cb.value = 30000;
+  onAdvantage(t, 1);
   document.getElementById(`${t}_최소나이`).value = 35;
   document.getElementById(`${t}_최대나이`).value = 65;
   document.getElementById(`${t}_시작일`).value = new Date().toISOString().split('T')[0];
@@ -1645,6 +1674,7 @@ function showToast(msg, type='info') {
 }
 ['t1','t2'].forEach(t => {
   document.getElementById(`${t}_시작일`).value = new Date().toISOString().split('T')[0];
+  onAdvantage(t, 1);
   ['유형','날짜','제작자'].forEach(field => {
     const el = document.getElementById(`${t}_${field}`);
     if (el) { el.addEventListener('input', () => autoGenNames(t)); el.addEventListener('change', () => autoGenNames(t)); }
