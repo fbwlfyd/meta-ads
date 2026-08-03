@@ -1159,13 +1159,22 @@ async function loadData() {
       if (r[17] && r[18]) GDB.logoByChannel[r[17]] = r[18];
     });
 
-    const seenPages = new Set();
+    const pageMap = new Map();
     DB.pages = []; DB.forms = [];
     for (let i = 1; i < pageRows.length; i++) {
       const r = pageRows[i];
-      if (r[1] && !seenPages.has(r[1])) { seenPages.add(r[1]); DB.pages.push({ name: r[1], pageId: r[0] }); }
-      if (r[3] && r[4] === 'ACTIVE') DB.forms.push({ pageName: r[1], formName: r[3], formId: r[2], status: r[4] });
+      const pName = (r[1] || '').trim();
+      const pId = (r[0] || '').trim();
+      if (pName) {
+        // 같은 페이지가 여러 행에 걸쳐 있을 때, ID가 채워진 행을 우선 사용
+        if (!pageMap.has(pName)) pageMap.set(pName, pId);
+        else if (!pageMap.get(pName) && pId) pageMap.set(pName, pId);
+      }
+      if (r[3] && r[4] === 'ACTIVE') DB.forms.push({ pageName: pName, formName: r[3], formId: r[2], status: r[4] });
     }
+    DB.pages = Array.from(pageMap, ([name, pageId]) => ({ name, pageId }));
+    const noIdPages = DB.pages.filter(p => !p.pageId).map(p => p.name);
+    if (noIdPages.length > 0) console.warn('페이지ID가 비어 있는 항목:', noIdPages);
 
     populateDropdowns();
     gLoadLearnedCopies();
@@ -1345,7 +1354,9 @@ function updateExcludeIds(t) { document.getElementById(`${t}_제외타겟ID`).va
 function onPage(t) {
   const name = document.getElementById(`${t}_페이지`).value;
   const page = DB.pages.find(p => p.name === name);
-  document.getElementById(`${t}_페이지ID`).value = page ? page.pageId : '';
+  const pid = page ? (page.pageId || '') : '';
+  document.getElementById(`${t}_페이지ID`).value = pid;
+  if (name && !pid) showToast(`'${name}'의 페이지ID가 시트에 없어요 (페이지_리드폼DB A열 확인)`, 'error');
   const sel = document.getElementById(`${t}_인스턴트양식`);
   sel.innerHTML = '<option value="">선택</option>';
   document.getElementById(`${t}_인스턴트양식ID`).value = '';
@@ -1567,6 +1578,7 @@ function updateCard(t, idx, status, msg) {
 async function submitAd(t) {
   const data = getData(t); const isT2 = t === 't2';
   if (!data.계정명 || !data.광고세트명) { showToast('계정명과 광고세트명은 필수입니다', 'error'); return; }
+  if (!data.페이지ID) { showToast('페이지를 선택해주세요 (페이지ID가 비어 있으면 소재 생성이 실패해요)', 'error'); return; }
   if (isT2 && !data.캠페인ID) { showToast('캠페인 ID를 입력해주세요', 'error'); return; }
   if (!isT2 && !data.캠페인명) { showToast('캠페인명을 입력해주세요', 'error'); return; }
   if (data.전환위치타입 === 'WEBSITE') {
