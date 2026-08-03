@@ -172,15 +172,18 @@
   .common-toggle { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; color: var(--text2); cursor: pointer; white-space: nowrap; }
   .btn-add-creative { height: 32px; padding: 0 14px; border: 1px dashed var(--border2); border-radius: var(--radius-sm); background: none; font-family: inherit; font-size: 12px; font-weight: 500; color: var(--text2); cursor: pointer; white-space: nowrap; }
   .btn-add-creative:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); }
-  .creative-strip { flex: 1; display: flex; gap: 12px; overflow-x: auto; overflow-y: auto; padding: 12px 28px 16px; align-items: flex-start; }
+  .creative-strip { flex: 1; display: flex; gap: 12px; overflow-x: auto; overflow-y: auto; padding: 12px 28px; align-items: stretch; }
   .creative-strip::-webkit-scrollbar { height: 6px; width: 6px; }
   .creative-strip::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-  .creative-card { flex: 0 0 300px; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+  .creative-card { flex: 0 0 300px; align-self: stretch; overflow-y: auto; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
   .creative-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
   .creative-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   .creative-card-title { font-size: 12px; font-weight: 600; color: var(--text1); }
   .creative-remove { background: none; border: none; font-size: 12px; color: var(--text3); cursor: pointer; font-family: inherit; }
   .creative-remove:hover { color: var(--red); }
+  .creative-adname { font-size: 11px; line-height: 1.4; color: var(--text2); background: var(--bg); border-radius: var(--radius-sm); padding: 6px 8px; margin-bottom: 8px; word-break: break-all; }
+  .creative-adname strong { color: var(--blue); font-weight: 600; }
+  .creative-adname.empty { color: var(--text3); }
   .creative-card .field { margin-bottom: 7px; }
   .creative-card .field label { margin-bottom: 3px; font-size: 11px; }
   .creative-card input, .creative-card select { height: 34px; font-size: 12px; }
@@ -268,11 +271,10 @@
         </div>
         <!-- 인스턴트양식 섹션 -->
         <div class="conv-section show" id="t1_conv_lead_section">
-          <div class="field"><label>인스턴트양식</label><select id="t1_인스턴트양식" onchange="onForm('t1')"><option value="">페이지 선택 후 사용 가능</option></select></div>
+          <div class="field-hint">양식은 아래 소재 카드에서 소재별로 선택합니다</div>
         </div>
         <!-- 웹사이트 섹션 -->
         <div class="conv-section" id="t1_conv_web_section">
-          <div class="field"><label>웹사이트 URL</label><input type="text" id="t1_웹사이트URL" placeholder="https://..."></div>
           <div class="field">
             <label>데이터세트 (픽셀) <span class="auto-tag">자동</span></label>
             <select id="t1_픽셀선택" onchange="onPixelSelect('t1')"><option value="">계정을 먼저 선택하세요</option></select>
@@ -420,11 +422,10 @@
         </div>
         <!-- 인스턴트양식 섹션 -->
         <div class="conv-section show" id="t2_conv_lead_section">
-          <div class="field"><label>인스턴트양식</label><select id="t2_인스턴트양식" onchange="onForm('t2')"><option value="">페이지 선택 후 사용 가능</option></select></div>
+          <div class="field-hint">양식은 아래 소재 카드에서 소재별로 선택합니다</div>
         </div>
         <!-- 웹사이트 섹션 -->
         <div class="conv-section" id="t2_conv_web_section">
-          <div class="field"><label>웹사이트 URL</label><input type="text" id="t2_웹사이트URL" placeholder="https://..."></div>
           <div class="field">
             <label>데이터세트 (픽셀) <span class="auto-tag">자동</span></label>
             <select id="t2_픽셀선택" onchange="onPixelSelect('t2')"><option value="">캠페인을 먼저 불러오세요</option></select>
@@ -1402,9 +1403,9 @@ function onAccount(t) {
   if (acc && acc.id) loadPixels(t);
 }
 const nextSetNumber = { t2: 1 };
-function autoGenNames(t) {
+function buildNames(t, seq) {
   const acc = DB.accounts.find(a => a.name === getAccountName(t));
-  if (!acc) return;
+  if (!acc) return null;
   const region = DB.regions.find(r => r.name === document.getElementById(`${t}_지역구분자`).value);
   const staffName = document.getElementById(`${t}_제작자`).value;
   const staffObj = DB.staff.find(s => s.name === staffName);
@@ -1413,12 +1414,43 @@ function autoGenNames(t) {
   const type = document.getElementById(`${t}_유형`).value;
   const refName = region ? (region.refName || '') : '';
   const staffId = staffObj ? staffObj.id : '';
-  const seqLabel = t === 't2' ? `${nextSetNumber.t2}A` : '1A';
-  const campaignName = [acc.campaignName, acc.subjectName, type, date ? `(${date})` : '', staffName, refName, '예비용'].filter(Boolean).join(' ');
-  const setName = [acc.setName, acc.subjectName, type, refName, seqLabel, staffId].filter(Boolean).join(' ');
-  if (t === 't1') document.getElementById('t1_캠페인명').value = campaignName;
-  document.getElementById(`${t}_광고세트명`).value = setName;
-  document.getElementById(`${t}_광고명`).value = setName;
+  return {
+    campaignName: [acc.campaignName, acc.subjectName, type, date ? `(${date})` : '', staffName, refName, '예비용'].filter(Boolean).join(' '),
+    setName: [acc.setName, acc.subjectName, type, refName, `${seq}A`, staffId].filter(Boolean).join(' '),
+  };
+}
+// 소재 n번 → 광고명의 순번이 nA 로 바뀐다
+function adNameFor(t, n) {
+  const built = buildNames(t, n);
+  return built ? built.setName : '';
+}
+function updateAdNames(t) {
+  const blocks = creativeBlocks(t);
+  const n = blocks.length;
+  const first = adNameFor(t, 1);
+  const el = document.getElementById(`${t}_광고명`);
+  if (el) el.value = !first ? '' : (n > 1 ? `${first} 외 ${n - 1}개 (2A~${n}A)` : first);
+  // 카드마다 자기 광고명 표기
+  blocks.forEach((b, i) => {
+    const box = b.querySelector('[data-role="광고명"]');
+    if (!box) return;
+    const name = adNameFor(t, i + 1);
+    if (name) {
+      box.classList.remove('empty');
+      box.innerHTML = `광고명 <strong>${name.replace(/</g, '&lt;')}</strong>`;
+    } else {
+      box.classList.add('empty');
+      box.textContent = '계정·지역을 선택하면 광고명이 만들어져요';
+    }
+  });
+}
+function autoGenNames(t) {
+  const seq = t === 't2' ? nextSetNumber.t2 : 1;
+  const built = buildNames(t, seq);
+  if (!built) return;
+  if (t === 't1') document.getElementById('t1_캠페인명').value = built.campaignName;
+  document.getElementById(`${t}_광고세트명`).value = built.setName;
+  updateAdNames(t);
 }
 const selectedExcludes = { t1: [], t2: [] };
 function onExclude(t) {
@@ -1441,12 +1473,8 @@ function onPage(t) {
   const pid = page ? (page.pageId || '') : '';
   document.getElementById(`${t}_페이지ID`).value = pid;
   if (name && !pid) showToast(`'${name}'의 페이지ID가 시트에 없어요 (페이지_리드폼DB A열 확인)`, 'error');
-  const sel = document.getElementById(`${t}_인스턴트양식`);
-  sel.innerHTML = '<option value="">선택</option>';
   document.getElementById(`${t}_인스턴트양식ID`).value = '';
-  DB.forms.filter(f => f.pageName === name).forEach(f => {
-    const o = document.createElement('option'); o.value = f.formName; o.dataset.id = f.formId; o.textContent = f.formName; sel.appendChild(o);
-  });
+  refreshCreativeForms(t);
 }
 function onRegion(t) {
   autoGenNames(t);
@@ -1495,7 +1523,7 @@ async function onCampaignId(t) {
   } catch (err) { showToast('캠페인 조회 실패: ' + err.message, 'error'); }
 }
 /* ===== 광고 소재 카드 (1세트 · 여러 소재) ===== */
-const CREATIVE_MAX = 5;
+const CREATIVE_MAX = 20;
 const creativeSeq = { t1: 0, t2: 0 };
 
 function creativeBlocks(t) {
@@ -1520,6 +1548,29 @@ function fillCreativeCta(block) {
   if (prev && Array.from(sel.options).some(o => o.value === prev)) sel.value = prev;
   else if (Array.from(sel.options).some(o => o.value === 'LEARN_MORE')) sel.value = 'LEARN_MORE';
 }
+function fillCreativeForms(t, block) {
+  const sel = block.querySelector('[data-role="인스턴트양식"]');
+  if (!sel) return;
+  const prev = sel.value;
+  const pageName = document.getElementById(`${t}_페이지`).value;
+  sel.innerHTML = '<option value="">선택</option>';
+  DB.forms.filter(f => f.pageName === pageName).forEach(f => {
+    const o = document.createElement('option');
+    o.value = f.formName; o.dataset.id = f.formId; o.textContent = f.formName;
+    sel.appendChild(o);
+  });
+  if (prev && Array.from(sel.options).some(o => o.value === prev)) sel.value = prev;
+}
+function refreshCreativeForms(t) { creativeBlocks(t).forEach(b => fillCreativeForms(t, b)); }
+function applyConvTypeToCreatives(t) {
+  const isWeb = (convTypeState[t] || 'ON_AD') === 'WEBSITE';
+  creativeBlocks(t).forEach(b => {
+    const fw = b.querySelector('[data-role="form_wrap"]');
+    const uw = b.querySelector('[data-role="url_wrap"]');
+    if (fw) fw.style.display = isWeb ? 'none' : 'block';
+    if (uw) uw.style.display = isWeb ? 'block' : 'none';
+  });
+}
 function refreshCreativeCtas() {
   ['t1','t2'].forEach(t => creativeBlocks(t).forEach(fillCreativeCta));
 }
@@ -1533,6 +1584,7 @@ function addCreativeBlock(t) {
   block.className = 'creative-card'; block.id = id;
   block.innerHTML = `
     <div class="creative-card-head"><span class="creative-card-title">소재 ${idx}</span><button type="button" class="creative-remove" onclick="removeCreativeBlock('${t}','${id}')">삭제</button></div>
+    <div class="creative-adname empty" data-role="광고명">계정·지역을 선택하면 광고명이 만들어져요</div>
     <div class="field"><label>파일 업로드 방식</label>
       <select data-role="파일방식" onchange="onCreativeFileMethod('${t}','${id}')">
         <option value="upload" selected>직접 첨부</option>
@@ -1544,6 +1596,8 @@ function addCreativeBlock(t) {
       <input type="file" data-role="파일첨부" accept="image/*,video/*" style="display:none;" onchange="onCreativeFileSelected(this)">
     </div>
     <div class="field" data-role="drive_wrap" style="display:none;"><label>파일ID (Google Drive)</label><input type="text" data-role="파일ID" placeholder="Drive 링크 붙여넣기" oninput="extractDriveId(this)"></div>
+    <div class="field" data-role="form_wrap"><label>인스턴트양식</label><select data-role="인스턴트양식" onchange="syncCreativeCommon('${t}')"><option value="">페이지 선택 후 사용 가능</option></select></div>
+    <div class="field" data-role="url_wrap" style="display:none;"><label>웹사이트 URL</label><input type="text" data-role="웹사이트URL" placeholder="https://..." oninput="syncCreativeCommon('${t}')"></div>
     <div data-role="text_wrap">
       <div class="field"><label>기본문구</label><textarea data-role="기본문구" placeholder="광고 기본문구" oninput="syncCreativeCommon('${t}')"></textarea></div>
       <div class="row2">
@@ -1554,9 +1608,12 @@ function addCreativeBlock(t) {
     </div>`;
   list.appendChild(block);
   fillCreativeCta(block);
+  fillCreativeForms(t, block);
+  applyConvTypeToCreatives(t);
   applyCreativeCommon(t);
   syncCreativeCommon(t);
   updateCreativeCount(t);
+  updateAdNames(t);
 }
 function removeCreativeBlock(t, id) {
   const list = document.getElementById(`${t}_creative_list`);
@@ -1568,6 +1625,7 @@ function removeCreativeBlock(t, id) {
   });
   applyCreativeCommon(t);
   updateCreativeCount(t);
+  updateAdNames(t);
 }
 function onCreativeFileMethod(t, id) {
   const block = document.getElementById(id); if (!block) return;
@@ -1609,7 +1667,7 @@ function syncCreativeCommon(t) {
   if (!isCommon) return;
   const blocks = creativeBlocks(t);
   const first = blocks[0]; if (!first) return;
-  ['기본문구','제목','설명','CTA버튼'].forEach(role => {
+  ['기본문구','제목','설명','CTA버튼','인스턴트양식','웹사이트URL'].forEach(role => {
     const val = first.querySelector(`[data-role="${role}"]`)?.value || '';
     blocks.forEach((b, i) => {
       if (i === 0) return;
@@ -1620,7 +1678,9 @@ function syncCreativeCommon(t) {
 }
 // 카드 → 데이터 (파일 객체 포함)
 function collectCreatives(t) {
-  return creativeBlocks(t).map(b => {
+  return creativeBlocks(t).map((b, i) => {
+    const formSel = b.querySelector('[data-role="인스턴트양식"]');
+    const formOpt = formSel ? formSel.options[formSel.selectedIndex] : null;
     const method = b.querySelector('[data-role="파일방식"]').value;
     const fileInput = b.querySelector('[data-role="파일첨부"]');
     const file = (method === 'upload' && fileInput && fileInput.files[0]) ? fileInput.files[0] : null;
@@ -1633,17 +1693,26 @@ function collectCreatives(t) {
       제목: b.querySelector('[data-role="제목"]').value,
       설명: b.querySelector('[data-role="설명"]').value,
       CTA버튼: b.querySelector('[data-role="CTA버튼"]').value,
+      인스턴트양식: formSel ? formSel.value : '',
+      인스턴트양식ID: formOpt ? (formOpt.dataset.id || '') : '',
+      웹사이트URL: (b.querySelector('[data-role="웹사이트URL"]').value || '').trim(),
     };
   });
 }
 // 카드 → Make로 보낼 형태
 function collectCreativePayload(t) {
+  const convType = convTypeState[t] || 'ON_AD';
   return collectCreatives(t).map((c, i) => ({
     순번: i + 1,
+    광고명: adNameFor(t, i + 1),
     파일유형: c.파일 ? (c.파일.type.startsWith('image/') ? '이미지' : '영상') : 'drive',
     파일ID: c.파일ID,
     파일명: c.파일 ? c.파일.name : '',
     기본문구: c.기본문구, 제목: c.제목, 설명: c.설명, CTA버튼: c.CTA버튼,
+    전환위치타입: convType,
+    인스턴트양식: convType === 'ON_AD' ? c.인스턴트양식 : '',
+    인스턴트양식ID: convType === 'ON_AD' ? c.인스턴트양식ID : '',
+    웹사이트URL: convType === 'WEBSITE' ? c.웹사이트URL : '',
   }));
 }
 // 어드밴티지+ 타겟 On/Off — 값이 그대로 targeting_automation에 들어감
@@ -1659,10 +1728,6 @@ function onAdvantage(t, val) {
   if (hint) hint.textContent = v === '1'
     ? '나이·성별은 제안으로만 쓰여요 (범위 밖 노출 가능). 지역·제외타겟은 그대로 적용됩니다'
     : '입력한 나이·성별 범위를 그대로 지킵니다';
-}
-function onForm(t) {
-  const sel = document.getElementById(`${t}_인스턴트양식`); const opt = sel.options[sel.selectedIndex];
-  document.getElementById(`${t}_인스턴트양식ID`).value = opt ? (opt.dataset.id || '') : '';
 }
 // 전환위치 타입 전환 (ON_AD vs WEBSITE)
 const convTypeState = { t1: 'ON_AD', t2: 'ON_AD' };
@@ -1686,6 +1751,7 @@ function onConvType(t, type) {
   document.getElementById(`${t}_conv_lead_section`).classList.toggle('show', type === 'ON_AD');
   document.getElementById(`${t}_conv_web_section`).classList.toggle('show', type === 'WEBSITE');
   syncDestinationSelect(t, type);
+  applyConvTypeToCreatives(t);
   // 성과목표도 전환위치에 맞춰 맞춰준다 (웹사이트 전환은 OFFSITE_CONVERSIONS)
   const optSel = document.getElementById(`${t}_성과목표`);
   if (optSel) {
@@ -1762,10 +1828,8 @@ function getData(t) {
     광고명: g(`${t}_광고명`),
     소재목록: collectCreativePayload(t),
     소재수: creativeBlocks(t).length,
-    인스턴트양식: g(`${t}_인스턴트양식`), 인스턴트양식ID: g(`${t}_인스턴트양식ID`),
-    // 전환위치 타입에 따른 분기
+    // 전환위치 타입에 따른 분기 (양식·URL은 소재별로 소재목록에 담김)
     전환위치타입: convTypeState[t] || 'ON_AD',
-    웹사이트URL: g(`${t}_웹사이트URL`),
     데이터세트ID: g(`${t}_데이터세트ID`) || g(`${t}_픽셀선택`),
     픽셀명: (() => {
       const id = g(`${t}_픽셀선택`) || g(`${t}_데이터세트ID`);
@@ -1786,6 +1850,10 @@ function getData(t) {
   d.제목 = first.제목 || '';
   d.설명 = first.설명 || '';
   d.CTA버튼 = first.CTA버튼 || '';
+  d.인스턴트양식 = first.인스턴트양식 || '';
+  d.인스턴트양식ID = first.인스턴트양식ID || '';
+  d.웹사이트URL = first.웹사이트URL || '';
+  d.광고명 = first.광고명 || d.광고명;
   if (t === 't1') { d.캠페인명 = g('t1_캠페인명'); d.구매유형 = g('t1_구매유형'); d.캠페인목표 = g('t1_캠페인목표'); d.캠페인예산 = g('t1_캠페인예산'); d.등록모드 = 'NEW_ADSET'; }
   else {
     d.캠페인ID = g('t2_캠페인ID');
@@ -1823,11 +1891,13 @@ async function submitAd(t) {
   if (!data.페이지ID) { showToast('페이지를 선택해주세요 (페이지ID가 비어 있으면 소재 생성이 실패해요)', 'error'); return; }
   if (isT2 && !data.캠페인ID) { showToast('캠페인 ID를 입력해주세요', 'error'); return; }
   if (!isT2 && !data.캠페인명) { showToast('캠페인명을 입력해주세요', 'error'); return; }
-  if (data.전환위치타입 === 'WEBSITE') {
-    if (!data.웹사이트URL) { showToast('웹사이트 URL을 입력해주세요', 'error'); return; }
+  const isWeb = data.전환위치타입 === 'WEBSITE';
+  if (isWeb && !toExisting) {
     if (!data.데이터세트ID) { showToast('픽셀(데이터세트)을 선택해주세요', 'error'); return; }
     if (!data.맞춤전환ID) { showToast('맞춤 전환을 선택해주세요', 'error'); return; }
-  } else if (!data.인스턴트양식ID) { showToast('인스턴트 양식을 선택해주세요', 'error'); return; }
+  }
+  const badConv = data.소재목록.findIndex(c => isWeb ? !c.웹사이트URL : !c.인스턴트양식ID);
+  if (badConv >= 0) { showToast(`소재 ${badConv + 1}에 ${isWeb ? '웹사이트 URL' : '인스턴트 양식'}이 없어요`, 'error'); return; }
   const creatives = collectCreatives(t);
   const empty = creatives.findIndex(c => !c.파일 && !c.파일ID);
   if (empty >= 0) { showToast(`소재 ${empty + 1}에 파일이 없어요`, 'error'); return; }
@@ -1867,10 +1937,8 @@ function clearForm(t) {
   document.getElementById(`${t}_타겟국가`).value = '';
   document.getElementById(`${t}_제외타겟`).innerHTML = '<option value="">선택</option>';
   selectedExcludes[t] = []; renderExcludeTags(t); updateExcludeIds(t);
-  document.getElementById(`${t}_인스턴트양식`).innerHTML = '<option value="">페이지 선택 후 사용 가능</option>';
   // 전환위치 타입 초기화
   onConvType(t, 'ON_AD');
-  const wurl = document.getElementById(`${t}_웹사이트URL`); if (wurl) wurl.value = '';
   const dsid = document.getElementById(`${t}_데이터세트ID`); if (dsid) dsid.value = '';
   resetPixelSelect(t, t === 't1' ? '계정을 먼저 선택하세요' : '캠페인을 먼저 불러오세요');
   const pmanual = document.getElementById(`${t}_픽셀_manual`); if (pmanual) pmanual.style.display = 'none';
