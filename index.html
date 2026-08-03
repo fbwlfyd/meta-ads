@@ -163,27 +163,30 @@
   .mode-banner.new { background: var(--blue-bg); color: #1d4ed8; border: 1px solid #c8dffe; }
   .mode-banner.existing { background: var(--yellow-bg); color: #b45309; border: 1px solid #ffe0a0; }
   .section.dimmed { opacity: 0.4; pointer-events: none; }
-  .main-top { flex: 1 1 50%; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
-  .creative-pane { flex: 1 1 50%; border-top: 1px solid var(--border); background: var(--white); display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
-  .creative-head { padding: 14px 28px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .main-top { flex: 1 1 38%; display: flex; flex-direction: column; overflow: hidden; min-height: 140px; }
+  .creative-pane { flex: 1 1 62%; min-height: 0; border-top: 1px solid var(--border); background: var(--white); display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+  .creative-head { padding: 11px 28px 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); flex-shrink: 0; }
   .creative-head h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
   .creative-head p { font-size: 12px; color: var(--text2); margin-top: 2px; }
   .creative-actions { display: flex; align-items: center; gap: 10px; }
   .common-toggle { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; color: var(--text2); cursor: pointer; white-space: nowrap; }
   .btn-add-creative { height: 32px; padding: 0 14px; border: 1px dashed var(--border2); border-radius: var(--radius-sm); background: none; font-family: inherit; font-size: 12px; font-weight: 500; color: var(--text2); cursor: pointer; white-space: nowrap; }
   .btn-add-creative:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); }
-  .creative-strip { flex: 1; display: flex; gap: 12px; overflow-x: auto; overflow-y: auto; padding: 16px 28px 20px; align-items: flex-start; }
+  .creative-strip { flex: 1; display: flex; gap: 12px; overflow-x: auto; overflow-y: auto; padding: 12px 28px 16px; align-items: flex-start; }
   .creative-strip::-webkit-scrollbar { height: 6px; width: 6px; }
   .creative-strip::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-  .creative-card { flex: 0 0 264px; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+  .creative-card { flex: 0 0 300px; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
   .creative-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
-  .creative-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .creative-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   .creative-card-title { font-size: 12px; font-weight: 600; color: var(--text1); }
   .creative-remove { background: none; border: none; font-size: 12px; color: var(--text3); cursor: pointer; font-family: inherit; }
   .creative-remove:hover { color: var(--red); }
-  .creative-card .field { margin-bottom: 8px; }
-  .creative-card textarea { height: 60px; }
-  .creative-drop { border: 2px dashed var(--border2); border-radius: var(--radius-sm); padding: 14px 10px; text-align: center; cursor: pointer; background: var(--bg); font-size: 12px; color: var(--text2); line-height: 1.5; transition: all 0.2s; word-break: break-all; }
+  .creative-card .field { margin-bottom: 7px; }
+  .creative-card .field label { margin-bottom: 3px; font-size: 11px; }
+  .creative-card input, .creative-card select { height: 34px; font-size: 12px; }
+  .creative-card textarea { height: 46px; font-size: 12px; padding: 7px 10px; }
+  .creative-card .row2 { gap: 6px; }
+  .creative-drop { border: 2px dashed var(--border2); border-radius: var(--radius-sm); padding: 9px; text-align: center; cursor: pointer; background: var(--bg); font-size: 12px; color: var(--text2); line-height: 1.45; transition: all 0.2s; word-break: break-all; }
   .creative-drop:hover { border-color: var(--blue); color: var(--blue); }
 
   .conv-type-wrap { display: flex; gap: 8px; margin-bottom: 10px; }
@@ -1543,8 +1546,10 @@ function addCreativeBlock(t) {
     <div class="field" data-role="drive_wrap" style="display:none;"><label>파일ID (Google Drive)</label><input type="text" data-role="파일ID" placeholder="Drive 링크 붙여넣기" oninput="extractDriveId(this)"></div>
     <div data-role="text_wrap">
       <div class="field"><label>기본문구</label><textarea data-role="기본문구" placeholder="광고 기본문구" oninput="syncCreativeCommon('${t}')"></textarea></div>
-      <div class="field"><label>제목</label><input type="text" data-role="제목" placeholder="광고 제목" oninput="syncCreativeCommon('${t}')"></div>
-      <div class="field"><label>설명</label><input type="text" data-role="설명" placeholder="광고 설명" oninput="syncCreativeCommon('${t}')"></div>
+      <div class="row2">
+        <div class="field"><label>제목</label><input type="text" data-role="제목" placeholder="제목" oninput="syncCreativeCommon('${t}')"></div>
+        <div class="field"><label>설명</label><input type="text" data-role="설명" placeholder="설명" oninput="syncCreativeCommon('${t}')"></div>
+      </div>
       <div class="field"><label>CTA버튼</label><select data-role="CTA버튼" onchange="syncCreativeCommon('${t}')"></select></div>
     </div>`;
   list.appendChild(block);
