@@ -244,15 +244,15 @@
       <div class="section"><div class="sec-label">광고 소재</div>
         <div class="field"><label>파일 업로드 방식</label>
           <select id="t1_파일방식" onchange="onFileMethod('t1')">
+            <option value="upload" selected>직접 첨부</option>
             <option value="drive">Drive 파일ID</option>
-            <option value="upload">직접 첨부</option>
           </select>
         </div>
-        <div class="field" id="t1_drive_wrap">
+        <div class="field" id="t1_drive_wrap" style="display:none;">
           <label>파일ID (Google Drive)</label>
           <input type="text" id="t1_파일ID" placeholder="Drive 전체 링크 복사 후 붙여넣기" oninput="extractDriveId(this)">
         </div>
-        <div class="field" id="t1_upload_wrap" style="display:none;">
+        <div class="field" id="t1_upload_wrap">
           <label>파일 첨부</label>
           <div id="t1_dropzone" style="border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg);"
             ondragover="onDragOver(event,'t1')" ondragleave="onDragLeave(event,'t1')" ondrop="onDrop(event,'t1')"
@@ -407,15 +407,15 @@
       <div class="section"><div class="sec-label">광고 소재</div>
         <div class="field"><label>파일 업로드 방식</label>
           <select id="t2_파일방식" onchange="onFileMethod('t2')">
+            <option value="upload" selected>직접 첨부</option>
             <option value="drive">Drive 파일ID</option>
-            <option value="upload">직접 첨부</option>
           </select>
         </div>
-        <div class="field" id="t2_drive_wrap">
+        <div class="field" id="t2_drive_wrap" style="display:none;">
           <label>파일ID (Google Drive)</label>
           <input type="text" id="t2_파일ID" placeholder="Drive 전체 링크 복사 후 붙여넣기" oninput="extractDriveId(this)">
         </div>
-        <div class="field" id="t2_upload_wrap" style="display:none;">
+        <div class="field" id="t2_upload_wrap">
           <label>파일 첨부</label>
           <div id="t2_dropzone" style="border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg);"
             ondragover="onDragOver(event,'t2')" ondragleave="onDragLeave(event,'t2')" ondrop="onDrop(event,'t2')"
@@ -1624,6 +1624,7 @@ function clearForm(t) {
   }
   document.getElementById(`${t}_제외타겟ID`).value = '';
   const fi = document.getElementById(`${t}_파일첨부`); if (fi) fi.value = '';
+  const fm = document.getElementById(`${t}_파일방식`); if (fm) { fm.value = 'upload'; onFileMethod(t); }
   const dz = document.getElementById(`${t}_dropzone_text`); if (dz) dz.innerHTML = '📎 클릭하거나 파일을 여기에 드래그하세요<br><span style="font-size:11px;color:var(--text3);">이미지 · 영상 파일 지원</span>';
   ['광고계정ID','캠페인명','광고세트명','광고명','페이지ID','인스턴트양식ID'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
   if (t === 't2') {
