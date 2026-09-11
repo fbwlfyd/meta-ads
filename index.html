@@ -814,7 +814,7 @@
       <button class="modal-tab active" id="mtab_staff" onclick="switchSettingsTab('staff')">제작자</button>
       <button class="modal-tab" id="mtab_account" onclick="switchSettingsTab('account')">계정 네이밍</button>
       <button class="modal-tab" id="mtab_region" onclick="switchSettingsTab('region')">지역</button>
-      <button class="modal-tab" id="mtab_page" onclick="switchSettingsTab('page')">페이지 직접 입력</button>
+      <button class="modal-tab" id="mtab_page" onclick="switchSettingsTab('page')">페이지 · 인스타 직접 입력</button>
       <button class="modal-tab" id="mtab_diag" onclick="switchSettingsTab('diag')">🩺 진단</button>
       <button class="modal-tab" id="mtab_import" onclick="switchSettingsTab('import')">가져오기 / 내보내기</button>
     </div>
@@ -857,6 +857,13 @@
           <tbody id="set_page_body"></tbody>
         </table>
         <button class="btn-sm" style="margin-top:10px;" onclick="addPageRow()">+ 페이지 추가</button>
+        <div class="divider" style="margin:22px 0 14px;"></div>
+        <div class="set-note">인스타 계정도 권한(<code>instagram_basic</code>) 때문에 목록이 비면 여기에 직접 넣어두세요. 인스타 계정 ID는 Meta 비즈니스 설정 → 계정 → Instagram 계정에서 확인할 수 있습니다.</div>
+        <table class="set-table">
+          <thead><tr><th style="width:50%">인스타 계정명 (@없이)</th><th style="width:45%">인스타 계정 ID</th><th></th></tr></thead>
+          <tbody id="set_insta_body"></tbody>
+        </table>
+        <button class="btn-sm" style="margin-top:10px;" onclick="addInstaRow()">+ 인스타 추가</button>
       </div>
       <!-- 진단 -->
       <div class="modal-sec" id="msec_diag">
@@ -904,7 +911,8 @@ const WEBHOOKS = {
 const META_ACCESS_TOKEN = 'EAAQT68743nIBRlU3QvgOZAERtM4PXN6gnMzY773HpcCZA2lFs0xyw2fUI4tWeV9SBEthgEx18o3O3ZBREIdGZCx6rPCttbnty3SsRJQE1CTtkl6ULl8EAFw5fZCfhQQaCgRWyuuMu0Xkw5TBircZCW2qkOySKRgCKq5os8ceXZAlHRhhy1oGpZCtSfbM0ZAUqnQZDZD';
 const META_API = 'https://graph.facebook.com/v25.0';
 
-// 사용할 광고계정 (숫자 ID만)
+// 광고계정은 /me/adaccounts 로 자동 수집합니다.
+// 아래 목록은 그 호출이 실패했을 때만 쓰는 폴백입니다.
 const META_ACCOUNT_IDS = [
   '328544192521713', '3539643943023966', '812454993694009', '615624957423553',
   '1385306302300937', '316162427633460', '383834457603938', '502168357743456',
@@ -994,6 +1002,7 @@ const DEFAULT_SETTINGS = {
   staff: [],
   accounts: {},   // { '<광고계정ID>': { campaignName, setName, subjectName, baseRegion } }
   pages: [],      // API로 페이지를 못 가져올 때 직접 입력해 두는 목록 [{name, pageId}]
+  instagram: [],  // API로 인스타를 못 가져올 때 직접 입력해 두는 목록 [{name, id}]
   regions: [
     { name: '울주', key: '', refName: '울주타겟', custom: '35.4491,129.1587,6; 35.5184,129.0763,5; 35.5519,129.0228,5' },
   ],
@@ -1009,6 +1018,7 @@ function loadSettings() {
         staff: Array.isArray(parsed.staff) ? parsed.staff : [],
         accounts: parsed.accounts && typeof parsed.accounts === 'object' ? parsed.accounts : {},
         pages: Array.isArray(parsed.pages) ? parsed.pages : [],
+        instagram: Array.isArray(parsed.instagram) ? parsed.instagram : [],
         regions: Array.isArray(parsed.regions) ? parsed.regions : [],
       };
     }
@@ -1078,9 +1088,23 @@ function renderSettings() {
 
   // 지역
   renderRegionRows();
-  // 페이지 직접 입력
+  // 페이지 · 인스타 직접 입력
   renderPageRows();
+  renderInstaRows();
 }
+function renderInstaRows() {
+  const ib = document.getElementById('set_insta_body');
+  if (!ib) return;
+  ib.innerHTML = (SETTINGS.instagram || []).map((g, i) => `
+    <tr>
+      <td><input type="text" data-set="insta-name" data-i="${i}" value="${esc(g.name)}" placeholder="today_dental"></td>
+      <td><input type="text" data-set="insta-id" data-i="${i}" value="${esc(g.id)}" placeholder="17841400000000000"></td>
+      <td><button class="set-del" onclick="removeInstaRow(${i})">✕</button></td>
+    </tr>`).join('');
+  if (!SETTINGS.instagram || SETTINGS.instagram.length === 0) ib.innerHTML = '<tr><td colspan="3" style="padding:14px 4px;color:var(--text3);font-size:12px;">비워두면 API로 가져온 인스타 계정만 사용합니다.</td></tr>';
+}
+function addInstaRow() { collectSettingsFromDom(); if (!SETTINGS.instagram) SETTINGS.instagram = []; SETTINGS.instagram.push({ name: '', id: '' }); renderInstaRows(); }
+function removeInstaRow(i) { collectSettingsFromDom(); SETTINGS.instagram.splice(i, 1); renderInstaRows(); }
 function renderPageRows() {
   const pb = document.getElementById('set_page_body');
   if (!pb) return;
@@ -1140,6 +1164,16 @@ function collectSettingsFromDom() {
     if (name || pid) pages.push({ name: name || pid, pageId: pid });
   });
   if (document.querySelectorAll('[data-set="page-name"]').length > 0) SETTINGS.pages = pages;
+
+  const igs = [];
+  document.querySelectorAll('[data-set="insta-name"]').forEach(el => {
+    const i = el.dataset.i;
+    const idEl = document.querySelector(`[data-set="insta-id"][data-i="${i}"]`);
+    const name = el.value.trim().replace(/^@/, '');
+    const id = idEl ? idEl.value.trim() : '';
+    if (id) igs.push({ name: name || id, id });
+  });
+  if (document.querySelectorAll('[data-set="insta-name"]').length > 0) SETTINGS.instagram = igs;
 }
 
 /* ===== 진단 ===== */
@@ -1184,6 +1218,7 @@ async function runDiagnostics() {
       ['business_management', '비즈니스 페이지', ['pages_show_list']],
       ['pages_read_engagement', '페이지 정보·인스타 연결', []],
       ['leads_retrieval', '리드 데이터 내려받기', ['pages_manage_ads']],
+      ['instagram_basic', '페이지에 연결된 인스타 계정', ['pages_manage_ads']],
     ];
     need.forEach(([k, why, alts]) => {
       if (granted.includes(k)) return;
@@ -1287,11 +1322,29 @@ async function runDiagnostics() {
       push(`     ✅ 인스턴트 양식 ${all.length}개 (게재중 ${active.length}개)`);
       if (all.length > 0 && active.length === 0) push('        ⚠ 전부 ACTIVE가 아니어서 소재 카드에는 안 보입니다');
     } catch (e) { push(`     ❌ 인스턴트 양식: ${e.message}`); }
-    try {
-      const r = await fbGetAs(pg.pageId, { fields: 'instagram_business_account{id,username},connected_instagram_account{id,username}' }, tok);
-      const igs = ['instagram_business_account', 'connected_instagram_account'].map(k => r[k]).filter(x => x && x.id);
-      push(igs.length ? `     ✅ 인스타 연결: ${igs.map(i => '@' + (i.username || i.id)).join(', ')}` : '     · 인스타 연결 없음 (이 페이지에 연결된 인스타 계정이 없습니다)');
-    } catch (e) { push(`     ❌ 인스타 연결: ${e.message}`); }
+    for (const [label, path, fields, take] of [
+      ['instagram_business_account', pg.pageId, 'instagram_business_account{id,username}', j => j.instagram_business_account ? ['@' + (j.instagram_business_account.username || j.instagram_business_account.id)] : []],
+      ['connected_instagram_account', pg.pageId, 'connected_instagram_account{id,username}', j => j.connected_instagram_account ? ['@' + (j.connected_instagram_account.username || j.connected_instagram_account.id)] : []],
+      ['page_backed_instagram_accounts', `${pg.pageId}/page_backed_instagram_accounts`, 'id,username', j => (j.data || []).map(x => '@' + (x.username || x.id))],
+    ]) {
+      try {
+        const r = await fbGetAs(path, { fields }, tok);
+        const got = take(r);
+        push(got.length ? `     ✅ ${label}: ${got.join(', ')}` : `     · ${label}: 없음`);
+      } catch (e) { push(`     ❌ ${label}: ${e.message}`); }
+    }
+  }
+
+  push('');
+  push('[8] 비즈니스 인스타 계정');
+  if (DB.businessIds.length === 0) push('  ⏭ 비즈니스 ID를 못 찾았습니다');
+  for (const bizId of DB.businessIds) {
+    for (const edge of ['owned_instagram_accounts', 'instagram_accounts']) {
+      try {
+        const r = await fbGetAll(`${bizId}/${edge}`, { fields: 'id,username' }, 2);
+        push(`  ${r.length ? '✅' : '·'} ${edge}: ${r.length}개 ${r.slice(0, 5).map(x => '@' + (x.username || x.id)).join(', ')}`);
+      } catch (e) { push(`  ❌ ${edge}: ${e.message}`); }
+    }
   }
 
   lastDiagText = lines.join('\n');
@@ -1340,6 +1393,7 @@ function importSettingsFile(input) {
         staff: Array.isArray(parsed.staff) ? parsed.staff : [],
         accounts: parsed.accounts || {},
         pages: Array.isArray(parsed.pages) ? parsed.pages : [],
+        instagram: Array.isArray(parsed.instagram) ? parsed.instagram : [],
         regions: Array.isArray(parsed.regions) ? parsed.regions : [],
       };
       persistSettings(); applySettingsToDB(); populateDropdowns(); renderSettings();
@@ -1524,28 +1578,55 @@ function logStep(area, label, ok, detail) {
   loadLog[area].push({ label, ok, detail: detail || '' });
 }
 
+// Meta 광고계정 상태 코드
+const ACCOUNT_STATUS = { 1: '', 2: '비활성', 3: '미결제', 7: '검토중', 8: '정산대기', 9: '유예기간', 100: '폐쇄예정', 101: '폐쇄됨' };
+
+/* 이 토큰(앱+사용자)이 실제로 접근할 수 있는 광고계정을 전부 가져온다.
+   조회에 실패하면 예전처럼 고정 목록으로 되돌아간다. */
 async function loadAccounts() {
   loadLog.accounts = [];
-  const found = new Map();
-  // 권한이 가장 적게 필요한 최소 필드부터 (business 필드는 business_management 권한이 필요해 따로 처리)
-  const tasks = META_ACCOUNT_IDS.map(async x => {
-    const id = String(x).replace('act_', '');
-    try {
-      const a = await fbGet(`act_${id}`, { fields: 'name,account_id,account_status' });
-      found.set(id, a);
-      logStep('accounts', `act_${id}`, true, a.name || '');
-    } catch (e) {
-      logStep('accounts', `act_${id}`, false, e.message);
-    }
-  });
-  await Promise.all(tasks);
-  DB.accounts = META_ACCOUNT_IDS.map(x => {
-    const id = String(x).replace('act_', '');
-    const a = found.get(id);
-    return { name: a ? (a.name || `계정 ${id}`) : `(조회 실패) ${id}`, id, business: '', status: a ? a.account_status : null, ok: !!a };
-  });
-  // 비즈니스 ID는 있으면 좋고 없어도 되는 부가 정보
-  await Promise.all(DB.accounts.filter(a => a.ok).slice(0, 3).map(async a => {
+  let list = null;
+  try {
+    list = await fbGetAll('me/adaccounts', { fields: 'account_id,name,account_status' }, 10);
+    logStep('accounts', '/me/adaccounts', true, `${list.length}개 조회`);
+  } catch (e) {
+    logStep('accounts', '/me/adaccounts', false, e.message);
+  }
+
+  if (list && list.length > 0) {
+    DB.accounts = list.map(a => {
+      const statusLabel = ACCOUNT_STATUS[a.account_status] === undefined ? '' : ACCOUNT_STATUS[a.account_status];
+      return {
+        id: a.account_id,
+        name: (a.name || `계정 ${a.account_id}`) + (statusLabel ? ` (${statusLabel})` : ''),
+        rawName: a.name || '',
+        business: '', status: a.account_status,
+        ok: true,
+        active: a.account_status === 1,
+      };
+    }).sort((a, b) => (Number(b.active) - Number(a.active)) || a.name.localeCompare(b.name, 'ko'));
+    DB.accounts.forEach(a => logStep('accounts', `act_${a.id}`, true, a.name));
+  } else {
+    // 폴백: 코드에 적어둔 고정 목록을 하나씩 조회
+    logStep('accounts', '폴백', true, '고정 목록으로 개별 조회합니다');
+    const found = new Map();
+    await Promise.all(META_ACCOUNT_IDS.map(async x => {
+      const id = String(x).replace('act_', '');
+      try {
+        const a = await fbGet(`act_${id}`, { fields: 'name,account_id,account_status' });
+        found.set(id, a);
+        logStep('accounts', `act_${id}`, true, a.name || '');
+      } catch (e) { logStep('accounts', `act_${id}`, false, e.message); }
+    }));
+    DB.accounts = META_ACCOUNT_IDS.map(x => {
+      const id = String(x).replace('act_', '');
+      const a = found.get(id);
+      return { name: a ? (a.name || `계정 ${id}`) : `(조회 실패) ${id}`, rawName: a ? a.name : '', id, business: '', status: a ? a.account_status : null, ok: !!a, active: a ? a.account_status === 1 : false };
+    });
+  }
+
+  // 비즈니스 ID는 페이지·인스타를 더 찾기 위한 부가 정보 (없어도 동작)
+  await Promise.all(DB.accounts.filter(a => a.ok).slice(0, 5).map(async a => {
     try {
       const r = await fbGet(`act_${a.id}`, { fields: 'business{id,name}' });
       if (r.business && r.business.id) a.business = r.business.id;
@@ -1665,42 +1746,65 @@ async function loadInstagramAccounts(t) {
   if (!page && !accountId) { fillInstaSelect(t, []); return; }
   if (DB.igByPage[cacheKey]) { fillInstaSelect(t, DB.igByPage[cacheKey]); return; }
   if (hint) { hint.className = 'field-hint'; hint.textContent = '연결된 인스타 계정을 확인하는 중...'; }
+  const list = await collectInstagramAccounts(accountId, page);
+  DB.igByPage[cacheKey] = list;
+  fillInstaSelect(t, list);
+}
+
+/* 인스타 계정은 권한에 따라 되는 경로가 제각각이라 여러 곳을 각각 따로 두드린다.
+   필드를 한 번에 묶어 요청하면 권한 없는 필드 하나 때문에 요청 전체가 실패하므로 반드시 분리한다. */
+async function collectInstagramAccounts(accountId, page) {
   const list = [];
   const add = (id, name, suffix) => {
     if (!id || list.some(x => x.id === id)) return;
-    list.push({ id, name: (name || id) + (suffix || '') });
+    list.push({ id, name: (name ? '@' + name : id) + (suffix || '') });
   };
-  // 1순위: 광고계정에 연결된 인스타 (ads 권한만 있으면 됨)
+  const tryEdge = async (label, path, params, token, pick) => {
+    try {
+      const json = await fbGetAs(path, params, token);
+      const n = pick(json);
+      logStep('insta', label, true, `${n}개`);
+    } catch (e) { logStep('insta', label, false, e.message); }
+  };
+
+  // 1) 페이지 기반 — 필드를 하나씩 따로 요청
+  if (page) {
+    const tok = DB.pageTokens[page.pageId];
+    await tryEdge('페이지 · instagram_business_account', page.pageId, { fields: 'instagram_business_account{id,username,name}' }, tok, j => {
+      const ig = j.instagram_business_account;
+      if (ig && ig.id) { add(ig.id, ig.username || ig.name, ''); return 1; }
+      return 0;
+    });
+    await tryEdge('페이지 · connected_instagram_account', page.pageId, { fields: 'connected_instagram_account{id,username,name}' }, tok, j => {
+      const ig = j.connected_instagram_account;
+      if (ig && ig.id) { add(ig.id, ig.username || ig.name, ''); return 1; }
+      return 0;
+    });
+    // 페이지 연동 인스타(PBIA) — 광고 권한(pages_manage_ads)만으로도 되는 경로
+    await tryEdge('페이지 · page_backed_instagram_accounts', `${page.pageId}/page_backed_instagram_accounts`, { fields: 'id,username' }, tok, j => {
+      (j.data || []).forEach(ig => add(ig.id, ig.username, ' (페이지 연동)'));
+      return (j.data || []).length;
+    });
+  }
+  // 2) 광고계정 기반
   if (accountId) {
-    for (const edge of ['instagram_accounts', 'connected_instagram_accounts']) {
-      try {
-        const extra = await fbGetAll(`act_${accountId}/${edge}`, { fields: 'id,username' }, 2);
-        extra.forEach(ig => add(ig.id, ig.username, ' (광고계정 연결)'));
-        logStep('insta', `act_${accountId}/${edge}`, true, `${extra.length}개`);
-      } catch (e) { logStep('insta', `act_${accountId}/${edge}`, false, e.message); }
+    await tryEdge(`act_${accountId}/instagram_accounts`, `act_${accountId}/instagram_accounts`, { fields: 'id,username' }, null, j => {
+      (j.data || []).forEach(ig => add(ig.id, ig.username, ' (광고계정)'));
+      return (j.data || []).length;
+    });
+  }
+  // 3) 비즈니스 기반
+  for (const bizId of DB.businessIds) {
+    for (const edge of ['owned_instagram_accounts', 'instagram_accounts']) {
+      await tryEdge(`${bizId}/${edge}`, `${bizId}/${edge}`, { fields: 'id,username' }, null, j => {
+        (j.data || []).forEach(ig => add(ig.id, ig.username, ' (비즈니스)'));
+        return (j.data || []).length;
+      });
     }
   }
-  // 2순위: 페이지에 연결된 인스타 (페이지 권한 필요)
-  if (page) {
-    const token = DB.pageTokens[page.pageId];
-    try {
-      const params = { fields: 'instagram_business_account{id,username,name},connected_instagram_account{id,username,name}' };
-      let json;
-      if (token) {
-        const q = new URLSearchParams(Object.assign({}, params, { access_token: token }));
-        const res = await fetch(`${META_API}/${page.pageId}?${q}`);
-        json = await res.json();
-        if (json.error) throw new Error(json.error.message);
-      } else json = await fbGet(page.pageId, params);
-      ['instagram_business_account', 'connected_instagram_account'].forEach(k => {
-        const ig = json[k];
-        if (ig && ig.id) add(ig.id, ig.username || ig.name, '');
-      });
-      logStep('insta', `${page.pageId} (페이지 연결)`, true, '');
-    } catch (e) { logStep('insta', `${page.pageId} (페이지 연결)`, false, e.message); }
-  }
-  DB.igByPage[cacheKey] = list;
-  fillInstaSelect(t, list);
+  // 4) 설정에 직접 넣어둔 인스타 계정
+  (SETTINGS.instagram || []).forEach(ig => { if (ig.id) add(ig.id, ig.name, ' (직접 입력)'); });
+  return list;
 }
 function fillInstaSelect(t, list) {
   const sel = document.getElementById(`${t}_인스타계정`);
@@ -1713,7 +1817,11 @@ function fillInstaSelect(t, list) {
   else if (list.length === 1) sel.value = list[0].id;
   if (hint) {
     hint.className = 'field-hint';
-    hint.textContent = list.length ? `연결된 인스타 계정 ${list.length}개` : '이 페이지에 연결된 인스타 계정이 없어요';
+    if (list.length) hint.textContent = `연결된 인스타 계정 ${list.length}개`;
+    else {
+      hint.className = 'field-hint err';
+      hint.textContent = '인스타 계정을 못 가져왔어요 — 진단 [7]에서 원인을 보거나, 설정에서 직접 입력하세요 (instagram_basic 권한이 없으면 페이지 연결 조회가 막힙니다)';
+    }
   }
 }
 
