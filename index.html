@@ -972,6 +972,7 @@
         <div style="display:flex;gap:8px;margin-top:10px;">
           <button class="btn-sm" onclick="gAddRow('channels')">+ 채널 추가</button>
           <button class="btn-sm blue" onclick="fetchYoutubeChannelsToSettings()">▶ YouTube에서 채널 가져오기</button>
+          <button class="btn-sm" onclick="gResetTokens()">구글 재로그인</button>
         </div>
         <div id="g_yt_out" style="margin-top:10px;font-size:12px;white-space:pre-wrap;color:var(--text2);"></div>
 
@@ -1719,7 +1720,7 @@ function gAddRegionFromSearch(i) {
    Google Ads API와 달리 YouTube Data API는 브라우저에서 바로 호출된다.
    로그인한 계정이 관리하는 채널을 그대로 가져온다. */
 async function loadYoutubeChannels() {
-  const token = await gDriveSignIn();
+  const token = await gYoutubeSignIn();
   const res = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true&maxResults=50', {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -1748,7 +1749,7 @@ async function fetchYoutubeChannelsToSettings() {
     persistGoogleSettings(); applyGoogleSettings(); gPopulateDropdowns(); gRenderTable('channels');
     out.textContent = `✅ 채널 ${list.length}개를 가져왔습니다 — ${list.map(c => c.channelName).join(', ')}\n계정명은 필요하면 표에서 고쳐 주세요.`;
   } catch (e) {
-    out.textContent = '❌ ' + e.message + '\n(YouTube 권한이 없으면 다시 로그인해야 합니다)';
+    out.textContent = '❌ ' + e.message + '\n※ YouTube 로그인 창이 뜨면 Drive와 별도 계정 승인이 한 번 더 필요합니다.';
   }
 }
 
@@ -3971,36 +3972,76 @@ function gOnFirstHeadlineInput(t) { gCopySuggestions[t].headline = []; clearTime
 function gOnFirstDescInput(t) { gCopySuggestions[t].desc = []; clearTimeout(gCopySuggestTimer); }
 function gOnFirstLongHeadlineInput(t) { gCopySuggestions[t].longheadline = []; clearTimeout(gCopySuggestTimer); }
 
-async function gDriveSignIn() {
+/* Google OAuth — YouTube 권한은 Drive 권한과 함께 요청할 수 없어서 로그인을 분리한다.
+   · core   : Drive + Sheets + Google Ads
+   · youtube: YouTube 읽기 전용 */
+const G_SCOPES = {
+  core: [
+    'https://www.googleapis.com/auth/drive.file',
+    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/adwords',
+  ],
+  youtube: ['https://www.googleapis.com/auth/youtube.readonly'],
+};
+const gTokens = {};
+
+function gSignIn(key) {
+  if (gTokens[key]) return Promise.resolve(gTokens[key]);
+  const scope = (G_SCOPES[key] || []).join(' ');
   return new Promise((resolve, reject) => {
-    if (gDriveAccessToken) { resolve(gDriveAccessToken); return; }
-    const popup = window.open(
-      `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GDRIVE_CLIENT_ID}&redirect_uri=${encodeURIComponent(location.origin + '/oauth2callback')}&response_type=token&scope=https://www.googleapis.com/auth/drive.file%20https://www.googleapis.com/auth/spreadsheets%20https://www.googleapis.com/auth/adwords%20https://www.googleapis.com/auth/youtube.readonly`,
-      'googleAuth', 'width=500,height=600'
-    );
+    const url = 'https://accounts.google.com/o/oauth2/v2/auth'
+      + `?client_id=${GDRIVE_CLIENT_ID}`
+      + `&redirect_uri=${encodeURIComponent(location.origin + '/oauth2callback')}`
+      + '&response_type=token'
+      + `&scope=${encodeURIComponent(scope)}`
+      + '&include_granted_scopes=false'
+      + '&prompt=consent';
+    const popup = window.open(url, 'googleAuth_' + key, 'width=520,height=640');
+    if (!popup) { reject(new Error('팝업이 차단됐어요 — 브라우저에서 팝업을 허용해주세요')); return; }
+    let done = false;
+    const finish = (fn, arg) => { if (done) return; done = true; clearInterval(timer); window.removeEventListener('message', handler); fn(arg); };
     const handler = (e) => {
       if (e.data && e.data.type === 'GOOGLE_TOKEN') {
-        window.removeEventListener('message', handler);
-        gDriveAccessToken = e.data.token;
-        resolve(gDriveAccessToken);
+        gTokens[key] = e.data.token;
+        if (key === 'core') gDriveAccessToken = e.data.token;
+        finish(resolve, e.data.token);
       }
     };
     window.addEventListener('message', handler);
+    const started = Date.now();
     const timer = setInterval(() => {
       try {
-        if (popup.closed) { clearInterval(timer); reject(new Error('로그인 창이 닫혔어요')); return; }
+        if (Date.now() - started > 180000) { try { popup.close(); } catch (e) {} finish(reject, new Error('로그인 시간이 초과됐어요')); return; }
+        if (popup.closed) { finish(reject, new Error('로그인 창이 닫혔어요')); return; }
+        const href = popup.location.href || '';
+        // 구글이 거절하면 error= 로 돌아온다 (스코프 충돌 등)
+        const errMatch = href.match(/[?#&]error=([^&]+)/);
+        if (errMatch) {
+          const desc = (href.match(/[?#&]error_description=([^&]+)/) || [])[1] || '';
+          popup.close();
+          finish(reject, new Error(decodeURIComponent(errMatch[1]) + (desc ? ' — ' + decodeURIComponent(desc).replace(/\+/g, ' ') : '')));
+          return;
+        }
         const hash = popup.location.hash;
         if (hash && hash.includes('access_token')) {
-          clearInterval(timer);
           const params = new URLSearchParams(hash.slice(1));
-          gDriveAccessToken = params.get('access_token');
+          gTokens[key] = params.get('access_token');
+          if (key === 'core') gDriveAccessToken = gTokens[key];
           popup.close();
-          resolve(gDriveAccessToken);
+          finish(resolve, gTokens[key]);
         }
-      } catch(e) {}
-    }, 500);
+      } catch (e) { /* 교차 출처라 읽을 수 없는 동안은 무시 */ }
+    }, 400);
   });
 }
+async function gDriveSignIn() { return gSignIn('core'); }
+function gResetTokens() {
+  Object.keys(gTokens).forEach(k => delete gTokens[k]);
+  gDriveAccessToken = null;
+  showToast('구글 로그인 정보를 지웠어요 — 다음 작업에서 다시 로그인합니다', 'info');
+}
+async function gYoutubeSignIn() { return gSignIn('youtube'); }
+
 async function uploadFileToDrive(file) {
   const token = await gDriveSignIn();
   const metadata = { name: file.name, mimeType: file.type };
