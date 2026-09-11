@@ -12,9 +12,17 @@
  * Vercel 환경변수 (Settings → Environment Variables)
  *   GOOGLE_ADS_DEVELOPER_TOKEN    필수
  *   GOOGLE_ADS_LOGIN_CUSTOMER_ID  선택 (MCC ID, 하이픈 없이)
+ *   GOOGLE_ADS_API_VERSION        선택 (예: v21). 없으면 자동으로 찾는다.
+ *
+ * 진단용 호출
+ *   /api/gads?type=version   ← 어떤 API 버전이 살아 있는지 확인
  */
 
-const API = 'https://googleads.googleapis.com/v18';
+const HOST = 'https://googleads.googleapis.com';
+
+// 최신 버전부터 훑는다. 지원 종료된 버전은 HTML 404를 돌려주므로 건너뛴다.
+const CANDIDATE_VERSIONS = ['v23', 'v22', 'v21', 'v20', 'v19', 'v18'];
+let cachedVersion = null;
 
 const QUERIES = {
   campaigns: () =>
@@ -31,7 +39,36 @@ const QUERIES = {
     "WHERE user_list.membership_status = 'OPEN' LIMIT 200",
 };
 
-// Google Ads 응답에서 {id, name, status} 만 뽑아낸다
+// 응답이 JSON이 아니면(=지원 종료된 버전 등) 내용을 그대로 담아 돌려준다
+async function readBody(res) {
+  const text = await res.text();
+  try {
+    return { ok: true, json: JSON.parse(text), text };
+  } catch (e) {
+    return { ok: false, json: null, text };
+  }
+}
+
+// 살아 있는 API 버전을 찾는다 (한 번 찾으면 캐시)
+async function resolveVersion(headers) {
+  if (process.env.GOOGLE_ADS_API_VERSION) return process.env.GOOGLE_ADS_API_VERSION;
+  if (cachedVersion) return cachedVersion;
+  const tried = [];
+  for (const v of CANDIDATE_VERSIONS) {
+    try {
+      const res = await fetch(`${HOST}/${v}/customers:listAccessibleCustomers`, { headers });
+      const body = await readBody(res);
+      if (body.ok) { cachedVersion = v; return v; }   // JSON이면 살아 있는 버전
+      tried.push(`${v}:HTTP${res.status}/HTML`);
+    } catch (e) {
+      tried.push(`${v}:${e.message}`);
+    }
+  }
+  const err = new Error('사용 가능한 Google Ads API 버전을 찾지 못했습니다 — ' + tried.join(', '));
+  err.tried = tried;
+  throw err;
+}
+
 function normalize(type, rows) {
   return rows.map((r) => {
     if (type === 'campaigns') return { id: String(r.campaign.id), name: r.campaign.name, status: r.campaign.status };
@@ -42,19 +79,23 @@ function normalize(type, rows) {
   }).filter(Boolean);
 }
 
+function gadsError(body, res) {
+  if (!body.ok) return `Google이 JSON이 아닌 응답을 보냈습니다 (HTTP ${res.status}): ${body.text.slice(0, 200)}`;
+  const j = body.json;
+  const d = j.error || (Array.isArray(j) && j[0] && j[0].error) || {};
+  const detail = d.details && d.details[0] && d.details[0].errors && d.details[0].errors[0];
+  return [d.message, detail && detail.message, d.status].filter(Boolean).join(' — ') || `HTTP ${res.status}`;
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'authorization,content-type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const devToken = process.env.GOOGLE_ADS_DEVELOPER_TOKEN;
-  if (!devToken) {
-    return res.status(500).json({ error: 'GOOGLE_ADS_DEVELOPER_TOKEN 환경변수가 없습니다' });
-  }
+  if (!devToken) return res.status(500).json({ error: 'GOOGLE_ADS_DEVELOPER_TOKEN 환경변수가 없습니다' });
   const auth = req.headers.authorization;
-  if (!auth) {
-    return res.status(401).json({ error: '로그인 토큰이 없습니다 (Authorization 헤더 필요)' });
-  }
+  if (!auth) return res.status(401).json({ error: '로그인 토큰이 없습니다 (Authorization 헤더 필요)' });
 
   const { type = '', customerId = '', campaignId = '', adGroupId = '' } = req.query;
   const headers = {
@@ -67,12 +108,41 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    // 접근 가능한 계정 목록
+    // 진단: 어떤 버전이 살아 있는지 + 토큰이 먹히는지
+    if (type === 'version') {
+      const report = [];
+      for (const v of CANDIDATE_VERSIONS) {
+        try {
+          const r = await fetch(`${HOST}/${v}/customers:listAccessibleCustomers`, { headers });
+          const body = await readBody(r);
+          report.push({
+            version: v,
+            http: r.status,
+            json: body.ok,
+            note: body.ok
+              ? (r.ok ? '✅ 사용 가능' : '응답은 JSON — ' + gadsError(body, r))
+              : '지원 종료된 버전(HTML 반환)',
+          });
+          if (body.ok) break;   // 살아 있는 버전을 찾으면 중단
+        } catch (e) {
+          report.push({ version: v, http: 0, json: false, note: e.message });
+        }
+      }
+      return res.status(200).json({
+        envVersion: process.env.GOOGLE_ADS_API_VERSION || null,
+        loginCustomerId: headers['login-customer-id'] || null,
+        report,
+      });
+    }
+
+    const V = await resolveVersion(headers);
+    const API = `${HOST}/${V}`;
+
     if (type === 'accounts') {
       const r = await fetch(`${API}/customers:listAccessibleCustomers`, { headers });
-      const j = await r.json();
-      if (!r.ok) return res.status(r.status).json({ error: (j.error && j.error.message) || 'Google Ads 오류', detail: j });
-      const ids = (j.resourceNames || []).map((n) => n.split('/').pop());
+      const body = await readBody(r);
+      if (!r.ok || !body.ok) return res.status(r.status || 500).json({ error: gadsError(body, r), apiVersion: V });
+      const ids = (body.json.resourceNames || []).map((n) => n.split('/').pop());
       const out = [];
       for (const id of ids.slice(0, 50)) {
         try {
@@ -80,8 +150,8 @@ module.exports = async function handler(req, res) {
             method: 'POST', headers,
             body: JSON.stringify({ query: 'SELECT customer.id, customer.descriptive_name FROM customer LIMIT 1' }),
           });
-          const jj = await rr.json();
-          const first = (Array.isArray(jj) ? jj : [jj])[0];
+          const bb = await readBody(rr);
+          const first = bb.ok ? (Array.isArray(bb.json) ? bb.json : [bb.json])[0] : null;
           const c = first && first.results && first.results[0] && first.results[0].customer;
           out.push({ id, name: (c && c.descriptiveName) || `계정 ${id}`, status: '' });
         } catch (e) {
@@ -91,15 +161,14 @@ module.exports = async function handler(req, res) {
       return res.status(200).json(out);
     }
 
-    // 지역 검색
     if (type === 'geo') {
       const r = await fetch(`${API}/geoTargetConstants:suggest`, {
         method: 'POST', headers,
         body: JSON.stringify({ locale: 'ko', countryCode: 'KR', locationNames: { names: [req.query.q || ''] } }),
       });
-      const j = await r.json();
-      if (!r.ok) return res.status(r.status).json({ error: (j.error && j.error.message) || 'Google Ads 오류', detail: j });
-      const out = (j.geoTargetConstantSuggestions || []).map((s) => {
+      const body = await readBody(r);
+      if (!r.ok || !body.ok) return res.status(r.status || 500).json({ error: gadsError(body, r), apiVersion: V });
+      const out = (body.json.geoTargetConstantSuggestions || []).map((s) => {
         const g = s.geoTargetConstant || {};
         return { id: String(g.id || (g.resourceName || '').split('/').pop()), name: g.name || '', status: g.targetType || '' };
       });
@@ -115,15 +184,12 @@ module.exports = async function handler(req, res) {
       method: 'POST', headers,
       body: JSON.stringify({ query: build({ campaignId, adGroupId }) }),
     });
-    const j = await r.json();
-    if (!r.ok) {
-      const d = j.error || (Array.isArray(j) && j[0] && j[0].error) || {};
-      return res.status(r.status).json({ error: d.message || 'Google Ads 오류', detail: j });
-    }
+    const body = await readBody(r);
+    if (!r.ok || !body.ok) return res.status(r.status || 500).json({ error: gadsError(body, r), apiVersion: V });
     const rows = [];
-    (Array.isArray(j) ? j : [j]).forEach((chunk) => (chunk.results || []).forEach((x) => rows.push(x)));
+    (Array.isArray(body.json) ? body.json : [body.json]).forEach((chunk) => (chunk.results || []).forEach((x) => rows.push(x)));
     return res.status(200).json(normalize(type, rows));
   } catch (e) {
-    return res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: e.message, tried: e.tried });
   }
 };
