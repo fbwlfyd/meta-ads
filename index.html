@@ -1178,9 +1178,19 @@ async function runDiagnostics() {
     const declined = (perm.data || []).filter(p => p.status !== 'granted').map(p => p.permission);
     push(`  부여됨: ${granted.join(', ') || '(없음)'}`);
     if (declined.length) push(`  거부됨: ${declined.join(', ')}`);
-    const need = { ads_management: '광고계정·맞춤타겟', pages_show_list: '페이지 목록', business_management: '비즈니스 페이지', leads_retrieval: '인스턴트 양식', pages_read_engagement: '페이지 정보' };
-    Object.entries(need).forEach(([k, why]) => {
-      if (!granted.includes(k)) push(`  ⚠ ${k} 없음 → ${why} 조회가 막힐 수 있어요`);
+    const need = [
+      ['ads_management', '광고계정·맞춤타겟', []],
+      ['pages_show_list', '페이지 목록', ['business_management']],
+      ['business_management', '비즈니스 페이지', ['pages_show_list']],
+      ['pages_read_engagement', '페이지 정보·인스타 연결', []],
+      ['leads_retrieval', '리드 데이터 내려받기', ['pages_manage_ads']],
+    ];
+    need.forEach(([k, why, alts]) => {
+      if (granted.includes(k)) return;
+      const covered = alts.filter(a => granted.includes(a));
+      push(covered.length
+        ? `  · ${k} 없음 → ${why} (${covered.join(', ')} 로 대체됨 · 문제 없음)`
+        : `  ⚠ ${k} 없음 → ${why} 조회가 막힐 수 있어요`);
     });
   } catch (e) { push(`  ❌ ${e.message} (시스템 사용자 토큰이면 이 호출은 원래 안 될 수 있어요)`); }
 
@@ -1189,6 +1199,50 @@ async function runDiagnostics() {
   push('[3] 광고계정');
   if (loadLog.accounts.length === 0) push('  (아직 불러온 적이 없어요 — 새로고침 후 다시 실행하세요)');
   loadLog.accounts.forEach(l => push(`  ${l.ok ? '✅' : '❌'} ${l.label} ${l.detail}`));
+
+  // 3-1. 실패한 계정의 진짜 원인을 좁힌다
+  const failedIds = loadLog.accounts.filter(l => !l.ok).map(l => l.label.replace('act_', ''));
+  if (failedIds.length) {
+    push('');
+    push(`[3-1] 실패한 계정 ${failedIds.length}개 원인 추적`);
+    let userAccts = null, bizMap = {};
+    try {
+      const list = await fbGetAll('me/adaccounts', { fields: 'account_id,name' }, 5);
+      userAccts = list.map(a => a.account_id);
+      push(`  · 내가 접근 가능한 계정(/me/adaccounts): ${userAccts.length}개`);
+    } catch (e) { push(`  · /me/adaccounts 조회 실패: ${e.message}`); }
+    for (const bizId of DB.businessIds) {
+      for (const edge of ['owned_ad_accounts', 'client_ad_accounts']) {
+        try {
+          const list = await fbGetAll(`${bizId}/${edge}`, { fields: 'account_id,name' }, 5);
+          list.forEach(a => { bizMap[a.account_id] = edge === 'owned_ad_accounts' ? '비즈니스 소유' : '비즈니스 연결(클라이언트)'; });
+          push(`  · ${bizId}/${edge}: ${list.length}개`);
+        } catch (e) { push(`  · ${bizId}/${edge} 실패: ${e.message}`); }
+      }
+    }
+    push('');
+    failedIds.forEach(id => {
+      const inUser = userAccts ? userAccts.includes(id) : null;
+      const inBiz = bizMap[id];
+      let verdict, fix;
+      if (inUser) {
+        verdict = '내 계정 목록에는 있음 → 이 앱에 계정이 연결되지 않았습니다';
+        fix = '비즈니스 설정 → 계정 → 광고 계정 → 해당 계정 → "앱 연결"에서 이 토큰의 앱을 추가';
+      } else if (inBiz) {
+        verdict = `${inBiz}이지만 내 사용자 권한이 없음`;
+        fix = '비즈니스 설정 → 광고 계정 → 해당 계정 → 사용자 추가에서 류지룡 계정에 관리자/광고주 권한 부여';
+      } else if (inUser === false) {
+        verdict = '내 계정 목록에도, 이 비즈니스에도 없음';
+        fix = '다른 비즈니스 소유이거나 계정 ID가 틀렸을 수 있어요. Meta 광고 관리자에서 ID를 다시 확인하세요';
+      } else {
+        verdict = '판정 불가 (/me/adaccounts 조회가 안 됨)';
+        fix = '비즈니스 설정에서 이 계정에 대한 사용자 권한과 앱 연결을 모두 확인하세요';
+      }
+      push(`  ❌ ${id}`);
+      push(`     원인: ${verdict}`);
+      push(`     조치: ${fix}`);
+    });
+  }
 
   // 4. 페이지
   push('');
@@ -1204,7 +1258,7 @@ async function runDiagnostics() {
   if (!acc) push('  ⏭ 정상 계정이 없어 건너뜁니다');
   else {
     push(`  대상: ${acc.name} (act_${acc.id})`);
-    for (const [edge, label] of [['customaudiences','맞춤타겟'], ['adspixels','픽셀'], ['customconversions','맞춤전환'], ['instagram_accounts','인스타'], ['promote_pages','홍보 가능 페이지']]) {
+    for (const [edge, label] of [['customaudiences','맞춤타겟'], ['adspixels','픽셀'], ['customconversions','맞춤전환'], ['instagram_accounts','인스타(광고계정 연결·보조 경로)'], ['promote_pages','홍보 가능 페이지']]) {
       try {
         const list = await fbGetAll(`act_${acc.id}/${edge}`, { fields: 'id,name' }, 1);
         push(`  ✅ ${label}: ${list.length}개`);
@@ -1215,6 +1269,30 @@ async function runDiagnostics() {
   push('[6] 인스타 조회 기록');
   if (loadLog.insta.length === 0) push('  (아직 페이지/계정을 선택한 적이 없어요)');
   loadLog.insta.forEach(l => push(`  ${l.ok ? '✅' : '❌'} ${l.label} ${l.detail}`));
+
+  // 7. 페이지 단위 실제 테스트 (인스턴트 양식 · 인스타 연결)
+  push('');
+  push('[7] 페이지 기능 테스트');
+  const withToken = DB.pages.filter(p => DB.pageTokens[p.pageId]);
+  const targets = (withToken.length ? withToken : DB.pages).slice(0, 3);
+  if (targets.length === 0) push('  ⏭ 페이지가 없어 건너뜁니다');
+  push(`  페이지 토큰 보유: ${withToken.length} / ${DB.pages.length}개`);
+  for (const pg of targets) {
+    const tok = DB.pageTokens[pg.pageId];
+    push(`  ─ ${pg.name} (${pg.pageId}) · 토큰 ${tok ? '있음' : '없음'}`);
+    try {
+      const r = await fbGetAs(`${pg.pageId}/leadgen_forms`, { fields: 'id,name,status', limit: 50 }, tok);
+      const all = r.data || [];
+      const active = all.filter(f => f.status === 'ACTIVE');
+      push(`     ✅ 인스턴트 양식 ${all.length}개 (게재중 ${active.length}개)`);
+      if (all.length > 0 && active.length === 0) push('        ⚠ 전부 ACTIVE가 아니어서 소재 카드에는 안 보입니다');
+    } catch (e) { push(`     ❌ 인스턴트 양식: ${e.message}`); }
+    try {
+      const r = await fbGetAs(pg.pageId, { fields: 'instagram_business_account{id,username},connected_instagram_account{id,username}' }, tok);
+      const igs = ['instagram_business_account', 'connected_instagram_account'].map(k => r[k]).filter(x => x && x.id);
+      push(igs.length ? `     ✅ 인스타 연결: ${igs.map(i => '@' + (i.username || i.id)).join(', ')}` : '     · 인스타 연결 없음 (이 페이지에 연결된 인스타 계정이 없습니다)');
+    } catch (e) { push(`     ❌ 인스타 연결: ${e.message}`); }
+  }
 
   lastDiagText = lines.join('\n');
 }
@@ -1379,8 +1457,8 @@ function netErrorHint() {
   return '요청이 차단됐어요 — 인터넷 연결, 광고차단 확장프로그램, 사내 방화벽(facebook.com 차단)을 확인해주세요.';
 }
 
-async function fbGet(path, params) {
-  const q = new URLSearchParams(Object.assign({}, params, { access_token: META_ACCESS_TOKEN }));
+async function fbGetAs(path, params, token) {
+  const q = new URLSearchParams(Object.assign({}, params, { access_token: token || META_ACCESS_TOKEN }));
   let res;
   try {
     res = await fetch(`${META_API}/${path}?${q.toString()}`);
@@ -1393,6 +1471,7 @@ async function fbGet(path, params) {
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return json;
 }
+async function fbGet(path, params) { return fbGetAs(path, params, null); }
 async function fbGetAll(path, params, maxPages) {
   const out = [];
   let json = await fbGet(path, Object.assign({ limit: 100 }, params));
