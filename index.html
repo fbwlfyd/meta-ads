@@ -1289,6 +1289,7 @@ async function runDiagnostics() {
   // 7. 페이지 단위 실제 테스트 (인스턴트 양식 · 인스타 연결)
   push('');
   push('[7] 페이지 기능 테스트');
+  push('  ※ 드롭다운에 올라가는 건 instagram_business_account / connected_instagram_account 뿐입니다');
   const withToken = DB.pages.filter(p => DB.pageTokens[p.pageId]);
   const targets = (withToken.length ? withToken : DB.pages).slice(0, 3);
   if (targets.length === 0) push('  ⏭ 페이지가 없어 건너뜁니다');
@@ -1306,7 +1307,7 @@ async function runDiagnostics() {
     for (const [label, path, fields, take] of [
       ['instagram_business_account', pg.pageId, 'instagram_business_account{id,username}', j => j.instagram_business_account ? ['@' + (j.instagram_business_account.username || j.instagram_business_account.id)] : []],
       ['connected_instagram_account', pg.pageId, 'connected_instagram_account{id,username}', j => j.connected_instagram_account ? ['@' + (j.connected_instagram_account.username || j.connected_instagram_account.id)] : []],
-      ['page_backed_instagram_accounts', `${pg.pageId}/page_backed_instagram_accounts`, 'id,username', j => (j.data || []).map(x => '@' + (x.username || x.id))],
+      ['page_backed_instagram_accounts (PBIA · 대역 계정)', `${pg.pageId}/page_backed_instagram_accounts`, 'id,username', j => (j.data || []).map(x => x.username ? '@' + x.username : `${pg.name} 연동 계정 (ID ${x.id})`)],
     ]) {
       try {
         const r = await fbGetAs(path, { fields }, tok);
@@ -1317,7 +1318,7 @@ async function runDiagnostics() {
   }
 
   push('');
-  push('[8] 비즈니스 인스타 계정');
+  push('[8] 비즈니스 인스타 계정 (참고용 · 드롭다운에는 표시하지 않음)');
   if (DB.businessIds.length === 0) push('  ⏭ 비즈니스 ID를 못 찾았습니다');
   for (const bizId of DB.businessIds) {
     for (const edge of ['owned_instagram_accounts', 'instagram_accounts']) {
@@ -1662,61 +1663,31 @@ async function loadInstagramAccounts(t) {
   fillInstaSelect(t, list);
 }
 
-/* 인스타 계정은 권한에 따라 되는 경로가 제각각이라 여러 곳을 각각 따로 두드린다.
-   필드를 한 번에 묶어 요청하면 권한 없는 필드 하나 때문에 요청 전체가 실패하므로 반드시 분리한다. */
+/* 드롭다운에는 페이지에 실제로 연결된 인스타 계정만 올린다.
+   PBIA(페이지 연동 대역 계정)와 비즈니스 전체 자산은 무관한 계정이 섞이므로 제외하고,
+   대신 설정에서 직접 입력한 계정은 항상 포함한다. (전체 경로 점검은 설정 → 진단에서) */
 async function collectInstagramAccounts(accountId, page) {
   const list = [];
-  const add = (id, name, suffix) => {
+  const add = (id, name) => {
     if (!id || list.some(x => x.id === id)) return;
-    list.push({ id, name: (name ? '@' + name : id) + (suffix || '') });
+    list.push({ id, name: name ? '@' + name : id });
   };
-  const tryEdge = async (label, path, params, token, pick) => {
-    try {
-      const json = await fbGetAs(path, params, token);
-      const n = pick(json);
-      logStep('insta', label, true, `${n}개`);
-    } catch (e) { logStep('insta', label, false, e.message); }
-  };
-
-  // 1) 페이지 기반 — 필드를 하나씩 따로 요청
   if (page) {
     const tok = DB.pageTokens[page.pageId];
-    await tryEdge('페이지 · instagram_business_account', page.pageId, { fields: 'instagram_business_account{id,username,name}' }, tok, j => {
-      const ig = j.instagram_business_account;
-      if (ig && ig.id) { add(ig.id, ig.username || ig.name, ''); return 1; }
-      return 0;
-    });
-    await tryEdge('페이지 · connected_instagram_account', page.pageId, { fields: 'connected_instagram_account{id,username,name}' }, tok, j => {
-      const ig = j.connected_instagram_account;
-      if (ig && ig.id) { add(ig.id, ig.username || ig.name, ''); return 1; }
-      return 0;
-    });
-    // 페이지 연동 인스타(PBIA) — 광고 권한(pages_manage_ads)만으로도 되는 경로
-    await tryEdge('페이지 · page_backed_instagram_accounts', `${page.pageId}/page_backed_instagram_accounts`, { fields: 'id,username' }, tok, j => {
-      (j.data || []).forEach(ig => add(ig.id, ig.username, ' (페이지 연동)'));
-      return (j.data || []).length;
-    });
-  }
-  // 2) 광고계정 기반
-  if (accountId) {
-    await tryEdge(`act_${accountId}/instagram_accounts`, `act_${accountId}/instagram_accounts`, { fields: 'id,username' }, null, j => {
-      (j.data || []).forEach(ig => add(ig.id, ig.username, ' (광고계정)'));
-      return (j.data || []).length;
-    });
-  }
-  // 3) 비즈니스 기반
-  for (const bizId of DB.businessIds) {
-    for (const edge of ['owned_instagram_accounts', 'instagram_accounts']) {
-      await tryEdge(`${bizId}/${edge}`, `${bizId}/${edge}`, { fields: 'id,username' }, null, j => {
-        (j.data || []).forEach(ig => add(ig.id, ig.username, ' (비즈니스)'));
-        return (j.data || []).length;
-      });
+    // 필드를 묶어 요청하면 권한 없는 필드 하나가 요청 전체를 죽이므로 반드시 따로 호출
+    for (const [field, label] of [['instagram_business_account', '비즈니스 인스타'], ['connected_instagram_account', '연결된 인스타']]) {
+      try {
+        const json = await fbGetAs(page.pageId, { fields: `${field}{id,username,name}` }, tok);
+        const ig = json[field];
+        if (ig && ig.id) { add(ig.id, ig.username || ig.name); logStep('insta', `${page.name} · ${label}`, true, '@' + (ig.username || ig.id)); }
+        else logStep('insta', `${page.name} · ${label}`, true, '연결 없음');
+      } catch (e) { logStep('insta', `${page.name} · ${label}`, false, e.message); }
     }
   }
-  // 4) 설정에 직접 넣어둔 인스타 계정
-  (SETTINGS.instagram || []).forEach(ig => { if (ig.id) add(ig.id, ig.name, ' (직접 입력)'); });
+  (SETTINGS.instagram || []).forEach(ig => { if (ig.id) add(ig.id, ig.name); });
   return list;
 }
+
 function fillInstaSelect(t, list) {
   const sel = document.getElementById(`${t}_인스타계정`);
   const hint = document.getElementById(`${t}_인스타_hint`);
@@ -1728,10 +1699,10 @@ function fillInstaSelect(t, list) {
   else if (list.length === 1) sel.value = list[0].id;
   if (hint) {
     hint.className = 'field-hint';
-    if (list.length) hint.textContent = `연결된 인스타 계정 ${list.length}개`;
+    if (list.length) hint.textContent = `이 페이지에 연결된 인스타 계정 ${list.length}개`;
     else {
-      hint.className = 'field-hint err';
-      hint.textContent = '인스타 계정을 못 가져왔어요 — 진단 [7]에서 원인을 보거나, 설정에서 직접 입력하세요 (instagram_basic 권한이 없으면 페이지 연결 조회가 막힙니다)';
+      hint.className = 'field-hint';
+      hint.textContent = '이 페이지에 연결된 인스타 계정이 없어요 — 광고는 Facebook 페이지 이름으로 인스타에 노출됩니다. 특정 계정을 쓰려면 페이지에 인스타를 연결하거나 설정에서 직접 입력하세요';
     }
   }
 }
