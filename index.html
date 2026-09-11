@@ -4837,8 +4837,7 @@ function gClearForm(t) {
   const ctaEl = document.getElementById(`${t}_CTA`); if (ctaEl) ctaEl.value = 'CONTACT_US';
   const chSel = document.getElementById(`${t}_유튜브채널`); if (chSel) chSel.value = 'UChg_3mq-CO2kFPkbXlTR3pw';
   ['광고계정ID','캠페인명','광고그룹명'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
-  if (t === 'g1') { document.getElementById('g1_계정명').value = ''; document.getElementById('g1_시작일').value = new Date().toISOString().split('T')[0];
-{ const tv = document.getElementById('topVersion'); if (tv) tv.textContent = APP_VERSION; } }
+  if (t === 'g1') { document.getElementById('g1_계정명').value = ''; document.getElementById('g1_시작일').value = new Date().toISOString().split('T')[0]; }
   else {
     gSelectedAccount.g2 = ''; gNextSetNumber.g2 = 1;
     const accSel = document.getElementById('g2_계정명'); if (accSel) accSel.value = '';
@@ -4867,6 +4866,7 @@ function gClearForm(t) {
 document.getElementById('g1_시작일').value = new Date().toISOString().split('T')[0];
 
 /* 시작 */
+{ const tv = document.getElementById('topVersion'); if (tv) tv.textContent = APP_VERSION; }
 loadSettings();
 applySettingsToDB();
 populateDropdowns();
