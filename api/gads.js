@@ -148,6 +148,42 @@ module.exports = async function handler(req, res) {
     const V = await resolveVersion(headers);
     const API = `${HOST}/${V}`;
 
+    // 계정을 고르지 않고, 이름 조각으로 모든 계정에서 캠페인을 찾는다
+    if (type === 'findcampaigns') {
+      const terms = String(req.query.q || '').split('|').map((x) => x.trim()).filter(Boolean);
+      if (terms.length === 0) return res.status(400).json({ error: '검색어(q)가 필요합니다' });
+      const r = await fetch(`${API}/customers:listAccessibleCustomers`, { headers });
+      const body = await readBody(r);
+      if (!r.ok || !body.ok) return res.status(r.status || 500).json({ error: gadsError(body, r), apiVersion: V });
+      const ids = (body.json.resourceNames || []).map((n) => n.split('/').pop()).slice(0, 40);
+      const where = terms.map((t2) => `campaign.name LIKE '%${t2.replace(/'/g, "")}%'`).join(' AND ');
+      const query =
+        'SELECT campaign.id, campaign.name, campaign.status, customer.id, customer.descriptive_name ' +
+        `FROM campaign WHERE campaign.status = 'ENABLED' AND ${where} ORDER BY campaign.id DESC LIMIT 100`;
+      const out = [];
+      // 계정 수가 많을 수 있으니 8개씩 병렬로
+      for (let i = 0; i < ids.length; i += 8) {
+        await Promise.all(ids.slice(i, i + 8).map(async (cid) => {
+          try {
+            const rr = await fetch(`${API}/customers/${cid}/googleAds:searchStream`, {
+              method: 'POST', headers, body: JSON.stringify({ query }),
+            });
+            const bb = await readBody(rr);
+            if (!rr.ok || !bb.ok) return;
+            (Array.isArray(bb.json) ? bb.json : [bb.json]).forEach((chunk) =>
+              (chunk.results || []).forEach((x) => out.push({
+                id: String(x.campaign.id),
+                name: x.campaign.name,
+                status: x.campaign.status,
+                customerId: String((x.customer && x.customer.id) || cid),
+                customerName: (x.customer && x.customer.descriptiveName) || `계정 ${cid}`,
+              })));
+          } catch (e) { /* 접근 불가 계정은 건너뜀 */ }
+        }));
+      }
+      return res.status(200).json(out);
+    }
+
     if (type === 'accounts') {
       const r = await fetch(`${API}/customers:listAccessibleCustomers`, { headers });
       const body = await readBody(r);
