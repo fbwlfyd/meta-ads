@@ -212,6 +212,19 @@
   .conv-section { display: none; }
   .conv-section.show { display: block; }
 
+  /* ===== 미리보기 모달 ===== */
+  .preview-modal { width: 100%; max-width: 560px; max-height: 90vh; background: var(--white); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+  .preview-formats { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 20px; border-bottom: 1px solid var(--border); }
+  .pv-fmt { padding: 6px 12px; border: 1px solid var(--border2); border-radius: 20px; background: var(--white); font-family: inherit; font-size: 12px; color: var(--text2); cursor: pointer; white-space: nowrap; }
+  .pv-fmt:hover { background: var(--bg); }
+  .pv-fmt.active { background: var(--blue-bg); border-color: var(--blue); color: var(--blue); font-weight: 600; }
+  .preview-body { flex: 1; overflow: auto; padding: 16px; background: var(--bg); display: flex; justify-content: center; }
+  .preview-body iframe { border: 0; background: var(--white); border-radius: 8px; max-width: 100%; }
+  .preview-msg { font-size: 13px; color: var(--text2); text-align: center; padding: 40px 20px; line-height: 1.6; }
+  .preview-msg.err { color: var(--red); }
+  .btn-preview { height: 28px; padding: 0 10px; border: 1px solid var(--border2); border-radius: 6px; background: var(--white); font-family: inherit; font-size: 11px; font-weight: 500; color: var(--text2); cursor: pointer; }
+  .btn-preview:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); }
+
   /* ===== 설정 모달 ===== */
   .modal-back { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 10000; display: none; align-items: center; justify-content: center; padding: 24px; }
   .modal-back.show { display: flex; }
@@ -897,6 +910,17 @@
         <button class="btn-sm blue" id="settingsSaveBtn" onclick="saveSettings()">저장하고 적용</button>
       </div>
     </div>
+  </div>
+</div>
+
+<div class="modal-back" id="previewModal" onclick="if(event.target===this)closePreview()">
+  <div class="preview-modal">
+    <div class="modal-head">
+      <div><h3>광고 미리보기</h3><p id="pv_sub">소재</p></div>
+      <button class="modal-close" onclick="closePreview()">✕</button>
+    </div>
+    <div class="preview-formats" id="pv_formats"></div>
+    <div class="preview-body" id="pv_body"><div class="preview-msg">형식을 선택하세요</div></div>
   </div>
 </div>
 
@@ -2011,21 +2035,43 @@ async function fetchActiveCampaigns(accountId) {
 }
 async function fetchAdsets(campaignId) { return fbGetAll(`${campaignId}/adsets`, { fields: 'name,effective_status' }, 3); }
 async function fetchAdsInAdset(adsetId) { return fbGetAll(`${adsetId}/ads`, { fields: 'name,effective_status' }, 3); }
-function maxSeqFrom(list) {
-  let maxNum = 0;
-  (list || []).forEach(item => {
-    const matches = (item.name || '').match(/(\d+)A(?![0-9A-Za-z가-힣])/g) || [];
-    matches.forEach(m => { const n = parseInt(m, 10); if (n > maxNum) maxNum = n; });
-  });
-  return maxNum;
+/* 순번 규칙
+   · 광고세트 : "... 2A ..."      → 다음 세트는 3A
+   · 광고     : "... 1.4A ..."    → 같은 세트(1) 안의 다음 광고는 1.5A
+   소수점 형태(1.4A)의 뒷자리를 세트번호로 오인하지 않도록 앞 문자를 함께 본다. */
+function parseSetSeq(name) {
+  const m = String(name || '').match(/(?:^|[^0-9.])(\d+)A(?![0-9A-Za-z가-힣])/);
+  return m ? parseInt(m[1], 10) : 0;
 }
-function nextSetNumberFrom(list) { return maxSeqFrom(list) + 1; }
+function maxSetSeqFrom(list) {
+  let mx = 0;
+  (list || []).forEach(item => { const n = parseSetSeq(item.name); if (n > mx) mx = n; });
+  return mx;
+}
+function nextSetNumberFrom(list) { return maxSetSeqFrom(list) + 1; }
+// 같은 세트번호를 가진 광고들 중 가장 큰 뒷자리
+function maxAdSubSeqFrom(list, setSeq) {
+  let mx = 0;
+  (list || []).forEach(item => {
+    const re = /(\d+)\.(\d+)A(?![0-9A-Za-z가-힣])/g;
+    let m;
+    while ((m = re.exec(item.name || '')) !== null) {
+      if (parseInt(m[1], 10) === setSeq) { const v = parseInt(m[2], 10); if (v > mx) mx = v; }
+    }
+  });
+  return mx;
+}
 
 /* =========================================================
    세트 추가 탭: 기존 광고세트 선택
    ========================================================= */
 const selectedAdset = { t2: null };
-const adSeqStart = { t1: 1, t2: 1 };
+const adSubStart = { t1: 1, t2: 1 };   // 광고 뒷자리 시작값 (1.«1»A)
+function setSeqFor(t) {
+  if (t !== 't2') return 1;
+  if (selectedAdset.t2) return selectedAdset.t2.seq || 1;
+  return nextSetNumber.t2 || 1;
+}
 
 function renderAdsetList(list) {
   const box = document.getElementById('t2_adset_list');
@@ -2052,23 +2098,24 @@ async function toggleAdsetSelect(id, name) {
   const already = selectedAdset.t2 && selectedAdset.t2.id === id;
   document.querySelectorAll('#t2_adset_list .adset-row').forEach(r => r.classList.remove('selected'));
   if (already) {
-    selectedAdset.t2 = null; adSeqStart.t2 = 1;
+    selectedAdset.t2 = null; adSubStart.t2 = 1;
     clearAdSublist();
     const h = document.getElementById('t2_adset_hint');
     if (h) h.textContent = '클릭하면 그 세트에 광고만 추가돼요';
     applyT2Mode(); updateAdNames('t2');
     return;
   }
-  selectedAdset.t2 = { id, name };
+  selectedAdset.t2 = { id, name, seq: parseSetSeq(name) || 1 };
   document.getElementById(`adset_${id}`)?.classList.add('selected');
-  adSeqStart.t2 = 1;
+  adSubStart.t2 = 1;
   applyT2Mode(); updateAdNames('t2');
   const hint = document.getElementById('t2_adset_hint');
   if (hint) hint.textContent = '기존 광고 확인 중...';
   renderAdSublist(null, '<div class="ad-subloading">불러오는 중...</div>');
   try {
     const ads = await fetchAdsInAdset(id);
-    adSeqStart.t2 = maxSeqFrom(ads) + 1;
+    const seq = selectedAdset.t2.seq;
+    adSubStart.t2 = maxAdSubSeqFrom(ads, seq) + 1;
     updateAdNames('t2');
     renderAdSublist(null, ads.length
       ? ads.map(a => {
@@ -2077,12 +2124,12 @@ async function toggleAdsetSelect(id, name) {
           return `<div class="ad-subrow"><span class="dot"></span><span class="nm" title="${nm}">${nm}</span><span class="adset-status ${on ? 'on' : ''}">${on ? '게재중' : (a.effective_status || '')}</span></div>`;
         }).join('')
       : '<div class="ad-subloading">이 세트에 광고가 없어요</div>',
-      ads.length ? `${ads.length}개 · 새 광고는 ${adSeqStart.t2}A부터` : '광고 없음 · 1A부터 시작');
+      ads.length ? `${ads.length}개 · 새 광고는 ${selectedAdset.t2.seq}.${adSubStart.t2}A 부터` : `광고 없음 · ${selectedAdset.t2.seq}.1A 부터 시작`);
     if (hint) hint.textContent = `선택됨 · ${name}`;
   } catch (err) {
-    adSeqStart.t2 = 1; updateAdNames('t2');
+    adSubStart.t2 = 1; updateAdNames('t2');
     renderAdSublist(null, `<div class="ad-subloading">조회 실패: ${err.message}</div>`);
-    if (hint) hint.textContent = '광고 번호 조회 실패 — 1A부터 시작합니다';
+    if (hint) hint.textContent = `광고 번호 조회 실패 — ${selectedAdset.t2.seq}.1A 부터 시작합니다`;
   }
 }
 function renderAdSublist(row, html, hintText) {
@@ -2328,26 +2375,27 @@ function selectCampaignFromList(t, campaignId) {
   if (listBox) listBox.classList.remove('show');
   onCampaignId(t);
 }
+/* 캠페인만 해제한다. 계정 선택과 그에 딸린 맞춤타겟·픽셀은 그대로 두고,
+   바로 다른 캠페인을 고를 수 있도록 캠페인 목록을 다시 펼쳐 준다. */
 function clearCampaignSelection(t) {
   const campIdEl = document.getElementById(`${t}_캠페인ID`); if (campIdEl) campIdEl.value = '';
   const disp = document.getElementById(`${t}_캠페인명_display`); if (disp) disp.textContent = '';
-  const accSel = document.getElementById(`${t}_캠페인선택계정`); if (accSel) accSel.value = '';
-  const listBox = document.getElementById(`${t}_캠페인목록`); if (listBox) { listBox.classList.remove('show'); listBox.innerHTML = ''; }
-  selectedAdset.t2 = null; adSeqStart.t2 = 1; clearAdSublist(); applyT2Mode();
+  selectedAdset.t2 = null; adSubStart.t2 = 1; clearAdSublist(); applyT2Mode();
   const adsetBox = document.getElementById('t2_adset_list');
   if (adsetBox) adsetBox.innerHTML = '<div class="adset-empty">위에서 캠페인을 먼저 선택하세요</div>';
   const adsetHint = document.getElementById('t2_adset_hint');
   if (adsetHint) adsetHint.textContent = '캠페인을 불러오면 목록이 표시돼요';
   nextSetNumber.t2 = 1;
-  setAccountName(t, '');
-  document.getElementById(`${t}_광고계정ID`).value = '';
-  const exSel = document.getElementById(`${t}_제외타겟`); if (exSel) exSel.innerHTML = '<option value="">캠페인을 먼저 불러오세요</option>';
-  selectedExcludes[t] = []; renderExcludeTags(t); updateExcludeIds(t);
-  resetPixelSelect(t, '캠페인을 먼저 불러오세요');
-  renderConversionEvents(t);
   toggleCampaignClear(t, false);
   autoGenNames(t);
-  showToast('캠페인 선택을 해제했어요', 'info');
+  // 계정이 그대로면 그 계정의 캠페인 목록을 바로 다시 보여준다
+  const accSel = document.getElementById(`${t}_캠페인선택계정`);
+  if (accSel && accSel.value) {
+    onCampaignAccountSelect(t);
+    showToast('캠페인만 해제했어요 — 목록에서 다시 고르세요', 'info');
+  } else {
+    showToast('캠페인 선택을 해제했어요', 'info');
+  }
 }
 function toggleCampaignClear(t, show) {
   const el = document.getElementById(`${t}_campaign_clear`);
@@ -2369,7 +2417,7 @@ async function onCampaignId(t) {
     const nameDisplay = document.getElementById(`${t}_캠페인명_display`);
     if (nameDisplay) nameDisplay.textContent = campaignName ? `📌 ${campaignName}` : '';
     if (t === 't2') {
-      selectedAdset.t2 = null; adSeqStart.t2 = 1; clearAdSublist(); applyT2Mode();
+      selectedAdset.t2 = null; adSubStart.t2 = 1; clearAdSublist(); applyT2Mode();
       try {
         const adsets = await fetchAdsets(campaignId);
         nextSetNumber.t2 = nextSetNumberFrom(adsets);
@@ -2435,7 +2483,7 @@ function onAccount(t) {
   loadInstagramAccounts(t);
 }
 const nextSetNumber = { t2: 1 };
-function buildNames(t, seq) {
+function buildNames(t, seqToken) {
   const acc = DB.accounts.find(a => a.name === getAccountName(t));
   if (!acc) return null;
   const region = DB.regions.find(r => r.name === document.getElementById(`${t}_지역구분자`).value);
@@ -2448,11 +2496,12 @@ function buildNames(t, seq) {
   const staffId = staffObj ? staffObj.id : '';
   return {
     campaignName: [acc.campaignName, type, date ? `(${date})` : '', staffName, refName, '예비용'].filter(Boolean).join(' '),
-    setName: [acc.setName, type, refName, `${seq}A`, staffId].filter(Boolean).join(' '),
+    setName: [acc.setName, type, refName, seqToken, staffId].filter(Boolean).join(' '),
   };
 }
 function adNameFor(t, n) {
-  const built = buildNames(t, (adSeqStart[t] || 1) + n - 1);
+  const sub = (adSubStart[t] || 1) + n - 1;
+  const built = buildNames(t, `${setSeqFor(t)}.${sub}A`);
   return built ? built.setName : '';
 }
 function updateAdNames(t) {
@@ -2460,8 +2509,9 @@ function updateAdNames(t) {
   const n = blocks.length;
   const first = adNameFor(t, 1);
   const el = document.getElementById(`${t}_광고명`);
-  const start = adSeqStart[t] || 1;
-  if (el) el.value = !first ? '' : (n > 1 ? `${first} 외 ${n - 1}개 (${start + 1}A~${start + n - 1}A)` : first);
+  const start = adSubStart[t] || 1;
+  const seq = setSeqFor(t);
+  if (el) el.value = !first ? '' : (n > 1 ? `${first} 외 ${n - 1}개 (${seq}.${start + 1}A~${seq}.${start + n - 1}A)` : first);
   blocks.forEach((b, i) => {
     const box = b.querySelector('[data-role="광고명"]');
     if (!box) return;
@@ -2478,8 +2528,7 @@ function updateAdNames(t) {
   });
 }
 function autoGenNames(t) {
-  const seq = t === 't2' ? nextSetNumber.t2 : 1;
-  const built = buildNames(t, seq);
+  const built = buildNames(t, `${setSeqFor(t)}A`);
   if (!built) return;
   if (t === 't1') document.getElementById('t1_캠페인명').value = built.campaignName;
   document.getElementById(`${t}_광고세트명`).value = built.setName;
@@ -2611,7 +2660,12 @@ function addCreativeBlock(t) {
   const block = document.createElement('div');
   block.className = 'creative-card'; block.id = id;
   block.innerHTML = `
-    <div class="creative-card-head"><span class="creative-card-title">소재 ${idx}</span><button type="button" class="creative-remove" onclick="removeCreativeBlock('${t}','${id}')">삭제</button></div>
+    <div class="creative-card-head"><span class="creative-card-title">소재 ${idx}</span>
+      <span style="display:flex;align-items:center;gap:6px;">
+        <button type="button" class="btn-preview" onclick="openPreview('${t}','${id}')">👁 미리보기</button>
+        <button type="button" class="creative-remove" onclick="removeCreativeBlock('${t}','${id}')">삭제</button>
+      </span>
+    </div>
     <div class="creative-adname is-empty" data-role="광고명">계정 선택 시 광고명 자동생성</div>
     <div class="field"><label>파일 업로드 방식</label>
       <select data-role="파일방식" onchange="onCreativeFileMethod('${t}','${id}')">
@@ -2786,6 +2840,125 @@ function onConvType(t, type) {
 }
 
 /* =========================================================
+   광고 미리보기 (Meta generatepreviews)
+   ========================================================= */
+const PREVIEW_FORMATS = [
+  { value: 'MOBILE_FEED_STANDARD', label: '📱 Facebook 피드' },
+  { value: 'DESKTOP_FEED_STANDARD', label: '🖥 Facebook 데스크톱' },
+  { value: 'INSTAGRAM_STANDARD', label: '📷 Instagram 피드' },
+  { value: 'INSTAGRAM_STORY', label: '📲 Instagram 스토리' },
+  { value: 'INSTAGRAM_REELS', label: '🎬 Instagram 릴스' },
+  { value: 'FACEBOOK_STORY_MOBILE', label: '📲 Facebook 스토리' },
+];
+const previewCtx = { t: null, blockId: null, format: 'MOBILE_FEED_STANDARD' };
+// 업로드한 파일의 해시/영상ID를 소재 카드에 캐시해 두고 등록 때 재사용한다
+const uploadCache = {};
+
+function closePreview() { document.getElementById('previewModal').classList.remove('show'); }
+
+async function openPreview(t, blockId) {
+  previewCtx.t = t; previewCtx.blockId = blockId;
+  const block = document.getElementById(blockId);
+  const idx = creativeBlocks(t).indexOf(block) + 1;
+  document.getElementById('pv_sub').textContent = `소재 ${idx} · ${adNameFor(t, idx) || '이름 미정'}`;
+  document.getElementById('pv_formats').innerHTML = PREVIEW_FORMATS.map(f =>
+    `<button class="pv-fmt${f.value === previewCtx.format ? ' active' : ''}" data-fmt="${f.value}" onclick="switchPreviewFormat('${f.value}')">${f.label}</button>`).join('');
+  document.getElementById('previewModal').classList.add('show');
+  renderPreview();
+}
+function switchPreviewFormat(fmt) {
+  previewCtx.format = fmt;
+  document.querySelectorAll('#pv_formats .pv-fmt').forEach(b => b.classList.toggle('active', b.dataset.fmt === fmt));
+  renderPreview();
+}
+function pvMsg(text, isErr) {
+  document.getElementById('pv_body').innerHTML = `<div class="preview-msg${isErr ? ' err' : ''}">${text}</div>`;
+}
+
+// 소재 카드 하나를 object_story_spec 으로 변환 (필요하면 파일을 먼저 업로드)
+async function buildStorySpec(t, block) {
+  const accId = String(document.getElementById(`${t}_광고계정ID`).value || '').replace('act_', '');
+  const pageId = document.getElementById(`${t}_페이지ID`).value;
+  if (!accId) throw new Error('계정을 먼저 선택하세요');
+  if (!pageId) throw new Error('페이지를 먼저 선택하세요');
+
+  const method = block.querySelector('[data-role="파일방식"]').value;
+  const fileInput = block.querySelector('[data-role="파일첨부"]');
+  const file = (method === 'upload' && fileInput && fileInput.files[0]) ? fileInput.files[0] : null;
+  if (!file) throw new Error(method === 'drive'
+    ? 'Drive 파일ID 방식은 미리보기를 지원하지 않아요 — 직접 첨부로 바꾸면 미리볼 수 있습니다'
+    : '먼저 이미지나 영상을 첨부하세요');
+
+  const cacheKey = `${block.id}|${file.name}|${file.size}|${accId}`;
+  if (!uploadCache[cacheKey]) {
+    const isImage = file.type.startsWith('image/');
+    pvMsg(`${isImage ? '이미지' : '영상'}를 Meta에 올리는 중...`);
+    uploadCache[cacheKey] = isImage
+      ? { imageHash: await uploadImageToMeta(file, accId) }
+      : { videoId: await uploadVideoToMeta(file, accId) };
+  }
+  const up = uploadCache[cacheKey];
+  block.dataset.uploaded = JSON.stringify(up);   // 등록 때 재사용
+
+  const convType = convTypeState[t] || 'ON_AD';
+  const message = block.querySelector('[data-role="기본문구"]').value || '';
+  const title = block.querySelector('[data-role="제목"]').value || '';
+  const desc = block.querySelector('[data-role="설명"]').value || '';
+  const cta = block.querySelector('[data-role="CTA버튼"]').value || 'LEARN_MORE';
+  const formSel = block.querySelector('[data-role="인스턴트양식"]');
+  const formId = formSel && formSel.options[formSel.selectedIndex] ? (formSel.options[formSel.selectedIndex].dataset.id || '') : '';
+  const siteUrl = (block.querySelector('[data-role="웹사이트URL"]').value || '').trim();
+
+  const link = convType === 'WEBSITE'
+    ? (siteUrl || `https://facebook.com/${pageId}`)
+    : `https://facebook.com/${pageId}`;
+  const ctaObj = convType === 'WEBSITE'
+    ? { type: cta, value: { link } }
+    : { type: cta, value: formId ? { lead_gen_form_id: formId } : { link } };
+
+  const spec = { page_id: pageId };
+  const igId = document.getElementById(`${t}_인스타계정`).value;
+  if (igId) spec.instagram_user_id = igId;
+
+  if (up.imageHash) {
+    spec.link_data = { image_hash: up.imageHash, link, message, name: title, description: desc, call_to_action: ctaObj };
+  } else {
+    const vd = { video_id: up.videoId, message, title, link_description: desc, call_to_action: ctaObj };
+    // 영상은 썸네일이 있어야 미리보기가 뜬다
+    try {
+      const th = await fbGet(up.videoId, { fields: 'thumbnails' });
+      const pick = (th.thumbnails && th.thumbnails.data || []).find(x => x.is_preferred) || (th.thumbnails && th.thumbnails.data || [])[0];
+      if (pick) vd.image_url = pick.uri;
+    } catch (e) { /* 아직 인코딩 중이면 썸네일이 없을 수 있음 */ }
+    spec.video_data = vd;
+  }
+  return { accId, spec };
+}
+
+async function renderPreview() {
+  const { t, blockId, format } = previewCtx;
+  const block = document.getElementById(blockId);
+  if (!block) return;
+  try {
+    pvMsg('미리보기를 만드는 중...');
+    const { accId, spec } = await buildStorySpec(t, block);
+    const json = await fbGet(`act_${accId}/generatepreviews`, {
+      creative: JSON.stringify({ object_story_spec: spec }),
+      ad_format: format,
+    });
+    const body = (json.data || [])[0] && json.data[0].body;
+    if (!body) { pvMsg('이 형식에서는 미리보기를 만들 수 없어요', true); return; }
+    const box = document.getElementById('pv_body');
+    box.innerHTML = body;
+    const ifr = box.querySelector('iframe');
+    if (ifr) { ifr.style.maxWidth = '100%'; ifr.setAttribute('scrolling', 'no'); }
+  } catch (e) {
+    const msg = String(e.message || '');
+    pvMsg(msg.includes('처리') || msg.includes('still') ? msg + '<br>영상 인코딩이 끝나면 다시 시도해 주세요' : msg, true);
+  }
+}
+
+/* =========================================================
    전송 데이터 만들기
    ========================================================= */
 function g(id) { const el = document.getElementById(id); return el ? el.value : ''; }
@@ -2896,10 +3069,87 @@ function addCard(t, data) {
   document.getElementById(`${t}_count`).textContent = `총 ${rows[t].length}${isT2?'건 처리됨':'건 등록됨'}`;
   return idx;
 }
-function updateCard(t, idx, status, msg) {
-  const badge = document.getElementById(`badge_${t}_${idx}`); const result = document.getElementById(`result_${t}_${idx}`);
-  if (status === '완료') { badge.className = 'badge badge-done'; badge.textContent = '완료'; result.className = 'card-result success'; result.textContent = msg; }
-  else { badge.className = 'badge badge-fail'; badge.textContent = '실패'; result.className = 'card-result fail'; result.textContent = msg; }
+function updateCard(t, idx, status, msg, html) {
+  const badge = document.getElementById(`badge_${t}_${idx}`);
+  const result = document.getElementById(`result_${t}_${idx}`);
+  if (!badge || !result) return;
+  const styles = {
+    '완료':   ['badge badge-done', '게재 확인됨', 'card-result success'],
+    '확인중': ['badge badge-sending', '확인 중', 'card-result'],
+    '주의':   ['badge badge-wait', '확인 필요', 'card-result'],
+    '실패':   ['badge badge-fail', '실패', 'card-result fail'],
+  };
+  const [bc, bt, rc] = styles[status] || styles['실패'];
+  badge.className = bc; badge.textContent = bt; result.className = rc;
+  if (html) result.innerHTML = msg; else result.textContent = msg;
+}
+
+/* ===== 등록 결과 검증 =====
+   Make 웹훅은 접수만 하고 바로 200을 주기 때문에, 실제로 광고가 만들어졌는지는
+   Meta에 직접 물어봐야 안다. 전송 후 주기적으로 조회해 기대한 광고가 보이면 '게재 확인됨'으로 바꾼다. */
+const VERIFY_INTERVAL_MS = 5000;
+const VERIFY_MAX_TRIES = 24;   // 약 2분
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const verifyState = {};
+
+async function verifyRegistration(t, idx, data) {
+  const key = `${t}_${idx}`;
+  verifyState[key] = { data, running: true };
+  const accId = String(data.광고계정ID || '').replace('act_', '');
+  const expected = (data.소재목록 || []).map(c => c.광고명).filter(Boolean);
+  const wantCampaign = data.캠페인명 || '';
+  const wantAdset = data.광고세트명 || '';
+  const matches = (adName, want) => adName === want || adName.includes(want) || want.includes(adName);
+
+  let campaignId = data.캠페인ID || '';
+  let adsetId = data.광고세트ID || '';
+  let lastStage = 'Make 처리 대기 중';
+
+  for (let n = 1; n <= VERIFY_MAX_TRIES; n++) {
+    await sleep(VERIFY_INTERVAL_MS);
+    const secs = Math.round(n * VERIFY_INTERVAL_MS / 1000);
+    try {
+      if (!campaignId && wantCampaign) {
+        const camps = await fbGetAll(`act_${accId}/campaigns`, { fields: 'id,name' }, 3);
+        const c = camps.find(x => x.name === wantCampaign) || camps.find(x => matches(x.name, wantCampaign));
+        if (!c) { lastStage = '캠페인 생성 대기 중'; updateCard(t, idx, '확인중', `${lastStage}… (${secs}초)`); continue; }
+        campaignId = c.id;
+      }
+      if (!adsetId) {
+        if (!campaignId) { lastStage = '캠페인 확인 대기 중'; updateCard(t, idx, '확인중', `${lastStage}… (${secs}초)`); continue; }
+        const sets = await fbGetAll(`${campaignId}/adsets`, { fields: 'id,name' }, 3);
+        const st = sets.find(x => x.name === wantAdset) || sets.find(x => matches(x.name, wantAdset));
+        if (!st) { lastStage = '광고세트 생성 대기 중'; updateCard(t, idx, '확인중', `${lastStage}… (${secs}초)`); continue; }
+        adsetId = st.id;
+      }
+      const ads = await fbGetAll(`${adsetId}/ads`, { fields: 'id,name,effective_status' }, 3);
+      const hit = expected.map(nm => ads.find(a => a.name === nm) || ads.find(a => matches(a.name, nm))).filter(Boolean);
+      if (hit.length >= expected.length && expected.length > 0) {
+        const issues = hit.filter(a => ['DISAPPROVED', 'WITH_ISSUES', 'PENDING_REVIEW'].includes(a.effective_status));
+        const statusNote = issues.length
+          ? `<br><span style="color:var(--yellow)">⚠ ${issues.length}개가 검수 중이거나 이슈 있음: ${issues.map(a => a.effective_status).join(', ')}</span>`
+          : '';
+        updateCard(t, idx, issues.length ? '주의' : '완료',
+          `광고 ${hit.length}개 생성 확인 · 광고세트 ${adsetId}${statusNote}`, true);
+        verifyState[key].running = false;
+        return;
+      }
+      lastStage = `광고 생성 대기 중 (${hit.length}/${expected.length})`;
+      updateCard(t, idx, '확인중', `${lastStage}… (${secs}초)`);
+    } catch (e) {
+      updateCard(t, idx, '확인중', `확인 중 오류: ${e.message} — 계속 시도합니다 (${secs}초)`);
+    }
+  }
+  verifyState[key].running = false;
+  updateCard(t, idx, '주의',
+    `2분 안에 확인되지 않았어요 (${lastStage}) — Make 시나리오 실행 기록을 확인하세요 ` +
+    `<button class="sync-btn" style="margin-left:6px;" onclick="retryVerify('${t}',${idx})">다시 확인</button>`, true);
+}
+function retryVerify(t, idx) {
+  const st = verifyState[`${t}_${idx}`];
+  if (!st || st.running) return;
+  updateCard(t, idx, '확인중', '다시 확인하는 중...');
+  verifyRegistration(t, idx, st.data);
 }
 async function submitAd(t) {
   const data = getData(t); const isT2 = t === 't2';
@@ -2927,16 +3177,28 @@ async function submitAd(t) {
       const c = creatives[n];
       if (!c.파일) continue;
       const isImage = c.파일.type.startsWith('image/');
-      showToast(`소재 ${n + 1} ${isImage ? '이미지' : '영상'} 업로드 중...`, 'info');
-      if (isImage) data.소재목록[n].이미지해시 = await uploadImageToMeta(c.파일, data.광고계정ID);
-      else data.소재목록[n].videoId = await uploadVideoToMeta(c.파일, data.광고계정ID);
+      // 미리보기에서 이미 올린 파일이면 다시 올리지 않는다
+      let cached = null;
+      try { cached = c.block && c.block.dataset.uploaded ? JSON.parse(c.block.dataset.uploaded) : null; } catch (e) { cached = null; }
+      if (cached && (cached.imageHash || cached.videoId)) {
+        if (cached.imageHash) data.소재목록[n].이미지해시 = cached.imageHash;
+        if (cached.videoId) data.소재목록[n].videoId = cached.videoId;
+      } else {
+        showToast(`소재 ${n + 1} ${isImage ? '이미지' : '영상'} 업로드 중...`, 'info');
+        if (isImage) data.소재목록[n].이미지해시 = await uploadImageToMeta(c.파일, data.광고계정ID);
+        else data.소재목록[n].videoId = await uploadVideoToMeta(c.파일, data.광고계정ID);
+      }
       data.소재목록[n].파일ID = '';
     }
     const f = data.소재목록[0] || {};
     if (f.이미지해시) { data.이미지해시 = f.이미지해시; data.파일ID = ''; }
     if (f.videoId) { data.videoId = f.videoId; data.파일ID = ''; }
     const res = await fetch(WEBHOOKS[t], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-    if (res.ok) { updateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중'); showToast(toExisting ? '광고 추가 요청 완료!' : (isT2 ? '세트 추가 요청 완료!' : '광고 등록 요청 완료!'), 'success'); }
+    if (res.ok) {
+      updateCard(t, idx, '확인중', 'Make로 전송됨 — Meta에서 생성 확인 중...');
+      showToast(toExisting ? '광고 추가 요청 완료!' : (isT2 ? '세트 추가 요청 완료!' : '광고 등록 요청 완료!'), 'success');
+      verifyRegistration(t, idx, data);
+    }
     else { updateCard(t, idx, '실패', `HTTP ${res.status}`); showToast(`전송 실패 (${res.status})`, 'error'); }
   } catch (err) { updateCard(t, idx, '실패', '오류: ' + err.message); showToast('오류: ' + err.message, 'error'); }
   btn.disabled = false;
@@ -2973,7 +3235,7 @@ function clearForm(t) {
     const campAccSel = document.getElementById('t2_캠페인선택계정'); if (campAccSel) campAccSel.value = '';
     const campListBox = document.getElementById('t2_캠페인목록'); if (campListBox) { campListBox.classList.remove('show'); campListBox.innerHTML = ''; }
     const manualWrap = document.getElementById('t2_manual_wrap'); if (manualWrap) manualWrap.style.display = 'none';
-    selectedAdset.t2 = null; adSeqStart.t2 = 1; clearAdSublist(); applyT2Mode(); toggleCampaignClear('t2', false);
+    selectedAdset.t2 = null; adSubStart.t2 = 1; clearAdSublist(); applyT2Mode(); toggleCampaignClear('t2', false);
     const adsetBox = document.getElementById('t2_adset_list');
     if (adsetBox) adsetBox.innerHTML = '<div class="adset-empty">위에서 캠페인을 먼저 선택하세요</div>';
     const adsetHint = document.getElementById('t2_adset_hint');
@@ -3465,7 +3727,7 @@ function gAddCard(t, data) {
 }
 function gUpdateCard(t, idx, status, msg) {
   const badge = document.getElementById(`gbadge_${t}_${idx}`); const result = document.getElementById(`gresult_${t}_${idx}`);
-  if (status === '완료') { badge.className = 'badge badge-done'; badge.textContent = '완료'; result.className = 'card-result success'; result.textContent = msg; }
+  if (status === '완료') { badge.className = 'badge badge-done'; badge.textContent = '전송됨'; result.className = 'card-result success'; result.textContent = msg; }
   else { badge.className = 'badge badge-fail'; badge.textContent = '실패'; result.className = 'card-result fail'; result.textContent = msg; }
 }
 async function gSubmitAd(t) {
@@ -3509,7 +3771,7 @@ async function gSubmitAd(t) {
   try {
     const res = await fetch(G_WEBHOOKS[t], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     if (res.ok) {
-      gUpdateCard(t, idx, '완료', 'Make 전송 완료 — 처리 중');
+      gUpdateCard(t, idx, '완료', 'Make로 전송됨 — 결과는 Make 실행 기록 / Google Ads에서 확인하세요');
       showToast(isT2?'세트 추가 요청 완료!':'캠페인 등록 요청 완료!', 'success');
       const usedCopies = gCollectTexts(t, 'headline').concat(gCollectTexts(t, 'desc'));
       gSaveCopies(usedCopies).catch(() => {});
