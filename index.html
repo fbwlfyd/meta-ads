@@ -270,7 +270,7 @@
   </div>
   <div class="topbar-right">
     <button class="icon-btn" onclick="loadAll()">↻ 새로고침</button>
-    <button class="icon-btn" onclick="openSettings()">⚙ 설정</button>
+    <button class="icon-btn" id="settingsBtn" onclick="openSettings()">⚙ Meta 설정</button>
   </div>
 </div>
 
@@ -306,6 +306,7 @@
         <div class="field"><label>인스타계정 <span class="auto-tag api">API</span></label><select id="t1_인스타계정"></select>
           <div class="field-hint" id="t1_인스타_hint"></div>
         </div>
+        <label class="common-toggle" style="margin-top:2px;"><input type="checkbox" id="t1_form_all" onchange="refreshCreativeForms('t1')"> 인스턴트 양식 전체 보기 (세트 약칭 필터 해제)</label>
       </div>
       <div class="divider"></div>
       <div class="section"><div class="sec-label">타겟</div>
@@ -384,7 +385,7 @@
           <div class="field"><label>종료일</label><input type="date" id="t1_종료일"></div>
         </div>
         <div class="row2">
-          <div class="field"><label>최소나이</label><input type="number" id="t1_최소나이" value="35" min="18" max="65"></div>
+          <div class="field"><label>최소나이</label><input type="number" id="t1_최소나이" value="45" min="18" max="65"></div>
           <div class="field"><label>최대나이</label><input type="number" id="t1_최대나이" value="65" min="18" max="65"></div>
         </div>
         <div class="row2">
@@ -465,6 +466,7 @@
         <div class="field"><label>인스타계정 <span class="auto-tag api">API</span></label><select id="t2_인스타계정"></select>
           <div class="field-hint" id="t2_인스타_hint"></div>
         </div>
+        <label class="common-toggle" style="margin-top:2px;"><input type="checkbox" id="t2_form_all" onchange="refreshCreativeForms('t2')"> 인스턴트 양식 전체 보기 (세트 약칭 필터 해제)</label>
       </div>
       <div class="divider"></div>
       <div class="section" id="t2_sec_target"><div class="sec-label">타겟</div>
@@ -535,7 +537,7 @@
           <div class="field"><label>종료일</label><input type="date" id="t2_종료일"></div>
         </div>
         <div class="row2">
-          <div class="field"><label>최소나이</label><input type="number" id="t2_최소나이" value="35" min="18" max="65"></div>
+          <div class="field"><label>최소나이</label><input type="number" id="t2_최소나이" value="45" min="18" max="65"></div>
           <div class="field"><label>최대나이</label><input type="number" id="t2_최대나이" value="65" min="18" max="65"></div>
         </div>
         <div class="row2">
@@ -805,17 +807,21 @@
   <div class="modal">
     <div class="modal-head">
       <div>
-        <h3>설정</h3>
-        <p>Meta API로 가져올 수 없는 사내 규칙만 여기서 관리합니다 (이 브라우저에 저장)</p>
+        <h3 id="settingsTitle">Meta 설정</h3>
+        <p id="settingsDesc">Meta API로 가져올 수 없는 사내 규칙만 여기서 관리합니다 (이 브라우저에 저장)</p>
       </div>
       <button class="modal-close" onclick="closeSettings()">✕</button>
     </div>
-    <div class="modal-tabs">
+    <div class="modal-tabs" id="metaSettingsTabs">
       <button class="modal-tab active" id="mtab_staff" onclick="switchSettingsTab('staff')">제작자</button>
       <button class="modal-tab" id="mtab_account" onclick="switchSettingsTab('account')">계정 네이밍</button>
       <button class="modal-tab" id="mtab_region" onclick="switchSettingsTab('region')">지역</button>
       <button class="modal-tab" id="mtab_page" onclick="switchSettingsTab('page')">페이지 · 인스타 직접 입력</button>
       <button class="modal-tab" id="mtab_diag" onclick="switchSettingsTab('diag')">🩺 진단</button>
+    </div>
+    <div class="modal-tabs" id="googleSettingsTabs" style="display:none;">
+      <button class="modal-tab active" id="mtab_gsheet" onclick="switchSettingsTab('gsheet')">참조시트</button>
+      <button class="modal-tab" id="mtab_gsummary" onclick="switchSettingsTab('gsummary')">불러온 데이터</button>
     </div>
     <div class="modal-body">
       <!-- 제작자 -->
@@ -871,12 +877,24 @@
         <button class="btn-sm" onclick="copyDiagnostics()">결과 복사</button>
         <div id="diag_out" style="margin-top:14px;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);border-radius:8px;padding:12px;min-height:60px;color:var(--text2);">진단 실행을 눌러주세요.</div>
       </div>
+      <!-- ===== Google 설정 ===== -->
+      <div class="modal-sec" id="msec_gsheet">
+        <div class="set-note">Google(디맨드젠) 쪽은 아직 <b>구글참조</b> 시트에서 계정·치과명·지역·잠재고객·CTA·유튜브채널을 읽어옵니다. 시트를 바꾸려면 여기에서 ID만 교체하세요.</div>
+        <div class="field"><label>구글참조 시트 ID</label><input type="text" id="g_sheet_id" placeholder="스프레드시트 ID"></div>
+        <div class="field-hint" id="g_sheet_hint"></div>
+        <button class="btn-sm blue" style="margin-top:8px;" onclick="saveGoogleSettings()">저장하고 다시 불러오기</button>
+        <button class="btn-sm" style="margin-top:8px;" onclick="resetGoogleSheetId()">기본값으로</button>
+      </div>
+      <div class="modal-sec" id="msec_gsummary">
+        <div class="set-note">현재 시트에서 읽어온 내용입니다. 값이 0이면 시트의 해당 열이 비었거나 시트 ID가 잘못된 것입니다.</div>
+        <div id="g_summary" style="font-size:12px;line-height:1.9;color:var(--text2);"></div>
+      </div>
     </div>
     <div class="modal-foot">
-      <button class="btn-sm" onclick="resetSettings()" style="color:var(--red);">초기화</button>
+      <button class="btn-sm" id="settingsResetBtn" onclick="resetSettings()" style="color:var(--red);">초기화</button>
       <div style="display:flex;gap:8px;">
         <button class="btn-sm" onclick="closeSettings()">닫기</button>
-        <button class="btn-sm blue" onclick="saveSettings()">저장하고 적용</button>
+        <button class="btn-sm blue" id="settingsSaveBtn" onclick="saveSettings()">저장하고 적용</button>
       </div>
     </div>
   </div>
@@ -888,7 +906,16 @@
 /* =========================================================
    기본 설정
    ========================================================= */
-const SHEET_ID = '1SIyoXfGJ2jI824WUOAcjywrTdApaKEAqtxnG9dkSwqw'; // 구글(디맨드젠)용 참조시트 — Meta는 더 이상 사용하지 않음
+const DEFAULT_SHEET_ID = '1SIyoXfGJ2jI824WUOAcjywrTdApaKEAqtxnG9dkSwqw'; // 구글(디맨드젠)용 참조시트 — Meta는 더 이상 사용하지 않음
+const GOOGLE_SETTINGS_KEY = 'adtool_google_settings_v1';
+let SHEET_ID = DEFAULT_SHEET_ID;
+function loadGoogleSettings() {
+  try {
+    const raw = localStorage.getItem(GOOGLE_SETTINGS_KEY);
+    if (raw) { const j = JSON.parse(raw); if (j && j.sheetId) SHEET_ID = j.sheetId; }
+  } catch (e) { /* 무시 */ }
+}
+loadGoogleSettings();
 const WEBHOOKS = {
   t1: 'https://hook.eu1.make.com/wgou4ekrp482asnvqh7i17wnhs7shwgm',
   t2: 'https://hook.eu1.make.com/wgou4ekrp482asnvqh7i17wnhs7shwgm',
@@ -1043,17 +1070,32 @@ function parseCustomCoords(str) {
 
 /* ===== 설정 모달 ===== */
 let settingsTab = 'staff';
+const META_TABS = ['staff','account','region','page','diag'];
+const GOOGLE_TABS = ['gsheet','gsummary'];
 function openSettings(tab) {
-  renderSettings();
-  switchSettingsTab(tab || settingsTab);
+  const isG = currentPlatform === 'google';
+  document.getElementById('settingsTitle').textContent = isG ? 'Google 설정' : 'Meta 설정';
+  document.getElementById('settingsDesc').textContent = isG
+    ? 'Google(디맨드젠)은 구글참조 시트를 사용합니다. 시트 연결과 불러온 내용을 여기서 확인하세요'
+    : 'Meta API로 가져올 수 없는 사내 규칙만 여기서 관리합니다 (이 브라우저에 저장)';
+  document.getElementById('metaSettingsTabs').style.display = isG ? 'none' : 'flex';
+  document.getElementById('googleSettingsTabs').style.display = isG ? 'flex' : 'none';
+  document.getElementById('settingsSaveBtn').style.display = isG ? 'none' : 'inline-block';
+  document.getElementById('settingsResetBtn').style.display = isG ? 'none' : 'inline-block';
+  if (isG) renderGoogleSettings(); else renderSettings();
+  const valid = isG ? GOOGLE_TABS : META_TABS;
+  const want = tab && valid.includes(tab) ? tab : (valid.includes(settingsTab) ? settingsTab : valid[0]);
+  switchSettingsTab(want);
   document.getElementById('settingsModal').classList.add('show');
 }
 function closeSettings() { document.getElementById('settingsModal').classList.remove('show'); }
 function switchSettingsTab(tab) {
   settingsTab = tab;
-  ['staff','account','region','page','diag'].forEach(k => {
-    document.getElementById(`mtab_${k}`).classList.toggle('active', k === tab);
-    document.getElementById(`msec_${k}`).classList.toggle('active', k === tab);
+  META_TABS.concat(GOOGLE_TABS).forEach(k => {
+    const b = document.getElementById(`mtab_${k}`);
+    const sec = document.getElementById(`msec_${k}`);
+    if (b) b.classList.toggle('active', k === tab);
+    if (sec) sec.classList.toggle('active', k === tab);
   });
 }
 function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
@@ -1384,6 +1426,51 @@ function resetSettings() {
   SETTINGS = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
   persistSettings(); applySettingsToDB(); populateDropdowns(); renderSettings();
   showToast('설정을 초기화했어요', 'info');
+}
+
+/* ===== Google 설정 ===== */
+function renderGoogleSettings() {
+  const el = document.getElementById('g_sheet_id');
+  if (el) el.value = SHEET_ID;
+  const hint = document.getElementById('g_sheet_hint');
+  if (hint) { hint.className = 'field-hint'; hint.textContent = SHEET_ID === DEFAULT_SHEET_ID ? '기본 시트를 사용 중입니다' : '사용자 지정 시트를 사용 중입니다'; }
+  const box = document.getElementById('g_summary');
+  if (!box) return;
+  const rows = [
+    ['광고계정', GDB.accounts.length],
+    ['치과명', GDB.clinicNames.length],
+    ['지역', GDB.googleRegions.length],
+    ['제작자', GDB.staff.length],
+    ['CTA 버튼', GDB.ctaTypes.length],
+    ['유튜브 채널', Object.keys(GDB.youtubeChannelsByAccount).length],
+    ['잠재고객(계정 수)', Object.keys(GDB.audiencesByAccount).length],
+    ['학습된 카피', (typeof gLearnedCopies !== 'undefined' ? gLearnedCopies.length : 0)],
+  ];
+  box.innerHTML = rows.map(([k, v]) =>
+    `<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:6px 2px;">
+       <span>${k}</span><b style="color:${v ? 'var(--text1)' : 'var(--red)'}">${v}개</b>
+     </div>`).join('');
+}
+async function saveGoogleSettings() {
+  const v = (document.getElementById('g_sheet_id').value || '').trim();
+  const hint = document.getElementById('g_sheet_hint');
+  if (!v) { hint.className = 'field-hint err'; hint.textContent = '시트 ID를 입력해주세요'; return; }
+  SHEET_ID = v;
+  try { localStorage.setItem(GOOGLE_SETTINGS_KEY, JSON.stringify({ sheetId: v })); } catch (e) { /* 무시 */ }
+  hint.className = 'field-hint'; hint.textContent = '다시 불러오는 중...';
+  try {
+    await loadGoogleData();
+    gPopulateDropdowns();
+    gLoadLearnedCopies();
+    renderGoogleSettings();
+    showToast('구글 참조시트를 다시 불러왔어요', 'success');
+  } catch (e) {
+    hint.className = 'field-hint err'; hint.textContent = '불러오기 실패: ' + e.message;
+  }
+}
+function resetGoogleSheetId() {
+  document.getElementById('g_sheet_id').value = DEFAULT_SHEET_ID;
+  saveGoogleSettings();
 }
 
 /* ===== 지역 검색 (Meta adgeolocation) ===== */
@@ -1879,6 +1966,9 @@ function switchPlatform(p) {
   document.getElementById('platform-google-panel').classList.toggle('active', p === 'google');
   document.getElementById('meta-subtabs').style.display = p === 'meta' ? 'flex' : 'none';
   document.getElementById('google-subtabs').style.display = p === 'google' ? 'flex' : 'none';
+  const btn = document.getElementById('settingsBtn');
+  if (btn) btn.textContent = p === 'google' ? '⚙ Google 설정' : '⚙ Meta 설정';
+  if (document.getElementById('settingsModal').classList.contains('show')) openSettings();
 }
 function switchTab(n) {
   if (currentPlatform !== 'meta') switchPlatform('meta');
@@ -2185,7 +2275,7 @@ function populateDropdowns() {
     if (regSel) {
       const prevReg = regSel.value;
       regSel.innerHTML = '<option value="">선택</option>';
-      DB.regions.forEach(r => { const o = document.createElement('option'); o.value = r.name; o.textContent = r.refName ? `${r.name} — ${r.refName}` : `${r.name} (이름에 표기 안 함)`; regSel.appendChild(o); });
+      DB.regions.forEach(r => { const o = document.createElement('option'); o.value = r.name; o.textContent = r.refName ? `${r.name} — ${r.refName}` : r.name; regSel.appendChild(o); });
       if (prevReg && Array.from(regSel.options).some(o => o.value === prevReg)) regSel.value = prevReg;
     }
     fill('전환위치', DB.destinations, 'ON_AD');
@@ -2334,6 +2424,7 @@ function onAccount(t) {
   const manual = document.getElementById(`${t}_데이터세트ID`); if (manual) manual.value = '';
   resetPixelSelect(t, acc ? '불러오는 중...' : '계정을 먼저 선택하세요');
   loadCustomAudiences(t);
+  refreshCreativeForms(t);
   if (acc && acc.id) loadPixels(t);
   // 계정이 바뀌면 인스타 후보도 갱신
   loadInstagramAccounts(t);
@@ -2447,12 +2538,26 @@ function fillCreativeCta(block) {
   if (prev && Array.from(sel.options).some(o => o.value === prev)) sel.value = prev;
   else if (Array.from(sel.options).some(o => o.value === 'LEARN_MORE')) sel.value = 'LEARN_MORE';
 }
+// 한 페이지에 여러 치과 양식이 섞여 있으므로, 세트 약칭이 들어간 양식만 남긴다
+function filteredForms(t) {
+  const pageName = document.getElementById(`${t}_페이지`).value;
+  const forms = DB.formsByPage[pageName];
+  if (!forms) return { forms: null, filtered: false, total: 0 };
+  const showAll = document.getElementById(`${t}_form_all`)?.checked;
+  const acc = DB.accounts.find(a => a.name === getAccountName(t));
+  const key = normName(acc ? acc.setName : '');
+  if (showAll || !key) return { forms, filtered: false, total: forms.length };
+  const hit = forms.filter(f => normName(f.formName).includes(key));
+  return hit.length > 0
+    ? { forms: hit, filtered: true, total: forms.length, key: acc.setName }
+    : { forms, filtered: false, total: forms.length, noMatch: true, key: acc.setName };
+}
 function fillCreativeForms(t, block) {
   const sel = block.querySelector('[data-role="인스턴트양식"]');
   if (!sel) return;
   const prev = sel.value;
   const pageName = document.getElementById(`${t}_페이지`).value;
-  const forms = DB.formsByPage[pageName];
+  const { forms } = filteredForms(t);
   sel.innerHTML = forms ? '<option value="">선택</option>' : `<option value="">${pageName ? '양식 불러오는 중...' : '페이지 선택 후 사용 가능'}</option>`;
   (forms || []).forEach(f => {
     const o = document.createElement('option');
@@ -2461,7 +2566,27 @@ function fillCreativeForms(t, block) {
   });
   if (prev && Array.from(sel.options).some(o => o.value === prev)) sel.value = prev;
 }
-function refreshCreativeForms(t) { creativeBlocks(t).forEach(b => fillCreativeForms(t, b)); }
+function refreshCreativeForms(t) {
+  creativeBlocks(t).forEach(b => fillCreativeForms(t, b));
+  updateFormFilterHint(t);
+}
+function updateFormFilterHint(t) {
+  const el = document.getElementById(`${t}_form_all`);
+  if (!el || !el.parentElement) return;
+  const info = filteredForms(t);
+  const label = el.parentElement;
+  let note = label.querySelector('[data-role="form_note"]');
+  if (!note) {
+    note = document.createElement('span');
+    note.dataset.role = 'form_note';
+    note.style.cssText = 'font-size:11px;color:var(--text3);margin-left:4px;';
+    label.appendChild(note);
+  }
+  if (!info.forms) note.textContent = '';
+  else if (info.filtered) note.textContent = `· '${info.key}' 로 ${info.total}개 중 ${info.forms.length}개만 표시 중`;
+  else if (info.noMatch) note.textContent = `· '${info.key}' 와 일치하는 양식이 없어 ${info.total}개 전부 표시`;
+  else note.textContent = `· 전체 ${info.total}개 표시`;
+}
 function applyConvTypeToCreatives(t) {
   const isWeb = (convTypeState[t] || 'ON_AD') === 'WEBSITE';
   creativeBlocks(t).forEach(b => {
@@ -2692,7 +2817,7 @@ function getData(t) {
       if (customs.length > 0) geoLocations = { custom_locations: customs };
       else if (regionKey) geoLocations = { cities: [{ key: regionKey }] };
       else geoLocations = { countries: ['KR'] };
-      let ageMin = parseInt(g(`${t}_최소나이`), 10); if (isNaN(ageMin)) ageMin = 35;
+      let ageMin = parseInt(g(`${t}_최소나이`), 10); if (isNaN(ageMin)) ageMin = 45;
       let ageMax = parseInt(g(`${t}_최대나이`), 10); if (isNaN(ageMax)) ageMax = 65;
       ageMin = Math.min(Math.max(ageMin, 18), 65);
       ageMax = Math.min(Math.max(ageMax, 18), 65);
@@ -2817,7 +2942,7 @@ function clearForm(t) {
   document.getElementById(`${t}_언어`).value = 'ko';
   const cb = document.getElementById(`${t}_캠페인예산`); if (cb) cb.value = 30000;
   onAdvantage(t, 0);
-  document.getElementById(`${t}_최소나이`).value = 35;
+  document.getElementById(`${t}_최소나이`).value = 45;
   document.getElementById(`${t}_최대나이`).value = 65;
   document.getElementById(`${t}_시작일`).value = new Date().toISOString().split('T')[0];
   document.getElementById(`${t}_타겟국가`).value = '';
