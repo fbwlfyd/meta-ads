@@ -837,7 +837,7 @@
       </div>
       <!-- 지역 -->
       <div class="modal-sec" id="msec_region">
-        <div class="set-note">Meta 지역 검색 API로 도시를 찾아 추가합니다. <b>표기명</b>은 캠페인명·세트명에 들어가는 이름이에요 (예: 울산타겟).<br>반경 지역(울주처럼 좌표 여러 개)은 아래 표의 <b>커스텀 좌표</b>에 <code>위도,경도,반경(mile)</code> 을 세미콜론으로 구분해 넣으면 됩니다.</div>
+        <div class="set-note">Meta 지역 검색 API로 도시를 찾아 추가합니다. <b>표기명</b>은 캠페인명·세트명에 들어가는 이름이에요 (예: 울산타겟).<br><b>표기명을 비우면 이름에 지역이 붙지 않습니다</b> — 해당 지역이 기본 지역이라 따로 구분할 필요가 없을 때 비워두세요.<br>반경 지역(울주처럼 좌표 여러 개)은 아래 표의 <b>커스텀 좌표</b>에 <code>위도,경도,반경(mile)</code> 을 세미콜론으로 구분해 넣으면 됩니다.</div>
         <div class="region-search-wrap">
           <input type="text" id="region_search_input" placeholder="도시 이름을 입력하세요 (예: 울산, Seoul)" oninput="onRegionSearchInput()" autocomplete="off">
           <div class="region-results" id="region_search_results"></div>
@@ -1094,7 +1094,7 @@ function renderRegionRows() {
     <tr>
       <td><input type="text" data-set="reg-name" data-i="${i}" value="${esc(r.name)}"></td>
       <td><input type="text" data-set="reg-key" data-i="${i}" value="${esc(r.key)}"></td>
-      <td><input type="text" data-set="reg-refName" data-i="${i}" value="${esc(r.refName)}" placeholder="울산타겟"></td>
+      <td><input type="text" data-set="reg-refName" data-i="${i}" value="${esc(r.refName)}" placeholder="비우면 이름에 안 붙음"></td>
       <td><input type="text" data-set="reg-custom" data-i="${i}" value="${esc(r.custom)}" placeholder="위도,경도,반경; 위도,경도,반경"></td>
       <td><button class="set-del" onclick="removeRegionRow(${i})">✕</button></td>
     </tr>`).join('');
@@ -1155,7 +1155,7 @@ function collectSettingsFromDom() {
     const i = el.dataset.i;
     const get = k => { const e = document.querySelector(`[data-set="reg-${k}"][data-i="${i}"]`); return e ? e.value.trim() : ''; };
     const name = el.value.trim();
-    if (name) regions.push({ name, key: get('key'), refName: get('refName') || `${name}타겟`, custom: get('custom') });
+    if (name) regions.push({ name, key: get('key'), refName: get('refName'), custom: get('custom') });
   });
   if (document.querySelectorAll('[data-set="reg-name"]').length > 0) SETTINGS.regions = regions;
 
@@ -2185,7 +2185,7 @@ function populateDropdowns() {
     if (regSel) {
       const prevReg = regSel.value;
       regSel.innerHTML = '<option value="">선택</option>';
-      DB.regions.forEach(r => { const o = document.createElement('option'); o.value = r.name; o.textContent = r.refName ? `${r.name} — ${r.refName}` : r.name; regSel.appendChild(o); });
+      DB.regions.forEach(r => { const o = document.createElement('option'); o.value = r.name; o.textContent = r.refName ? `${r.name} — ${r.refName}` : `${r.name} (이름에 표기 안 함)`; regSel.appendChild(o); });
       if (prevReg && Array.from(regSel.options).some(o => o.value === prevReg)) regSel.value = prevReg;
     }
     fill('전환위치', DB.destinations, 'ON_AD');
