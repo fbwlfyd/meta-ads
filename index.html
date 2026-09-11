@@ -857,12 +857,12 @@
         </table>
         <button class="btn-sm" style="margin-top:10px;" onclick="addPageRow()">+ 페이지 추가</button>
         <div class="divider" style="margin:22px 0 14px;"></div>
-        <div class="set-note">인스타 계정도 권한(<code>instagram_basic</code>) 때문에 목록이 비면 여기에 직접 넣어두세요. 인스타 계정 ID는 Meta 비즈니스 설정 → 계정 → Instagram 계정에서 확인할 수 있습니다.</div>
+        <div class="set-note"><b>페이지별 인스타 계정</b> — 여기에 적어둔 페이지를 고르면 그 인스타 계정이 자동 선택됩니다.<br>목록에 <b>없는 페이지는 인스타 계정을 쓰지 않고 Facebook 페이지 이름으로</b> 인스타에 게재됩니다.<br>인스타 계정 ID는 Meta 비즈니스 설정 → 계정 → Instagram 계정에서 확인할 수 있습니다.</div>
         <table class="set-table">
-          <thead><tr><th style="width:50%">인스타 계정명 (@없이)</th><th style="width:45%">인스타 계정 ID</th><th></th></tr></thead>
-          <tbody id="set_insta_body"></tbody>
+          <thead><tr><th style="width:38%">페이지</th><th style="width:28%">인스타 계정명 (@없이)</th><th style="width:30%">인스타 계정 ID</th><th></th></tr></thead>
+          <tbody id="set_pageig_body"></tbody>
         </table>
-        <button class="btn-sm" style="margin-top:10px;" onclick="addInstaRow()">+ 인스타 추가</button>
+        <button class="btn-sm" style="margin-top:10px;" onclick="addPageIgRow()">+ 매핑 추가</button>
       </div>
       <!-- 진단 -->
       <div class="modal-sec" id="msec_diag">
@@ -987,7 +987,11 @@ const DEFAULT_SETTINGS = {
   staff: [],
   accounts: {},   // { '<광고계정ID>': { campaignName, setName } }
   pages: [],      // API로 페이지를 못 가져올 때 직접 입력해 두는 목록 [{name, pageId}]
-  instagram: [],  // API로 인스타를 못 가져올 때 직접 입력해 두는 목록 [{name, id}]
+  // 페이지별로 쓸 인스타 계정 지정 [{pageName, pageId, igName, igId}]
+  // 여기에 없는 페이지는 인스타 계정을 쓰지 않고 Facebook 페이지 이름으로 게재됩니다.
+  pageInstagram: [
+    { pageName: '오늘의병원app', pageId: '', igName: '오늘의 병원 app', igId: '24676730048580915' },
+  ],
   regions: [
     { name: '울주', key: '', refName: '울주타겟', custom: '35.4491,129.1587,6; 35.5184,129.0763,5; 35.5519,129.0228,5' },
   ],
@@ -1003,7 +1007,7 @@ function loadSettings() {
         staff: Array.isArray(parsed.staff) ? parsed.staff : [],
         accounts: parsed.accounts && typeof parsed.accounts === 'object' ? parsed.accounts : {},
         pages: Array.isArray(parsed.pages) ? parsed.pages : [],
-        instagram: Array.isArray(parsed.instagram) ? parsed.instagram : [],
+        pageInstagram: Array.isArray(parsed.pageInstagram) ? parsed.pageInstagram : JSON.parse(JSON.stringify(DEFAULT_SETTINGS.pageInstagram)),
         regions: Array.isArray(parsed.regions) ? parsed.regions : [],
       };
     }
@@ -1017,6 +1021,16 @@ function accountSetting(accountId) {
   const id = String(accountId || '').replace('act_', '');
   if (!SETTINGS.accounts[id]) SETTINGS.accounts[id] = { campaignName: '', setName: '' };
   return SETTINGS.accounts[id];
+}
+// 페이지명은 띄어쓰기·대소문자 차이를 무시하고 비교한다
+function normName(v) { return String(v || '').replace(/\s+/g, '').toLowerCase(); }
+function igMappingForPage(page) {
+  if (!page) return null;
+  const list = SETTINGS.pageInstagram || [];
+  return list.find(m => m.igId && (
+    (m.pageId && String(m.pageId) === String(page.pageId)) ||
+    (m.pageName && normName(m.pageName) === normName(page.name))
+  )) || null;
 }
 function parseCustomCoords(str) {
   if (!str) return [];
@@ -1071,21 +1085,21 @@ function renderSettings() {
   renderRegionRows();
   // 페이지 · 인스타 직접 입력
   renderPageRows();
-  renderInstaRows();
+  renderPageIgRows();
 }
-function renderInstaRows() {
-  const ib = document.getElementById('set_insta_body');
-  if (!ib) return;
-  ib.innerHTML = (SETTINGS.instagram || []).map((g, i) => `
+function renderRegionRows() {
+  const rb = document.getElementById('set_region_body');
+  if (!rb) return;
+  rb.innerHTML = SETTINGS.regions.map((r, i) => `
     <tr>
-      <td><input type="text" data-set="insta-name" data-i="${i}" value="${esc(g.name)}" placeholder="today_dental"></td>
-      <td><input type="text" data-set="insta-id" data-i="${i}" value="${esc(g.id)}" placeholder="17841400000000000"></td>
-      <td><button class="set-del" onclick="removeInstaRow(${i})">✕</button></td>
+      <td><input type="text" data-set="reg-name" data-i="${i}" value="${esc(r.name)}"></td>
+      <td><input type="text" data-set="reg-key" data-i="${i}" value="${esc(r.key)}"></td>
+      <td><input type="text" data-set="reg-refName" data-i="${i}" value="${esc(r.refName)}" placeholder="울산타겟"></td>
+      <td><input type="text" data-set="reg-custom" data-i="${i}" value="${esc(r.custom)}" placeholder="위도,경도,반경; 위도,경도,반경"></td>
+      <td><button class="set-del" onclick="removeRegionRow(${i})">✕</button></td>
     </tr>`).join('');
-  if (!SETTINGS.instagram || SETTINGS.instagram.length === 0) ib.innerHTML = '<tr><td colspan="3" style="padding:14px 4px;color:var(--text3);font-size:12px;">비워두면 API로 가져온 인스타 계정만 사용합니다.</td></tr>';
+  if (SETTINGS.regions.length === 0) rb.innerHTML = '<tr><td colspan="5" style="padding:14px 4px;color:var(--text3);font-size:12px;">위 검색창에서 도시를 찾아 추가하세요.</td></tr>';
 }
-function addInstaRow() { collectSettingsFromDom(); if (!SETTINGS.instagram) SETTINGS.instagram = []; SETTINGS.instagram.push({ name: '', id: '' }); renderInstaRows(); }
-function removeInstaRow(i) { collectSettingsFromDom(); SETTINGS.instagram.splice(i, 1); renderInstaRows(); }
 function renderPageRows() {
   const pb = document.getElementById('set_page_body');
   if (!pb) return;
@@ -1099,18 +1113,27 @@ function renderPageRows() {
 }
 function addPageRow() { collectSettingsFromDom(); if (!SETTINGS.pages) SETTINGS.pages = []; SETTINGS.pages.push({ name: '', pageId: '' }); renderPageRows(); }
 function removePageRow(i) { collectSettingsFromDom(); SETTINGS.pages.splice(i, 1); renderPageRows(); }
-function renderRegionRows() {
-  const rb = document.getElementById('set_region_body');
-  rb.innerHTML = SETTINGS.regions.map((r, i) => `
+function renderPageIgRows() {
+  const ib = document.getElementById('set_pageig_body');
+  if (!ib) return;
+  const opts = (selected) => {
+    const known = DB.pages.map(p => p.name);
+    if (selected && !known.includes(selected)) known.unshift(selected);
+    return ['<option value="">페이지 선택</option>']
+      .concat(known.map(n => `<option value="${esc(n)}"${normName(n) === normName(selected) ? ' selected' : ''}>${esc(n)}</option>`))
+      .join('');
+  };
+  ib.innerHTML = (SETTINGS.pageInstagram || []).map((m, i) => `
     <tr>
-      <td><input type="text" data-set="reg-name" data-i="${i}" value="${esc(r.name)}"></td>
-      <td><input type="text" data-set="reg-key" data-i="${i}" value="${esc(r.key)}"></td>
-      <td><input type="text" data-set="reg-refName" data-i="${i}" value="${esc(r.refName)}" placeholder="울산타겟"></td>
-      <td><input type="text" data-set="reg-custom" data-i="${i}" value="${esc(r.custom)}" placeholder="위도,경도,반경; 위도,경도,반경"></td>
-      <td><button class="set-del" onclick="removeRegionRow(${i})">✕</button></td>
+      <td><select data-set="pageig-page" data-i="${i}" style="width:100%;height:34px;border:1px solid var(--border2);border-radius:6px;padding:0 8px;font-family:inherit;font-size:12px;">${opts(m.pageName)}</select></td>
+      <td><input type="text" data-set="pageig-igname" data-i="${i}" value="${esc(m.igName)}" placeholder="오늘의 병원 app"></td>
+      <td><input type="text" data-set="pageig-igid" data-i="${i}" value="${esc(m.igId)}" placeholder="24676730048580915"></td>
+      <td><button class="set-del" onclick="removePageIgRow(${i})">✕</button></td>
     </tr>`).join('');
-  if (SETTINGS.regions.length === 0) rb.innerHTML = '<tr><td colspan="5" style="padding:14px 4px;color:var(--text3);font-size:12px;">위 검색창에서 도시를 찾아 추가하세요.</td></tr>';
+  if (!SETTINGS.pageInstagram || SETTINGS.pageInstagram.length === 0) ib.innerHTML = '<tr><td colspan="4" style="padding:14px 4px;color:var(--text3);font-size:12px;">비어 있으면 모든 페이지가 Facebook 페이지 이름으로 게재됩니다.</td></tr>';
 }
+function addPageIgRow() { collectSettingsFromDom(); if (!SETTINGS.pageInstagram) SETTINGS.pageInstagram = []; SETTINGS.pageInstagram.push({ pageName: '', pageId: '', igName: '', igId: '' }); renderPageIgRows(); }
+function removePageIgRow(i) { collectSettingsFromDom(); SETTINGS.pageInstagram.splice(i, 1); renderPageIgRows(); }
 function collectSettingsFromDom() {
   const staff = [];
   document.querySelectorAll('[data-set="staff-name"]').forEach(el => {
@@ -1146,15 +1169,20 @@ function collectSettingsFromDom() {
   });
   if (document.querySelectorAll('[data-set="page-name"]').length > 0) SETTINGS.pages = pages;
 
-  const igs = [];
-  document.querySelectorAll('[data-set="insta-name"]').forEach(el => {
+  const maps = [];
+  document.querySelectorAll('[data-set="pageig-page"]').forEach(el => {
     const i = el.dataset.i;
-    const idEl = document.querySelector(`[data-set="insta-id"][data-i="${i}"]`);
-    const name = el.value.trim().replace(/^@/, '');
-    const id = idEl ? idEl.value.trim() : '';
-    if (id) igs.push({ name: name || id, id });
+    const get = k => { const e = document.querySelector(`[data-set="pageig-${k}"][data-i="${i}"]`); return e ? e.value.trim() : ''; };
+    const pageName = el.value.trim();
+    const igId = get('igid');
+    if (pageName && igId) {
+      const pg = DB.pages.find(p => normName(p.name) === normName(pageName));
+      maps.push({ pageName, pageId: pg ? pg.pageId : '', igName: get('igname').replace(/^@/, ''), igId });
+    }
   });
-  if (document.querySelectorAll('[data-set="insta-name"]').length > 0) SETTINGS.instagram = igs;
+  if (document.querySelectorAll('[data-set="pageig-page"]').length > 0) SETTINGS.pageInstagram = maps;
+  // 매핑이 바뀌면 캐시를 비워 즉시 반영되게 한다
+  DB.igByPage = {};
 }
 
 /* ===== 진단 ===== */
@@ -1658,20 +1686,21 @@ async function loadInstagramAccounts(t) {
   if (!page && !accountId) { fillInstaSelect(t, []); return; }
   if (DB.igByPage[cacheKey]) { fillInstaSelect(t, DB.igByPage[cacheKey]); return; }
   if (hint) { hint.className = 'field-hint'; hint.textContent = '연결된 인스타 계정을 확인하는 중...'; }
-  const list = await collectInstagramAccounts(accountId, page);
-  DB.igByPage[cacheKey] = list;
-  fillInstaSelect(t, list);
+  const result = await collectInstagramAccounts(accountId, page);
+  DB.igByPage[cacheKey] = result;
+  fillInstaSelect(t, result);
 }
 
-/* 드롭다운에는 페이지에 실제로 연결된 인스타 계정만 올린다.
-   PBIA(페이지 연동 대역 계정)와 비즈니스 전체 자산은 무관한 계정이 섞이므로 제외하고,
-   대신 설정에서 직접 입력한 계정은 항상 포함한다. (전체 경로 점검은 설정 → 진단에서) */
+/* 페이지별 매핑이 있으면 그 계정만 쓰고, 없으면 Facebook 페이지로 게재한다.
+   매핑이 없는 페이지도 실제로 연결된 인스타가 있으면 선택지로는 보여준다(기본값은 '선택 안함'). */
 async function collectInstagramAccounts(accountId, page) {
+  const mapped = igMappingForPage(page);
+  if (mapped) {
+    logStep('insta', `${page.name} · 설정 매핑`, true, `@${mapped.igName || mapped.igId}`);
+    return { list: [{ id: String(mapped.igId), name: (mapped.igName ? '@' + mapped.igName : mapped.igId) }], forceId: String(mapped.igId), mapped: true };
+  }
   const list = [];
-  const add = (id, name) => {
-    if (!id || list.some(x => x.id === id)) return;
-    list.push({ id, name: name ? '@' + name : id });
-  };
+  const add = (id, name) => { if (id && !list.some(x => x.id === id)) list.push({ id, name: name ? '@' + name : id }); };
   if (page) {
     const tok = DB.pageTokens[page.pageId];
     // 필드를 묶어 요청하면 권한 없는 필드 하나가 요청 전체를 죽이므로 반드시 따로 호출
@@ -1684,26 +1713,31 @@ async function collectInstagramAccounts(accountId, page) {
       } catch (e) { logStep('insta', `${page.name} · ${label}`, false, e.message); }
     }
   }
-  (SETTINGS.instagram || []).forEach(ig => { if (ig.id) add(ig.id, ig.name); });
-  return list;
+  return { list, forceId: '', mapped: false };
 }
 
-function fillInstaSelect(t, list) {
+function fillInstaSelect(t, result) {
   const sel = document.getElementById(`${t}_인스타계정`);
   const hint = document.getElementById(`${t}_인스타_hint`);
   if (!sel) return;
+  const data = Array.isArray(result) ? { list: result, forceId: '', mapped: false } : (result || { list: [], forceId: '', mapped: false });
+  const list = data.list || [];
   const prev = sel.value;
   sel.innerHTML = '<option value="">선택 안함 (Facebook 페이지 사용)</option>';
   list.forEach(ig => { const o = document.createElement('option'); o.value = ig.id; o.textContent = ig.name; sel.appendChild(o); });
-  if (prev && Array.from(sel.options).some(o => o.value === prev)) sel.value = prev;
-  else if (list.length === 1) sel.value = list[0].id;
-  if (hint) {
+  if (data.forceId && list.some(x => x.id === data.forceId)) sel.value = data.forceId;
+  else if (prev && Array.from(sel.options).some(o => o.value === prev)) sel.value = prev;
+  else sel.value = '';
+  if (!hint) return;
+  if (data.mapped) {
+    hint.className = 'field-hint ok';
+    hint.textContent = `설정에 지정된 계정이 자동 선택됐어요 — ${list[0] ? list[0].name : ''}`;
+  } else if (list.length) {
     hint.className = 'field-hint';
-    if (list.length) hint.textContent = `이 페이지에 연결된 인스타 계정 ${list.length}개`;
-    else {
-      hint.className = 'field-hint';
-      hint.textContent = '이 페이지에 연결된 인스타 계정이 없어요 — 광고는 Facebook 페이지 이름으로 인스타에 노출됩니다. 특정 계정을 쓰려면 페이지에 인스타를 연결하거나 설정에서 직접 입력하세요';
-    }
+    hint.textContent = `이 페이지에 연결된 인스타 계정 ${list.length}개 · 비워두면 Facebook 페이지 이름으로 게재됩니다`;
+  } else {
+    hint.className = 'field-hint';
+    hint.textContent = 'Facebook 페이지 이름으로 인스타에 게재됩니다 (지정이 필요하면 설정 → 페이지별 인스타)';
   }
 }
 
