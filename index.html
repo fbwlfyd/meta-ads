@@ -973,10 +973,10 @@ const META_ENUMS = {
     { value: 'facebook,instagram,audience_network,messenger', label: '전체 (자동 노출위치)' },
   ],
   fbPositions: [
-    { value: 'feed,video_feeds,story,facebook_reels,marketplace,search,profile_feed', label: '주요 지면 전체' },
+    { value: 'feed,story,facebook_reels,marketplace,search,profile_feed', label: '주요 지면 전체' },
     { value: 'feed', label: '피드' },
     { value: 'feed,story,facebook_reels', label: '피드 + 스토리 + 릴스' },
-    { value: 'feed,video_feeds,marketplace', label: '피드 + 동영상 + 마켓플레이스' },
+    { value: 'feed,marketplace,search', label: '피드 + 마켓플레이스 + 검색' },
     { value: 'story,facebook_reels', label: '스토리 + 릴스' },
   ],
   igPositions: [
@@ -2407,7 +2407,12 @@ function extractDriveId(el) {
   const match = val.match(/\/d\/([a-zA-Z0-9_-]+)/) || val.match(/id=([a-zA-Z0-9_-]+)/);
   if (match && match[1]) el.value = match[1];
 }
-function toArray(str) { if (!str) return []; return str.split(',').map(s => s.trim()).filter(Boolean); }
+// Meta가 지원 중단한 노출위치 — 남아 있으면 광고세트 생성이 통째로 실패한다
+const DEPRECATED_POSITIONS = new Set(['video_feeds', 'instant_article', 'instream_video', 'adsmanager_search', 'ig_search']);
+function toArray(str) {
+  if (!str) return [];
+  return str.split(',').map(s => s.trim()).filter(Boolean).filter(v => !DEPRECATED_POSITIONS.has(v));
+}
 const selectedAccount = { t1: '', t2: '' };
 function getAccountName(t) { if (t === 't1') return document.getElementById('t1_계정명').value; return selectedAccount.t2; }
 function setAccountName(t, name) {
