@@ -1875,9 +1875,9 @@ async function testGoogleProxy() {
   } catch (e) {
     push('  ❌ ' + e.message);
     push('');
-    if (/JSON이 아닙니다|404/.test(e.message)) {
-      push('  → api/gads.js 파일이 아직 배포되지 않은 것 같습니다.');
-      push('     Vercel 프로젝트 루트에 api/gads.js 를 넣고 재배포하세요.');
+    if (/웹페이지를 돌려줬어요/.test(e.message)) {
+      push('  → 확인: 주소창에 아래를 쳐서 JSON이 나오는지 보세요');
+      push(`     ${location.origin}${GSET.proxyUrl}?type=accounts`);
     } else if (/DEVELOPER_TOKEN/.test(e.message)) {
       push('  → Vercel 환경변수 GOOGLE_ADS_DEVELOPER_TOKEN 을 설정하고 재배포하세요.');
     }
@@ -1961,9 +1961,22 @@ function gProxyUrl(type, params) {
 }
 async function gLookupViaProxy(type, params) {
   const token = await gDriveSignIn();   // adwords 권한 포함
-  const res = await fetch(gProxyUrl(type, params), { headers: { Authorization: `Bearer ${token}` } });
+  const url = gProxyUrl(type, params);
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   const text = await res.text();
-  let j; try { j = JSON.parse(text); } catch (e) { throw new Error('중계 함수 응답이 JSON이 아닙니다: ' + text.slice(0, 120)); }
+  let j;
+  try { j = JSON.parse(text); }
+  catch (e) {
+    // HTML이 돌아왔다 = 함수가 없고 페이지(404 등)가 응답한 것
+    if (/^\s*<(!doctype|html)/i.test(text)) {
+      throw new Error(
+        `${url} 가 함수가 아니라 웹페이지를 돌려줬어요 (HTTP ${res.status}).\n` +
+        '  → api/gads.js 가 현재 배포에 없습니다.\n' +
+        '     Vercel Deployments 에서 "Create gads.js" 배포를 Promote to Production 하거나,\n' +
+        '     파일이 api/gads.js 경로에 있는지 확인하세요.');
+    }
+    throw new Error('중계 함수 응답이 JSON이 아닙니다: ' + text.slice(0, 120));
+  }
   if (!res.ok) throw new Error(j.error || `HTTP ${res.status}`);
   if (!Array.isArray(j)) throw new Error('목록 형태가 아닙니다');
   return j;
