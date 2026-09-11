@@ -816,7 +816,6 @@
       <button class="modal-tab" id="mtab_region" onclick="switchSettingsTab('region')">지역</button>
       <button class="modal-tab" id="mtab_page" onclick="switchSettingsTab('page')">페이지 · 인스타 직접 입력</button>
       <button class="modal-tab" id="mtab_diag" onclick="switchSettingsTab('diag')">🩺 진단</button>
-      <button class="modal-tab" id="mtab_import" onclick="switchSettingsTab('import')">가져오기 / 내보내기</button>
     </div>
     <div class="modal-body">
       <!-- 제작자 -->
@@ -830,9 +829,9 @@
       </div>
       <!-- 계정 네이밍 -->
       <div class="modal-sec" id="msec_account">
-        <div class="set-note">계정 이름과 ID는 Meta API에서 자동으로 가져옵니다. 캠페인명·세트명을 만들 때 쓰는 <b>약칭</b>과 <b>기본 지역</b>만 입력해 주세요.<br>(캠페인명 = 캠페인약칭 + 주제명 + 유형 + (날짜) + 제작자 + 지역표기 + 예비용)</div>
+        <div class="set-note">계정 이름과 ID는 Meta API에서 자동으로 가져옵니다. 캠페인명·세트명을 만들 때 쓰는 <b>약칭</b>만 입력해 주세요.<br>캠페인명 = 캠페인약칭 + 유형 + (날짜) + 제작자 + 지역표기 + 예비용<br>광고세트명 = 세트약칭 + 유형 + 지역표기 + 순번 + 제작자코드</div>
         <table class="set-table">
-          <thead><tr><th style="width:22%">계정명 (API)</th><th style="width:16%">캠페인 약칭</th><th style="width:16%">세트 약칭</th><th style="width:16%">주제명</th><th style="width:16%">기본 지역</th></tr></thead>
+          <thead><tr><th style="width:44%">계정명 (API)</th><th style="width:28%">캠페인 약칭</th><th style="width:28%">세트 약칭</th></tr></thead>
           <tbody id="set_account_body"></tbody>
         </table>
       </div>
@@ -871,20 +870,6 @@
         <button class="btn-sm blue" onclick="runDiagnostics()">진단 실행</button>
         <button class="btn-sm" onclick="copyDiagnostics()">결과 복사</button>
         <div id="diag_out" style="margin-top:14px;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);border-radius:8px;padding:12px;min-height:60px;color:var(--text2);">진단 실행을 눌러주세요.</div>
-      </div>
-      <!-- 가져오기 -->
-      <div class="modal-sec" id="msec_import">
-        <div class="set-note">기존에 쓰던 <b>메타참조</b> 구글시트에서 제작자·계정 약칭·지역 정보를 한 번만 가져올 수 있습니다. 가져온 뒤에는 시트 없이 동작합니다.</div>
-        <div class="field"><label>구글시트 ID</label><input type="text" id="import_sheet_id" placeholder="스프레드시트 ID"></div>
-        <button class="btn-sm blue" onclick="importFromSheet()">시트에서 가져오기</button>
-        <div class="field-hint" id="import_hint" style="margin-top:10px;"></div>
-        <div class="divider" style="margin:20px 0 16px;"></div>
-        <div class="set-note" style="margin-bottom:10px;">설정을 파일로 백업하거나 다른 PC로 옮길 때 사용합니다.</div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn-sm" onclick="exportSettings()">JSON 내보내기</button>
-          <button class="btn-sm" onclick="document.getElementById('import_json_file').click()">JSON 불러오기</button>
-          <input type="file" id="import_json_file" accept="application/json" style="display:none;" onchange="importSettingsFile(this)">
-        </div>
       </div>
     </div>
     <div class="modal-foot">
@@ -1000,7 +985,7 @@ const META_ENUMS = {
 const SETTINGS_KEY = 'adtool_meta_settings_v1';
 const DEFAULT_SETTINGS = {
   staff: [],
-  accounts: {},   // { '<광고계정ID>': { campaignName, setName, subjectName, baseRegion } }
+  accounts: {},   // { '<광고계정ID>': { campaignName, setName } }
   pages: [],      // API로 페이지를 못 가져올 때 직접 입력해 두는 목록 [{name, pageId}]
   instagram: [],  // API로 인스타를 못 가져올 때 직접 입력해 두는 목록 [{name, id}]
   regions: [
@@ -1030,7 +1015,7 @@ function persistSettings() {
 }
 function accountSetting(accountId) {
   const id = String(accountId || '').replace('act_', '');
-  if (!SETTINGS.accounts[id]) SETTINGS.accounts[id] = { campaignName: '', setName: '', subjectName: '', baseRegion: '' };
+  if (!SETTINGS.accounts[id]) SETTINGS.accounts[id] = { campaignName: '', setName: '' };
   return SETTINGS.accounts[id];
 }
 function parseCustomCoords(str) {
@@ -1048,13 +1033,11 @@ function openSettings(tab) {
   renderSettings();
   switchSettingsTab(tab || settingsTab);
   document.getElementById('settingsModal').classList.add('show');
-  const si = document.getElementById('import_sheet_id');
-  if (si && !si.value) si.value = SHEET_ID;
 }
 function closeSettings() { document.getElementById('settingsModal').classList.remove('show'); }
 function switchSettingsTab(tab) {
   settingsTab = tab;
-  ['staff','account','region','page','diag','import'].forEach(k => {
+  ['staff','account','region','page','diag'].forEach(k => {
     document.getElementById(`mtab_${k}`).classList.toggle('active', k === tab);
     document.getElementById(`msec_${k}`).classList.toggle('active', k === tab);
   });
@@ -1081,8 +1064,6 @@ function renderSettings() {
       <td><input type="text" value="${esc(a.name)}" readonly title="${esc(a.id)}"></td>
       <td><input type="text" data-set="acc-campaignName" data-id="${esc(a.id)}" value="${esc(s.campaignName)}"></td>
       <td><input type="text" data-set="acc-setName" data-id="${esc(a.id)}" value="${esc(s.setName)}"></td>
-      <td><input type="text" data-set="acc-subjectName" data-id="${esc(a.id)}" value="${esc(s.subjectName)}"></td>
-      <td><input type="text" data-set="acc-baseRegion" data-id="${esc(a.id)}" value="${esc(s.baseRegion)}" placeholder="예: 울산"></td>
     </tr>`;
   }).join('');
 
@@ -1140,7 +1121,7 @@ function collectSettingsFromDom() {
   });
   if (document.querySelectorAll('[data-set="staff-name"]').length > 0) SETTINGS.staff = staff;
 
-  ['campaignName','setName','subjectName','baseRegion'].forEach(key => {
+  ['campaignName','setName'].forEach(key => {
     document.querySelectorAll(`[data-set="acc-${key}"]`).forEach(el => {
       accountSetting(el.dataset.id)[key] = el.value.trim();
     });
@@ -1375,34 +1356,6 @@ function resetSettings() {
   persistSettings(); applySettingsToDB(); populateDropdowns(); renderSettings();
   showToast('설정을 초기화했어요', 'info');
 }
-function exportSettings() {
-  const blob = new Blob([JSON.stringify(SETTINGS, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `광고자동등록_설정_${new Date().toISOString().split('T')[0]}.json`;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-}
-function importSettingsFile(input) {
-  const file = input.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    try {
-      const parsed = JSON.parse(reader.result);
-      SETTINGS = {
-        staff: Array.isArray(parsed.staff) ? parsed.staff : [],
-        accounts: parsed.accounts || {},
-        pages: Array.isArray(parsed.pages) ? parsed.pages : [],
-        instagram: Array.isArray(parsed.instagram) ? parsed.instagram : [],
-        regions: Array.isArray(parsed.regions) ? parsed.regions : [],
-      };
-      persistSettings(); applySettingsToDB(); populateDropdowns(); renderSettings();
-      showToast('설정을 불러왔어요', 'success');
-    } catch (e) { showToast('JSON 파싱 실패: ' + e.message, 'error'); }
-  };
-  reader.readAsText(file);
-  input.value = '';
-}
 
 /* ===== 지역 검색 (Meta adgeolocation) ===== */
 let regionSearchTimer = null;
@@ -1446,44 +1399,6 @@ function addRegionFromSearch(i) {
 }
 
 /* ===== 기존 시트에서 한 번 가져오기 (마이그레이션) ===== */
-async function importFromSheet() {
-  const sheetId = (document.getElementById('import_sheet_id').value || '').trim();
-  const hint = document.getElementById('import_hint');
-  if (!sheetId) { hint.className = 'field-hint err'; hint.textContent = '시트 ID를 입력해주세요'; return; }
-  hint.className = 'field-hint'; hint.textContent = '가져오는 중...';
-  try {
-    const rows = await fetchSheet('메타참조', sheetId);
-    collectSettingsFromDom();
-    // 제작자: R열(17)=이름, S열(18)=ID
-    const staffSeen = new Set(SETTINGS.staff.map(s => s.name));
-    rows.slice(1).forEach(r => {
-      if (r[17] && !staffSeen.has(r[17])) { staffSeen.add(r[17]); SETTINGS.staff.push({ name: r[17], id: r[18] || '' }); }
-    });
-    // 계정: A열=계정명, B열=ID, C열=캠페인약칭, D열=세트약칭, E열=주제명, F열=기본지역
-    rows.slice(1).forEach(r => {
-      if (!r[1]) return;
-      const s = accountSetting(r[1]);
-      if (r[2]) s.campaignName = r[2];
-      if (r[3]) s.setName = r[3];
-      if (r[4]) s.subjectName = r[4];
-      if (r[5]) s.baseRegion = r[5];
-    });
-    // 지역: N열(13)=지역명, O열(14)=key, P열(15)=표기명
-    const regSeen = new Set(SETTINGS.regions.map(x => x.name));
-    rows.slice(1).forEach(r => {
-      if (r[13] && !regSeen.has(r[13])) {
-        regSeen.add(r[13]);
-        SETTINGS.regions.push({ name: r[13], key: r[14] || '', refName: r[15] || `${r[13]}타겟`, custom: '' });
-      }
-    });
-    persistSettings(); applySettingsToDB(); populateDropdowns(); renderSettings();
-    hint.className = 'field-hint ok';
-    hint.textContent = `가져오기 완료 — 제작자 ${SETTINGS.staff.length}명 · 계정 ${Object.keys(SETTINGS.accounts).length}개 · 지역 ${SETTINGS.regions.length}개`;
-  } catch (err) {
-    hint.className = 'field-hint err';
-    hint.textContent = '가져오기 실패: ' + err.message;
-  }
-}
 
 /* =========================================================
    Graph API 공통 헬퍼
@@ -1554,20 +1469,16 @@ let DB = {
   destinations: META_ENUMS.destinations, optimizations: META_ENUMS.optimizations,
   platforms: META_ENUMS.platforms, fbPositions: META_ENUMS.fbPositions,
   igPositions: META_ENUMS.igPositions, ctaTypes: META_ENUMS.ctaTypes,
-  baseRegions: {},
 };
 
 function applySettingsToDB() {
   DB.staff = SETTINGS.staff.filter(s => s.name);
   DB.regions = SETTINGS.regions.filter(r => r.name).map(r => ({ name: r.name, id: r.key || '', refName: r.refName || '', custom: r.custom || '' }));
-  DB.baseRegions = {};
-  Object.entries(SETTINGS.accounts).forEach(([id, s]) => { if (s.baseRegion) DB.baseRegions[id] = s.baseRegion; });
   // 계정에 네이밍 약칭 얹기
   DB.accounts.forEach(a => {
     const s = accountSetting(a.id);
     a.campaignName = s.campaignName || '';
     a.setName = s.setName || '';
-    a.subjectName = s.subjectName || '';
   });
 }
 
@@ -2381,9 +2292,7 @@ async function onCampaignId(t) {
       if (accountId) { loadPixels(t); loadCustomAudiences(t); }
     }
     const regionMatch = campaignName.match(/([가-힣]+)타겟/);
-    let regionName = '';
-    if (regionMatch) regionName = regionMatch[1];
-    else if (accountId && DB.baseRegions[accountId]) regionName = DB.baseRegions[accountId];
+    const regionName = regionMatch ? regionMatch[1] : '';
     if (regionName) {
       const regSel = document.getElementById(`${t}_지역구분자`);
       const exists = Array.from(regSel.options).some(o => o.value === regionName);
@@ -2437,8 +2346,8 @@ function buildNames(t, seq) {
   const refName = region ? (region.refName || '') : '';
   const staffId = staffObj ? staffObj.id : '';
   return {
-    campaignName: [acc.campaignName, acc.subjectName, type, date ? `(${date})` : '', staffName, refName, '예비용'].filter(Boolean).join(' '),
-    setName: [acc.setName, acc.subjectName, type, refName, `${seq}A`, staffId].filter(Boolean).join(' '),
+    campaignName: [acc.campaignName, type, date ? `(${date})` : '', staffName, refName, '예비용'].filter(Boolean).join(' '),
+    setName: [acc.setName, type, refName, `${seq}A`, staffId].filter(Boolean).join(' '),
   };
 }
 function adNameFor(t, n) {
