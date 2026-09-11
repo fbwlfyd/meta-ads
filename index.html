@@ -1811,14 +1811,15 @@ async function testLookupWebhook() {
   const body = { type, customerId: cid };
   if (type === 'adgroups') body.campaignId = 'TEST';
   if (type === 'ads') body.adGroupId = 'TEST';
-  out.textContent = `보내는 값: ${JSON.stringify(body)}\n호출 중...`;
+  const shownUrl = GSET.lookupWebhook ? gLookupUrl(type, body).replace(GSET.lookupWebhook, '…웹훅주소') : '';
+  out.textContent = `보내는 주소: ${shownUrl}\n호출 중...`;
   try {
     const list = await gLookupViaWebhook(type, body);
-    out.textContent = `보내는 값: ${JSON.stringify(body)}\n\n✅ ${list.length}건 수신\n`
+    out.textContent = `보내는 주소: ${shownUrl}\n\n✅ ${list.length}건 수신\n`
       + list.slice(0, 8).map(x => `  · ${x.name} (${x.id})${x.status ? ' [' + x.status + ']' : ''}`).join('\n')
       + (list.length > 8 ? `\n  … 외 ${list.length - 8}건` : '');
   } catch (e) {
-    out.textContent = `보내는 값: ${JSON.stringify(body)}\n\n❌ ${e.message}`;
+    out.textContent = `보내는 주소: ${shownUrl}\n\n❌ ${e.message}`;
   }
 }
 
@@ -1883,13 +1884,17 @@ async function gLookup(type, params) {
 }
 let gLastLookupError = '';
 /* Make 조회 웹훅 호출.
-   Content-Type을 text/plain 으로 보내 CORS preflight를 피한다 (본문은 그대로 JSON). */
+   쿼리 파라미터로 GET 요청한다 — CORS preflight가 없고,
+   Make가 type·customerId 를 각각의 필드로 인식한다. */
+function gLookupUrl(type, params) {
+  const q = new URLSearchParams();
+  q.set('type', type);
+  Object.entries(params || {}).forEach(([k, v]) => { if (k !== 'type' && v) q.set(k, v); });
+  const base = GSET.lookupWebhook;
+  return base + (base.includes('?') ? '&' : '?') + q.toString();
+}
 async function gLookupViaWebhook(type, params) {
-  const res = await fetch(GSET.lookupWebhook, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-    body: JSON.stringify(Object.assign({ type }, params)),
-  });
+  const res = await fetch(gLookupUrl(type, params), { method: 'GET' });
   const text = await res.text();
   if (!res.ok) throw new Error(`HTTP ${res.status} — ${text.slice(0, 120)}`);
   let j;
