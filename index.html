@@ -3202,6 +3202,44 @@ const VERIFY_MAX_TRIES = 24;   // 약 2분
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const verifyState = {};
 
+/* Make 웹훅 응답에서 생성된 ID를 찾아낸다.
+   Make 시나리오 끝에 Webhook Response 모듈을 붙이고 아래 키 중 아무거나 담아 보내면 된다.
+   { "campaign_id": "...", "adset_id": "...", "ad_ids": ["...", "..."] } */
+async function readWebhookIds(res) {
+  const out = { campaignId: '', adsetId: '', adIds: [], any: false };
+  let body = '';
+  try { body = await res.text(); } catch (e) { return out; }
+  if (!body) return out;
+  let j = null;
+  try { j = JSON.parse(body); } catch (e) { j = null; }
+  const pickFrom = (obj) => {
+    if (!obj || typeof obj !== 'object') return;
+    const grab = (keys) => {
+      for (const k of keys) {
+        if (obj[k] !== undefined && obj[k] !== null && String(obj[k]).trim() !== '') return String(obj[k]).trim();
+      }
+      return '';
+    };
+    out.campaignId = out.campaignId || grab(['campaign_id', 'campaignId', 'campaignID', '캠페인ID', '캠페인아이디']);
+    out.adsetId = out.adsetId || grab(['adset_id', 'adsetId', 'ad_set_id', '광고세트ID', '세트ID']);
+    const ads = obj.ad_ids || obj.adIds || obj.ads || obj['광고IDs'] || obj['광고ID'];
+    if (Array.isArray(ads)) out.adIds = ads.map(x => String(typeof x === 'object' ? (x.id || '') : x)).filter(Boolean);
+    else if (ads && String(ads).trim()) out.adIds = String(ads).split(',').map(x => x.trim()).filter(Boolean);
+  };
+  if (j) {
+    pickFrom(j);
+    if (j.data) pickFrom(j.data);
+    if (j.result) pickFrom(j.result);
+    if (Array.isArray(j) && j[0]) pickFrom(j[0]);
+  } else {
+    // JSON이 아니면 본문에서 숫자 ID라도 건져본다
+    const m = body.match(/\b\d{15,20}\b/g);
+    if (m && m.length) out.adIds = [...new Set(m)];
+  }
+  out.any = !!(out.campaignId || out.adsetId || out.adIds.length);
+  return out;
+}
+
 /* 계정에 캠페인이 수천 개일 수 있으므로 전체를 훑지 않는다.
    ① 최근 생성분만 필터 → ② 이름 포함 검색 → ③ 최후에만 순차 조회 */
 async function findByName(edge, wantName, sinceTs) {
@@ -3237,12 +3275,30 @@ async function verifyRegistration(t, idx, data) {
 
   let campaignId = data.캠페인ID || '';
   let adsetId = data.광고세트ID || '';
+  const knownAdIds = Array.isArray(data.광고IDs) ? data.광고IDs : [];
   let lastStage = 'Make 처리 대기 중';
 
   for (let n = 1; n <= VERIFY_MAX_TRIES; n++) {
     await sleep(VERIFY_INTERVAL_MS);
     const secs = Math.round(n * VERIFY_INTERVAL_MS / 1000);
     try {
+      // Make가 광고 ID를 알려준 경우 — 이름 검색 없이 ID로 바로 확인
+      if (knownAdIds.length) {
+        const got = [];
+        for (const id of knownAdIds) {
+          try { got.push(await fbGet(id, { fields: 'id,name,effective_status,adset_id' })); } catch (e) { /* 아직 없음 */ }
+        }
+        if (got.length >= knownAdIds.length) {
+          const rejected = got.filter(a => a.effective_status === 'DISAPPROVED');
+          const note = rejected.length ? `<br><span style="color:var(--red)">⚠ ${rejected.length}개가 승인 거부됨 (DISAPPROVED)</span>` : '';
+          updateCard(t, idx, '완료', `광고 ${got.length}개 확인 (ID 기준) · 광고세트 ${got[0].adset_id || adsetId || '-'}${note}`, true);
+          verifyState[key].running = false;
+          return;
+        }
+        lastStage = `광고 생성 대기 중 (${got.length}/${knownAdIds.length}, ID 기준)`;
+        updateCard(t, idx, '확인중', `${lastStage}… (${secs}초)`);
+        continue;
+      }
       if (!campaignId && wantCampaign) {
         const c = await findByName(`act_${accId}/campaigns`, wantCampaign, sinceTs);
         if (!c) { lastStage = '캠페인 생성 대기 중'; updateCard(t, idx, '확인중', `${lastStage}… (${secs}초)`); continue; }
@@ -3321,7 +3377,14 @@ async function submitAd(t) {
     if (f.videoId) { data.videoId = f.videoId; data.파일ID = ''; }
     const res = await fetch(WEBHOOKS[t], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     if (res.ok) {
-      updateCard(t, idx, '확인중', 'Make로 전송됨 — Meta에서 생성 확인 중...');
+      // Make가 생성된 ID를 응답으로 돌려주면 그걸 그대로 쓴다 (이름 검색보다 정확)
+      const ids = await readWebhookIds(res);
+      if (ids.campaignId) data.캠페인ID = ids.campaignId;
+      if (ids.adsetId) data.광고세트ID = ids.adsetId;
+      if (ids.adIds && ids.adIds.length) data.광고IDs = ids.adIds;
+      updateCard(t, idx, '확인중', ids.any
+        ? 'Make가 ID를 회신했어요 — ID로 확인 중...'
+        : 'Make로 전송됨 — Meta에서 생성 확인 중...');
       showToast(toExisting ? '광고 추가 요청 완료!' : (isT2 ? '세트 추가 요청 완료!' : '광고 등록 요청 완료!'), 'success');
       verifyRegistration(t, idx, data);
     }
