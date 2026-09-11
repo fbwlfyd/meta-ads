@@ -3202,9 +3202,33 @@ const VERIFY_MAX_TRIES = 24;   // 약 2분
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const verifyState = {};
 
+/* 계정에 캠페인이 수천 개일 수 있으므로 전체를 훑지 않는다.
+   ① 최근 생성분만 필터 → ② 이름 포함 검색 → ③ 최후에만 순차 조회 */
+async function findByName(edge, wantName, sinceTs) {
+  if (!wantName) return null;
+  const pick = list => list.find(x => x.name === wantName)
+    || list.find(x => x.name && (x.name.includes(wantName) || wantName.includes(x.name)));
+  const attempt = async (params, pages) => {
+    const list = await fbGetAll(edge, Object.assign({ fields: 'id,name' }, params), pages);
+    return pick(list);
+  };
+  if (sinceTs) {
+    try {
+      const h = await attempt({ filtering: JSON.stringify([{ field: 'created_time', operator: 'GREATER_THAN', value: sinceTs }]) }, 3);
+      if (h) return h;
+    } catch (e) { /* 필터 미지원이면 다음 방법 */ }
+  }
+  try {
+    const h = await attempt({ filtering: JSON.stringify([{ field: 'name', operator: 'CONTAIN', value: wantName }]) }, 3);
+    if (h) return h;
+  } catch (e) { /* 다음 방법 */ }
+  try { return await attempt({}, 10) || null; } catch (e) { return null; }
+}
+
 async function verifyRegistration(t, idx, data) {
   const key = `${t}_${idx}`;
   verifyState[key] = { data, running: true };
+  const sinceTs = Math.floor(Date.now() / 1000) - 900;   // 최근 15분 내 생성분
   const accId = String(data.광고계정ID || '').replace('act_', '');
   const expected = (data.소재목록 || []).map(c => c.광고명).filter(Boolean);
   const wantCampaign = data.캠페인명 || '';
@@ -3220,27 +3244,24 @@ async function verifyRegistration(t, idx, data) {
     const secs = Math.round(n * VERIFY_INTERVAL_MS / 1000);
     try {
       if (!campaignId && wantCampaign) {
-        const camps = await fbGetAll(`act_${accId}/campaigns`, { fields: 'id,name' }, 3);
-        const c = camps.find(x => x.name === wantCampaign) || camps.find(x => matches(x.name, wantCampaign));
+        const c = await findByName(`act_${accId}/campaigns`, wantCampaign, sinceTs);
         if (!c) { lastStage = '캠페인 생성 대기 중'; updateCard(t, idx, '확인중', `${lastStage}… (${secs}초)`); continue; }
         campaignId = c.id;
       }
       if (!adsetId) {
         if (!campaignId) { lastStage = '캠페인 확인 대기 중'; updateCard(t, idx, '확인중', `${lastStage}… (${secs}초)`); continue; }
-        const sets = await fbGetAll(`${campaignId}/adsets`, { fields: 'id,name' }, 3);
-        const st = sets.find(x => x.name === wantAdset) || sets.find(x => matches(x.name, wantAdset));
+        const st = await findByName(`${campaignId}/adsets`, wantAdset, null);
         if (!st) { lastStage = '광고세트 생성 대기 중'; updateCard(t, idx, '확인중', `${lastStage}… (${secs}초)`); continue; }
         adsetId = st.id;
       }
       const ads = await fbGetAll(`${adsetId}/ads`, { fields: 'id,name,effective_status' }, 3);
       const hit = expected.map(nm => ads.find(a => a.name === nm) || ads.find(a => matches(a.name, nm))).filter(Boolean);
       if (hit.length >= expected.length && expected.length > 0) {
-        const issues = hit.filter(a => ['DISAPPROVED', 'WITH_ISSUES', 'PENDING_REVIEW'].includes(a.effective_status));
-        const statusNote = issues.length
-          ? `<br><span style="color:var(--yellow)">⚠ ${issues.length}개가 검수 중이거나 이슈 있음: ${issues.map(a => a.effective_status).join(', ')}</span>`
-          : '';
-        updateCard(t, idx, issues.length ? '주의' : '완료',
-          `광고 ${hit.length}개 생성 확인 · 광고세트 ${adsetId}${statusNote}`, true);
+        // 생성됐으면 완료. 검수중(PENDING_REVIEW)·처리중은 정상 과정이라 따로 표시하지 않는다
+        const rejected = hit.filter(a => a.effective_status === 'DISAPPROVED');
+        const note = rejected.length
+          ? `<br><span style="color:var(--red)">⚠ ${rejected.length}개가 승인 거부됨 (DISAPPROVED)</span>` : '';
+        updateCard(t, idx, '완료', `광고 ${hit.length}개 생성 확인 · 광고세트 ${adsetId}${note}`, true);
         verifyState[key].running = false;
         return;
       }
@@ -3252,7 +3273,8 @@ async function verifyRegistration(t, idx, data) {
   }
   verifyState[key].running = false;
   updateCard(t, idx, '주의',
-    `2분 안에 확인되지 않았어요 (${lastStage}) — Make 시나리오 실행 기록을 확인하세요 ` +
+    `2분 안에 확인되지 않았어요 — 마지막 단계: ${lastStage}<br>` +
+    `<span style="font-size:11px;color:var(--text3)">이름이 정확히 일치하지 않거나 Make에서 실패했을 수 있어요. 광고 관리자에서 직접 확인하세요.</span> ` +
     `<button class="sync-btn" style="margin-left:6px;" onclick="retryVerify('${t}',${idx})">다시 확인</button>`, true);
 }
 function retryVerify(t, idx) {
