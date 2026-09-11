@@ -206,6 +206,10 @@
   .creative-drop { border: 2px dashed var(--border2); border-radius: var(--radius-sm); padding: 8px; text-align: center; cursor: pointer; background: var(--bg); font-size: 12px; color: var(--text2); line-height: 1.45; transition: all 0.2s; word-break: break-all; }
   .creative-drop:hover { border-color: var(--blue); color: var(--blue); }
 
+  .gcard-cols { display: flex; gap: 14px; align-items: flex-start; }
+  .gcard-col { flex: 1 1 0; min-width: 0; }
+  .gcard-col.right { border-left: 1px dashed var(--border2); padding-left: 14px; }
+  .gcard-sub { font-size: 10px; font-weight: 600; color: var(--text3); letter-spacing: .05em; text-transform: uppercase; margin-bottom: 6px; }
   .btn-mini-add { width: 100%; height: 26px; border: 1px dashed var(--border2); border-radius: 6px; background: none; color: var(--text3); font-family: inherit; font-size: 11px; cursor: pointer; margin-top: 2px; }
   .btn-mini-add:hover { border-color: var(--g-red); color: var(--g-red); }
   .creative-card [data-role$="_list"] input { height: 30px; font-size: 12px; }
@@ -285,7 +289,6 @@
     <button class="tab-btn" id="gtab2-btn" onclick="switchGTab(2)"><div class="tab-dot"></div> 세트 추가</button>
   </div>
   <div class="topbar-right">
-    <span style="font-size:11px;color:var(--text3);white-space:nowrap;" id="topVersion"></span>
     <button class="icon-btn" onclick="loadAll()">↻ 새로고침</button>
     <button class="icon-btn" id="settingsBtn" onclick="openSettings()">⚙ Meta 설정</button>
   </div>
@@ -733,7 +736,9 @@
     <div class="panel-head"><h2>Google 세트 추가</h2><p>기존 캠페인에 광고그룹 · 광고 추가</p></div>
     <div class="panel-body">
       <div class="campaign-id-box">
-        <label>기존 캠페인 불러오기</label>
+        <label>① 치과 선택</label>
+        <select id="g2_치과명" onchange="gOnClinic('g2')" style="margin-bottom:12px;"><option value="">치과를 선택하세요</option></select>
+        <label>② 계정 선택 → 캠페인 고르기</label>
         <div class="copy-suggest-wrap">
           <select id="g2_캠페인선택계정" onchange="gOnCampaignAccountSelect('g2')">
             <option value="">계정을 선택하세요</option>
@@ -752,14 +757,16 @@
       <div class="mode-banner new" id="g2_mode_banner">🆕 새 광고그룹을 만들고 그 안에 광고를 추가합니다</div>
 
       <div class="section"><div class="sec-label">기본 정보</div>
-        <div class="field"><label>제작자</label><select id="g2_제작자" onchange="gAutoGenNames('g2')"><option value="">선택</option></select></div>
-        <div class="field"><label>치과명</label><select id="g2_치과명" onchange="gOnClinic('g2')"><option value="">캠페인을 먼저 불러오세요</option></select></div>
+        <div class="field"><label>제작자</label><select id="g2_제작자" onchange="gAutoGenNames('g2')"><option value="">선택</option></select>
+          <span class="link-toggle" onclick="openSettings('gstaff')">제작자 관리</span>
+        </div>
       </div>
       <div class="divider"></div>
 
       <div class="section" id="g2_sec_region"><div class="sec-label">지역</div>
         <div class="field"><label>지역구분자</label>
           <select id="g2_지역구분자" onchange="gOnRegion('g2')"><option value="">선택</option></select>
+          <span class="link-toggle" onclick="openSettings('gregion')">+ 지역 검색해서 추가</span>
           <div class="field-hint" id="g2_region_hint">캠페인을 불러오면 지역 설정 여부를 확인합니다</div>
         </div>
       </div>
@@ -862,10 +869,7 @@
         <h3 id="settingsTitle">Meta 설정</h3>
         <p id="settingsDesc">Meta API로 가져올 수 없는 사내 규칙만 여기서 관리합니다 (이 브라우저에 저장)</p>
       </div>
-      <span style="display:flex;align-items:center;gap:10px;">
-        <span id="appVersionTag" style="font-size:11px;color:var(--text3);background:var(--bg);padding:3px 9px;border-radius:20px;"></span>
-        <button class="modal-close" onclick="closeSettings()">✕</button>
-      </span>
+      <button class="modal-close" onclick="closeSettings()">✕</button>
     </div>
     <div class="modal-tabs" id="metaSettingsTabs">
       <button class="modal-tab active" id="mtab_staff" onclick="switchSettingsTab('staff')">제작자</button>
@@ -879,7 +883,6 @@
       <button class="modal-tab" id="mtab_gclinic" onclick="switchSettingsTab('gclinic')">치과 · 약칭</button>
       <button class="modal-tab" id="mtab_gregion" onclick="switchSettingsTab('gregion')">지역</button>
       <button class="modal-tab" id="mtab_gchannel" onclick="switchSettingsTab('gchannel')">채널</button>
-      <button class="modal-tab" id="mtab_gaccount" onclick="switchSettingsTab('gaccount')">계정 · 잠재고객</button>
       <button class="modal-tab" id="mtab_gsheet" onclick="switchSettingsTab('gsheet')">연동</button>
     </div>
     <div class="modal-body">
@@ -981,21 +984,6 @@
         </div>
         <div id="g_yt_out" style="margin-top:10px;font-size:12px;white-space:pre-wrap;color:var(--text2);"></div>
 
-      </div>
-
-      <div class="modal-sec" id="msec_gaccount">
-        <div class="set-note">Google Ads API 연결이 되면 계정과 잠재고객은 <b>자동으로 불러옵니다</b>. 아래 표는 API가 안 될 때 쓰는 목록입니다.<br><span id="gapi_state" style="font-weight:600;"></span></div>
-        <table class="set-table">
-          <thead><tr><th style="width:48%">계정명</th><th style="width:47%">customer ID (숫자만)</th><th></th></tr></thead>
-          <tbody id="gset_account_body"></tbody>
-        </table>
-        <button class="btn-sm" style="margin-top:10px;" onclick="gAddRow('accounts')">+ 계정 추가</button>
-        <div class="divider" style="margin:22px 0 14px;"></div>
-        <table class="set-table">
-          <thead><tr><th style="width:32%">계정명</th><th style="width:32%">잠재고객 이름</th><th style="width:31%">잠재고객 ID</th><th></th></tr></thead>
-          <tbody id="gset_audience_body"></tbody>
-        </table>
-        <button class="btn-sm" style="margin-top:10px;" onclick="gAddRow('audiences')">+ 잠재고객 추가</button>
       </div>
 
       <div class="modal-sec" id="msec_gsheet">
@@ -1108,7 +1096,6 @@ const WEBHOOKS = {
 };
 const META_ACCESS_TOKEN = 'EAAQT68743nIBRlU3QvgOZAERtM4PXN6gnMzY773HpcCZA2lFs0xyw2fUI4tWeV9SBEthgEx18o3O3ZBREIdGZCx6rPCttbnty3SsRJQE1CTtkl6ULl8EAFw5fZCfhQQaCgRWyuuMu0Xkw5TBircZCW2qkOySKRgCKq5os8ceXZAlHRhhy1oGpZCtSfbM0ZAUqnQZDZD';
 const META_API = 'https://graph.facebook.com/v25.0';
-const APP_VERSION = 'v260911-1640';   // 배포 확인용 — 설정 창 우측 상단에 표시됩니다
 
 // 광고계정은 /me/adaccounts 로 자동 수집합니다.
 // 아래 목록은 그 호출이 실패했을 때만 쓰는 폴백입니다.
@@ -1258,10 +1245,8 @@ function parseCustomCoords(str) {
 /* ===== 설정 모달 ===== */
 let settingsTab = 'staff';
 const META_TABS = ['staff','account','region','page','diag'];
-const GOOGLE_TABS = ['gstaff','gclinic','gregion','gchannel','gaccount','gsheet'];
+const GOOGLE_TABS = ['gstaff','gclinic','gregion','gchannel','gsheet'];
 function openSettings(tab) {
-  const vt = document.getElementById('appVersionTag');
-  if (vt) vt.textContent = APP_VERSION;
   const isG = currentPlatform === 'google';
   document.getElementById('settingsTitle').textContent = isG ? 'Google 설정' : 'Meta 설정';
   document.getElementById('settingsDesc').textContent = isG
@@ -1623,8 +1608,6 @@ const G_TABLES = {
   clinics:   { body: 'gset_clinic_body',    cols: [['clinic','오늘의치과'], ['short','오늘']] },
   regions:   { body: 'gset_region_body',    cols: [['name','부산'], ['criterionId','1009871'], ['refName','비우면 이름에 안 붙음']] },
   channels:  { body: 'gset_channel_body',   cols: [['accountName','계정명'], ['channelName','오늘의병원'], ['channelId','UC...'], ['logoFileId','Drive 파일ID']] },
-  accounts:  { body: 'gset_account_body',   cols: [['name','계정명'], ['customerId','1234567890']] },
-  audiences: { body: 'gset_audience_body',  cols: [['accountName','계정명'], ['name','관심고객'], ['id','1234567']] },
 };
 function gRenderTable(key) {
   const cfg = G_TABLES[key];
@@ -1690,12 +1673,6 @@ function renderGoogleSettings() {
   set('g_proxy_url', GSET.proxyUrl);
   set('g_sheet_id', GSET.sheetId);
   showSavedHook();
-  const st = document.getElementById('gapi_state');
-  if (st) {
-    st.textContent = GDB.fromApi ? '● Google Ads API로 불러온 상태입니다'
-      : (GSET.developerToken ? '○ API 미연결 — 연동 탭에서 테스트해 보세요' : '○ developer token 미설정 — 아래 목록을 사용합니다');
-    st.style.color = GDB.fromApi ? '#047857' : 'var(--text3)';
-  }
   const hint = document.getElementById('g_sheet_hint');
   if (hint && !hint.textContent) hint.textContent = GSET.seeded ? '시트에서 이관 완료 — 평소엔 시트를 읽지 않습니다' : '아직 시트에서 가져오지 않았습니다';
 }
@@ -1861,7 +1838,7 @@ async function dumpProxyRaw() {
   const out = document.getElementById('g_api_out');
   const url = (GSET.proxyUrl || '/api/gads') + '?type=accounts';
   const abs = new URL(url, location.href).href;
-  const lines = [`[원시 응답 확인] ${APP_VERSION}`, `요청 주소: ${abs}`, ''];
+  const lines = ['[원시 응답 확인]', `요청 주소: ${abs}`, ''];
   const show = () => { out.textContent = lines.join('\n'); };
   show();
   let token = '';
@@ -1891,7 +1868,7 @@ async function testGoogleProxy() {
   gCollectSettings(); persistGoogleSettings();
   const out = document.getElementById('g_api_out');
   const lines = []; const push = t => { lines.push(t); out.textContent = lines.join('\n'); };
-  push(`중계 함수 테스트 시작... (${APP_VERSION})`);
+  push('중계 함수 테스트 시작...');
   push(`주소: ${new URL(GSET.proxyUrl || '/api/gads', location.href).href}`);
   if (!ENV.isHttp) { push('❌ 로컬 파일에서는 안 됩니다 — 배포된 주소에서 열어주세요'); return; }
   push('');
@@ -4365,7 +4342,11 @@ function gOnAccount(t) {
     const bizEl = document.getElementById(`${t}_업체명`); if (bizEl) bizEl.value = ch.channelName || '';
   } else { gOnYoutubeChannel(t); }
 }
-function gOnClinic(t) { gAutoGenNames(t); }
+function gOnClinic(t) {
+  gAutoGenNames(t);
+  // 세트 추가 탭: 치과를 바꾸면 캠페인 목록을 다시 걸러 보여준다
+  if (t === 'g2' && document.getElementById('g2_캠페인선택계정')?.value) gOnCampaignAccountSelect('g2');
+}
 function gOnRegion(t) { gAutoGenNames(t); }
 function gToggleChip(input) { const chip = input.closest('.chip'); if (chip) chip.classList.toggle('checked', input.checked); }
 function gOnYoutubeChannel(t) {
@@ -4480,31 +4461,35 @@ function gAddCreativeBlock(t) {
   const idx = list.children.length + 1;
   const block = document.createElement('div');
   block.className = 'creative-card'; block.id = id;
-  block.style.flex = '0 0 330px';
+  block.style.flex = '0 0 560px';
   block.innerHTML = `
     <div class="creative-card-head"><span class="creative-card-title">소재 ${idx}</span>
       <button type="button" class="creative-remove" onclick="gRemoveCreativeBlock('${t}','${id}')">삭제</button>
     </div>
     <div class="creative-adname is-empty" data-role="광고명">캠페인 선택 시 광고명 자동생성</div>
 
-    <div class="field"><label>파일 업로드 방식</label>
-      <select data-role="파일방식" onchange="gOnCardFileMethod('${t}','${id}')">
-        <option value="drive" selected>Drive 파일ID</option>
-        <option value="upload">직접 첨부</option>
-      </select>
-    </div>
-    <div class="field" data-role="drive_wrap"><label>파일ID</label><input type="text" data-role="파일ID" placeholder="Drive 링크 붙여넣기" oninput="extractDriveId(this)"></div>
-    <div class="field" data-role="upload_wrap" style="display:none;"><label>영상 첨부</label><input type="file" data-role="파일첨부" accept="video/*"></div>
-
-    <div class="field"><label>YouTube 제목</label><input type="text" data-role="유튜브제목" placeholder="영상 제목" oninput="gSyncCreativeCommon('${t}')"></div>
-    <div class="field"><label>YouTube 설명</label><textarea data-role="유튜브설명" placeholder="#shorts 등" oninput="gSyncCreativeCommon('${t}')"></textarea></div>
-
-    <div data-role="text_wrap">
-      <div class="field"><label>최종 URL</label><input type="text" data-role="최종URL" placeholder="https://..." oninput="gSyncCreativeCommon('${t}')"></div>
-      ${gMiniList('광고제목', '광고제목', 40, t)}
-      ${gMiniList('긴광고제목', '긴 광고제목', 90, t)}
-      ${gMiniList('설명', '설명', 90, t)}
-      <div class="field"><label>CTA버튼</label><select data-role="CTA버튼" onchange="gSyncCreativeCommon('${t}')"></select></div>
+    <div class="gcard-cols">
+      <div class="gcard-col">
+        <div class="gcard-sub">영상</div>
+        <div class="field"><label>파일 업로드 방식</label>
+          <select data-role="파일방식" onchange="gOnCardFileMethod('${t}','${id}')">
+            <option value="drive" selected>Drive 파일ID</option>
+            <option value="upload">직접 첨부</option>
+          </select>
+        </div>
+        <div class="field" data-role="drive_wrap"><label>파일ID</label><input type="text" data-role="파일ID" placeholder="Drive 링크 붙여넣기" oninput="extractDriveId(this)"></div>
+        <div class="field" data-role="upload_wrap" style="display:none;"><label>영상 첨부</label><input type="file" data-role="파일첨부" accept="video/*"></div>
+        <div class="field"><label>YouTube 제목</label><input type="text" data-role="유튜브제목" placeholder="영상 제목" oninput="gSyncCreativeCommon('${t}')"></div>
+        <div class="field"><label>YouTube 설명</label><textarea data-role="유튜브설명" placeholder="#shorts 등" oninput="gSyncCreativeCommon('${t}')"></textarea></div>
+      </div>
+      <div class="gcard-col right" data-role="text_wrap">
+        <div class="gcard-sub">광고 문구</div>
+        <div class="field"><label>최종 URL</label><input type="text" data-role="최종URL" placeholder="https://..." oninput="gSyncCreativeCommon('${t}')"></div>
+        ${gMiniList('광고제목', '광고제목', 40, t)}
+        ${gMiniList('긴광고제목', '긴 광고제목', 90, t)}
+        ${gMiniList('설명', '설명', 90, t)}
+        <div class="field"><label>CTA버튼</label><select data-role="CTA버튼" onchange="gSyncCreativeCommon('${t}')"></select></div>
+      </div>
     </div>`;
   list.appendChild(block);
   gFillCta(block);
@@ -4538,7 +4523,9 @@ function gApplyCreativeCommon(t) {
   const on = document.getElementById(`${t}_creative_common`)?.checked;
   gCreativeBlocks(t).forEach((b, i) => {
     const w = b.querySelector('[data-role="text_wrap"]');
-    if (w) w.style.display = (on && i > 0) ? 'none' : 'block';
+    const hide = on && i > 0;
+    if (w) w.style.display = hide ? 'none' : 'block';
+    b.style.flex = hide ? '0 0 290px' : '0 0 560px';   // 문구가 접히면 카드도 좁힌다
   });
 }
 function gSyncCreativeCommon(t) {
@@ -4646,6 +4633,24 @@ function gMaxAdSubSeq(list, seq) {
   return mx;
 }
 
+/* 치과명(또는 캠페인 약칭)이 들어간 캠페인만 보여준다 */
+const gLastCampaignList = { g2: [] };
+function gFilterCampaignsByClinic(t, list) {
+  const clinic = document.getElementById(`${t}_치과명`)?.value || '';
+  if (!clinic) return list;
+  const keys = [clinic, GDB.clinicToShortName[clinic] || ''].filter(Boolean).map(normName);
+  const hit = list.filter(c => keys.some(k => normName(c.name).includes(k)));
+  return hit.length ? hit : [];
+}
+function gShowAllCampaigns(t) {
+  const listBox = document.getElementById(`${t}_캠페인목록`);
+  const list = gLastCampaignList[t] || [];
+  if (!listBox || list.length === 0) return;
+  listBox.innerHTML = `<div style="padding:6px 12px;font-size:11px;color:var(--text3);border-bottom:1px solid var(--border);">전체 ${list.length}개 표시 중</div>`
+    + list.map(c => `<div class="copy-suggest-item" onclick="gSelectCampaignFromList('${t}','${c.id}','${(c.name || '').replace(/'/g, '&#39;').replace(/</g, '&lt;')}')">${(c.name || '(이름 없음)').replace(/</g, '&lt;')}</div>`).join('');
+  listBox.classList.add('show');
+}
+
 async function gOnCampaignAccountSelect(t) {
   const accName = document.getElementById(`${t}_캠페인선택계정`).value;
   const listBox = document.getElementById(`${t}_캠페인목록`);
@@ -4664,8 +4669,18 @@ async function gOnCampaignAccountSelect(t) {
     listBox.innerHTML = '<div class="copy-suggest-loading">캠페인 목록을 가져올 수 없어요 — 설정 → 연동에서 Google Ads API 또는 Make 조회 웹훅을 설정하세요</div>';
     return;
   }
-  if (list.length === 0) { listBox.innerHTML = '<div class="copy-suggest-loading">진행중인 캠페인이 없어요</div>'; return; }
-  listBox.innerHTML = list.map(c =>
+  const filtered = gFilterCampaignsByClinic(t, list);
+  if (filtered.length === 0) {
+    const clinic = document.getElementById(`${t}_치과명`)?.value || '';
+    listBox.innerHTML = clinic
+      ? `<div class="copy-suggest-loading">'${clinic}' 과 일치하는 캠페인이 없어요 (전체 ${list.length}개)<br><span class="manual-toggle" onclick="gShowAllCampaigns('${t}')">전체 보기</span></div>`
+      : '<div class="copy-suggest-loading">진행중인 캠페인이 없어요</div>';
+    return;
+  }
+  gLastCampaignList[t] = list;
+  listBox.innerHTML = (filtered.length < list.length
+      ? `<div style="padding:6px 12px;font-size:11px;color:var(--text3);border-bottom:1px solid var(--border);">전체 ${list.length}개 중 ${filtered.length}개 표시 · <span class="manual-toggle" onclick="gShowAllCampaigns('${t}')">전체 보기</span></div>` : '')
+    + filtered.map(c =>
     `<div class="copy-suggest-item" onclick="gSelectCampaignFromList('${t}','${c.id}','${(c.name || '').replace(/'/g, '&#39;').replace(/</g, '&lt;')}')">${(c.name || '(이름 없음)').replace(/</g, '&lt;')}</div>`
   ).join('');
 }
@@ -5148,7 +5163,6 @@ function gClearForm(t) {
 document.getElementById('g1_시작일').value = new Date().toISOString().split('T')[0];
 
 /* 시작 */
-{ const tv = document.getElementById('topVersion'); if (tv) tv.textContent = APP_VERSION; }
 loadSettings();
 applySettingsToDB();
 populateDropdowns();
