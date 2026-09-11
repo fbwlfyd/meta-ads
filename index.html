@@ -1005,6 +1005,18 @@
         <div class="divider" style="margin:22px 0 14px;"></div>
         <div class="set-note">API가 막히면 Make에 조회용 시나리오를 만들고 그 웹훅 주소를 넣으세요. 앱이 <code>{"type":"campaigns","customerId":"..."}</code> 형태로 물어보고 JSON 목록을 받습니다.</div>
         <div class="field"><label>Make 조회용 웹훅 URL</label><input type="text" id="g_lookup_hook" placeholder="https://hook.eu1.make.com/..."></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select id="g_hook_test_type" style="height:34px;border:1px solid var(--border2);border-radius:8px;padding:0 10px;font-family:inherit;font-size:12px;">
+            <option value="accounts">accounts</option>
+            <option value="campaigns" selected>campaigns</option>
+            <option value="adgroups">adgroups</option>
+            <option value="ads">ads</option>
+            <option value="audiences">audiences</option>
+          </select>
+          <input type="text" id="g_hook_test_cid" placeholder="customerId (숫자만)" style="flex:1;height:34px;border:1px solid var(--border2);border-radius:8px;padding:0 10px;font-family:inherit;font-size:12px;">
+          <button class="btn-sm blue" onclick="testLookupWebhook()">조회 웹훅 테스트</button>
+        </div>
+        <div id="g_hook_out" style="margin-top:10px;font-size:12px;white-space:pre-wrap;background:var(--bg);border-radius:8px;padding:10px;color:var(--text2);min-height:36px;">아직 테스트하지 않았습니다.</div>
 
         <div class="divider" style="margin:22px 0 14px;"></div>
         <div class="set-note">기존 <b>구글참조</b> 시트에서 위 설정들을 다시 가져올 수 있습니다. 평소에는 시트를 읽지 않습니다.</div>
@@ -1790,6 +1802,26 @@ async function gAdsSearch(customerId, query) {
   return out;
 }
 
+async function testLookupWebhook() {
+  gCollectSettings(); persistGoogleSettings();
+  const out = document.getElementById('g_hook_out');
+  if (!GSET.lookupWebhook) { out.textContent = '웹훅 URL을 먼저 입력하고 저장하세요.'; return; }
+  const type = document.getElementById('g_hook_test_type').value;
+  const cid = (document.getElementById('g_hook_test_cid').value || '').replace(/[^0-9]/g, '');
+  const body = { type, customerId: cid };
+  if (type === 'adgroups') body.campaignId = 'TEST';
+  if (type === 'ads') body.adGroupId = 'TEST';
+  out.textContent = `보내는 값: ${JSON.stringify(body)}\n호출 중...`;
+  try {
+    const list = await gLookupViaWebhook(type, body);
+    out.textContent = `보내는 값: ${JSON.stringify(body)}\n\n✅ ${list.length}건 수신\n`
+      + list.slice(0, 8).map(x => `  · ${x.name} (${x.id})${x.status ? ' [' + x.status + ']' : ''}`).join('\n')
+      + (list.length > 8 ? `\n  … 외 ${list.length - 8}건` : '');
+  } catch (e) {
+    out.textContent = `보내는 값: ${JSON.stringify(body)}\n\n❌ ${e.message}`;
+  }
+}
+
 async function testGoogleAdsApi() {
   gCollectSettings(); persistGoogleSettings();
   const out = document.getElementById('g_api_out');
@@ -1844,17 +1876,34 @@ async function gLookup(type, params) {
     catch (e) { console.warn('Google Ads API 조회 실패:', e.message); }
   }
   if (GSET.lookupWebhook) {
-    try {
-      const res = await fetch(GSET.lookupWebhook, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(Object.assign({ type }, params)),
-      });
-      const j = await res.json();
-      return Array.isArray(j) ? j : (j.data || j.results || []);
-    } catch (e) { console.warn('Make 조회 실패:', e.message); }
+    try { return await gLookupViaWebhook(type, params); }
+    catch (e) { console.warn('Make 조회 실패:', e.message); gLastLookupError = e.message; }
   }
   return null;   // 폴백 없음 → 호출부에서 설정값 사용
 }
+let gLastLookupError = '';
+/* Make 조회 웹훅 호출.
+   Content-Type을 text/plain 으로 보내 CORS preflight를 피한다 (본문은 그대로 JSON). */
+async function gLookupViaWebhook(type, params) {
+  const res = await fetch(GSET.lookupWebhook, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+    body: JSON.stringify(Object.assign({ type }, params)),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`HTTP ${res.status} — ${text.slice(0, 120)}`);
+  let j;
+  try { j = JSON.parse(text); }
+  catch (e) { throw new Error('응답이 JSON이 아닙니다: ' + text.slice(0, 120)); }
+  const list = Array.isArray(j) ? j : (j.data || j.results || j.items || []);
+  if (!Array.isArray(list)) throw new Error('배열 형태의 목록이 아닙니다');
+  return list.map(x => ({
+    id: String(x.id || x.ID || x.resourceName || '').split('/').pop(),
+    name: x.name || x.Name || '(이름 없음)',
+    status: x.status || x.Status || '',
+  })).filter(x => x.id);
+}
+
 async function gLookupViaApi(type, params) {
   const cid = params && params.customerId;
   if (type === 'accounts') {
