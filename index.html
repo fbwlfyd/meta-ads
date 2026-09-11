@@ -1007,6 +1007,7 @@
         <div style="display:flex;gap:8px;">
           <button class="btn-sm blue" onclick="testGoogleProxy()">🔌 중계 함수 연결 테스트</button>
           <button class="btn-sm" onclick="testGoogleAdsApi()">브라우저 직접 호출 테스트</button>
+          <button class="btn-sm" onclick="dumpProxyRaw()">🔍 원시 응답 보기</button>
         </div>
         <div id="g_api_out" style="margin-top:12px;font-size:12px;line-height:1.7;white-space:pre-wrap;background:var(--bg);border-radius:8px;padding:12px;color:var(--text2);min-height:40px;">아직 테스트하지 않았습니다.</div>
 
@@ -1106,7 +1107,7 @@ const WEBHOOKS = {
 };
 const META_ACCESS_TOKEN = 'EAAQT68743nIBRlU3QvgOZAERtM4PXN6gnMzY773HpcCZA2lFs0xyw2fUI4tWeV9SBEthgEx18o3O3ZBREIdGZCx6rPCttbnty3SsRJQE1CTtkl6ULl8EAFw5fZCfhQQaCgRWyuuMu0Xkw5TBircZCW2qkOySKRgCKq5os8ceXZAlHRhhy1oGpZCtSfbM0ZAUqnQZDZD';
 const META_API = 'https://graph.facebook.com/v25.0';
-const APP_VERSION = 'v260911-1610';   // 배포 확인용 — 설정 창 우측 상단에 표시됩니다
+const APP_VERSION = 'v260911-1640';   // 배포 확인용 — 설정 창 우측 상단에 표시됩니다
 
 // 광고계정은 /me/adaccounts 로 자동 수집합니다.
 // 아래 목록은 그 호출이 실패했을 때만 쓰는 폴백입니다.
@@ -1853,12 +1854,44 @@ async function testLookupWebhook() {
   }
 }
 
+/* 파싱 없이 /api/gads 가 실제로 뭘 돌려주는지 그대로 본다 */
+async function dumpProxyRaw() {
+  gCollectSettings(); persistGoogleSettings();
+  const out = document.getElementById('g_api_out');
+  const url = (GSET.proxyUrl || '/api/gads') + '?type=accounts';
+  const abs = new URL(url, location.href).href;
+  const lines = [`[원시 응답 확인] ${APP_VERSION}`, `요청 주소: ${abs}`, ''];
+  const show = () => { out.textContent = lines.join('\n'); };
+  show();
+  let token = '';
+  try { token = await gDriveSignIn(); lines.push('토큰: 있음 (' + token.slice(0, 12) + '...)'); }
+  catch (e) { lines.push('토큰: 없음 — ' + e.message); }
+  show();
+  try {
+    const res = await fetch(abs, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    const text = await res.text();
+    lines.push(`HTTP ${res.status} ${res.statusText}`);
+    lines.push(`content-type: ${res.headers.get('content-type') || '(없음)'}`);
+    lines.push('');
+    lines.push('--- 응답 앞부분 300자 ---');
+    lines.push(text.slice(0, 300));
+    lines.push('------------------------');
+    lines.push('');
+    if (/^\s*<(!doctype|html)/i.test(text)) lines.push('→ HTML 페이지입니다. /api/gads 가 함수로 동작하지 않습니다.');
+    else if (text.trim().startsWith('{') || text.trim().startsWith('[')) lines.push('→ JSON입니다. 함수 정상 동작 중.');
+    else lines.push('→ 정체불명의 응답입니다.');
+  } catch (e) {
+    lines.push('요청 자체 실패: ' + e.message);
+  }
+  show();
+}
+
 async function testGoogleProxy() {
   gCollectSettings(); persistGoogleSettings();
   const out = document.getElementById('g_api_out');
   const lines = []; const push = t => { lines.push(t); out.textContent = lines.join('\n'); };
-  push('중계 함수 테스트 시작...');
-  push(`주소: ${GSET.proxyUrl}`);
+  push(`중계 함수 테스트 시작... (${APP_VERSION})`);
+  push(`주소: ${new URL(GSET.proxyUrl || '/api/gads', location.href).href}`);
   if (!ENV.isHttp) { push('❌ 로컬 파일에서는 안 됩니다 — 배포된 주소에서 열어주세요'); return; }
   push('');
   push('① Google 로그인 (adwords 권한)');
