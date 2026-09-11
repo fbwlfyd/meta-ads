@@ -999,7 +999,11 @@
           <div class="field"><label>developer token</label><input type="text" id="g_dev_token" placeholder="Google Ads API developer token"></div>
           <div class="field"><label>MCC(login customer) ID</label><input type="text" id="g_login_cid" placeholder="하이픈 없이 숫자만"></div>
         </div>
-        <button class="btn-sm blue" onclick="testGoogleAdsApi()">🔌 Google Ads API 연결 테스트</button>
+        <div class="field"><label>중계 함수 주소 (같은 도메인에 올린 파일)</label><input type="text" id="g_proxy_url" placeholder="/api/gads"></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-sm blue" onclick="testGoogleProxy()">🔌 중계 함수 연결 테스트</button>
+          <button class="btn-sm" onclick="testGoogleAdsApi()">브라우저 직접 호출 테스트</button>
+        </div>
         <div id="g_api_out" style="margin-top:12px;font-size:12px;line-height:1.7;white-space:pre-wrap;background:var(--bg);border-radius:8px;padding:12px;color:var(--text2);min-height:40px;">아직 테스트하지 않았습니다.</div>
 
         <div class="divider" style="margin:22px 0 14px;"></div>
@@ -1071,7 +1075,8 @@ const G_DEFAULTS = {
   audiences: [],          // {accountName, name, id} API가 안 되면 이걸 씀
   developerToken: '',     // Google Ads API
   loginCustomerId: '',    // MCC ID (하이픈 없이)
-  lookupWebhook: '',      // Make 조회용 웹훅 (API가 막힐 때)
+  lookupWebhook: '',      // Make 조회용 웹훅 (마지막 폴백)
+  proxyUrl: '/api/gads',  // 같은 도메인에 둔 중계 함수 (1순위)
 };
 let GSET = JSON.parse(JSON.stringify(G_DEFAULTS));
 function loadGoogleSettings() {
@@ -1648,6 +1653,7 @@ function gCollectSettings() {
     GSET.developerToken = val('g_dev_token').trim();
     GSET.loginCustomerId = val('g_login_cid').replace(/[^0-9]/g, '');
     GSET.lookupWebhook = val('g_lookup_hook').trim().replace(/[\s\u200b]+/g, '');
+    GSET.proxyUrl = val('g_proxy_url').trim() || '/api/gads';
     GSET.sheetId = val('g_sheet_id').trim();
     SHEET_ID = GSET.sheetId || DEFAULT_SHEET_ID;
   }
@@ -1672,6 +1678,7 @@ function renderGoogleSettings() {
   set('g_dev_token', GSET.developerToken);
   set('g_login_cid', GSET.loginCustomerId);
   set('g_lookup_hook', GSET.lookupWebhook);
+  set('g_proxy_url', GSET.proxyUrl);
   set('g_sheet_id', GSET.sheetId);
   showSavedHook();
   const st = document.getElementById('gapi_state');
@@ -1839,6 +1846,44 @@ async function testLookupWebhook() {
   }
 }
 
+async function testGoogleProxy() {
+  gCollectSettings(); persistGoogleSettings();
+  const out = document.getElementById('g_api_out');
+  const lines = []; const push = t => { lines.push(t); out.textContent = lines.join('\n'); };
+  push('중계 함수 테스트 시작...');
+  push(`주소: ${GSET.proxyUrl}`);
+  if (!ENV.isHttp) { push('❌ 로컬 파일에서는 안 됩니다 — 배포된 주소에서 열어주세요'); return; }
+  push('');
+  push('① Google 로그인 (adwords 권한)');
+  try { await gDriveSignIn(); push('  ✅ 완료'); }
+  catch (e) { push('  ❌ ' + e.message); return; }
+  push('');
+  push('② 접근 가능한 계정 조회');
+  try {
+    const list = await gLookupViaProxy('accounts', {});
+    push(`  ✅ ${list.length}개`);
+    list.slice(0, 10).forEach(a => push(`     · ${a.name} (${a.id})`));
+    if (list.length) {
+      push('');
+      push('③ 첫 계정의 캠페인 조회');
+      const camps = await gLookupViaProxy('campaigns', { customerId: list[0].id });
+      push(`  ✅ ${camps.length}개`);
+      camps.slice(0, 5).forEach(c => push(`     · ${c.name} (${c.id})`));
+    }
+    push('');
+    push('✔ 성공입니다. [저장하고 적용] 후 세트 추가 탭에서 바로 쓸 수 있어요.');
+  } catch (e) {
+    push('  ❌ ' + e.message);
+    push('');
+    if (/JSON이 아닙니다|404/.test(e.message)) {
+      push('  → api/gads.js 파일이 아직 배포되지 않은 것 같습니다.');
+      push('     Vercel 프로젝트 루트에 api/gads.js 를 넣고 재배포하세요.');
+    } else if (/DEVELOPER_TOKEN/.test(e.message)) {
+      push('  → Vercel 환경변수 GOOGLE_ADS_DEVELOPER_TOKEN 을 설정하고 재배포하세요.');
+    }
+  }
+}
+
 async function testGoogleAdsApi() {
   gCollectSettings(); persistGoogleSettings();
   const out = document.getElementById('g_api_out');
@@ -1888,9 +1933,15 @@ async function testGoogleAdsApi() {
 
 /* 조회 계층: Google Ads API → Make 조회 웹훅 → 설정값 */
 async function gLookup(type, params) {
+  // ① 같은 도메인의 중계 함수 (CORS 없음 · 가장 권장)
+  if (GSET.proxyUrl && ENV.isHttp) {
+    try { return await gLookupViaProxy(type, params); }
+    catch (e) { gLastLookupError = e.message; console.warn('중계 함수 조회 실패:', e.message); }
+  }
+  // ② 브라우저에서 직접 (대부분 CORS로 막힘)
   if (GSET.developerToken) {
     try { return await gLookupViaApi(type, params); }
-    catch (e) { console.warn('Google Ads API 조회 실패:', e.message); }
+    catch (e) { console.warn('Google Ads API 직접 조회 실패:', e.message); }
   }
   if (GSET.lookupWebhook) {
     try { return await gLookupViaWebhook(type, params); }
@@ -1899,6 +1950,24 @@ async function gLookup(type, params) {
   return null;   // 폴백 없음 → 호출부에서 설정값 사용
 }
 let gLastLookupError = '';
+/* 같은 도메인에 올려둔 /api/gads 중계 함수를 부른다.
+   브라우저는 자기 도메인만 부르므로 CORS가 아예 발생하지 않는다. */
+function gProxyUrl(type, params) {
+  const q = new URLSearchParams();
+  q.set('type', type);
+  Object.entries(params || {}).forEach(([k, v]) => { if (k !== 'type' && v) q.set(k, v); });
+  const base = GSET.proxyUrl || '/api/gads';
+  return base + (base.includes('?') ? '&' : '?') + q.toString();
+}
+async function gLookupViaProxy(type, params) {
+  const token = await gDriveSignIn();   // adwords 권한 포함
+  const res = await fetch(gProxyUrl(type, params), { headers: { Authorization: `Bearer ${token}` } });
+  const text = await res.text();
+  let j; try { j = JSON.parse(text); } catch (e) { throw new Error('중계 함수 응답이 JSON이 아닙니다: ' + text.slice(0, 120)); }
+  if (!res.ok) throw new Error(j.error || `HTTP ${res.status}`);
+  if (!Array.isArray(j)) throw new Error('목록 형태가 아닙니다');
+  return j;
+}
 /* Make 조회 웹훅 호출.
    쿼리 파라미터로 GET 요청한다 — CORS preflight가 없고,
    Make가 type·customerId 를 각각의 필드로 인식한다. */
