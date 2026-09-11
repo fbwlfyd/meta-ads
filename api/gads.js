@@ -37,6 +37,11 @@ const QUERIES = {
   audiences: () =>
     "SELECT user_list.id, user_list.name FROM user_list " +
     "WHERE user_list.membership_status = 'OPEN' LIMIT 200",
+  // 캠페인 단위에 걸린 지역 타겟 (있으면 광고그룹에서 지역을 다시 설정하지 않는다)
+  campaigngeo: (p) =>
+    "SELECT campaign_criterion.criterion_id, campaign_criterion.location.geo_target_constant, " +
+    "campaign_criterion.negative, campaign_criterion.type FROM campaign_criterion " +
+    `WHERE campaign.id = ${Number(p.campaignId)} AND campaign_criterion.type = 'LOCATION' LIMIT 100`,
 };
 
 // 응답이 JSON이 아니면(=지원 종료된 버전 등) 내용을 그대로 담아 돌려준다
@@ -75,6 +80,11 @@ function normalize(type, rows) {
     if (type === 'adgroups') return { id: String(r.adGroup.id), name: r.adGroup.name, status: r.adGroup.status };
     if (type === 'ads') return { id: String(r.adGroupAd.ad.id), name: r.adGroupAd.ad.name || '(이름 없음)', status: r.adGroupAd.status };
     if (type === 'audiences') return { id: String(r.userList.id), name: r.userList.name, status: '' };
+    if (type === 'campaigngeo') {
+      const cc = r.campaignCriterion || {};
+      const gt = (cc.location && cc.location.geoTargetConstant) || '';
+      return { id: String(gt.split('/').pop() || cc.criterionId || ''), name: gt || String(cc.criterionId || ''), status: cc.negative ? 'NEGATIVE' : 'POSITIVE' };
+    }
     return null;
   }).filter(Boolean);
 }
