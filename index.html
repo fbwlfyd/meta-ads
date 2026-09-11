@@ -873,7 +873,7 @@
       <button class="modal-tab active" id="mtab_gstaff" onclick="switchSettingsTab('gstaff')">제작자</button>
       <button class="modal-tab" id="mtab_gclinic" onclick="switchSettingsTab('gclinic')">치과 · 약칭</button>
       <button class="modal-tab" id="mtab_gregion" onclick="switchSettingsTab('gregion')">지역</button>
-      <button class="modal-tab" id="mtab_gchannel" onclick="switchSettingsTab('gchannel')">채널 · CTA</button>
+      <button class="modal-tab" id="mtab_gchannel" onclick="switchSettingsTab('gchannel')">채널</button>
       <button class="modal-tab" id="mtab_gaccount" onclick="switchSettingsTab('gaccount')">계정 · 잠재고객</button>
       <button class="modal-tab" id="mtab_gsheet" onclick="switchSettingsTab('gsheet')">연동</button>
     </div>
@@ -951,7 +951,11 @@
       </div>
 
       <div class="modal-sec" id="msec_gregion">
-        <div class="set-note">Google Ads 지역 타겟은 <b>criterion ID</b>(geo target constant)로 지정합니다. <b>표기명</b>을 비우면 이름에 지역이 붙지 않습니다.</div>
+        <div class="set-note">Google Ads 지역 타겟은 <b>criterion ID</b>(geo target constant)로 지정합니다. <b>표기명</b>을 비우면 이름에 지역이 붙지 않습니다.<br>아래 검색은 Google Ads API 연결이 된 경우에만 동작합니다.</div>
+        <div class="region-search-wrap">
+          <input type="text" id="g_region_search" placeholder="지역 이름을 입력하세요 (예: 부산, 울주)" oninput="gOnRegionSearchInput()" autocomplete="off">
+          <div class="region-results" id="g_region_results"></div>
+        </div>
         <table class="set-table">
           <thead><tr><th style="width:32%">지역명</th><th style="width:32%">criterion ID</th><th style="width:31%">표기명</th><th></th></tr></thead>
           <tbody id="gset_region_body"></tbody>
@@ -965,14 +969,12 @@
           <thead><tr><th style="width:25%">계정명</th><th style="width:25%">채널명</th><th style="width:25%">채널 ID</th><th style="width:22%">로고 파일ID</th><th></th></tr></thead>
           <tbody id="gset_channel_body"></tbody>
         </table>
-        <button class="btn-sm" style="margin-top:10px;" onclick="gAddRow('channels')">+ 채널 추가</button>
-        <div class="divider" style="margin:22px 0 14px;"></div>
-        <div class="set-note">CTA 버튼 — 화면에 보일 이름과 API 값입니다.</div>
-        <table class="set-table">
-          <thead><tr><th style="width:48%">표시 이름</th><th style="width:47%">API 값</th><th></th></tr></thead>
-          <tbody id="gset_cta_body"></tbody>
-        </table>
-        <button class="btn-sm" style="margin-top:10px;" onclick="gAddRow('cta')">+ CTA 추가</button>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="btn-sm" onclick="gAddRow('channels')">+ 채널 추가</button>
+          <button class="btn-sm blue" onclick="fetchYoutubeChannelsToSettings()">▶ YouTube에서 채널 가져오기</button>
+        </div>
+        <div id="g_yt_out" style="margin-top:10px;font-size:12px;white-space:pre-wrap;color:var(--text2);"></div>
+
       </div>
 
       <div class="modal-sec" id="msec_gaccount">
@@ -1593,7 +1595,6 @@ const G_TABLES = {
   clinics:   { body: 'gset_clinic_body',    cols: [['clinic','오늘의치과'], ['short','오늘']] },
   regions:   { body: 'gset_region_body',    cols: [['name','부산'], ['criterionId','1009871'], ['refName','비우면 이름에 안 붙음']] },
   channels:  { body: 'gset_channel_body',   cols: [['accountName','계정명'], ['channelName','오늘의병원'], ['channelId','UC...'], ['logoFileId','Drive 파일ID']] },
-  cta:       { body: 'gset_cta_body',       cols: [['label','문의하기'], ['value','CONTACT_US']] },
   accounts:  { body: 'gset_account_body',   cols: [['name','계정명'], ['customerId','1234567890']] },
   audiences: { body: 'gset_audience_body',  cols: [['accountName','계정명'], ['name','관심고객'], ['id','1234567']] },
 };
@@ -1665,6 +1666,90 @@ function saveGoogleSettingsNow() {
 function saveCurrentSettings() {
   if (currentPlatform === 'google') saveGoogleSettingsNow();
   else saveSettings();
+}
+
+/* ===== Google Ads 지역 검색 (geo_target_constant) ===== */
+let gRegionSearchTimer = null;
+function gOnRegionSearchInput() {
+  clearTimeout(gRegionSearchTimer);
+  const q = document.getElementById('g_region_search').value.trim();
+  const box = document.getElementById('g_region_results');
+  if (q.length < 2) { box.classList.remove('show'); box.innerHTML = ''; return; }
+  box.innerHTML = '<div class="region-result">검색 중...</div>';
+  box.classList.add('show');
+  gRegionSearchTimer = setTimeout(() => gSearchGeo(q), 400);
+}
+async function gSearchGeo(q) {
+  const box = document.getElementById('g_region_results');
+  if (!GSET.developerToken) {
+    box.innerHTML = '<div class="region-result">Google Ads API가 연결되지 않았습니다 — 연동 탭에서 developer token을 설정하세요</div>';
+    return;
+  }
+  try {
+    const j = await gAdsFetch('geoTargetConstants:suggest', {
+      locale: 'ko', countryCode: 'KR',
+      locationNames: { names: [q] },
+    });
+    const items = (j.geoTargetConstantSuggestions || []).slice(0, 25);
+    if (items.length === 0) { box.innerHTML = '<div class="region-result">결과가 없어요</div>'; return; }
+    window._gGeo = items;
+    box.innerHTML = items.map((it, i) => {
+      const g = it.geoTargetConstant || {};
+      const sub = [g.targetType, g.canonicalName].filter(Boolean).join(' · ');
+      return `<div class="region-result" onclick="gAddRegionFromSearch(${i})"><span>${esc(g.name || '')}</span><span class="sub">${esc(sub)}</span></div>`;
+    }).join('');
+  } catch (e) {
+    box.innerHTML = `<div class="region-result">검색 실패: ${esc(e.message)}</div>`;
+  }
+}
+function gAddRegionFromSearch(i) {
+  const it = (window._gGeo || [])[i]; if (!it) return;
+  const g = it.geoTargetConstant || {};
+  const id = String(g.id || (g.resourceName || '').split('/').pop() || '');
+  gCollectSettings();
+  if ((GSET.regions || []).some(r => r.criterionId === id)) { showToast('이미 추가된 지역이에요', 'error'); return; }
+  (GSET.regions = GSET.regions || []).push({ name: g.name || '', criterionId: id, refName: `${g.name || ''}타겟` });
+  gRenderTable('regions');
+  document.getElementById('g_region_results').classList.remove('show');
+  document.getElementById('g_region_search').value = '';
+  showToast(`${g.name} 추가됨 — 표기명을 확인하고 저장하세요`, 'success');
+}
+
+/* ===== YouTube 채널 자동 조회 =====
+   Google Ads API와 달리 YouTube Data API는 브라우저에서 바로 호출된다.
+   로그인한 계정이 관리하는 채널을 그대로 가져온다. */
+async function loadYoutubeChannels() {
+  const token = await gDriveSignIn();
+  const res = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true&maxResults=50', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const j = await res.json();
+  if (j.error) throw new Error(j.error.message || 'YouTube API 오류');
+  return (j.items || []).map(it => ({
+    channelId: it.id,
+    channelName: (it.snippet && it.snippet.title) || it.id,
+    thumb: it.snippet && it.snippet.thumbnails && it.snippet.thumbnails.default ? it.snippet.thumbnails.default.url : '',
+  }));
+}
+async function fetchYoutubeChannelsToSettings() {
+  const out = document.getElementById('g_yt_out');
+  out.textContent = '불러오는 중...';
+  try {
+    const list = await loadYoutubeChannels();
+    if (list.length === 0) { out.textContent = '이 계정이 관리하는 YouTube 채널이 없습니다.'; return; }
+    gCollectSettings();
+    const accName = (GDB.accounts[0] || {}).name || '';
+    list.forEach(ch => {
+      const exist = (GSET.channels || []).find(c => c.channelId === ch.channelId)
+        || (GSET.channels || []).find(c => (c.channelName || '').trim() === ch.channelName.trim());
+      if (exist) { exist.channelName = ch.channelName; exist.channelId = ch.channelId; }
+      else (GSET.channels = GSET.channels || []).push({ accountName: accName, channelName: ch.channelName, channelId: ch.channelId, logoFileId: '' });
+    });
+    persistGoogleSettings(); applyGoogleSettings(); gPopulateDropdowns(); gRenderTable('channels');
+    out.textContent = `✅ 채널 ${list.length}개를 가져왔습니다 — ${list.map(c => c.channelName).join(', ')}\n계정명은 필요하면 표에서 고쳐 주세요.`;
+  } catch (e) {
+    out.textContent = '❌ ' + e.message + '\n(YouTube 권한이 없으면 다시 로그인해야 합니다)';
+  }
 }
 
 /* ===== Google Ads API 연결 =====
@@ -1740,7 +1825,14 @@ async function testGoogleAdsApi() {
     push(c ? `  ✅ ${c.descriptiveName || '(이름 없음)'} (${c.id})` : '  · 결과 없음');
   } catch (e) { push('  ❌ ' + e.message); }
   push('');
-  push('✔ 여기까지 성공했다면 계정·잠재고객·캠페인·광고그룹을 API로 불러올 수 있습니다.');
+  push('④ 지역 검색 (geoTargetConstants:suggest)');
+  try {
+    const j = await gAdsFetch('geoTargetConstants:suggest', { locale: 'ko', countryCode: 'KR', locationNames: { names: ['부산'] } });
+    const n = (j.geoTargetConstantSuggestions || []).length;
+    push(n ? `  ✅ ${n}건 검색됨` : '  · 결과 없음');
+  } catch (e) { push('  ❌ ' + e.message); }
+  push('');
+  push('✔ 여기까지 성공했다면 계정·잠재고객·캠페인·광고그룹·지역을 API로 불러올 수 있습니다.');
   push('  [저장하고 적용]을 누른 뒤 새로고침하세요.');
 }
 
@@ -2211,7 +2303,7 @@ function applyGoogleSettings() {
   GDB.staff = (GSET.staff || []).filter(x => x.name);
   GDB.googleRegions = (GSET.regions || []).filter(x => x.name)
     .map(r => ({ name: r.name, criterionId: r.criterionId || '', refName: r.refName || '' }));
-  GDB.ctaTypes = (GSET.cta || []).filter(x => x.value);
+  GDB.ctaTypes = GOOGLE_CTA;   // 고정 목록 (시트·설정 불필요)
   GDB.clinicNames = [...new Set((GSET.clinics || []).map(c => c.clinic).filter(Boolean))];
   GDB.clinicToShortName = {};
   (GSET.clinics || []).forEach(c => { if (c.clinic) GDB.clinicToShortName[c.clinic] = c.short || ''; });
@@ -2239,7 +2331,6 @@ function seedGoogleSettingsFromSheet(rows) {
   GSET.staff = uniq(body.map(r => ({ name: r[11] || '', id: r[12] || '' })), x => x.name);
   GSET.clinics = uniq(body.map(r => ({ clinic: r[10] || '', short: r[9] || '' })), x => x.clinic);
   GSET.regions = uniq(body.map(r => ({ name: r[2] || '', criterionId: r[3] || '', refName: r[4] || '' })), x => x.name);
-  GSET.cta = uniq(body.map(r => ({ label: r[15] || '', value: r[16] || '' })), x => x.value);
   GSET.accounts = uniq(body.map(r => ({ name: r[0] || '', customerId: r[1] || '' })), x => x.name);
   GSET.audiences = uniq(body.map(r => ({ accountName: r[5] || '', name: r[7] || '', id: r[8] || '' })), x => (x.accountName && x.id) ? x.accountName + '|' + x.id : '');
   const chMap = {};
@@ -3884,7 +3975,7 @@ async function gDriveSignIn() {
   return new Promise((resolve, reject) => {
     if (gDriveAccessToken) { resolve(gDriveAccessToken); return; }
     const popup = window.open(
-      `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GDRIVE_CLIENT_ID}&redirect_uri=${encodeURIComponent(location.origin + '/oauth2callback')}&response_type=token&scope=https://www.googleapis.com/auth/drive.file%20https://www.googleapis.com/auth/spreadsheets%20https://www.googleapis.com/auth/adwords`,
+      `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GDRIVE_CLIENT_ID}&redirect_uri=${encodeURIComponent(location.origin + '/oauth2callback')}&response_type=token&scope=https://www.googleapis.com/auth/drive.file%20https://www.googleapis.com/auth/spreadsheets%20https://www.googleapis.com/auth/adwords%20https://www.googleapis.com/auth/youtube.readonly`,
       'googleAuth', 'width=500,height=600'
     );
     const handler = (e) => {
@@ -3927,6 +4018,21 @@ async function uploadFileToDrive(file) {
   return json.id;
 }
 
+/* 디맨드젠 광고의 CTA는 Google이 정한 고정 목록이라 API 조회가 없다 */
+const GOOGLE_CTA = [
+  { value: 'LEARN_MORE', label: '자세히 알아보기' },
+  { value: 'CONTACT_US', label: '문의하기' },
+  { value: 'BOOK_NOW', label: '지금 예약하기' },
+  { value: 'SIGN_UP', label: '가입하기' },
+  { value: 'GET_QUOTE', label: '견적 요청' },
+  { value: 'APPLY_NOW', label: '지금 신청하기' },
+  { value: 'SUBSCRIBE', label: '구독하기' },
+  { value: 'DOWNLOAD', label: '다운로드' },
+  { value: 'SHOP_NOW', label: '지금 쇼핑하기' },
+  { value: 'ORDER_NOW', label: '지금 주문하기' },
+  { value: 'VISIT_SITE', label: '사이트 방문' },
+  { value: 'SEE_MORE', label: '더보기' },
+];
 let GDB = {
   accounts: [], staff: [], googleRegions: [], audiencesByAccount: {},
   clinicNames: [], clinicToShortName: {}, youtubeChannelsByAccount: {},
