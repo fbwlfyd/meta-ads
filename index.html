@@ -1576,7 +1576,13 @@ async function fbGetAs(path, params, token) {
     throw new Error(netErrorHint());
   }
   const json = await res.json().catch(() => ({}));
-  if (json.error) throw new Error(json.error.message || 'Graph API 오류');
+  if (json.error) {
+    const e = json.error;
+    const parts = [e.error_user_title, e.error_user_msg, e.message].filter(Boolean);
+    const err = new Error(parts.join(' — ') || 'Graph API 오류');
+    err.fb = e;
+    throw err;
+  }
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return json;
 }
@@ -2478,7 +2484,14 @@ function onAccount(t) {
   resetPixelSelect(t, acc ? '불러오는 중...' : '계정을 먼저 선택하세요');
   loadCustomAudiences(t);
   refreshCreativeForms(t);
-  if (acc && acc.id) loadPixels(t);
+  if (acc && acc.id) {
+    loadPixels(t);
+    // 계정을 늦게 골랐어도 이미 붙여둔 파일은 지금 미리 올려둔다
+    creativeBlocks(t).forEach(b => {
+      const inp = b.querySelector('[data-role="파일첨부"]');
+      if (inp && inp.files[0] && !b.dataset.uploaded) prefetchUpload(inp);
+    });
+  }
   // 계정이 바뀌면 인스타 후보도 갱신
   loadInstagramAccounts(t);
 }
@@ -2727,10 +2740,60 @@ function onCreativeDrop(e, dz) {
   const input = dz.parentElement.querySelector('[data-role="파일첨부"]');
   const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files;
   setCreativeDropText(dz, file.name);
+  prefetchUpload(input);
 }
 function onCreativeFileSelected(input) {
   const dz = input.parentElement.querySelector('[data-role="dropzone"]');
   if (input.files[0]) setCreativeDropText(dz, input.files[0].name);
+  prefetchUpload(input);
+}
+/* 파일을 붙이는 순간 Meta에 미리 올려둔다.
+   미리보기를 누를 때는 이미 올라가 있어 바로 뜨고, 등록할 때도 재업로드하지 않는다. */
+function prefetchUpload(input) {
+  const block = input.closest('.creative-card');
+  if (!block) return;
+  const t = block.id.startsWith('t2') ? 't2' : 't1';
+  const dz = block.querySelector('[data-role="dropzone"]');
+  const file = input.files[0];
+  if (!file) return;
+  const accId = String(document.getElementById(`${t}_광고계정ID`).value || '').replace('act_', '');
+  if (!accId) return;   // 계정을 아직 안 골랐으면 미리보기 시점에 올린다
+  const badge = (txt, color) => {
+    let el = dz.querySelector('[data-role="upstat"]');
+    if (!el) { el = document.createElement('div'); el.dataset.role = 'upstat'; el.style.cssText = 'font-size:10px;margin-top:4px;'; dz.appendChild(el); }
+    el.style.color = color; el.textContent = txt;
+  };
+  badge('Meta에 올리는 중...', 'var(--blue)');
+  ensureUploaded(t, block).then(
+    () => badge('✓ 업로드 완료 — 미리보기 바로 가능', '#047857'),
+    (e) => badge('업로드 실패: ' + e.message, 'var(--red)')
+  );
+}
+// 업로드 결과를 카드에 캐시 (미리보기 · 등록 공용)
+async function ensureUploaded(t, block) {
+  const accId = String(document.getElementById(`${t}_광고계정ID`).value || '').replace('act_', '');
+  if (!accId) throw new Error('계정을 먼저 선택하세요');
+  const method = block.querySelector('[data-role="파일방식"]').value;
+  const input = block.querySelector('[data-role="파일첨부"]');
+  const file = (method === 'upload' && input && input.files[0]) ? input.files[0] : null;
+  if (!file) throw new Error(method === 'drive'
+    ? 'Drive 파일ID 방식은 미리보기를 지원하지 않아요 — 직접 첨부로 바꾸면 미리볼 수 있습니다'
+    : '먼저 이미지나 영상을 첨부하세요');
+  const key = `${file.name}|${file.size}|${accId}`;
+  if (block.dataset.uploadKey === key && block.dataset.uploaded) return JSON.parse(block.dataset.uploaded);
+  if (block._uploading && block._uploadKey === key) return block._uploading;
+  const isImage = file.type.startsWith('image/');
+  block._uploadKey = key;
+  block._uploading = (async () => {
+    const up = isImage
+      ? { imageHash: await uploadImageToMeta(file, accId) }
+      : { videoId: await uploadVideoToMeta(file, accId) };
+    block.dataset.uploaded = JSON.stringify(up);
+    block.dataset.uploadKey = key;
+    block._uploading = null;
+    return up;
+  })();
+  return block._uploading;
 }
 function setCreativeDropText(dz, name) {
   dz.innerHTML = `✅ <strong>${name}</strong><br><span style="font-size:11px;color:var(--text3);">클릭하면 다시 선택</span>`;
@@ -2851,8 +2914,7 @@ const PREVIEW_FORMATS = [
   { value: 'FACEBOOK_STORY_MOBILE', label: '📲 Facebook 스토리' },
 ];
 const previewCtx = { t: null, blockId: null, format: 'MOBILE_FEED_STANDARD' };
-// 업로드한 파일의 해시/영상ID를 소재 카드에 캐시해 두고 등록 때 재사용한다
-const uploadCache = {};
+const previewCache = {};   // `${blockId}|${format}|${sig}` → iframe HTML
 
 function closePreview() { document.getElementById('previewModal').classList.remove('show'); }
 
@@ -2871,90 +2933,138 @@ function switchPreviewFormat(fmt) {
   document.querySelectorAll('#pv_formats .pv-fmt').forEach(b => b.classList.toggle('active', b.dataset.fmt === fmt));
   renderPreview();
 }
-function pvMsg(text, isErr) {
-  document.getElementById('pv_body').innerHTML = `<div class="preview-msg${isErr ? ' err' : ''}">${text}</div>`;
+function pvMsg(html, isErr) {
+  document.getElementById('pv_body').innerHTML = `<div class="preview-msg${isErr ? ' err' : ''}">${html}</div>`;
+}
+function pvShow(html) {
+  const box = document.getElementById('pv_body');
+  box.innerHTML = html;
+  const ifr = box.querySelector('iframe');
+  if (ifr) { ifr.style.maxWidth = '100%'; ifr.setAttribute('scrolling', 'no'); }
 }
 
-// 소재 카드 하나를 object_story_spec 으로 변환 (필요하면 파일을 먼저 업로드)
-async function buildStorySpec(t, block) {
-  const accId = String(document.getElementById(`${t}_광고계정ID`).value || '').replace('act_', '');
+// 입력값이 바뀌면 캐시를 무효화하기 위한 서명
+function creativeSignature(t, block) {
+  const v = r => (block.querySelector(`[data-role="${r}"]`) || {}).value || '';
+  return [block.dataset.uploaded || '', convTypeState[t], v('기본문구'), v('제목'), v('설명'),
+          v('CTA버튼'), v('인스턴트양식'), v('웹사이트URL'),
+          document.getElementById(`${t}_인스타계정`).value,
+          document.getElementById(`${t}_페이지ID`).value].join('|');
+}
+
+// 빈 값은 아예 빼고 보낸다 (빈 문자열을 넣으면 Invalid parameter 가 난다)
+function clean(obj) {
+  const out = {};
+  Object.entries(obj).forEach(([k, v]) => {
+    if (v === undefined || v === null) return;
+    if (typeof v === 'string' && v.trim() === '') return;
+    out[k] = v;
+  });
+  return out;
+}
+
+async function buildStorySpecs(t, block) {
   const pageId = document.getElementById(`${t}_페이지ID`).value;
-  if (!accId) throw new Error('계정을 먼저 선택하세요');
   if (!pageId) throw new Error('페이지를 먼저 선택하세요');
-
-  const method = block.querySelector('[data-role="파일방식"]').value;
-  const fileInput = block.querySelector('[data-role="파일첨부"]');
-  const file = (method === 'upload' && fileInput && fileInput.files[0]) ? fileInput.files[0] : null;
-  if (!file) throw new Error(method === 'drive'
-    ? 'Drive 파일ID 방식은 미리보기를 지원하지 않아요 — 직접 첨부로 바꾸면 미리볼 수 있습니다'
-    : '먼저 이미지나 영상을 첨부하세요');
-
-  const cacheKey = `${block.id}|${file.name}|${file.size}|${accId}`;
-  if (!uploadCache[cacheKey]) {
-    const isImage = file.type.startsWith('image/');
-    pvMsg(`${isImage ? '이미지' : '영상'}를 Meta에 올리는 중...`);
-    uploadCache[cacheKey] = isImage
-      ? { imageHash: await uploadImageToMeta(file, accId) }
-      : { videoId: await uploadVideoToMeta(file, accId) };
-  }
-  const up = uploadCache[cacheKey];
-  block.dataset.uploaded = JSON.stringify(up);   // 등록 때 재사용
+  const up = await ensureUploaded(t, block);
 
   const convType = convTypeState[t] || 'ON_AD';
-  const message = block.querySelector('[data-role="기본문구"]').value || '';
-  const title = block.querySelector('[data-role="제목"]').value || '';
-  const desc = block.querySelector('[data-role="설명"]').value || '';
-  const cta = block.querySelector('[data-role="CTA버튼"]').value || 'LEARN_MORE';
+  const v = r => (block.querySelector(`[data-role="${r}"]`) || {}).value || '';
+  const message = v('기본문구'), title = v('제목'), desc = v('설명');
+  const cta = v('CTA버튼') || 'LEARN_MORE';
   const formSel = block.querySelector('[data-role="인스턴트양식"]');
   const formId = formSel && formSel.options[formSel.selectedIndex] ? (formSel.options[formSel.selectedIndex].dataset.id || '') : '';
-  const siteUrl = (block.querySelector('[data-role="웹사이트URL"]').value || '').trim();
-
-  const link = convType === 'WEBSITE'
-    ? (siteUrl || `https://facebook.com/${pageId}`)
-    : `https://facebook.com/${pageId}`;
-  const ctaObj = convType === 'WEBSITE'
-    ? { type: cta, value: { link } }
-    : { type: cta, value: formId ? { lead_gen_form_id: formId } : { link } };
-
-  const spec = { page_id: pageId };
+  const siteUrl = v('웹사이트URL').trim();
   const igId = document.getElementById(`${t}_인스타계정`).value;
-  if (igId) spec.instagram_user_id = igId;
 
-  if (up.imageHash) {
-    spec.link_data = { image_hash: up.imageHash, link, message, name: title, description: desc, call_to_action: ctaObj };
-  } else {
-    const vd = { video_id: up.videoId, message, title, link_description: desc, call_to_action: ctaObj };
-    // 영상은 썸네일이 있어야 미리보기가 뜬다
+  const pageLink = `https://www.facebook.com/${pageId}`;
+  const link = convType === 'WEBSITE' ? (siteUrl || pageLink) : pageLink;
+  const ctaObj = (convType === 'ON_AD' && formId)
+    ? { type: cta, value: { lead_gen_form_id: formId } }
+    : { type: cta, value: { link } };
+
+  const make = (opts) => {
+    const spec = { page_id: pageId };
+    if (igId && !opts.noIg) spec.instagram_user_id = igId;
+    if (up.imageHash) {
+      spec.link_data = clean({
+        image_hash: up.imageHash, link,
+        message: opts.minimal ? message : message,
+        name: opts.noText ? '' : title,
+        description: opts.noText ? '' : desc,
+        call_to_action: opts.noCta ? undefined : ctaObj,
+      });
+    } else {
+      spec.video_data = clean({
+        video_id: up.videoId,
+        image_url: opts.thumb,
+        message,
+        title: opts.noText ? '' : title,
+        link_description: opts.noText ? '' : desc,
+        call_to_action: opts.noCta ? undefined : ctaObj,
+      });
+    }
+    return spec;
+  };
+
+  let thumb = '';
+  if (up.videoId) {
     try {
       const th = await fbGet(up.videoId, { fields: 'thumbnails' });
-      const pick = (th.thumbnails && th.thumbnails.data || []).find(x => x.is_preferred) || (th.thumbnails && th.thumbnails.data || [])[0];
-      if (pick) vd.image_url = pick.uri;
-    } catch (e) { /* 아직 인코딩 중이면 썸네일이 없을 수 있음 */ }
-    spec.video_data = vd;
+      const list = (th.thumbnails && th.thumbnails.data) || [];
+      const pick = list.find(x => x.is_preferred) || list[0];
+      if (pick) thumb = pick.uri;
+    } catch (e) { /* 인코딩 중이면 없음 */ }
   }
-  return { accId, spec };
+
+  // 실패하면 한 단계씩 걷어내며 재시도 → 어느 항목이 문제인지 알 수 있다
+  return [
+    { label: '전체', spec: make({ thumb }) },
+    { label: '인스타 계정 제외', spec: make({ thumb, noIg: true }) },
+    { label: '제목·설명 제외', spec: make({ thumb, noIg: true, noText: true }) },
+    { label: 'CTA 제외', spec: make({ thumb, noIg: true, noText: true, noCta: true }) },
+  ];
 }
 
 async function renderPreview() {
   const { t, blockId, format } = previewCtx;
   const block = document.getElementById(blockId);
   if (!block) return;
+  const accId = String(document.getElementById(`${t}_광고계정ID`).value || '').replace('act_', '');
+  if (!accId) { pvMsg('계정을 먼저 선택하세요', true); return; }
+
+  const cacheKey = () => `${blockId}|${format}|${creativeSignature(t, block)}`;
+  const cached = previewCache[cacheKey()];
+  if (cached) { pvShow(cached); return; }
+
   try {
-    pvMsg('미리보기를 만드는 중...');
-    const { accId, spec } = await buildStorySpec(t, block);
-    const json = await fbGet(`act_${accId}/generatepreviews`, {
-      creative: JSON.stringify({ object_story_spec: spec }),
-      ad_format: format,
-    });
-    const body = (json.data || [])[0] && json.data[0].body;
-    if (!body) { pvMsg('이 형식에서는 미리보기를 만들 수 없어요', true); return; }
-    const box = document.getElementById('pv_body');
-    box.innerHTML = body;
-    const ifr = box.querySelector('iframe');
-    if (ifr) { ifr.style.maxWidth = '100%'; ifr.setAttribute('scrolling', 'no'); }
+    if (!block.dataset.uploaded) pvMsg('<div class="spinner" style="border-color:rgba(0,0,0,.1);border-top-color:var(--blue);margin:0 auto 10px;"></div>파일을 Meta에 올리는 중...');
+    else pvMsg('<div class="spinner" style="border-color:rgba(0,0,0,.1);border-top-color:var(--blue);margin:0 auto 10px;"></div>미리보기를 만드는 중...');
+
+    const variants = await buildStorySpecs(t, block);
+    let lastErr = null;
+    for (const vnt of variants) {
+      try {
+        const json = await fbGet(`act_${accId}/generatepreviews`, {
+          creative: JSON.stringify({ object_story_spec: vnt.spec }),
+          ad_format: format,
+        });
+        const body = (json.data || [])[0] && json.data[0].body;
+        if (!body) { lastErr = new Error('이 형식에서는 미리보기를 만들 수 없어요'); continue; }
+        const note = vnt.label === '전체' ? '' :
+          `<div style="font-size:11px;color:var(--yellow);text-align:center;padding:6px 0;">※ ${vnt.label} 상태로 렌더링했습니다 (원래 값으로는 Meta가 거절)</div>`;
+        const html = note + body;
+        previewCache[cacheKey()] = html;
+        pvShow(html);
+        return;
+      } catch (e) { lastErr = e; }
+    }
+    throw lastErr || new Error('미리보기 실패');
   } catch (e) {
-    const msg = String(e.message || '');
-    pvMsg(msg.includes('처리') || msg.includes('still') ? msg + '<br>영상 인코딩이 끝나면 다시 시도해 주세요' : msg, true);
+    const fb = e.fb || {};
+    pvMsg(`<b>미리보기를 만들지 못했어요</b><br><br>${e.message}` +
+      (fb.code ? `<br><span style="font-size:11px;color:var(--text3)">code ${fb.code}${fb.error_subcode ? ' / subcode ' + fb.error_subcode : ''}</span>` : '') +
+      `<br><br><span style="font-size:11px;color:var(--text3)">형식을 바꿔 보거나, 문구·양식·URL이 채워져 있는지 확인해 주세요</span>`, true);
   }
 }
 
@@ -3177,17 +3287,11 @@ async function submitAd(t) {
       const c = creatives[n];
       if (!c.파일) continue;
       const isImage = c.파일.type.startsWith('image/');
-      // 미리보기에서 이미 올린 파일이면 다시 올리지 않는다
-      let cached = null;
-      try { cached = c.block && c.block.dataset.uploaded ? JSON.parse(c.block.dataset.uploaded) : null; } catch (e) { cached = null; }
-      if (cached && (cached.imageHash || cached.videoId)) {
-        if (cached.imageHash) data.소재목록[n].이미지해시 = cached.imageHash;
-        if (cached.videoId) data.소재목록[n].videoId = cached.videoId;
-      } else {
-        showToast(`소재 ${n + 1} ${isImage ? '이미지' : '영상'} 업로드 중...`, 'info');
-        if (isImage) data.소재목록[n].이미지해시 = await uploadImageToMeta(c.파일, data.광고계정ID);
-        else data.소재목록[n].videoId = await uploadVideoToMeta(c.파일, data.광고계정ID);
-      }
+      // 첨부할 때 미리 올려둔 결과가 있으면 그대로 쓴다 (파일이 바뀌었으면 다시 올림)
+      showToast(`소재 ${n + 1} ${isImage ? '이미지' : '영상'} 준비 중...`, 'info');
+      const up = await ensureUploaded(t, c.block);
+      if (up.imageHash) data.소재목록[n].이미지해시 = up.imageHash;
+      if (up.videoId) data.소재목록[n].videoId = up.videoId;
       data.소재목록[n].파일ID = '';
     }
     const f = data.소재목록[0] || {};
