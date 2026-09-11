@@ -1004,7 +1004,8 @@
 
         <div class="divider" style="margin:22px 0 14px;"></div>
         <div class="set-note">API가 막히면 Make에 조회용 시나리오를 만들고 그 웹훅 주소를 넣으세요. 앱이 <code>{"type":"campaigns","customerId":"..."}</code> 형태로 물어보고 JSON 목록을 받습니다.</div>
-        <div class="field"><label>Make 조회용 웹훅 URL</label><input type="text" id="g_lookup_hook" placeholder="https://hook.eu1.make.com/..."></div>
+        <div class="field"><label>Make 조회용 웹훅 URL</label><input type="text" id="g_lookup_hook" placeholder="https://hook.eu1.make.com/..." oninput="showSavedHook()"></div>
+        <div class="field-hint" id="g_hook_saved"></div>
         <div style="display:flex;gap:8px;align-items:center;">
           <select id="g_hook_test_type" style="height:34px;border:1px solid var(--border2);border-radius:8px;padding:0 10px;font-family:inherit;font-size:12px;">
             <option value="accounts">accounts</option>
@@ -1646,9 +1647,23 @@ function gCollectSettings() {
   if (document.getElementById('g_dev_token')) {
     GSET.developerToken = val('g_dev_token').trim();
     GSET.loginCustomerId = val('g_login_cid').replace(/[^0-9]/g, '');
-    GSET.lookupWebhook = val('g_lookup_hook').trim();
+    GSET.lookupWebhook = val('g_lookup_hook').trim().replace(/[\s\u200b]+/g, '');
     GSET.sheetId = val('g_sheet_id').trim();
     SHEET_ID = GSET.sheetId || DEFAULT_SHEET_ID;
+  }
+}
+function showSavedHook() {
+  const el = document.getElementById('g_hook_saved');
+  if (!el) return;
+  const typed = (document.getElementById('g_lookup_hook').value || '').trim();
+  const saved = (GSET.lookupWebhook || '').trim();
+  if (!saved && !typed) { el.className = 'field-hint'; el.textContent = '아직 저장된 주소가 없습니다'; return; }
+  if (typed && typed !== saved) {
+    el.className = 'field-hint err';
+    el.textContent = `⚠ 아직 저장 전입니다 — 저장된 주소: ${saved || '(없음)'} · [저장하고 적용]을 눌러주세요`;
+  } else {
+    el.className = 'field-hint ok';
+    el.textContent = `저장된 주소: ${saved}`;
   }
 }
 function renderGoogleSettings() {
@@ -1658,6 +1673,7 @@ function renderGoogleSettings() {
   set('g_login_cid', GSET.loginCustomerId);
   set('g_lookup_hook', GSET.lookupWebhook);
   set('g_sheet_id', GSET.sheetId);
+  showSavedHook();
   const st = document.getElementById('gapi_state');
   if (st) {
     st.textContent = GDB.fromApi ? '● Google Ads API로 불러온 상태입니다'
@@ -1811,7 +1827,7 @@ async function testLookupWebhook() {
   const body = { type, customerId: cid };
   if (type === 'adgroups') body.campaignId = 'TEST';
   if (type === 'ads') body.adGroupId = 'TEST';
-  const shownUrl = GSET.lookupWebhook ? gLookupUrl(type, body).replace(GSET.lookupWebhook, '…웹훅주소') : '';
+  const shownUrl = gLookupUrl(type, body);
   out.textContent = `보내는 주소: ${shownUrl}\n호출 중...`;
   try {
     const list = await gLookupViaWebhook(type, body);
