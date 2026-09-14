@@ -82,7 +82,7 @@
   .btn-primary.g:hover { background: var(--g-red-dark); }
   .btn-ghost { width: 100%; height: 36px; background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text2); font-family: inherit; font-size: 13px; cursor: pointer; transition: all 0.15s; }
   .btn-ghost:hover { background: var(--bg); color: var(--text1); }
-  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .main { flex: 1; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }
   .main-head { padding: 18px 28px 14px; background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
   .main-head h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
   .main-head p { font-size: 12px; color: var(--text2); margin-top: 2px; }
@@ -90,6 +90,7 @@
   .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 2s infinite; }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
   .content { flex: 1; overflow-y: auto; padding: 24px 28px; }
+  .main > .content { flex: 1 1 auto; overflow: visible; }
   .content::-webkit-scrollbar { width: 4px; }
   .content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 10px; color: var(--text3); }
@@ -175,8 +176,10 @@
   .mode-banner.new { background: var(--blue-bg); color: #1d4ed8; border: 1px solid #c8dffe; }
   .mode-banner.existing { background: var(--yellow-bg); color: #b45309; border: 1px solid #ffe0a0; }
   .section.dimmed { opacity: 0.4; pointer-events: none; }
-  .main-top { flex: 1 1 34%; display: flex; flex-direction: column; overflow: hidden; min-height: 120px; }
-  .creative-pane { flex: 1 1 66%; min-height: 260px; border-top: 1px solid var(--border); background: var(--white); display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+  .main-top { flex: 0 0 auto; display: flex; flex-direction: column; }
+  .main-top .content { flex: 0 0 auto; overflow: visible; }
+  .main-top .empty { min-height: 170px; padding: 20px 0; }
+  .creative-pane { flex: 0 0 auto; border-top: 1px solid var(--border); background: var(--white); display: flex; flex-direction: column; }
   .creative-head { padding: 11px 28px 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); flex-shrink: 0; }
   .creative-head h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
   .creative-head p { font-size: 12px; color: var(--text2); margin-top: 2px; }
@@ -184,7 +187,7 @@
   .common-toggle { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; color: var(--text2); cursor: pointer; white-space: nowrap; }
   .btn-add-creative { height: 32px; padding: 0 14px; border: 1px dashed var(--border2); border-radius: var(--radius-sm); background: none; font-family: inherit; font-size: 12px; font-weight: 500; color: var(--text2); cursor: pointer; white-space: nowrap; }
   .btn-add-creative:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); }
-  .creative-strip { flex: 1 1 auto; min-height: 0; display: flex; flex-wrap: nowrap; gap: 12px; overflow-x: auto; overflow-y: auto; padding: 12px 28px 14px; align-items: flex-start; }
+  .creative-strip { flex: 0 0 auto; display: flex; flex-wrap: nowrap; gap: 12px; overflow-x: auto; overflow-y: visible; padding: 12px 28px 18px; align-items: flex-start; }
   .creative-strip::-webkit-scrollbar { height: 9px; width: 9px; }
   .creative-strip::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 5px; border: 2px solid var(--white); }
   .creative-strip::-webkit-scrollbar-thumb:hover { background: var(--text3); }
@@ -201,7 +204,7 @@
   .creative-card .field { margin-bottom: 6px; }
   .creative-card .field label { margin-bottom: 3px; font-size: 11px; }
   .creative-card input, .creative-card select { height: 32px; font-size: 12px; }
-  .creative-card textarea { height: 40px; font-size: 12px; padding: 6px 10px; }
+  .creative-card textarea { height: 38px; font-size: 12px; padding: 6px 10px; }
   .creative-card .row2 { gap: 6px; }
   .creative-drop { border: 2px dashed var(--border2); border-radius: var(--radius-sm); padding: 8px; text-align: center; cursor: pointer; background: var(--bg); font-size: 12px; color: var(--text2); line-height: 1.45; transition: all 0.2s; word-break: break-all; }
   .creative-drop:hover { border-color: var(--blue); color: var(--blue); }
@@ -738,8 +741,8 @@
       <div class="campaign-id-box">
         <label>① 치과 선택</label>
         <select id="g2_치과명" onchange="gOnClinic('g2')" style="margin-bottom:12px;"><option value="">치과를 선택하세요</option></select>
-        <label>② 지역 선택</label>
-        <select id="g2_지역구분자" onchange="gOnRegion('g2')" style="margin-bottom:12px;"><option value="">지역을 선택하세요</option></select>
+        <label>② 지역 선택 <span style="font-weight:400;color:#c2760a;">(캠페인 검색용 · 비워도 됨)</span></label>
+        <select id="g2_검색지역" style="margin-bottom:12px;"><option value="">지역 없이 찾기</option></select>
         <label>③ 캠페인 고르기</label>
         <div class="copy-suggest-wrap">
           <button type="button" class="btn-sm" style="width:100%;height:40px;" onclick="gFindCampaigns('g2')">🔎 캠페인 찾기</button>
@@ -763,10 +766,11 @@
       </div>
       <div class="divider"></div>
 
-      <div class="section" id="g2_sec_region"><div class="sec-label">지역</div>
-        <div class="field">
-          <div class="field-hint" id="g2_region_hint">캠페인을 불러오면 지역 설정 여부를 확인합니다</div>
+      <div class="section" id="g2_sec_region"><div class="sec-label">광고그룹 지역</div>
+        <div class="field"><label>지역구분자</label>
+          <select id="g2_지역구분자" onchange="gOnRegion('g2')"><option value="">선택</option></select>
           <span class="link-toggle" onclick="openSettings('gregion')">+ 지역 검색해서 추가</span>
+          <div class="field-hint" id="g2_region_hint">캠페인을 불러오면 지역 설정 여부를 확인합니다</div>
         </div>
       </div>
       <div class="divider"></div>
@@ -958,13 +962,17 @@
       </div>
 
       <div class="modal-sec" id="msec_gregion">
-        <div class="set-note">Google Ads 지역 타겟은 <b>criterion ID</b>(geo target constant)로 지정합니다. <b>표기명</b>을 비우면 이름에 지역이 붙지 않습니다.<br>아래 검색은 Google Ads API 연결이 된 경우에만 동작합니다.</div>
+        <div class="set-note">지역은 <b>치과별로</b> 묶입니다 — 치과를 고르면 그 치과의 지역만 드롭다운에 나옵니다 (치과를 비우면 모든 치과에서 보임).<br><b>표기명</b>을 비우면 이름에 지역이 붙지 않습니다. 반경 타겟(핀)은 <b>커스텀 좌표</b>에 <code>위도,경도,반경km</code> 를 세미콜론으로 구분해 넣으세요 — 좌표가 있으면 criterion ID 대신 반경으로 타겟합니다.</div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+          <span style="font-size:12px;color:var(--text2);white-space:nowrap;">검색 결과를 추가할 치과</span>
+          <select id="g_region_target_clinic" style="flex:1;height:36px;border:1px solid var(--border2);border-radius:8px;padding:0 10px;font-family:inherit;font-size:12px;"><option value="">공통 (모든 치과)</option></select>
+        </div>
         <div class="region-search-wrap">
           <input type="text" id="g_region_search" placeholder="지역 이름을 입력하세요 (예: 부산, 울주)" oninput="gOnRegionSearchInput()" autocomplete="off">
           <div class="region-results" id="g_region_results"></div>
         </div>
         <table class="set-table">
-          <thead><tr><th style="width:32%">지역명</th><th style="width:32%">criterion ID</th><th style="width:31%">표기명</th><th></th></tr></thead>
+          <thead><tr><th style="width:20%">치과</th><th style="width:15%">지역명</th><th style="width:15%">criterion ID</th><th style="width:16%">표기명</th><th style="width:30%">커스텀 좌표 (핀)</th><th></th></tr></thead>
           <tbody id="gset_region_body"></tbody>
         </table>
         <button class="btn-sm" style="margin-top:10px;" onclick="gAddRow('regions')">+ 지역 추가</button>
@@ -986,6 +994,11 @@
       </div>
 
       <div class="modal-sec" id="msec_gsheet">
+        <div class="set-note" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <span id="g_login_status" style="flex:1;min-width:220px;">구글 로그인 상태 확인 중...</span>
+          <button class="btn-sm blue" onclick="gLoginNow()">지금 로그인</button>
+          <button class="btn-sm" onclick="gSwitchGoogleAccount()">다른 계정으로</button>
+        </div>
         <div class="set-note"><b>Google Ads API</b> — 계정·잠재고객·캠페인·광고그룹을 직접 불러오려면 developer token이 필요합니다. 브라우저에서 막힐 수 있으니 아래 버튼으로 먼저 확인하세요.</div>
         <div class="row2">
           <div class="field"><label>developer token</label><input type="text" id="g_dev_token" placeholder="Google Ads API developer token"></div>
@@ -1230,7 +1243,7 @@ function openSettings(tab) {
   const isG = currentPlatform === 'google';
   document.getElementById('settingsTitle').textContent = isG ? 'Google 설정' : 'Meta 설정';
   document.getElementById('settingsDesc').textContent = isG
-    ? 'Google(디맨드젠)은 구글참조 시트를 사용합니다. 시트 연결과 불러온 내용을 여기서 확인하세요'
+    ? 'Google Ads API로 가져올 수 없는 사내 규칙(제작자·치과·지역·채널)과 로그인·연동 상태를 여기서 관리합니다 (이 브라우저에 저장)'
     : 'Meta API로 가져올 수 없는 사내 규칙만 여기서 관리합니다 (이 브라우저에 저장)';
   document.getElementById('metaSettingsTabs').style.display = isG ? 'none' : 'flex';
   document.getElementById('googleSettingsTabs').style.display = isG ? 'flex' : 'none';
@@ -1586,7 +1599,7 @@ function resetSettings() {
 const G_TABLES = {
   staff:     { body: 'gset_staff_body',     cols: [['name','홍길동'], ['id','KCS']] },
   clinics:   { body: 'gset_clinic_body',    cols: [['clinic','오늘의치과'], ['short','오늘']] },
-  regions:   { body: 'gset_region_body',    cols: [['name','부산'], ['criterionId','1009871'], ['refName','비우면 이름에 안 붙음']] },
+  regions:   { body: 'gset_region_body',    cols: [['clinic','공통'], ['name','부산'], ['criterionId','검색으로 자동 입력'], ['refName','비우면 이름에 안 붙음'], ['custom','35.18,128.11,10; 35.20,128.05,8']] },
   channels:  { body: 'gset_channel_body',   cols: [['accountName','계정명'], ['channelName','오늘의병원'], ['channelId','UC...'], ['logoFileId','Drive 파일ID']] },
 };
 function gRenderTable(key) {
@@ -1594,9 +1607,18 @@ function gRenderTable(key) {
   const body = document.getElementById(cfg.body);
   if (!body) return;
   const rows = GSET[key] || [];
+  const clinicNames = (GSET.clinics || []).map(c => c.clinic).filter(Boolean);
   body.innerHTML = rows.map((r, i) => {
-    const tds = cfg.cols.map(([f, ph]) =>
-      `<td><input type="text" data-g="${key}" data-f="${f}" data-i="${i}" value="${esc(r[f])}" placeholder="${esc(ph)}"></td>`).join('');
+    const tds = cfg.cols.map(([f, ph]) => {
+      if (key === 'regions' && f === 'clinic') {
+        const cur = r.clinic || '';
+        const opts = ['<option value="">공통 (모든 치과)</option>']
+          .concat((clinicNames.includes(cur) || !cur ? clinicNames : [cur].concat(clinicNames))
+            .map(n => `<option value="${esc(n)}"${normName(n) === normName(cur) ? ' selected' : ''}>${esc(n)}</option>`));
+        return `<td><select data-g="${key}" data-f="${f}" data-i="${i}" style="width:100%;height:34px;border:1px solid var(--border2);border-radius:6px;padding:0 8px;font-family:inherit;font-size:12px;">${opts.join('')}</select></td>`;
+      }
+      return `<td><input type="text" data-g="${key}" data-f="${f}" data-i="${i}" value="${esc(r[f])}" placeholder="${esc(ph)}"></td>`;
+    }).join('');
     return `<tr>${tds}<td><button class="set-del" onclick="gRemoveRow('${key}',${i})">✕</button></td></tr>`;
   }).join('');
   if (rows.length === 0) body.innerHTML = `<tr><td colspan="${cfg.cols.length + 1}" style="padding:14px 4px;color:var(--text3);font-size:12px;">비어 있습니다. 아래 버튼으로 추가하거나 연동 탭에서 시트를 가져오세요.</td></tr>`;
@@ -1629,10 +1651,17 @@ function gCollectSettings() {
 }
 function renderGoogleSettings() {
   Object.keys(G_TABLES).forEach(gRenderTable);
+  const tc = document.getElementById('g_region_target_clinic');
+  if (tc) {
+    const prev = tc.value;
+    tc.innerHTML = '<option value="">공통 (모든 치과)</option>' + (GSET.clinics || []).filter(c => c.clinic).map(c => `<option value="${esc(c.clinic)}">${esc(c.clinic)}</option>`).join('');
+    if (prev) tc.value = prev;
+  }
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
   set('g_dev_token', GSET.developerToken);
   set('g_login_cid', GSET.loginCustomerId);
   set('g_proxy_url', GSET.proxyUrl);
+  if (typeof gRenderLoginStatus === 'function') gRenderLoginStatus();
   const hint = document.getElementById('g_sheet_hint');
   if (hint && !hint.textContent) hint.textContent = GSET.seeded ? '시트에서 이관 완료 — 평소엔 시트를 읽지 않습니다' : '아직 시트에서 가져오지 않았습니다';
 }
@@ -1663,22 +1692,15 @@ function gOnRegionSearchInput() {
 }
 async function gSearchGeo(q) {
   const box = document.getElementById('g_region_results');
-  if (!GSET.developerToken) {
-    box.innerHTML = '<div class="region-result">Google Ads API가 연결되지 않았습니다 — 연동 탭에서 developer token을 설정하세요</div>';
-    return;
-  }
   try {
-    const j = await gAdsFetch('geoTargetConstants:suggest', {
-      locale: 'ko', countryCode: 'KR',
-      locationNames: { names: [q] },
-    });
-    const items = (j.geoTargetConstantSuggestions || []).slice(0, 25);
+    const list = await gLookup('geo', { q });
+    if (!list) throw new Error('연결이 안 됐어요 — 설정 → 연동에서 중계 함수 연결을 확인하세요');
+    const items = list.slice(0, 25);
     if (items.length === 0) { box.innerHTML = '<div class="region-result">결과가 없어요</div>'; return; }
     window._gGeo = items;
     box.innerHTML = items.map((it, i) => {
-      const g = it.geoTargetConstant || {};
-      const sub = [g.targetType, g.canonicalName].filter(Boolean).join(' · ');
-      return `<div class="region-result" onclick="gAddRegionFromSearch(${i})"><span>${esc(g.name || '')}</span><span class="sub">${esc(sub)}</span></div>`;
+      const sub = [it.status, it.canonical].filter(Boolean).join(' · ');
+      return `<div class="region-result" onclick="gAddRegionFromSearch(${i})"><span>${esc(it.name || '')}</span><span class="sub">${esc(sub)}</span></div>`;
     }).join('');
   } catch (e) {
     box.innerHTML = `<div class="region-result">검색 실패: ${esc(e.message)}</div>`;
@@ -1686,25 +1708,23 @@ async function gSearchGeo(q) {
 }
 function gAddRegionFromSearch(i) {
   const it = (window._gGeo || [])[i]; if (!it) return;
-  const g = it.geoTargetConstant || {};
-  const id = String(g.id || (g.resourceName || '').split('/').pop() || '');
+  const id = String(it.id || '');
+  const name = it.name || '';
   gCollectSettings();
-  if ((GSET.regions || []).some(r => r.criterionId === id)) { showToast('이미 추가된 지역이에요', 'error'); return; }
-  (GSET.regions = GSET.regions || []).push({ name: g.name || '', criterionId: id, refName: `${g.name || ''}타겟` });
+  const clinic = (document.getElementById('g_region_target_clinic') || {}).value || '';
+  if ((GSET.regions || []).some(r => r.criterionId === id && normName(r.clinic || '') === normName(clinic))) { showToast('이미 추가된 지역이에요', 'error'); return; }
+  (GSET.regions = GSET.regions || []).push({ clinic, name, criterionId: id, refName: `${name}타겟`, custom: '' });
   gRenderTable('regions');
   document.getElementById('g_region_results').classList.remove('show');
   document.getElementById('g_region_search').value = '';
-  showToast(`${g.name} 추가됨 — 표기명을 확인하고 저장하세요`, 'success');
+  showToast(`${name} 추가됨 — 표기명을 확인하고 저장하세요`, 'success');
 }
 
 /* ===== YouTube 채널 자동 조회 =====
    Google Ads API와 달리 YouTube Data API는 브라우저에서 바로 호출된다.
    로그인한 계정이 관리하는 채널을 그대로 가져온다. */
 async function loadYoutubeChannels() {
-  const token = await gYoutubeSignIn();
-  const res = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true&maxResults=50', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await gAuthFetch('youtube', 'https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true&maxResults=50');
   const j = await res.json();
   if (j.error) throw new Error(j.error.message || 'YouTube API 오류');
   return (j.items || []).map(it => ({
@@ -1752,7 +1772,7 @@ async function gAdsFetch(path, body) {
   try {
     res = await fetch(`${GADS_API}/${path}`, { method: body ? 'POST' : 'GET', headers, body: body ? JSON.stringify(body) : undefined });
   } catch (e) {
-    const err = new Error('브라우저에서 Google Ads API를 부를 수 없습니다 (CORS 차단) — Make 조회 웹훅을 쓰세요');
+    const err = new Error('브라우저에서 Google Ads API를 직접 부를 수 없습니다 (CORS 차단) — 중계 함수(/api/gads)를 쓰세요');
     err.cors = true;
     throw err;
   }
@@ -1914,9 +1934,9 @@ function gProxyUrl(type, params) {
   return base + (base.includes('?') ? '&' : '?') + q.toString();
 }
 async function gLookupViaProxy(type, params) {
-  const token = await gDriveSignIn();   // adwords 권한 포함
   const url = gProxyUrl(type, params);
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  // adwords 권한 포함 · 토큰이 만료돼 401이 오면 새 토큰으로 한 번 더 부른다
+  const res = await gAuthFetch('core', url);
   const text = await res.text();
   let j;
   try { j = JSON.parse(text); }
@@ -2387,7 +2407,7 @@ async function loadAll(force) {
 function applyGoogleSettings() {
   GDB.staff = (GSET.staff || []).filter(x => x.name);
   GDB.googleRegions = (GSET.regions || []).filter(x => x.name)
-    .map(r => ({ name: r.name, criterionId: r.criterionId || '', refName: r.refName || '' }));
+    .map(r => ({ name: r.name, criterionId: r.criterionId || '', refName: r.refName || '', clinic: r.clinic || '', custom: r.custom || '' }));
   GDB.ctaTypes = GOOGLE_CTA;   // 고정 목록 (시트·설정 불필요)
   GDB.clinicNames = [...new Set((GSET.clinics || []).map(c => c.clinic).filter(Boolean))];
   GDB.clinicToShortName = {};
@@ -2573,15 +2593,13 @@ function maxSetSeqFrom(list) {
   return mx;
 }
 function nextSetNumberFrom(list) { return maxSetSeqFrom(list) + 1; }
-// 같은 세트번호를 가진 광고들 중 가장 큰 뒷자리
-function maxAdSubSeqFrom(list, setSeq) {
+// 광고 번호는 세트 번호와 무관하게 항상 1.N — 세트 안에서 가장 큰 N을 찾는다
+function maxAdSubSeqFrom(list) {
   let mx = 0;
   (list || []).forEach(item => {
     const re = /(\d+)\.(\d+)A(?![0-9A-Za-z가-힣])/g;
     let m;
-    while ((m = re.exec(item.name || '')) !== null) {
-      if (parseInt(m[1], 10) === setSeq) { const v = parseInt(m[2], 10); if (v > mx) mx = v; }
-    }
+    while ((m = re.exec(item.name || '')) !== null) { const v = parseInt(m[2], 10); if (v > mx) mx = v; }
   });
   return mx;
 }
@@ -2638,8 +2656,7 @@ async function toggleAdsetSelect(id, name) {
   renderAdSublist(null, '<div class="ad-subloading">불러오는 중...</div>');
   try {
     const ads = await fetchAdsInAdset(id);
-    const seq = selectedAdset.t2.seq;
-    adSubStart.t2 = maxAdSubSeqFrom(ads, seq) + 1;
+    adSubStart.t2 = maxAdSubSeqFrom(ads) + 1;
     updateAdNames('t2');
     renderAdSublist(null, ads.length
       ? ads.map(a => {
@@ -2648,12 +2665,12 @@ async function toggleAdsetSelect(id, name) {
           return `<div class="ad-subrow"><span class="dot"></span><span class="nm" title="${nm}">${nm}</span><span class="adset-status ${on ? 'on' : ''}">${on ? '게재중' : (a.effective_status || '')}</span></div>`;
         }).join('')
       : '<div class="ad-subloading">이 세트에 광고가 없어요</div>',
-      ads.length ? `${ads.length}개 · 새 광고는 ${selectedAdset.t2.seq}.${adSubStart.t2}A 부터` : `광고 없음 · ${selectedAdset.t2.seq}.1A 부터 시작`);
+      ads.length ? `${ads.length}개 · 새 광고는 1.${adSubStart.t2}A 부터` : '광고 없음 · 1.1A 부터 시작');
     if (hint) hint.textContent = `선택됨 · ${name}`;
   } catch (err) {
     adSubStart.t2 = 1; updateAdNames('t2');
     renderAdSublist(null, `<div class="ad-subloading">조회 실패: ${err.message}</div>`);
-    if (hint) hint.textContent = `광고 번호 조회 실패 — ${selectedAdset.t2.seq}.1A 부터 시작합니다`;
+    if (hint) hint.textContent = '광고 번호 조회 실패 — 1.1A 부터 시작합니다';
   }
 }
 function renderAdSublist(row, html, hintText) {
@@ -3032,7 +3049,7 @@ function buildNames(t, seqToken) {
 }
 function adNameFor(t, n) {
   const sub = (adSubStart[t] || 1) + n - 1;
-  const built = buildNames(t, `${setSeqFor(t)}.${sub}A`);
+  const built = buildNames(t, `1.${sub}A`);   // 광고 번호 앞자리는 세트 번호와 무관하게 항상 1
   return built ? built.setName : '';
 }
 function updateAdNames(t) {
@@ -3041,8 +3058,7 @@ function updateAdNames(t) {
   const first = adNameFor(t, 1);
   const el = document.getElementById(`${t}_광고명`);
   const start = adSubStart[t] || 1;
-  const seq = setSeqFor(t);
-  if (el) el.value = !first ? '' : (n > 1 ? `${first} 외 ${n - 1}개 (${seq}.${start + 1}A~${seq}.${start + n - 1}A)` : first);
+  if (el) el.value = !first ? '' : (n > 1 ? `${first} 외 ${n - 1}개 (1.${start + 1}A~1.${start + n - 1}A)` : first);
   blocks.forEach((b, i) => {
     const box = b.querySelector('[data-role="광고명"]');
     if (!box) return;
@@ -3989,16 +4005,15 @@ async function gLoadLearnedCopies() {
 async function gSaveCopies(copies) {
   if (!copies || copies.length === 0) return;
   try {
-    const token = await gDriveSignIn();
-    const getRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/구글참조!T:T`, { headers: { Authorization: `Bearer ${token}` } });
+    const getRes = await gAuthFetch('core', `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/구글참조!T:T`);
     const getData = await getRes.json();
     const existing = (getData.values || []).flat().filter(Boolean);
     const newCopies = copies.filter(c => c && !existing.includes(c));
     if (newCopies.length === 0) return;
     const startRow = existing.length + 1;
-    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/구글참조!T${startRow}:T${startRow + newCopies.length - 1}?valueInputOption=RAW`, {
+    await gAuthFetch('core', `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/구글참조!T${startRow}:T${startRow + newCopies.length - 1}?valueInputOption=RAW`, {
       method: 'PUT',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ values: newCopies.map(c => [c]) })
     });
     gLearnedCopies = [...existing, ...newCopies];
@@ -4056,9 +4071,15 @@ function gOnFirstHeadlineInput(t) { gCopySuggestions[t].headline = []; clearTime
 function gOnFirstDescInput(t) { gCopySuggestions[t].desc = []; clearTimeout(gCopySuggestTimer); }
 function gOnFirstLongHeadlineInput(t) { gCopySuggestions[t].longheadline = []; clearTimeout(gCopySuggestTimer); }
 
-/* Google OAuth — YouTube 권한은 Drive 권한과 함께 요청할 수 없어서 로그인을 분리한다.
-   · core   : Drive + Sheets + Google Ads
-   · youtube: YouTube 읽기 전용 */
+/* =========================================================
+   Google OAuth — 로그인 유지
+   · 토큰을 만료시간과 함께 localStorage에 보관 → 새로고침해도 다시 로그인하지 않는다
+   · 만료가 가까워지면 숨은 iframe에서 조용히 갱신(prompt=none) → 팝업이 뜨지 않는다
+   · 조용한 갱신이 안 될 때만 팝업. 이때도 consent 를 강제하지 않아 이미 승인한 계정은 창이 바로 닫힌다
+   · YouTube 권한은 Drive 권한과 함께 요청할 수 없어서 로그인을 분리한다
+     core   : Drive + Sheets + Google Ads
+     youtube: YouTube 읽기 전용
+   ========================================================= */
 const G_SCOPES = {
   core: [
     'https://www.googleapis.com/auth/drive.file',
@@ -4067,27 +4088,144 @@ const G_SCOPES = {
   ],
   youtube: ['https://www.googleapis.com/auth/youtube.readonly'],
 };
-const gTokens = {};
+const G_TOKEN_KEY = 'adtool_google_tokens_v1';
+const G_TOKEN_MARGIN_MS = 60 * 1000;            // 만료 1분 전부터는 만료로 취급
+const G_REFRESH_AHEAD_MS = 8 * 60 * 1000;       // 만료 8분 전부터 미리 갱신
+const gTokens = {};                             // key → { token, exp, hint, name, silentFailAt }
+const gSignInFlight = {};                       // key → 진행 중인 로그인 Promise
+const gSilentInFlight = {};                     // key → 진행 중인 조용한 갱신 Promise
 
-function gSignIn(key) {
-  if (gTokens[key]) return Promise.resolve(gTokens[key]);
-  const scope = (G_SCOPES[key] || []).join(' ');
+function gLoadTokens() {
+  try {
+    const j = JSON.parse(localStorage.getItem(G_TOKEN_KEY) || '{}') || {};
+    Object.keys(gTokens).forEach(k => delete gTokens[k]);
+    Object.keys(j).forEach(k => { if (j[k] && typeof j[k] === 'object') gTokens[k] = j[k]; });
+  } catch (e) { /* 저장소를 못 읽으면 메모리만 사용 */ }
+  gDriveAccessToken = gTokenValid('core') ? gTokens.core.token : null;
+  gRenderLoginStatus();
+}
+function gSaveTokens() {
+  try { localStorage.setItem(G_TOKEN_KEY, JSON.stringify(gTokens)); } catch (e) { /* 무시 */ }
+}
+function gTokenValid(key, marginMs) {
+  const t = gTokens[key];
+  return !!(t && t.token && (Number(t.exp) || 0) - Date.now() > (marginMs === undefined ? G_TOKEN_MARGIN_MS : marginMs));
+}
+function gStoreToken(key, token, expiresIn, via) {
+  const prev = gTokens[key] || {};
+  const secs = Number(expiresIn) || 3600;
+  gTokens[key] = { token, exp: Date.now() + secs * 1000, hint: prev.hint || '', name: prev.name || '', silentFailAt: 0, at: Date.now() };
+  if (key === 'core') gDriveAccessToken = token;
+  gSaveTokens();
+  if (key === 'core' && !gTokens[key].hint) gFetchAccountEmail(token);
+  gRenderLoginStatus();
+  console.info(`[google] ${key} 토큰 ${via || ''} — ${Math.round(secs / 60)}분 유효`);
+}
+/* 토큰을 서버가 거부했을 때(401) 지운다. 계정 힌트는 남겨서 다음엔 조용히 갱신되게 한다 */
+function gInvalidateToken(key) {
+  const prev = gTokens[key];
+  if (!prev) return;
+  gTokens[key] = { token: '', exp: 0, hint: prev.hint || '', name: prev.name || '', silentFailAt: 0 };
+  if (key === 'core') gDriveAccessToken = null;
+  gSaveTokens();
+  gRenderLoginStatus();
+}
+/* 로그인 계정 이메일 — 상태 표시와 login_hint(계정 여러 개일 때 선택창 생략)에 쓴다 */
+async function gFetchAccountEmail(token) {
+  try {
+    const res = await fetch('https://www.googleapis.com/drive/v3/about?fields=user(emailAddress,displayName)', { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return;
+    const j = await res.json();
+    const u = j.user || {};
+    if (gTokens.core && u.emailAddress) {
+      gTokens.core.hint = u.emailAddress;
+      gTokens.core.name = u.displayName || '';
+      gSaveTokens();
+      gRenderLoginStatus();
+    }
+  } catch (e) { /* 표시용이라 실패해도 된다 */ }
+}
+
+function gAuthUrl(key, opts) {
+  opts = opts || {};
+  const p = new URLSearchParams({
+    client_id: GDRIVE_CLIENT_ID,
+    redirect_uri: location.origin + '/oauth2callback',
+    response_type: 'token',
+    scope: (G_SCOPES[key] || []).join(' '),
+    include_granted_scopes: 'false',
+  });
+  if (opts.silent) p.set('prompt', 'none');
+  else if (opts.picker) p.set('prompt', 'select_account');
+  const hint = (gTokens[key] || {}).hint;
+  if (hint && !opts.picker) p.set('login_hint', hint);
+  return 'https://accounts.google.com/o/oauth2/v2/auth?' + p.toString();
+}
+/* 구글이 돌려보낸 주소(#access_token=… 또는 #error=…)를 읽는다 */
+function gParseAuthResult(href) {
+  const out = {};
+  if (!href) return out;
+  const hashIdx = href.indexOf('#');
+  const qIdx = href.indexOf('?');
+  const parts = [];
+  if (hashIdx >= 0) parts.push(href.slice(hashIdx + 1));
+  if (qIdx >= 0) parts.push(href.slice(qIdx + 1, hashIdx >= 0 && hashIdx > qIdx ? hashIdx : undefined));
+  parts.forEach(s => {
+    const q = new URLSearchParams(s);
+    if (q.get('access_token')) { out.token = q.get('access_token'); out.expiresIn = q.get('expires_in'); }
+    if (q.get('error')) { out.error = q.get('error'); out.desc = (q.get('error_description') || '').replace(/\+/g, ' '); }
+  });
+  return out;
+}
+
+/* 숨은 iframe으로 조용히 새 토큰을 받는다 (구글에 로그인돼 있고 이미 승인한 앱이면 화면 없이 끝난다) */
+function gSilentRefresh(key, timeoutMs) {
+  if (gSilentInFlight[key]) return gSilentInFlight[key];
+  const p = new Promise((resolve, reject) => {
+    if (!ENV.isHttp) { reject(new Error('배포된 주소에서만 됩니다')); return; }
+    const f = document.createElement('iframe');
+    f.setAttribute('aria-hidden', 'true');
+    f.style.cssText = 'position:fixed;width:1px;height:1px;left:-9999px;top:-9999px;opacity:0;pointer-events:none;border:0;';
+    let done = false;
+    const cleanup = () => { clearInterval(timer); clearTimeout(to); window.removeEventListener('message', onMsg); setTimeout(() => { try { f.remove(); } catch (e) {} }, 0); };
+    const finish = (ok, v) => { if (done) return; done = true; cleanup(); if (ok) resolve(v); else reject(v); };
+    const onMsg = (e) => {
+      if (e.source === f.contentWindow && e.data && e.data.type === 'GOOGLE_TOKEN' && e.data.token) {
+        gStoreToken(key, e.data.token, e.data.expiresIn, '조용히 갱신');
+        finish(true, e.data.token);
+      }
+    };
+    window.addEventListener('message', onMsg);
+    const timer = setInterval(() => {
+      try {
+        const href = f.contentWindow.location.href || '';
+        if (!href || href === 'about:blank' || href.indexOf(location.origin) !== 0) return;   // 아직 구글 쪽
+        const r = gParseAuthResult(href);
+        if (r.token) { gStoreToken(key, r.token, r.expiresIn, '조용히 갱신'); finish(true, r.token); }
+        else if (r.error) finish(false, new Error(r.error + (r.desc ? ' — ' + r.desc : '')));
+      } catch (e) { /* 교차 출처 동안은 읽을 수 없다 */ }
+    }, 120);
+    const to = setTimeout(() => finish(false, new Error('응답 없음')), timeoutMs || 8000);
+    document.body.appendChild(f);
+    f.src = gAuthUrl(key, { silent: true });
+  });
+  gSilentInFlight[key] = p;
+  p.catch(e => { if (gTokens[key]) { gTokens[key].silentFailAt = Date.now(); gSaveTokens(); } console.info(`[google] ${key} 조용한 갱신 실패:`, e.message); })
+   .finally(() => { delete gSilentInFlight[key]; });
+  return p;
+}
+
+/* 팝업 로그인 — 이미 승인한 계정이면 창이 잠깐 떴다가 저절로 닫힌다 */
+function gPopupSignIn(key, opts) {
   return new Promise((resolve, reject) => {
-    const url = 'https://accounts.google.com/o/oauth2/v2/auth'
-      + `?client_id=${GDRIVE_CLIENT_ID}`
-      + `&redirect_uri=${encodeURIComponent(location.origin + '/oauth2callback')}`
-      + '&response_type=token'
-      + `&scope=${encodeURIComponent(scope)}`
-      + '&include_granted_scopes=false'
-      + '&prompt=consent';
-    const popup = window.open(url, 'googleAuth_' + key, 'width=520,height=640');
-    if (!popup) { reject(new Error('팝업이 차단됐어요 — 브라우저에서 팝업을 허용해주세요')); return; }
+    const popup = window.open(gAuthUrl(key, opts), 'googleAuth_' + key, 'width=520,height=640');
+    if (!popup) { reject(new Error('로그인 창이 차단됐어요 — 주소창 오른쪽의 팝업 차단 아이콘에서 이 사이트를 허용하고 다시 눌러주세요')); return; }
     let done = false;
     const finish = (fn, arg) => { if (done) return; done = true; clearInterval(timer); window.removeEventListener('message', handler); fn(arg); };
     const handler = (e) => {
-      if (e.data && e.data.type === 'GOOGLE_TOKEN') {
-        gTokens[key] = e.data.token;
-        if (key === 'core') gDriveAccessToken = e.data.token;
+      if (e.origin === location.origin && e.data && e.data.type === 'GOOGLE_TOKEN' && e.data.token) {
+        gStoreToken(key, e.data.token, e.data.expiresIn, '팝업 로그인');
+        try { popup.close(); } catch (err) {}
         finish(resolve, e.data.token);
       }
     };
@@ -4098,46 +4236,136 @@ function gSignIn(key) {
         if (Date.now() - started > 180000) { try { popup.close(); } catch (e) {} finish(reject, new Error('로그인 시간이 초과됐어요')); return; }
         if (popup.closed) { finish(reject, new Error('로그인 창이 닫혔어요')); return; }
         const href = popup.location.href || '';
-        // 구글이 거절하면 error= 로 돌아온다 (스코프 충돌 등)
-        const errMatch = href.match(/[?#&]error=([^&]+)/);
-        if (errMatch) {
-          const desc = (href.match(/[?#&]error_description=([^&]+)/) || [])[1] || '';
+        if (href.indexOf(location.origin) !== 0) return;
+        const r = gParseAuthResult(href);
+        if (r.error) {
+          // 구글이 거절하면 error= 로 돌아온다 (스코프 충돌 등)
           popup.close();
-          finish(reject, new Error(decodeURIComponent(errMatch[1]) + (desc ? ' — ' + decodeURIComponent(desc).replace(/\+/g, ' ') : '')));
-          return;
-        }
-        const hash = popup.location.hash;
-        if (hash && hash.includes('access_token')) {
-          const params = new URLSearchParams(hash.slice(1));
-          gTokens[key] = params.get('access_token');
-          if (key === 'core') gDriveAccessToken = gTokens[key];
+          finish(reject, new Error(r.error + (r.desc ? ' — ' + r.desc : '')));
+        } else if (r.token) {
+          gStoreToken(key, r.token, r.expiresIn, '팝업 로그인');
           popup.close();
-          finish(resolve, gTokens[key]);
+          finish(resolve, r.token);
         }
       } catch (e) { /* 교차 출처라 읽을 수 없는 동안은 무시 */ }
-    }, 400);
+    }, 300);
   });
 }
+
+/* 토큰이 필요할 때 부르는 진입점.
+   ① 저장된 토큰이 살아 있으면 그대로 ② 예전에 로그인한 적이 있으면 잠깐 조용히 갱신 ③ 그래도 안 되면 팝업 */
+function gSignIn(key, opts) {
+  opts = opts || {};
+  if (!opts.force && gTokenValid(key)) return Promise.resolve(gTokens[key].token);
+  if (gSignInFlight[key]) return gSignInFlight[key];
+  const run = async () => {
+    const rec = gTokens[key];
+    const recentlyFailed = rec && rec.silentFailAt && Date.now() - rec.silentFailAt < 2 * 60 * 1000;
+    if (!opts.force && rec && ENV.isHttp && !recentlyFailed) {
+      // 사용자 클릭 직후라 팝업 허용 시간이 짧다 — 2.5초만 기다리고 팝업으로 넘어간다
+      const silent = gSilentRefresh(key, 8000);
+      const brief = new Promise((_, rej) => setTimeout(() => rej(new Error('대기 시간 초과')), 2500));
+      try { return await Promise.race([silent, brief]); }
+      catch (e) { /* 팝업으로 */ }
+      if (gTokenValid(key)) return gTokens[key].token;
+    }
+    const token = await gPopupSignIn(key, opts);
+    return token;
+  };
+  const p = run().finally(() => { delete gSignInFlight[key]; });
+  gSignInFlight[key] = p;
+  return p;
+}
 async function gDriveSignIn() { return gSignIn('core'); }
+async function gYoutubeSignIn() { return gSignIn('youtube'); }
+
+/* 토큰으로 호출하고, 서버가 401로 거부하면 새 토큰을 받아 한 번 더 시도한다 */
+async function gAuthFetch(key, url, init) {
+  const call = async (tk) => {
+    const headers = Object.assign({}, (init && init.headers) || {}, { Authorization: `Bearer ${tk}` });
+    return fetch(url, Object.assign({}, init || {}, { headers }));
+  };
+  let res = await call(await gSignIn(key));
+  if (res.status === 401) {
+    gInvalidateToken(key);
+    res = await call(await gSignIn(key));
+  }
+  return res;
+}
+
+/* 백그라운드 유지: 만료 8분 전이면 미리 조용히 갱신해 둔다 */
+function gTokenMaintenance() {
+  if (!ENV.isHttp) return;
+  Object.keys(gTokens).forEach(key => {
+    const t = gTokens[key];
+    if (!t || !t.token) return;
+    if ((Number(t.exp) || 0) - Date.now() > G_REFRESH_AHEAD_MS) return;
+    if (t.silentFailAt && Date.now() - t.silentFailAt < 10 * 60 * 1000) return;   // 방금 실패했으면 잠시 쉼
+    gSilentRefresh(key, 8000).catch(() => {});
+  });
+  gRenderLoginStatus();
+}
 function gResetTokens() {
   Object.keys(gTokens).forEach(k => delete gTokens[k]);
   gDriveAccessToken = null;
+  gSaveTokens();
+  gRenderLoginStatus();
   showToast('구글 로그인 정보를 지웠어요 — 다음 작업에서 다시 로그인합니다', 'info');
 }
-async function gYoutubeSignIn() { return gSignIn('youtube'); }
+/* 연동 탭 버튼: 지금 로그인 / 다른 계정으로 */
+async function gLoginNow() {
+  try {
+    await gSignIn('core');
+    showToast('구글 로그인 완료 — 새로고침해도 유지돼요', 'success');
+  } catch (e) { showToast('로그인 실패: ' + e.message, 'error'); }
+  gRenderLoginStatus();
+}
+async function gSwitchGoogleAccount() {
+  Object.keys(gTokens).forEach(k => delete gTokens[k]);
+  gDriveAccessToken = null;
+  gSaveTokens();
+  try {
+    await gSignIn('core', { force: true, picker: true });
+    showToast('다른 계정으로 로그인했어요', 'success');
+  } catch (e) { showToast('로그인 실패: ' + e.message, 'error'); }
+  gRenderLoginStatus();
+}
+function gRenderLoginStatus() {
+  const el = document.getElementById('g_login_status');
+  if (!el) return;
+  const c = gTokens.core;
+  const who = c && (c.hint || c.name) ? ` <b>${esc(c.hint || c.name)}</b>` : '';
+  let html;
+  if (gTokenValid('core')) {
+    const mins = Math.max(1, Math.round((c.exp - Date.now()) / 60000));
+    html = `✅ 구글 로그인 유지 중${who} · 새로고침해도 유지되고 ${mins}분 뒤 자동 연장됩니다`;
+  } else if (c && c.hint) {
+    html = `⏳ 로그인이 만료됐어요${who} · 다음 작업 때 자동으로 다시 연결합니다`;
+  } else {
+    html = '로그인 안 됨 · 캠페인을 찾거나 등록할 때 구글 로그인 창이 한 번 뜹니다';
+  }
+  const y = gTokens.youtube;
+  html += `<br><span style="opacity:.75">YouTube 권한: ${gTokenValid('youtube') ? '있음' : (y && y.token ? '만료됨 (필요할 때 자동 갱신)' : '없음 — 채널 가져오기 때 별도 승인')}</span>`;
+  el.innerHTML = html;
+}
+gLoadTokens();
+setInterval(gTokenMaintenance, 60 * 1000);
+setTimeout(gTokenMaintenance, 1500);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) gTokenMaintenance(); });
+// 다른 탭에서 로그인하면 이 탭에도 바로 반영
+window.addEventListener('storage', (e) => { if (e.key === G_TOKEN_KEY) gLoadTokens(); });
 
 async function uploadFileToDrive(file) {
-  const token = await gDriveSignIn();
   const metadata = { name: file.name, mimeType: file.type };
   const form = new FormData();
   form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
   form.append('file', file);
-  const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form });
+  const res = await gAuthFetch('core', 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', { method: 'POST', body: form });
   if (!res.ok) throw new Error(`드라이브 업로드 실패: ${res.status}`);
   const json = await res.json();
-  await fetch(`https://www.googleapis.com/drive/v3/files/${json.id}/permissions`, {
+  await gAuthFetch('core', `https://www.googleapis.com/drive/v3/files/${json.id}/permissions`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ role: 'reader', type: 'anyone' })
   });
   return json.id;
@@ -4188,13 +4416,9 @@ function gPopulateDropdowns() {
       GDB.accounts.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; accSel.appendChild(o); });
       if (prev) accSel.value = prev;
     }
-    const regSel = document.getElementById(`${t}_지역구분자`);
-    if (regSel) {
-      const prev = regSel.value;
-      regSel.innerHTML = '<option value="">선택</option>';
-      GDB.googleRegions.forEach(r => { const o = document.createElement('option'); o.value = r.name; o.textContent = r.name; regSel.appendChild(o); });
-      if (prev) regSel.value = prev;
-    }
+    gFillRegionSelects(t);
+    // 카드 안 CTA 도 목록이 준비된 뒤 다시 채운다 (초기 카드는 목록 로드 전에 만들어짐)
+    if (t === 'g2' && typeof gCreativeBlocks === 'function') gCreativeBlocks('g2').forEach(b => { if (typeof gFillCta === 'function') gFillCta(b); });
     const staffSel = document.getElementById(`${t}_제작자`);
     if (staffSel && staffSel.tagName === 'SELECT') {
       const prev = staffSel.value;
@@ -4256,7 +4480,41 @@ function gOnAccount(t) {
     const bizEl = document.getElementById(`${t}_업체명`); if (bizEl) bizEl.value = ch.channelName || '';
   } else { gOnYoutubeChannel(t); }
 }
+/* 치과에 매핑된 지역만 드롭다운에 올린다 (치과가 비어 있는 지역은 공통) */
+function gRegionsForClinic(clinic) {
+  const key = normName(clinic || '');
+  return GDB.googleRegions.filter(r => !r.clinic || normName(r.clinic) === key);
+}
+function gFillRegionSelects(t) {
+  const clinic = (document.getElementById(`${t}_치과명`) || {}).value || '';
+  const list = gRegionsForClinic(clinic);
+  const label = r => (r.refName ? `${r.name} — ${r.refName}` : r.name) + (r.custom ? ' 📍' : '');
+  const regSel = document.getElementById(`${t}_지역구분자`);
+  if (regSel) {
+    const prev = regSel.value;
+    regSel.innerHTML = '<option value="">선택</option>';
+    list.forEach(r => { const o = document.createElement('option'); o.value = r.name; o.textContent = label(r); regSel.appendChild(o); });
+    if (prev && Array.from(regSel.options).some(x => x.value === prev)) regSel.value = prev;
+  }
+  const srchSel = document.getElementById(`${t}_검색지역`);
+  if (srchSel) {
+    const prev = srchSel.value;
+    srchSel.innerHTML = '<option value="">지역 없이 찾기</option>';
+    list.forEach(r => { const o = document.createElement('option'); o.value = r.name; o.textContent = label(r); srchSel.appendChild(o); });
+    if (prev && Array.from(srchSel.options).some(x => x.value === prev)) srchSel.value = prev;
+  }
+}
+// 구글 반경 타겟용 좌표 파싱: "위도,경도,반경km; ..." → [{latitude, longitude, radiusKm}]
+function gParseCoords(str) {
+  if (!str) return [];
+  return String(str).split(';').map(chunk => {
+    const p = chunk.split(',').map(x => parseFloat(x.trim()));
+    if (p.length < 2 || isNaN(p[0]) || isNaN(p[1])) return null;
+    return { latitude: p[0], longitude: p[1], radiusKm: isNaN(p[2]) ? 10 : p[2] };
+  }).filter(Boolean);
+}
 function gOnClinic(t) {
+  gFillRegionSelects(t);
   gAutoGenNames(t);
   // 세트 추가 탭: 치과를 바꾸면 캠페인 목록을 다시 걸러 보여준다
   if (t === 'g2' && document.getElementById('g2_치과명')?.value) gFindCampaigns('g2');
@@ -4286,7 +4544,7 @@ function gPopulateYoutubeChannels(t) {
 function gAutoGenNames(t) {
   const acc = GDB.accounts.find(a => a.name === gGetAccountName(t)) || (t === 'g2' ? { name: '', campaignName: '' } : null);
   if (!acc) return;
-  const region = GDB.googleRegions.find(r => r.name === document.getElementById(`${t}_지역구분자`).value);
+  const region = gRegionsForClinic(document.getElementById(`${t}_치과명`)?.value || '').find(r => r.name === document.getElementById(`${t}_지역구분자`).value);
   const staffName = document.getElementById(`${t}_제작자`).value;
   const staffObj = GDB.staff.find(s => s.name === staffName);
   const dateEl = document.getElementById(`${t}_날짜`);
@@ -4308,20 +4566,21 @@ function gAutoGenNames(t) {
     ? (document.getElementById('g2_creative_list')?.children.length || 1)
     : (document.getElementById(`${t}_video_list`)?.children.length || 1);
   const start = gAdSubStart[t] || 1;
-  const first = build(`${seq}.${start}U`);
+  const first = build(`1.${start}U`);   // 광고 번호 앞자리는 그룹 번호와 무관하게 항상 1
   const adEl = document.getElementById(`${t}_광고명`);
-  if (adEl) adEl.value = n > 1 ? `${first} 외 ${n - 1}개 (${seq}.${start + 1}U~${seq}.${start + n - 1}U)` : first;
+  if (adEl) adEl.value = n > 1 ? `${first} 외 ${n - 1}개 (1.${start + 1}U~1.${start + n - 1}U)` : first;
   if (t === 'g2' && typeof gUpdateCardAdNames === 'function') gUpdateCardAdNames(t);
 }
 function gAdNameFor(t, i) {
   const acc = GDB.accounts.find(a => a.name === gGetAccountName(t)) || (t === 'g2' ? {} : null);
   if (!acc) return '';
-  const region = GDB.googleRegions.find(r => r.name === document.getElementById(`${t}_지역구분자`).value);
-  const staffObj = GDB.staff.find(x => x.name === document.getElementById(`${t}_제작자`).value);
   const clinicName = document.getElementById(`${t}_치과명`)?.value || '';
-  const seq = gSetSeqFor(t);
+  const region = gRegionsForClinic(clinicName).find(r => r.name === document.getElementById(`${t}_지역구분자`).value);
+  const staffObj = GDB.staff.find(x => x.name === document.getElementById(`${t}_제작자`).value);
   const sub = (gAdSubStart[t] || 1) + i - 1;
-  return [clinicName, '임플란트', region ? (region.refName || '') : '', `${seq}.${sub}U`, staffObj ? staffObj.id : ''].filter(Boolean).join(' ');
+  let refName = region ? (region.refName || '') : '';
+  if (t === 'g2' && gCampaignGeo.g2 && gCampaignGeo.g2.length > 0) refName = '';
+  return [clinicName, '임플란트', refName, `1.${sub}U`, staffObj ? staffObj.id : ''].filter(Boolean).join(' ');
 }
 /* =========================================================
    Google 광고 소재 카드 (세트 추가 탭) — 메타와 동일한 카드 UI
@@ -4521,7 +4780,10 @@ async function gCheckCampaignGeo(t, customerId, campaignId) {
   if (positives.length > 0) {
     setState(true, `캠페인에 지역 ${positives.length}곳이 이미 설정돼 있어 광고그룹에서는 건드리지 않습니다`);
   } else {
-    setState(false, '캠페인에 지역 설정이 없어요 — 광고그룹에서 직접 지정하세요');
+    setState(false, '캠페인에 지역 설정이 없어요 — 광고그룹 지역을 직접 지정하세요');
+    // 검색할 때 고른 지역이 있으면 그걸 기본값으로
+    const srch = (document.getElementById(`${t}_검색지역`) || {}).value || '';
+    if (sel && !sel.value && srch && Array.from(sel.options).some(o => o.value === srch)) sel.value = srch;
   }
   gAutoGenNames(t);
 }
@@ -4545,11 +4807,12 @@ function gParseSetSeq(name) {
   return m ? parseInt(m[1], 10) : 0;
 }
 function gMaxSetSeq(list) { let mx = 0; (list || []).forEach(x => { const n = gParseSetSeq(x.name); if (n > mx) mx = n; }); return mx; }
-function gMaxAdSubSeq(list, seq) {
+// 광고 번호는 그룹 번호와 무관하게 항상 1.N — 그룹 안에서 가장 큰 N을 찾는다
+function gMaxAdSubSeq(list) {
   let mx = 0;
   (list || []).forEach(x => {
     const re = /(\d+)\.(\d+)U(?![0-9A-Za-z가-힣])/g; let m;
-    while ((m = re.exec(x.name || '')) !== null) { if (parseInt(m[1], 10) === seq) { const v = parseInt(m[2], 10); if (v > mx) mx = v; } }
+    while ((m = re.exec(x.name || '')) !== null) { const v = parseInt(m[2], 10); if (v > mx) mx = v; }
   });
   return mx;
 }
@@ -4559,13 +4822,13 @@ const gPickedCampaign = { g2: null };
 async function gFindCampaigns(t) {
   const box = document.getElementById(`${t}_캠페인목록`);
   const clinic = document.getElementById(`${t}_치과명`).value;
-  const region = document.getElementById(`${t}_지역구분자`).value;
+  const region = (document.getElementById(`${t}_검색지역`) || {}).value || '';
   if (!clinic) { showToast('치과를 먼저 선택하세요', 'error'); return; }
   const short = GDB.clinicToShortName[clinic] || clinic;
-  const regionObj = GDB.googleRegions.find(r => r.name === region);
+  const regionObj = gRegionsForClinic(clinic).find(r => r.name === region);
   const regionLabel = regionObj ? (regionObj.refName || regionObj.name) : region;
   const terms = [short, regionLabel].filter(Boolean);
-  box.innerHTML = `<div class="copy-suggest-loading">'${terms.join(' + ')}' 로 캠페인 찾는 중...</div>`;
+  box.innerHTML = `<div class="copy-suggest-loading">캠페인 찾는 중... (검색어: ${terms.join(' + ')})</div>`;
   box.classList.add('show');
   let list = await gLookup('findcampaigns', { q: terms.join('|') });
   // 지역까지 넣어 못 찾으면 치과명만으로 한 번 더
@@ -4579,13 +4842,22 @@ async function gFindCampaigns(t) {
     return;
   }
   if (list.length === 0) {
-    box.innerHTML = `<div class="copy-suggest-loading">'${short}' 이 들어간 진행중 캠페인이 없어요<br><span class="manual-toggle" onclick="gToggleManualCampaignId('${t}')">캠페인 ID 직접 입력</span></div>`;
+    box.innerHTML = `<div class="copy-suggest-loading" style="line-height:1.6;">
+        검색어 «${short}» 로 진행중 캠페인을 찾지 못했어요<br>
+        <span style="color:var(--text3);font-size:11px;">캠페인명에 치과 약칭이 들어가는지 확인해 보세요 (설정 → 치과·약칭)</span><br>
+        <span class="manual-toggle" onclick="gToggleManualCampaignId('${t}')">캠페인 ID 직접 입력</span>
+      </div>`;
     return;
   }
   gLastCampaignList[t] = list;
   const head = widened
-    ? `<div style="padding:6px 12px;font-size:11px;color:var(--yellow);border-bottom:1px solid var(--border);">'${regionLabel}' 는 못 찾아 '${short}' 로만 검색했습니다 (${list.length}개)</div>`
-    : `<div style="padding:6px 12px;font-size:11px;color:var(--text3);border-bottom:1px solid var(--border);">${list.length}개 찾음</div>`;
+    ? `<div style="padding:7px 12px;font-size:11px;color:#b45309;background:var(--yellow-bg);border-bottom:1px solid var(--border);line-height:1.5;">
+         지역까지 넣으면 결과가 없어서, 치과명만으로 다시 찾았어요<br>
+         <span style="color:var(--text3);">검색어: ${short} (지역 «${regionLabel}» 제외) · ${list.length}개</span>
+       </div>`
+    : `<div style="padding:7px 12px;font-size:11px;color:var(--text3);border-bottom:1px solid var(--border);">
+         검색어: ${terms.join(' + ')} · ${list.length}개
+       </div>`;
   box.innerHTML = head + list.map((c, i) =>
     `<div class="copy-suggest-item" onclick="gPickCampaign('${t}',${i})">
        ${(c.name || '(이름 없음)').replace(/</g, '&lt;')}
@@ -4618,55 +4890,7 @@ async function gLoadAudiences(t, customerId) {
 }
 
 const gLastCampaignList = { g2: [] };
-function gFilterCampaignsByClinic(t, list) {
-  const clinic = document.getElementById(`${t}_치과명`)?.value || '';
-  if (!clinic) return list;
-  const keys = [clinic, GDB.clinicToShortName[clinic] || ''].filter(Boolean).map(normName);
-  const hit = list.filter(c => keys.some(k => normName(c.name).includes(k)));
-  return hit.length ? hit : [];
-}
-function gShowAllCampaigns(t) {
-  const listBox = document.getElementById(`${t}_캠페인목록`);
-  const list = gLastCampaignList[t] || [];
-  if (!listBox || list.length === 0) return;
-  listBox.innerHTML = `<div style="padding:6px 12px;font-size:11px;color:var(--text3);border-bottom:1px solid var(--border);">전체 ${list.length}개 표시 중</div>`
-    + list.map(c => `<div class="copy-suggest-item" onclick="gSelectCampaignFromList('${t}','${c.id}','${(c.name || '').replace(/'/g, '&#39;').replace(/</g, '&lt;')}')">${(c.name || '(이름 없음)').replace(/</g, '&lt;')}</div>`).join('');
-  listBox.classList.add('show');
-}
 
-async function gOnCampaignAccountSelect(t) {
-  const accName = document.getElementById(`${t}_캠페인선택계정`).value;
-  const listBox = document.getElementById(`${t}_캠페인목록`);
-  if (!listBox) return;
-  if (!accName) { listBox.classList.remove('show'); listBox.innerHTML = ''; return; }
-  const acc = GDB.accounts.find(a => a.name === accName);
-  if (!acc || !acc.id) { showToast('선택한 계정의 customer ID를 찾을 수 없어요 (설정에서 입력하세요)', 'error'); return; }
-  // 본문 계정 선택도 같이 맞춘다
-  const mainSel = document.getElementById(`${t}_계정명`);
-  if (mainSel) { mainSel.value = accName; gOnAccount(t); }
-  const disp = document.getElementById(`${t}_계정명_display`); if (disp) disp.value = accName;
-  listBox.innerHTML = '<div class="copy-suggest-loading">진행중인 캠페인 불러오는 중...</div>';
-  listBox.classList.add('show');
-  const list = await gLookup('campaigns', { customerId: acc.id });
-  if (!list) {
-    listBox.innerHTML = '<div class="copy-suggest-loading">캠페인 목록을 가져올 수 없어요 — 설정 → 연동에서 Google Ads API 또는 Make 조회 웹훅을 설정하세요</div>';
-    return;
-  }
-  const filtered = gFilterCampaignsByClinic(t, list);
-  if (filtered.length === 0) {
-    const clinic = document.getElementById(`${t}_치과명`)?.value || '';
-    listBox.innerHTML = clinic
-      ? `<div class="copy-suggest-loading">'${clinic}' 과 일치하는 캠페인이 없어요 (전체 ${list.length}개)<br><span class="manual-toggle" onclick="gShowAllCampaigns('${t}')">전체 보기</span></div>`
-      : '<div class="copy-suggest-loading">진행중인 캠페인이 없어요</div>';
-    return;
-  }
-  gLastCampaignList[t] = list;
-  listBox.innerHTML = (filtered.length < list.length
-      ? `<div style="padding:6px 12px;font-size:11px;color:var(--text3);border-bottom:1px solid var(--border);">전체 ${list.length}개 중 ${filtered.length}개 표시 · <span class="manual-toggle" onclick="gShowAllCampaigns('${t}')">전체 보기</span></div>` : '')
-    + filtered.map(c =>
-    `<div class="copy-suggest-item" onclick="gSelectCampaignFromList('${t}','${c.id}','${(c.name || '').replace(/'/g, '&#39;').replace(/</g, '&lt;')}')">${(c.name || '(이름 없음)').replace(/</g, '&lt;')}</div>`
-  ).join('');
-}
 function gSelectCampaignFromList(t, id, name) {
   document.getElementById(`${t}_캠페인ID`).value = id;
   const box = document.getElementById(`${t}_캠페인목록`); if (box) box.classList.remove('show');
@@ -4735,15 +4959,14 @@ async function gToggleGroupSelect(id, name) {
     if (hint) hint.textContent = `선택됨 · ${name}`;
     return;
   }
-  const seq = gSelectedGroup.g2.seq;
-  gAdSubStart.g2 = gMaxAdSubSeq(ads, seq) + 1;
+  gAdSubStart.g2 = gMaxAdSubSeq(ads) + 1;
   gAutoGenNames('g2');
   gRenderAdSublist(ads.length ? ads.map(a => {
       const on = String(a.status || '').toUpperCase() === 'ENABLED';
       const nm = (a.name || '(이름 없음)').replace(/</g, '&lt;');
       return `<div class="ad-subrow"><span class="dot"></span><span class="nm" title="${nm}">${nm}</span><span class="adset-status ${on ? 'on' : ''}">${on ? '게재중' : (a.status || '')}</span></div>`;
     }).join('') : '<div class="ad-subloading">이 그룹에 광고가 없어요</div>',
-    ads.length ? `${ads.length}개 · 새 광고는 ${seq}.${gAdSubStart.g2}U 부터` : `광고 없음 · ${seq}.1U 부터 시작`);
+    ads.length ? `${ads.length}개 · 새 광고는 1.${gAdSubStart.g2}U 부터` : '광고 없음 · 1.1U 부터 시작');
   if (hint) hint.textContent = `선택됨 · ${name}`;
 }
 function gRenderAdSublist(html, hintText) {
@@ -4942,7 +5165,10 @@ function gCollectChannels(t) {
 function gGetData(t) {
   const isT2 = t === 'g2';
   const regionName = document.getElementById(`${t}_지역구분자`).value;
-  const gRegion = GDB.googleRegions.find(r => r.name === regionName);
+  const clinicSel = document.getElementById(`${t}_치과명`);
+  const gRegion = gRegionsForClinic(clinicSel ? clinicSel.value : '').find(r => r.name === regionName)
+    || GDB.googleRegions.find(r => r.name === regionName);
+  const gCoords = gParseCoords(gRegion ? gRegion.custom : '');
   const d = {
     플랫폼: 'google',
     제작자: g(`${t}_제작자`), 날짜: g(`${t}_날짜`), 유형: '디맨드젠', 상태: '대기중',
@@ -4950,6 +5176,8 @@ function gGetData(t) {
     치과명: g(`${t}_치과명`), 광고그룹명: g(`${t}_광고그룹명`),
     지역구분자: regionName,
     구글지역ID: gRegion ? (gRegion.criterionId || '') : '',
+    구글좌표목록: gCoords,                                   // 반경 타겟(핀) — 있으면 criterion 대신 사용
+    지역타겟방식: gCoords.length ? 'PROXIMITY' : (gRegion && gRegion.criterionId ? 'LOCATION' : 'NONE'),
     언어: 'ko',
     채널: gCollectChannels(t),
     잠재고객ID: g(`${t}_잠재고객`),
@@ -4993,8 +5221,8 @@ function gGetData(t) {
     d.긴광고제목목록 = f.긴광고제목목록 || [];
     d.설명목록 = f.설명목록 || [];
     d.CTA버튼 = f.CTA버튼 || '';
-    d.지역구분자 = (gCampaignGeo.g2 && gCampaignGeo.g2.length > 0) ? '' : d.지역구분자;
-    d.구글지역ID = (gCampaignGeo.g2 && gCampaignGeo.g2.length > 0) ? '' : d.구글지역ID;
+    const locked = !!(gCampaignGeo.g2 && gCampaignGeo.g2.length > 0);
+    if (locked) { d.지역구분자 = ''; d.구글지역ID = ''; d.구글좌표목록 = []; d.지역타겟방식 = 'CAMPAIGN'; }
     d.캠페인지역설정됨 = !!(gCampaignGeo.g2 && gCampaignGeo.g2.length > 0);
   } else {
     d.영상목록.forEach((v, i) => { v.광고명 = gAdNameFor(t, i + 1); });
