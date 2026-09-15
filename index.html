@@ -1879,7 +1879,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-17';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-15.5';
+const G_PAGE_BUILD = '2026-09-15.6';
 function gShowPageBuild() {
   const el = document.getElementById('g_page_build');
   if (el) { el.className = 'field-hint'; el.textContent = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요`; }
@@ -5540,6 +5540,16 @@ async function gSubmitAd(t) {
   if (!data.광고그룹명) { showToast('광고그룹명은 필수입니다 — 설정에서 치과명·약칭을 확인하세요', 'error'); return; }
   if (isT2 && !data.캠페인ID) { showToast('캠페인 ID를 입력해주세요', 'error'); return; }
   if (!isT2 && !data.캠페인명) { showToast('캠페인명을 입력해주세요', 'error'); return; }
+  // 캠페인이 어느 계정 것인지 확인된 경우에만 보낸다 — 다른 계정 ID로 보내면 Google이 RESOURCE_NOT_FOUND(campaign) 로 거절한다
+  if (isT2) {
+    const picked = gPickedCampaign.g2;
+    const cid = String(data.광고계정ID || '').replace(/[^0-9]/g, '');
+    const confirmed = picked && String(picked.id) === String(data.캠페인ID) && cid && String(picked.customerId || '').replace(/[^0-9]/g, '') === cid;
+    if (!confirmed) {
+      showToast('이 캠페인이 어느 광고계정 것인지 확인되지 않았어요 — 캠페인 ID를 다시 입력(Enter)하거나 목록에서 골라주세요. 계속 안 되면 설정 → 연동에서 중계 함수 버전을 확인하세요', 'error');
+      return;
+    }
+  }
   if ((data.영상목록||[]).length + (data.업로드대기수||0) === 0) { showToast('영상을 1개 이상 추가해주세요', 'error'); return; }
   // 구글이 거절할 게 뻔한 빈칸은 보내기 전에 잡는다 (최종 URL 없이 보내면 final_urls 오류로 멈춘다)
   const problem = gValidateCreatives(t);
@@ -5638,6 +5648,7 @@ function gClearForm(t) {
     const campIdEl = document.getElementById('g2_캠페인ID'); if (campIdEl) campIdEl.value = '';
     const campListBox = document.getElementById('g2_캠페인목록'); if (campListBox) { campListBox.classList.remove('show'); campListBox.innerHTML = ''; }
     gSelectedGroup.g2 = null; gAdSubStart.g2 = 1; gClearAdSublist(); gApplyG2Mode(); gToggleCampaignClear('g2', false);
+    gPickedCampaign.g2 = null; gManualLookedUp.g2 = '';
     const gBox = document.getElementById('g2_group_list');
     if (gBox) gBox.innerHTML = '<div class="adset-empty">위에서 캠페인을 먼저 선택하세요</div>';
   }
