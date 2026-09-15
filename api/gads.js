@@ -4499,14 +4499,6 @@ function gPopulateDropdowns() {
       GDB.accounts.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; campAccSel.appendChild(o); });
       if (prev) campAccSel.value = prev;
     }
-    const ctaSel = document.getElementById(`${t}_CTA`);
-    if (ctaSel) {
-      const prev = ctaSel.value;
-      ctaSel.innerHTML = '<option value="">자동</option>';
-      GDB.ctaTypes.forEach(c => { const o = document.createElement('option'); o.value = c.value; o.textContent = c.label; ctaSel.appendChild(o); });
-      const want = prev || 'CONTACT_US';
-      ctaSel.value = Array.from(ctaSel.options).some(o => o.value === want) ? want : '';
-    }
   });
 }
 function gOnAccount(t) {
@@ -4753,14 +4745,13 @@ function gUpdateCreativeCount(t) {
 function gFillCta(block) {
   const sel = block.querySelector('[data-role="CTA버튼"]');
   if (!sel) return;
-  const hadList = sel.options.length > 1;   // 이미 목록이 있었으면 사용자가 고른 값('자동' 포함)을 지킨다
+  // '자동'은 없다 — 항상 CTA를 하나 고른다 (기본 문의하기)
   const prev = sel.value;
-  sel.innerHTML = '<option value="">자동</option>';
-  (GDB.ctaTypes && GDB.ctaTypes.length ? GDB.ctaTypes : GOOGLE_CTA).forEach(c => {
+  sel.innerHTML = '';
+  GOOGLE_CTA.forEach(c => {
     const o = document.createElement('option'); o.value = c.value; o.textContent = c.label; sel.appendChild(o);
   });
-  if (hadList) sel.value = Array.from(sel.options).some(x => x.value === prev) ? prev : 'CONTACT_US';
-  else sel.value = 'CONTACT_US';   // 처음 만들 때 기본값은 문의하기
+  sel.value = (prev && Array.from(sel.options).some(x => x.value === prev)) ? prev : 'CONTACT_US';
 }
 // 카드 안의 작은 반복 입력 (광고제목 / 긴 광고제목 / 설명)
 function gMiniList(role, label, maxLen, t) {
@@ -5335,6 +5326,8 @@ function gValidateCreatives(t) {
     if (!(heads || []).length) { focus(target, '광고제목'); return `소재 ${i + 1}: 광고제목을 1개 이상 넣어주세요`; }
     if (!(longs || []).length) { focus(target, '긴광고제목'); return `소재 ${i + 1}: 긴 광고제목을 1개 이상 넣어주세요`; }
     if (!(descs || []).length) { focus(target, '설명'); return `소재 ${i + 1}: 설명을 1개 이상 넣어주세요`; }
+    const cta = (common && i > 0) ? first.CTA버튼 : c.CTA버튼;
+    if (!cta) { focus(target, 'CTA버튼'); return `소재 ${i + 1}: CTA 버튼을 골라주세요`; }
   }
   return '';
 }
