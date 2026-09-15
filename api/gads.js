@@ -15,10 +15,14 @@
  *   GOOGLE_ADS_API_VERSION        선택 (예: v21). 없으면 자동으로 찾는다.
  *
  * 진단용 호출
+ *   /api/gads?type=ping      ← 로그인 없이 배포된 빌드 확인 (연동 탭이 자동으로 부른다)
  *   /api/gads?type=version   ← 어떤 API 버전이 살아 있는지 확인
  */
 
 const HOST = 'https://googleads.googleapis.com';
+// 이 파일의 빌드 표식 — HTML(연동 탭)이 /api/gads?type=ping 으로 읽어 구버전 배포를 잡아낸다
+const BUILD = '2026-09-15';
+const FEATURES = ['audience', 'geo', 'findcampaigns', 'campaigngeo'];
 
 // 최신 버전부터 훑는다. 지원 종료된 버전은 HTML 404를 돌려주므로 건너뛴다.
 const CANDIDATE_VERSIONS = ['v23', 'v22', 'v21', 'v20', 'v19', 'v18'];
@@ -34,9 +38,11 @@ const QUERIES = {
   ads: (p) =>
     "SELECT ad_group_ad.ad.id, ad_group_ad.ad.name, ad_group_ad.status FROM ad_group_ad " +
     `WHERE ad_group.id = ${Number(p.adGroupId)} LIMIT 200`,
+  // 잠재고객(audience 리소스)만. 세그먼트(user_list: 'AdWords optimized list', 'Purchasers of …')와
+  // 실적최대화 애셋그룹 전용 신호(scope=ASSET_GROUP)는 제외한다.
   audiences: () =>
-    "SELECT user_list.id, user_list.name FROM user_list " +
-    "WHERE user_list.membership_status = 'OPEN' LIMIT 200",
+    "SELECT audience.id, audience.name, audience.status, audience.scope FROM audience " +
+    "WHERE audience.status = 'ENABLED' AND audience.scope = 'CUSTOMER' ORDER BY audience.name LIMIT 300",
   // 캠페인 단위에 걸린 지역 타겟 (있으면 광고그룹에서 지역을 다시 설정하지 않는다)
   campaigngeo: (p) =>
     "SELECT campaign_criterion.criterion_id, campaign_criterion.location.geo_target_constant, " +
@@ -79,7 +85,7 @@ function normalize(type, rows) {
     if (type === 'campaigns') return { id: String(r.campaign.id), name: r.campaign.name, status: r.campaign.status };
     if (type === 'adgroups') return { id: String(r.adGroup.id), name: r.adGroup.name, status: r.adGroup.status };
     if (type === 'ads') return { id: String(r.adGroupAd.ad.id), name: r.adGroupAd.ad.name || '(이름 없음)', status: r.adGroupAd.status };
-    if (type === 'audiences') return { id: String(r.userList.id), name: r.userList.name, status: '' };
+    if (type === 'audiences') return { id: String(r.audience.id), name: r.audience.name, status: r.audience.status || '', kind: 'audience' };
     if (type === 'campaigngeo') {
       const cc = r.campaignCriterion || {};
       const gt = (cc.location && cc.location.geoTargetConstant) || '';
@@ -101,6 +107,17 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'authorization,content-type');
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  // 로그인 없이 배포 상태만 확인 (비밀값은 내보내지 않는다)
+  if (req.query && req.query.type === 'ping') {
+    return res.status(200).json({
+      ok: true,
+      build: BUILD,
+      features: FEATURES,
+      hasDeveloperToken: !!process.env.GOOGLE_ADS_DEVELOPER_TOKEN,
+      hasLoginCustomerId: !!process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID,
+    });
+  }
 
   const devToken = process.env.GOOGLE_ADS_DEVELOPER_TOKEN;
   if (!devToken) return res.status(500).json({ error: 'GOOGLE_ADS_DEVELOPER_TOKEN 환경변수가 없습니다' });
@@ -216,7 +233,7 @@ module.exports = async function handler(req, res) {
       if (!r.ok || !body.ok) return res.status(r.status || 500).json({ error: gadsError(body, r), apiVersion: V });
       const out = (body.json.geoTargetConstantSuggestions || []).map((s) => {
         const g = s.geoTargetConstant || {};
-        return { id: String(g.id || (g.resourceName || '').split('/').pop()), name: g.name || '', status: g.targetType || '' };
+        return { id: String(g.id || (g.resourceName || '').split('/').pop()), name: g.name || '', status: g.targetType || '', canonical: g.canonicalName || '' };
       });
       return res.status(200).json(out);
     }
