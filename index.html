@@ -1879,7 +1879,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-17';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-15.6';
+const G_PAGE_BUILD = '2026-09-15.7';
 function gShowPageBuild() {
   const el = document.getElementById('g_page_build');
   if (el) { el.className = 'field-hint'; el.textContent = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요`; }
@@ -4433,13 +4433,21 @@ async function uploadFileToDrive(file) {
   const res = await gAuthFetch('core', 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', { method: 'POST', body: form });
   if (!res.ok) throw new Error(`드라이브 업로드 실패: ${res.status}`);
   const json = await res.json();
-  await gAuthFetch('core', `https://www.googleapis.com/drive/v3/files/${json.id}/permissions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ role: 'reader', type: 'anyone' })
-  });
+  // Make의 Drive 연결이 다른 구글 계정이라 '링크가 있는 모든 사용자' 읽기 권한이 있어야 가져갈 수 있다 — 실패하면 한 번 더
+  let permOk = false;
+  for (let i = 0; i < 2 && !permOk; i++) {
+    const pr = await gAuthFetch('core', `https://www.googleapis.com/drive/v3/files/${json.id}/permissions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: 'reader', type: 'anyone' })
+    });
+    permOk = pr.ok;
+    if (!permOk) console.warn('드라이브 공유 설정 실패', pr.status, await pr.text().catch(() => ''));
+  }
+  gUploadPermissionFailed[json.id] = !permOk;
   return json.id;
 }
+const gUploadPermissionFailed = {};   // 파일ID → 공유 설정 실패 여부 (Make가 못 읽을 수 있음)
 
 /* 디맨드젠 광고의 CTA는 Google이 정한 고정 목록이라 API 조회가 없다 */
 const GOOGLE_CTA = [
@@ -4740,7 +4748,8 @@ async function gPrefetchDriveUpload(t, block) {
     if (input.files[0] !== file) return null;   // 그 사이 다른 파일로 바뀜
     block.dataset.uploadedId = id;
     block.querySelector('[data-role="파일ID"]').value = id;
-    badge('✓ Drive 업로드 완료 — 등록 시 바로 사용', '#047857');
+    if (gUploadPermissionFailed[id]) badge('⚠ 올라갔지만 공유 설정에 실패했어요 — Make가 못 읽을 수 있으니 다시 첨부해 보세요', 'var(--red)');
+    else badge('✓ Drive 업로드 완료 — 등록 시 바로 사용', '#047857');
     return id;
   })();
   gUploadInFlight.set(block, p);
@@ -5478,6 +5487,18 @@ async function gCheckAdsCreated(data, state) {
   const names = (ads || []).map(a => a.name);
   return { found: expected.filter(n => names.includes(n)), total: expected.length, groupId, campaignId, adsInGroup: names.length };
 }
+/* Make 오류 기록을 사람 말로 — 자주 나오는 것만 */
+function gErrorHint(row) {
+  const s = `${row.msg || ''} ${row.detail || ''}`;
+  if (/File not found/i.test(s)) return '첨부한 영상이 Drive에 없어요. 등록이 한 번 끝나면 임시 영상은 지워지니, 같은 소재를 다시 보낼 땐 영상을 다시 첨부하세요 (이제부터는 자동으로 새로 올립니다)';
+  if (/RESOURCE_NOT_FOUND/.test(s) && /campaign/i.test(s)) return '이 광고계정에 그 캠페인이 없어요 — 캠페인을 다시 골라주세요';
+  if (/RESOURCE_NOT_FOUND/.test(s) && /ad_group|adGroup/i.test(s)) return '광고그룹을 찾지 못했어요 — 목록에서 다시 골라주세요';
+  if (/CONCURRENT_MODIFICATION/.test(s)) return 'Google이 잠시 잠갔어요 — Make가 1분 뒤 자동 재시도합니다';
+  if (/final_urls|ILLEGAL_CHARS|INVALID_URL/i.test(s)) return '최종 URL 형식을 확인하세요 (https:// 로 시작)';
+  if (/quotaExceeded|uploadLimitExceeded/i.test(s)) return 'YouTube 업로드 한도에 걸렸어요 — 내일 다시 시도하거나 다른 채널로';
+  if (/invalid_grant|Unauthorized|401/.test(s)) return 'Make의 Google 연결이 풀렸어요 — Make에서 해당 모듈의 연결을 다시 인증하세요';
+  return '';
+}
 function gRenderTrack(t, idx, data, state) {
   const box = document.getElementById(`gtrack_${t}_${idx}`);
   const steps = document.getElementById(`gsteps_${t}_${idx}`);
@@ -5519,7 +5540,10 @@ async function gTrackRegistration(t, idx, data) {
       gUpdateCard(t, idx, '완료', `광고 ${state.check.found.length}개가 Google Ads에 생성됐어요 · 광고그룹 ${state.check.groupId}${last && last.status === '오류' ? ' (마지막 기록은 오류였지만 광고는 확인됨)' : ''}`);
       return;
     }
-    if (last && last.status === '오류') gUpdateCard(t, idx, '실패', `${last.step}에서 멈췄어요 — ${last.msg}${/재시도/.test(last.msg) ? '' : ' · Make가 자동 재시도하면 기록이 이어집니다'}`);
+    if (last && last.status === '오류') {
+      const hint = gErrorHint(last);
+      gUpdateCard(t, idx, '실패', `${last.step}에서 멈췄어요 — ${last.msg}` + (hint ? ` · ${hint}` : (/재시도/.test(last.msg) ? '' : ' · Make가 자동 재시도하면 기록이 이어집니다')));
+    }
     else if (last) gUpdateCard(t, idx, '진행중', `${last.step}${last.ad ? ' (' + last.ad + ')' : ''} ${last.status === '완료' ? '완료' : '진행 중'} — 다음 단계를 기다리는 중`);
     if (state.elapsed > G_TRACK_MAX_MS) {
       state.running = false;
@@ -5611,6 +5635,17 @@ async function gSubmitAd(t) {
     if (res.ok) {
       gUpdateCard(t, idx, '진행중', 'Make가 받았어요 — 진행 상황을 확인하는 중입니다');
       showToast(isT2?'세트 추가 요청 완료!':'캠페인 등록 요청 완료!', 'success');
+      // 직접 첨부한 임시 파일은 Make가 등록을 마치면 Drive에서 지운다.
+      // 같은 카드를 한 번 더 보내면 지워진 ID를 다시 쓰게 되므로(404 File not found) ID를 비워 두고, 다음 전송 때 첨부 파일을 새로 올린다.
+      blocks.forEach(block => {
+        const idInput = block.querySelector('[data-role="파일ID"]');
+        const id = (idInput && idInput.value || '').trim();
+        if (!id || !uploadedIds.includes(id)) return;
+        idInput.value = ''; block.dataset.uploadedId = '';
+        const dz = block.querySelector('[data-role="dropzone"]');
+        const el = dz && dz.querySelector('[data-role="upstat"]');
+        if (el) { el.style.color = 'var(--text3)'; el.textContent = '✓ 전송됨 — 같은 소재를 다시 등록하면 영상을 새로 올립니다'; }
+      });
       const usedCopies = (data.영상목록 || []).flatMap(v => (v.광고제목목록 || []).concat(v.설명목록 || []));
       gSaveCopies(usedCopies).catch(() => {});
       gTrackRegistration(t, idx, data);
