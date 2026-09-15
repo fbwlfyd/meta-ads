@@ -21,8 +21,8 @@
 
 const HOST = 'https://googleads.googleapis.com';
 // 이 파일의 빌드 표식 — HTML(연동 탭)이 /api/gads?type=ping 으로 읽어 구버전 배포를 잡아낸다
-const BUILD = '2026-09-16';
-const FEATURES = ['audience', 'geo', 'findcampaigns', 'campaigngeo'];
+const BUILD = '2026-09-17';
+const FEATURES = ['audience', 'geo', 'findcampaigns', 'campaigngeo', 'campaign'];
 
 // 최신 버전부터 훑는다. 지원 종료된 버전은 HTML 404를 돌려주므로 건너뛴다.
 const CANDIDATE_VERSIONS = ['v23', 'v22', 'v21', 'v20', 'v19', 'v18'];
@@ -165,20 +165,13 @@ module.exports = async function handler(req, res) {
     const V = await resolveVersion(headers);
     const API = `${HOST}/${V}`;
 
-    // 계정을 고르지 않고, 이름 조각으로 모든 계정에서 캠페인을 찾는다
-    if (type === 'findcampaigns') {
-      const terms = String(req.query.q || '').split('|').map((x) => x.trim()).filter(Boolean);
-      if (terms.length === 0) return res.status(400).json({ error: '검색어(q)가 필요합니다' });
+    // 접근 가능한 모든 계정에서 캠페인 조건으로 찾는다 (findcampaigns · campaign 공용)
+    //   stopWhenFound: ID 하나를 찾는 경우 첫 결과가 나오면 나머지 계정은 안 본다
+    async function searchCampaignsEverywhere(query, stopWhenFound) {
       const r = await fetch(`${API}/customers:listAccessibleCustomers`, { headers });
       const body = await readBody(r);
-      if (!r.ok || !body.ok) return res.status(r.status || 500).json({ error: gadsError(body, r), apiVersion: V });
+      if (!r.ok || !body.ok) { const err = new Error(gadsError(body, r)); err.http = r.status; throw err; }
       const ids = (body.json.resourceNames || []).map((n) => n.split('/').pop()).slice(0, 40);
-      const where = terms.map((t2) => `campaign.name LIKE '%${t2.replace(/'/g, "")}%'`).join(' AND ');
-      // status=all 이면 일시중지 캠페인도 포함 (새로 만든 캠페인은 PAUSED 로 생성된다)
-      const statusCond = req.query.status === 'all' ? "campaign.status != 'REMOVED'" : "campaign.status = 'ENABLED'";
-      const query =
-        'SELECT campaign.id, campaign.name, campaign.status, customer.id, customer.descriptive_name ' +
-        `FROM campaign WHERE ${statusCond} AND ${where} ORDER BY campaign.id DESC LIMIT 100`;
       const out = [];
       // 계정 수가 많을 수 있으니 8개씩 병렬로
       for (let i = 0; i < ids.length; i += 8) {
@@ -199,8 +192,35 @@ module.exports = async function handler(req, res) {
               })));
           } catch (e) { /* 접근 불가 계정은 건너뜀 */ }
         }));
+        if (stopWhenFound && out.length > 0) break;
       }
-      return res.status(200).json(out);
+      return out;
+    }
+
+    // 계정을 고르지 않고, 이름 조각으로 모든 계정에서 캠페인을 찾는다
+    if (type === 'findcampaigns') {
+      const terms = String(req.query.q || '').split('|').map((x) => x.trim()).filter(Boolean);
+      if (terms.length === 0) return res.status(400).json({ error: '검색어(q)가 필요합니다' });
+      const where = terms.map((t2) => `campaign.name LIKE '%${t2.replace(/'/g, "")}%'`).join(' AND ');
+      // status=all 이면 일시중지 캠페인도 포함 (새로 만든 캠페인은 PAUSED 로 생성된다)
+      const statusCond = req.query.status === 'all' ? "campaign.status != 'REMOVED'" : "campaign.status = 'ENABLED'";
+      const query =
+        'SELECT campaign.id, campaign.name, campaign.status, customer.id, customer.descriptive_name ' +
+        `FROM campaign WHERE ${statusCond} AND ${where} ORDER BY campaign.id DESC LIMIT 100`;
+      try { return res.status(200).json(await searchCampaignsEverywhere(query, false)); }
+      catch (e) { return res.status(e.http || 500).json({ error: e.message, apiVersion: V }); }
+    }
+
+    // 캠페인 ID 하나로 어느 계정의 캠페인인지 찾는다 (HTML에서 ID를 직접 입력했을 때)
+    //   결과 모양은 findcampaigns 와 같다 (0개 또는 1개)
+    if (type === 'campaign') {
+      const id = String(req.query.campaignId || '').replace(/[^0-9]/g, '');
+      if (!id) return res.status(400).json({ error: 'campaignId가 필요합니다' });
+      const query =
+        'SELECT campaign.id, campaign.name, campaign.status, customer.id, customer.descriptive_name ' +
+        `FROM campaign WHERE campaign.id = ${Number(id)} AND campaign.status != 'REMOVED' LIMIT 1`;
+      try { return res.status(200).json((await searchCampaignsEverywhere(query, true)).slice(0, 1)); }
+      catch (e) { return res.status(e.http || 500).json({ error: e.message, apiVersion: V }); }
     }
 
     if (type === 'accounts') {
