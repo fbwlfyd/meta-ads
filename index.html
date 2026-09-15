@@ -147,6 +147,30 @@
   .chip input { display: none; }
   .chip.checked { background: var(--g-red-bg); border-color: var(--g-red-border); color: var(--g-red-dark); font-weight: 600; }
 
+  /* YouTube 채널 선택 — 이름이 같은 채널이 있어서 로고와 채널 ID를 같이 보여준다 */
+  .chpick { position: relative; }
+  .chpick-btn { width: 100%; height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 12px; background: var(--white); border: 1px solid var(--border2); border-radius: var(--radius-sm); font-family: inherit; font-size: 13px; color: var(--text1); cursor: pointer; text-align: left; transition: border-color 0.15s, box-shadow 0.15s; }
+  .chpick-btn:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
+  .chpick-logo { width: 24px; height: 24px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background: var(--bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--text2); }
+  .chpick-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .chpick-logo.noimg img { display: none; }
+  .chpick-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chpick-id { font-size: 11px; color: var(--text3); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap; }
+  .chpick-btn .chpick-id { max-width: 45%; overflow: hidden; text-overflow: ellipsis; }
+  .chpick-caret { color: var(--text3); font-size: 11px; flex-shrink: 0; }
+  .chpick-menu { display: none; position: absolute; left: 0; right: 0; top: calc(100% + 4px); background: var(--white); border: 1px solid var(--border2); border-radius: var(--radius-sm); box-shadow: 0 8px 24px rgba(0,0,0,0.08); z-index: 30; max-height: 280px; overflow-y: auto; }
+  .chpick.open .chpick-menu { display: block; }
+  .chpick.open .chpick-btn { border-color: var(--blue); }
+  .chpick-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; font-size: 13px; color: var(--text1); }
+  .chpick-item:hover { background: var(--bg); }
+  .chpick-item.selected { background: var(--blue-bg); }
+  .chpick-item .chpick-logo { width: 30px; height: 30px; font-size: 13px; }
+  .chpick-item .chpick-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .chpick-item .chpick-text b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chpick-item .nologo { font-size: 10px; color: #b45309; }
+  .set-table .logo-prev { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); background: var(--bg); flex-shrink: 0; }
+  .set-table .logo-prev.hidden { visibility: hidden; }
+
   .adset-picker { border: 1px solid var(--border); border-radius: var(--radius); background: var(--white); margin-bottom: 16px; overflow: hidden; }
   .adset-picker-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
   .adset-picker-head strong { font-size: 13px; font-weight: 600; }
@@ -177,8 +201,13 @@
   .mode-banner.existing { background: var(--yellow-bg); color: #b45309; border: 1px solid #ffe0a0; }
   .section.dimmed { opacity: 0.4; pointer-events: none; }
   .main-top { flex: 0 0 auto; display: flex; flex-direction: column; }
-  .main-top .content { flex: 0 0 auto; overflow: visible; }
-  .main-top .empty { min-height: 170px; padding: 20px 0; }
+  .main-top .content { flex: 0 0 auto; overflow: visible; padding: 20px 28px 14px; }
+  .main-top .adset-picker { margin-bottom: 10px; }
+  /* 위쪽 영역의 빈 상태는 한 줄로 — height:100% 를 쓰면 소재 영역 뒤로 길게 늘어나 빈 여백이 생긴다 */
+  .main-top .empty { height: auto; min-height: 0; flex-direction: row; justify-content: flex-start; gap: 10px; padding: 4px 2px 0; }
+  .main-top .empty .empty-icon { width: 32px; height: 32px; font-size: 16px; border-radius: 9px; }
+  .main-top .empty h4 { font-size: 13px; }
+  .main-top .empty p { font-size: 12px; color: var(--text3); }
   .creative-pane { flex: 0 0 auto; border-top: 1px solid var(--border); background: var(--white); display: flex; flex-direction: column; }
   .creative-head { padding: 11px 28px 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); flex-shrink: 0; }
   .creative-head h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
@@ -692,7 +721,11 @@
         <div class="field"><label>긴 광고제목 (최대 5개, 최대 90자)</label><div id="g1_longheadline_list"></div><button type="button" class="repeat-add" onclick="gAddLongHeadlineBlock('g1')">+ 긴 광고제목 추가</button></div>
         <div class="field"><label>설명 (최대 5개)</label><div id="g1_desc_list"></div><button type="button" class="repeat-add" onclick="gAddTextBlock('g1','desc')">+ 설명 추가</button></div>
         <div class="field"><label>YouTube 채널</label>
-          <select id="g1_유튜브채널" onchange="gOnYoutubeChannel('g1')">
+          <div class="chpick" id="g1_chpick">
+            <button type="button" class="chpick-btn" id="g1_chpick_btn" onclick="gToggleChannelMenu('g1')" aria-haspopup="listbox"><span class="chpick-logo noimg"><img alt=""></span><span class="chpick-name">오늘의병원</span><span class="chpick-id"></span><span class="chpick-caret">▾</span></button>
+            <div class="chpick-menu" id="g1_chpick_menu" role="listbox"></div>
+          </div>
+          <select id="g1_유튜브채널" onchange="gOnYoutubeChannel('g1')" hidden>
             <option value="UChg_3mq-CO2kFPkbXlTR3pw">오늘의병원</option>
           </select>
         </div>
@@ -798,7 +831,11 @@
 
       <div class="section"><div class="sec-label">공통 설정</div>
         <div class="field"><label>YouTube 채널</label>
-          <select id="g2_유튜브채널" onchange="gOnYoutubeChannel('g2')">
+          <div class="chpick" id="g2_chpick">
+            <button type="button" class="chpick-btn" id="g2_chpick_btn" onclick="gToggleChannelMenu('g2')" aria-haspopup="listbox"><span class="chpick-logo noimg"><img alt=""></span><span class="chpick-name">오늘의병원</span><span class="chpick-id"></span><span class="chpick-caret">▾</span></button>
+            <div class="chpick-menu" id="g2_chpick_menu" role="listbox"></div>
+          </div>
+          <select id="g2_유튜브채널" onchange="gOnYoutubeChannel('g2')" hidden>
             <option value="UChg_3mq-CO2kFPkbXlTR3pw">오늘의병원</option>
           </select>
         </div>
@@ -979,9 +1016,9 @@
       </div>
 
       <div class="modal-sec" id="msec_gchannel">
-        <div class="set-note">계정별 YouTube 채널과 로고 파일ID입니다. 업체명은 채널명이 그대로 들어갑니다.</div>
+        <div class="set-note">YouTube 채널과 로고입니다. 채널은 어느 계정에서든 고를 수 있고, 업체명은 채널명이 그대로 들어갑니다.<br>로고는 Drive <b>공유 링크를 통째로 붙여넣으면</b> 파일ID만 자동으로 남습니다.</div>
         <table class="set-table">
-          <thead><tr><th style="width:25%">계정명</th><th style="width:25%">채널명</th><th style="width:25%">채널 ID</th><th style="width:22%">로고 파일ID</th><th></th></tr></thead>
+          <thead><tr><th style="width:30%">채널명</th><th style="width:32%">채널 ID</th><th style="width:34%">로고 (Drive 링크 또는 파일ID)</th><th></th></tr></thead>
           <tbody id="gset_channel_body"></tbody>
         </table>
         <div style="display:flex;gap:8px;margin-top:10px;">
@@ -1000,6 +1037,7 @@
           <button class="btn-sm" onclick="gSwitchGoogleAccount()">다른 계정으로</button>
         </div>
         <div class="set-note"><b>Google Ads API</b> — 계정·잠재고객·캠페인·광고그룹을 직접 불러오려면 developer token이 필요합니다. 브라우저에서 막힐 수 있으니 아래 버튼으로 먼저 확인하세요.</div>
+        <div class="field-hint" id="g_proxy_status" style="margin:-6px 0 12px;">중계 함수 확인 중...</div>
         <div class="row2">
           <div class="field"><label>developer token</label><input type="text" id="g_dev_token" placeholder="Google Ads API developer token"></div>
           <div class="field"><label>MCC(login customer) ID</label><input type="text" id="g_login_cid" placeholder="하이픈 없이 숫자만"></div>
@@ -1011,11 +1049,6 @@
           <button class="btn-sm" onclick="dumpProxyRaw()">🔍 원시 응답 보기</button>
         </div>
         <div id="g_api_out" style="margin-top:12px;font-size:12px;line-height:1.7;white-space:pre-wrap;background:var(--bg);border-radius:8px;padding:12px;color:var(--text2);min-height:40px;">아직 테스트하지 않았습니다.</div>
-
-        <div class="divider" style="margin:22px 0 14px;"></div>
-        <div class="set-note">기존 <b>구글참조</b> 시트에서 제작자·치과·지역·채널을 다시 가져올 수 있습니다. 평소에는 시트를 읽지 않습니다.</div>
-        <div class="field-hint" id="g_sheet_hint"></div>
-        <button class="btn-sm" style="margin-top:8px;" onclick="reseedGoogleFromSheet()">시트에서 다시 가져오기</button>
       </div>
     </div>
     <div class="modal-foot">
@@ -1057,7 +1090,7 @@ const G_DEFAULTS = {
   staff: [],              // {name, id}
   clinics: [],            // {clinic, short}  치과명 → 캠페인 약칭
   regions: [],            // {name, criterionId, refName}
-  channels: [],           // {accountName, channelName, channelId, logoFileId}
+  channels: [],           // {channelName, channelId, logoFileId}  계정과 무관하게 공용
   cta: [],                // {label, value}
   accounts: [],           // {name, customerId}     API가 안 되면 이걸 씀
   audiences: [],          // {accountName, name, id} API가 안 되면 이걸 씀
@@ -1600,8 +1633,31 @@ const G_TABLES = {
   staff:     { body: 'gset_staff_body',     cols: [['name','홍길동'], ['id','KCS']] },
   clinics:   { body: 'gset_clinic_body',    cols: [['clinic','오늘의치과'], ['short','오늘']] },
   regions:   { body: 'gset_region_body',    cols: [['clinic','공통'], ['name','부산'], ['criterionId','검색으로 자동 입력'], ['refName','비우면 이름에 안 붙음'], ['custom','35.18,128.11,10; 35.20,128.05,8']] },
-  channels:  { body: 'gset_channel_body',   cols: [['accountName','계정명'], ['channelName','오늘의병원'], ['channelId','UC...'], ['logoFileId','Drive 파일ID']] },
+  channels:  { body: 'gset_channel_body',   cols: [['channelName','오늘의병원'], ['channelId','UC...'], ['logoFileId','Drive 링크를 붙여넣으면 파일ID만 남아요']] },
 };
+/* Drive 공유 링크 어떤 형태든 파일ID만 뽑는다 (이미 ID면 그대로)
+   https://drive.google.com/file/d/<ID>/view?usp=sharing · /open?id=<ID> · /uc?id=<ID> · drive.google.com/d/<ID> */
+function gExtractDriveId(v) {
+  v = String(v || '').trim();
+  if (!v) return '';
+  const m = v.match(/\/d\/([A-Za-z0-9_-]{15,})/) || v.match(/[?&#]id=([A-Za-z0-9_-]{15,})/);
+  if (m) return m[1];
+  if (/^https?:\/\//i.test(v)) {
+    const any = v.match(/([A-Za-z0-9_-]{25,})/);   // 주소 안에서 가장 ID처럼 생긴 조각
+    return any ? any[1] : v;
+  }
+  return v;
+}
+function gOnLogoInput(el) {
+  const id = gExtractDriveId(el.value);
+  if (id !== el.value) { el.value = id; showToast('링크에서 파일ID만 남겼어요', 'success'); }
+  const img = el.parentNode && el.parentNode.querySelector('.logo-prev');
+  if (img) {
+    const url = gLogoUrl(id, 56);
+    img.classList.toggle('hidden', !url);
+    if (url) img.src = url;
+  }
+}
 function gRenderTable(key) {
   const cfg = G_TABLES[key];
   const body = document.getElementById(cfg.body);
@@ -1617,11 +1673,20 @@ function gRenderTable(key) {
             .map(n => `<option value="${esc(n)}"${normName(n) === normName(cur) ? ' selected' : ''}>${esc(n)}</option>`));
         return `<td><select data-g="${key}" data-f="${f}" data-i="${i}" style="width:100%;height:34px;border:1px solid var(--border2);border-radius:6px;padding:0 8px;font-family:inherit;font-size:12px;">${opts.join('')}</select></td>`;
       }
-      return `<td><input type="text" data-g="${key}" data-f="${f}" data-i="${i}" value="${esc(r[f])}" placeholder="${esc(ph)}"></td>`;
+      const isLogo = key === 'channels' && f === 'logoFileId';
+      const extra = isLogo ? ' onchange="gOnLogoInput(this)" onpaste="setTimeout(() => gOnLogoInput(this), 0)"' : '';
+      const val = isLogo ? gExtractDriveId(r[f]) : r[f];
+      const input = `<input type="text" data-g="${key}" data-f="${f}" data-i="${i}" value="${esc(val)}" placeholder="${esc(ph)}"${extra}>`;
+      if (isLogo) {
+        // 로고 미리보기 — 링크 공유가 안 된 파일은 안 보인다
+        const url = gLogoUrl(val, 56);
+        return `<td><div style="display:flex;gap:6px;align-items:center;">${input}<img class="logo-prev${url ? '' : ' hidden'}" alt="" src="${esc(url)}" onerror="this.classList.add('hidden')" title="로고 미리보기 (링크 공유된 파일만 보여요)"></div></td>`;
+      }
+      return `<td>${input}</td>`;
     }).join('');
     return `<tr>${tds}<td><button class="set-del" onclick="gRemoveRow('${key}',${i})">✕</button></td></tr>`;
   }).join('');
-  if (rows.length === 0) body.innerHTML = `<tr><td colspan="${cfg.cols.length + 1}" style="padding:14px 4px;color:var(--text3);font-size:12px;">비어 있습니다. 아래 버튼으로 추가하거나 연동 탭에서 시트를 가져오세요.</td></tr>`;
+  if (rows.length === 0) body.innerHTML = `<tr><td colspan="${cfg.cols.length + 1}" style="padding:14px 4px;color:var(--text3);font-size:12px;">비어 있습니다. 아래 버튼으로 추가하세요.</td></tr>`;
 }
 function gAddRow(key) {
   gCollectSettings();
@@ -1638,7 +1703,9 @@ function gCollectSettings() {
     inputs.forEach(el => {
       const i = Number(el.dataset.i);
       rows[i] = rows[i] || {};
-      rows[i][el.dataset.f] = el.value.trim();
+      let v = el.value.trim();
+      if (key === 'channels' && el.dataset.f === 'logoFileId') v = gExtractDriveId(v);
+      rows[i][el.dataset.f] = v;
     });
     GSET[key] = rows.filter(r => r && Object.values(r).some(v => v));
   });
@@ -1662,8 +1729,7 @@ function renderGoogleSettings() {
   set('g_login_cid', GSET.loginCustomerId);
   set('g_proxy_url', GSET.proxyUrl);
   if (typeof gRenderLoginStatus === 'function') gRenderLoginStatus();
-  const hint = document.getElementById('g_sheet_hint');
-  if (hint && !hint.textContent) hint.textContent = GSET.seeded ? '시트에서 이관 완료 — 평소엔 시트를 읽지 않습니다' : '아직 시트에서 가져오지 않았습니다';
+  gCheckProxyBuild();
 }
 function saveGoogleSettingsNow() {
   gCollectSettings();
@@ -1740,15 +1806,14 @@ async function fetchYoutubeChannelsToSettings() {
     const list = await loadYoutubeChannels();
     if (list.length === 0) { out.textContent = '이 계정이 관리하는 YouTube 채널이 없습니다.'; return; }
     gCollectSettings();
-    const accName = (GDB.accounts[0] || {}).name || '';
     list.forEach(ch => {
       const exist = (GSET.channels || []).find(c => c.channelId === ch.channelId)
         || (GSET.channels || []).find(c => (c.channelName || '').trim() === ch.channelName.trim());
       if (exist) { exist.channelName = ch.channelName; exist.channelId = ch.channelId; }
-      else (GSET.channels = GSET.channels || []).push({ accountName: accName, channelName: ch.channelName, channelId: ch.channelId, logoFileId: '' });
+      else (GSET.channels = GSET.channels || []).push({ channelName: ch.channelName, channelId: ch.channelId, logoFileId: '' });
     });
     persistGoogleSettings(); applyGoogleSettings(); gPopulateDropdowns(); gRenderTable('channels');
-    out.textContent = `✅ 채널 ${list.length}개를 가져왔습니다 — ${list.map(c => c.channelName).join(', ')}\n계정명은 필요하면 표에서 고쳐 주세요.`;
+    out.textContent = `✅ 채널 ${list.length}개를 가져왔습니다 — ${list.map(c => c.channelName).join(', ')}\n로고는 표에서 Drive 링크를 붙여넣어 주세요.`;
   } catch (e) {
     out.textContent = '❌ ' + e.message + '\n※ YouTube 로그인 창이 뜨면 Drive와 별도 계정 승인이 한 번 더 필요합니다.';
   }
@@ -1791,6 +1856,43 @@ async function gAdsSearch(customerId, query) {
   return out;
 }
 
+
+/* 배포된 api/gads.js 가 최신인지 — 로그인 없이 ping 으로 확인한다.
+   잠재고객이 세그먼트로 나오는 문제는 대부분 이 파일이 구버전인 경우였다. */
+const G_PROXY_REQUIRED_BUILD = '2026-09-15';
+async function gCheckProxyBuild() {
+  const el = document.getElementById('g_proxy_status');
+  if (!el) return;
+  if (!ENV.isHttp) { el.className = 'field-hint'; el.textContent = '배포된 주소에서만 확인할 수 있어요'; return; }
+  el.className = 'field-hint'; el.textContent = '중계 함수 확인 중...';
+  try {
+    const base = GSET.proxyUrl || '/api/gads';
+    const res = await fetch(base + (base.includes('?') ? '&' : '?') + 'type=ping', { cache: 'no-store' });
+    const text = await res.text();
+    let j = null; try { j = JSON.parse(text); } catch (e) { /* JSON 아님 */ }
+    if (!j) {
+      el.className = 'field-hint err';
+      el.textContent = '⚠ 중계 함수가 응답하지 않아요 — api/gads.js 가 배포에 없거나 웹페이지를 돌려줬어요';
+      return;
+    }
+    if (j.ok && j.build) {
+      if (String(j.build) >= G_PROXY_REQUIRED_BUILD) {
+        el.className = 'field-hint ok';
+        el.textContent = `✅ 중계 함수 최신 (${j.build})` + (j.hasDeveloperToken ? '' : ' · ⚠ Vercel 환경변수 GOOGLE_ADS_DEVELOPER_TOKEN 이 비어 있어요');
+      } else {
+        el.className = 'field-hint err';
+        el.textContent = `⚠ 중계 함수가 구버전(${j.build})이에요 — api/gads.js 를 새 파일로 바꿔 재배포하세요 (필요: ${G_PROXY_REQUIRED_BUILD})`;
+      }
+    } else {
+      // 구버전은 ping 을 몰라서 401(토큰 없음) 같은 걸 돌려준다
+      el.className = 'field-hint err';
+      el.textContent = '⚠ 배포된 api/gads.js 가 구버전이에요 — 새 파일로 바꿔 재배포해야 잠재고객이 제대로 나옵니다';
+    }
+  } catch (e) {
+    el.className = 'field-hint err';
+    el.textContent = '⚠ 중계 함수 확인 실패: ' + e.message;
+  }
+}
 
 /* 파싱 없이 /api/gads 가 실제로 뭘 돌려주는지 그대로 본다 */
 async function dumpProxyRaw() {
@@ -1975,8 +2077,9 @@ async function gLookupViaApi(type, params) {
     return out;
   }
   if (type === 'audiences') {
-    const rows = await gAdsSearch(cid, "SELECT user_list.id, user_list.name FROM user_list WHERE user_list.membership_status = 'OPEN' LIMIT 200");
-    return rows.map(r => ({ id: String(r.userList.id), name: r.userList.name }));
+    // 잠재고객(audience)만 — 세그먼트(user_list)는 쓰지 않는다
+    const rows = await gAdsSearch(cid, "SELECT audience.id, audience.name, audience.scope FROM audience WHERE audience.status = 'ENABLED' AND audience.scope = 'CUSTOMER' ORDER BY audience.name LIMIT 300");
+    return rows.map(r => ({ id: String(r.audience.id), name: r.audience.name, kind: 'audience' }));
   }
   if (type === 'campaigns') {
     const rows = await gAdsSearch(cid, "SELECT campaign.id, campaign.name, campaign.status FROM campaign WHERE campaign.status = 'ENABLED' ORDER BY campaign.id DESC LIMIT 300");
@@ -2412,11 +2515,18 @@ function applyGoogleSettings() {
   GDB.clinicNames = [...new Set((GSET.clinics || []).map(c => c.clinic).filter(Boolean))];
   GDB.clinicToShortName = {};
   (GSET.clinics || []).forEach(c => { if (c.clinic) GDB.clinicToShortName[c.clinic] = c.short || ''; });
-  GDB.youtubeChannelsByAccount = {};
+  // 채널은 계정과 무관하게 공용 — 어느 계정에서든 고를 수 있다
+  GDB.youtubeChannels = [];
+  GDB.logoByChannelId = {};
   GDB.logoByChannel = {};
+  const seenCh = new Set();
   (GSET.channels || []).forEach(c => {
-    if (c.accountName && c.channelId) GDB.youtubeChannelsByAccount[c.accountName] = { channelName: c.channelName || '', channelId: c.channelId };
-    if (c.channelName && c.logoFileId) GDB.logoByChannel[c.channelName] = c.logoFileId;
+    const id = (c.channelId || '').trim();
+    if (!id || seenCh.has(id)) return;
+    seenCh.add(id);
+    const logo = gExtractDriveId(c.logoFileId || '');
+    GDB.youtubeChannels.push({ channelName: c.channelName || '', channelId: id, logoFileId: logo });
+    if (logo) { GDB.logoByChannelId[id] = logo; if (c.channelName) GDB.logoByChannel[c.channelName] = logo; }
   });
   // 계정·잠재고객은 API로 못 가져왔을 때의 폴백
   if (!GDB.fromApi) {
@@ -2438,14 +2548,15 @@ function seedGoogleSettingsFromSheet(rows) {
   GSET.regions = uniq(body.map(r => ({ name: r[2] || '', criterionId: r[3] || '', refName: r[4] || '' })), x => x.name);
   GSET.accounts = uniq(body.map(r => ({ name: r[0] || '', customerId: r[1] || '' })), x => x.name);
   GSET.audiences = uniq(body.map(r => ({ accountName: r[5] || '', name: r[7] || '', id: r[8] || '' })), x => (x.accountName && x.id) ? x.accountName + '|' + x.id : '');
+  // 채널은 계정과 무관하게 채널 ID 기준으로 한 번씩만
   const chMap = {};
   body.forEach(r => {
-    const acc = r[0], chName = r[13], chId = r[14];
-    if (acc && chId) chMap[acc] = { accountName: acc, channelName: chName || '', channelId: chId, logoFileId: '' };
+    const chName = r[13], chId = r[14];
+    if (chId && !chMap[chId]) chMap[chId] = { channelName: chName || '', channelId: chId, logoFileId: '' };
   });
   body.forEach(r => {
     if (!r[17] || !r[18]) return;
-    Object.values(chMap).forEach(c => { if (c.channelName === r[17]) c.logoFileId = r[18]; });
+    Object.values(chMap).forEach(c => { if (c.channelName === r[17]) c.logoFileId = gExtractDriveId(r[18]); });
   });
   GSET.channels = Object.values(chMap);
   GSET.seeded = true;
@@ -2465,24 +2576,6 @@ async function loadGoogleData() {
     console.warn('구글참조 시트 불러오기 실패 — 설정에서 직접 입력하세요:', e.message);
   }
   applyGoogleSettings();
-}
-
-/* 다시 시트에서 가져오기 (설정 화면 버튼) */
-async function reseedGoogleFromSheet() {
-  const hint = document.getElementById('g_sheet_hint');
-  if (hint) { hint.className = 'field-hint'; hint.textContent = '시트에서 가져오는 중...'; }
-  try {
-    const rows = await fetchSheet('구글참조');
-    if (!rows || rows.length < 2) throw new Error('시트가 비어 있습니다');
-    seedGoogleSettingsFromSheet(rows);
-    applyGoogleSettings();
-    gPopulateDropdowns();
-    renderGoogleSettings();
-    if (hint) { hint.className = 'field-hint ok'; hint.textContent = `가져오기 완료 — 제작자 ${GSET.staff.length} · 치과 ${GSET.clinics.length} · 지역 ${GSET.regions.length} · 계정 ${GSET.accounts.length}`; }
-    showToast('시트에서 설정을 가져왔어요', 'success');
-  } catch (e) {
-    if (hint) { hint.className = 'field-hint err'; hint.textContent = '가져오기 실패: ' + e.message; }
-  }
 }
 
 /* =========================================================
@@ -4388,8 +4481,8 @@ const GOOGLE_CTA = [
 ];
 let GDB = {
   accounts: [], staff: [], googleRegions: [], audiencesByAccount: {},
-  clinicNames: [], clinicToShortName: {}, youtubeChannelsByAccount: {},
-  ctaTypes: [], logoByChannel: {},
+  clinicNames: [], clinicToShortName: {}, youtubeChannels: [],
+  ctaTypes: [], logoByChannel: {}, logoByChannelId: {},
 };
 const gSelectedAccount = { g1: '', g2: '' };
 const gNextSetNumber = { g2: 1 };
@@ -4469,16 +4562,13 @@ function gOnAccount(t) {
         use.forEach(a => { const o = document.createElement('option'); o.value = a.id; o.textContent = a.name; audSel.appendChild(o); });
         if (prev && Array.from(audSel.options).some(o => o.value === prev)) audSel.value = prev;
         if (list && list.length) GDB.audiencesByAccount[name] = list;
+        gAudienceSourceHint(t, list);
       });
     }
   }
+  // 채널은 계정과 묶이지 않는다 — 고른 채널을 그대로 두고 업체명·로고만 맞춘다
   gPopulateYoutubeChannels(t);
-  const ch = GDB.youtubeChannelsByAccount[name];
-  const chSel = document.getElementById(`${t}_유튜브채널`);
-  if (ch && chSel) {
-    chSel.value = ch.channelId;
-    const bizEl = document.getElementById(`${t}_업체명`); if (bizEl) bizEl.value = ch.channelName || '';
-  } else { gOnYoutubeChannel(t); }
+  gOnYoutubeChannel(t);
 }
 /* 치과에 매핑된 지역만 드롭다운에 올린다 (치과가 비어 있는 지역은 공통) */
 function gRegionsForClinic(clinic) {
@@ -4521,26 +4611,79 @@ function gOnClinic(t) {
 }
 function gOnRegion(t) { gAutoGenNames(t); }
 function gToggleChip(input) { const chip = input.closest('.chip'); if (chip) chip.classList.toggle('checked', input.checked); }
+/* 고른 채널의 로고 파일ID — 채널 ID 기준, 없으면 채널명 기준 */
+function gLogoForChannelSelect(sel) {
+  if (!sel) return '';
+  const name = sel.options[sel.selectedIndex]?.text || '';
+  return GDB.logoByChannelId[sel.value] || GDB.logoByChannel[name] || '';
+}
 function gOnYoutubeChannel(t) {
   const sel = document.getElementById(`${t}_유튜브채널`); if (!sel) return;
   const selectedText = sel.options[sel.selectedIndex]?.text || '';
   const bizEl = document.getElementById(`${t}_업체명`); if (bizEl) bizEl.value = selectedText;
   if (!window._logoFileId) window._logoFileId = {};
-  window._logoFileId[t] = GDB.logoByChannel[selectedText] || '';
+  window._logoFileId[t] = gLogoForChannelSelect(sel);
+  gRenderChannelButton(t);
+}
+const G_DEFAULT_CHANNEL = { channelId: 'UChg_3mq-CO2kFPkbXlTR3pw', channelName: '오늘의병원' };
+/* Drive 파일ID → 화면에 보여줄 썸네일 주소 (링크 공유된 파일만 보인다) */
+function gLogoUrl(fileId, size) {
+  const id = gExtractDriveId(fileId || '');
+  return id ? `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w${size || 64}` : '';
+}
+/* 드롭다운에 올릴 채널 목록 — 설정 채널 전부 + 기본 채널, 채널 ID 기준 중복 제거 */
+function gChannelChoices() {
+  const out = []; const seen = new Set();
+  const list = (GDB.youtubeChannels || []).slice();
+  if (!list.some(c => c.channelId === G_DEFAULT_CHANNEL.channelId)) list.push(G_DEFAULT_CHANNEL);
+  list.forEach(ch => {
+    if (!ch.channelId || seen.has(ch.channelId)) return;
+    seen.add(ch.channelId);
+    out.push({ channelId: ch.channelId, channelName: ch.channelName || ch.channelId, logoFileId: ch.logoFileId || GDB.logoByChannelId[ch.channelId] || '' });
+  });
+  return out;
+}
+function gLogoBadgeHtml(ch, size) {
+  const url = gLogoUrl(ch.logoFileId, size);
+  const initial = esc((ch.channelName || '?').trim().charAt(0) || '?');
+  // 이미지가 안 뜨면(공유 안 됨·잘못된 ID) 첫 글자로 대신 보여준다
+  return `<span class="chpick-logo${url ? '' : ' noimg'}" data-initial="${initial}">${url ? `<img alt="" src="${esc(url)}" onerror="this.parentNode.classList.add('noimg');this.parentNode.textContent=this.parentNode.dataset.initial">` : initial}</span>`;
+}
+function gRenderChannelButton(t) {
+  const sel = document.getElementById(`${t}_유튜브채널`);
+  const btn = document.getElementById(`${t}_chpick_btn`);
+  if (!sel || !btn) return;
+  const ch = gChannelChoices().find(c => c.channelId === sel.value) || { channelId: sel.value, channelName: sel.options[sel.selectedIndex]?.text || '', logoFileId: '' };
+  btn.innerHTML = `${gLogoBadgeHtml(ch, 48)}<span class="chpick-name">${esc(ch.channelName)}</span><span class="chpick-id">${esc(ch.channelId)}</span><span class="chpick-caret">▾</span>`;
+  document.querySelectorAll(`#${t}_chpick_menu .chpick-item`).forEach(el => el.classList.toggle('selected', el.dataset.id === sel.value));
 }
 function gPopulateYoutubeChannels(t) {
   const sel = document.getElementById(`${t}_유튜브채널`); if (!sel) return;
   const prev = sel.value;
-  sel.innerHTML = '<option value="UChg_3mq-CO2kFPkbXlTR3pw">오늘의병원</option>';
-  const seen = new Set(['UChg_3mq-CO2kFPkbXlTR3pw']);
-  Object.values(GDB.youtubeChannelsByAccount).forEach(ch => {
-    if (ch.channelId && !seen.has(ch.channelId)) {
-      seen.add(ch.channelId);
-      const o = document.createElement('option'); o.value = ch.channelId; o.textContent = ch.channelName || ch.channelId; sel.appendChild(o);
-    }
-  });
-  sel.value = prev || 'UChg_3mq-CO2kFPkbXlTR3pw';
+  sel.innerHTML = '';
+  const choices = gChannelChoices();
+  choices.forEach(ch => { const o = document.createElement('option'); o.value = ch.channelId; o.textContent = ch.channelName; sel.appendChild(o); });
+  sel.value = (prev && choices.some(c => c.channelId === prev)) ? prev : G_DEFAULT_CHANNEL.channelId;
+  const menu = document.getElementById(`${t}_chpick_menu`);
+  if (menu) {
+    menu.innerHTML = choices.map(ch => `<div class="chpick-item${ch.channelId === sel.value ? ' selected' : ''}" role="option" data-id="${esc(ch.channelId)}" onclick="gPickChannel('${t}', this.dataset.id)">${gLogoBadgeHtml(ch, 64)}<span class="chpick-text"><b>${esc(ch.channelName)}</b><span class="chpick-id">${esc(ch.channelId)}${ch.logoFileId ? '' : ' <span class="nologo">로고 없음</span>'}</span></span></div>`).join('');
+  }
+  gRenderChannelButton(t);
 }
+function gToggleChannelMenu(t, force) {
+  const box = document.getElementById(`${t}_chpick`); if (!box) return;
+  const open = force === undefined ? !box.classList.contains('open') : !!force;
+  document.querySelectorAll('.chpick.open').forEach(b => { if (b !== box) b.classList.remove('open'); });
+  box.classList.toggle('open', open);
+}
+function gPickChannel(t, id) {
+  const sel = document.getElementById(`${t}_유튜브채널`); if (!sel) return;
+  sel.value = id;
+  gOnYoutubeChannel(t);
+  gToggleChannelMenu(t, false);
+}
+document.addEventListener('click', (e) => { if (!e.target.closest('.chpick')) document.querySelectorAll('.chpick.open').forEach(b => b.classList.remove('open')); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.chpick.open').forEach(b => b.classList.remove('open')); });
 function gAutoGenNames(t) {
   const acc = GDB.accounts.find(a => a.name === gGetAccountName(t)) || (t === 'g2' ? { name: '', campaignName: '' } : null);
   if (!acc) return;
@@ -4887,6 +5030,30 @@ async function gLoadAudiences(t, customerId) {
   sel.innerHTML = '<option value="">선택 안함</option>';
   (list || []).forEach(a => { const o = document.createElement('option'); o.value = a.id; o.textContent = a.name; sel.appendChild(o); });
   if (prev && Array.from(sel.options).some(o => o.value === prev)) sel.value = prev;
+  gAudienceSourceHint(t, list);
+}
+/* 목록이 잠재고객(audience)이 아니라 세그먼트(user_list)로 오면 = 배포된 api/gads.js 가 구버전 */
+function gAudienceSourceHint(t, list) {
+  const sel = document.getElementById(`${t}_잠재고객`);
+  if (!sel) return;
+  let hint = document.getElementById(`${t}_잠재고객_hint`);
+  if (!hint) {
+    hint = document.createElement('div');
+    hint.id = `${t}_잠재고객_hint`;
+    hint.className = 'field-hint';
+    sel.insertAdjacentElement('afterend', hint);
+  }
+  const stale = Array.isArray(list) && list.length > 0 && !list.some(a => a && a.kind === 'audience');
+  if (stale) {
+    hint.className = 'field-hint err';
+    hint.innerHTML = '⚠ 세그먼트 목록이 보여요 — 배포된 <b>api/gads.js</b>가 구버전입니다. 새 파일로 바꿔 재배포하면 잠재고객이 나옵니다 <button class="sync-btn" type="button" onclick="openSettings(\'gsheet\')">연동 확인</button>';
+  } else if (Array.isArray(list) && list.length === 0) {
+    hint.className = 'field-hint';
+    hint.textContent = '이 계정에 만들어 둔 잠재고객이 없어요 (Google Ads → 잠재고객 관리자에서 만든 것만 나옵니다)';
+  } else {
+    hint.className = 'field-hint';
+    hint.textContent = '';
+  }
 }
 
 const gLastCampaignList = { g2: [] };
@@ -5202,11 +5369,7 @@ function gGetData(t) {
     설명목록: gCollectTexts(t, 'desc'),
     업체명: g(`${t}_업체명`),
     CTA버튼: g(`${t}_CTA`),
-    로고파일ID: (() => {
-      const sel = document.getElementById(`${t}_유튜브채널`);
-      const channelName = sel ? (sel.options[sel.selectedIndex]?.text || '') : '';
-      return GDB.logoByChannel[channelName] || '';
-    })(),
+    로고파일ID: gLogoForChannelSelect(document.getElementById(`${t}_유튜브채널`)),
   };
   d.광고명 = g(`${t}_광고명`);
   if (isT2) {
