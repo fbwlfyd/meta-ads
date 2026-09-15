@@ -799,7 +799,7 @@
           <span class="manual-toggle" id="g2_campaign_clear" style="display:none;color:var(--red);" onclick="gClearCampaignSelection('g2')">✕ 선택한 캠페인 해제</span>
         </div>
         <div id="g2_manual_wrap" style="display:none;margin-top:8px;">
-          <input type="text" id="g2_캠페인ID" placeholder="캠페인 ID를 입력하세요" onblur="gOnCampaignId('g2')">
+          <input type="text" id="g2_캠페인ID" placeholder="캠페인 ID 입력 후 Enter" inputmode="numeric" onblur="gOnCampaignId('g2')" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">
         </div>
       </div>
       <div class="mode-banner new" id="g2_mode_banner">🆕 새 광고그룹을 만들고 그 안에 광고를 추가합니다</div>
@@ -1876,10 +1876,10 @@ async function gAdsSearch(customerId, query) {
 
 /* 배포된 api/gads.js 가 최신인지 — 로그인 없이 ping 으로 확인한다.
    잠재고객이 세그먼트로 나오는 문제는 대부분 이 파일이 구버전인 경우였다. */
-const G_PROXY_REQUIRED_BUILD = '2026-09-16';
+const G_PROXY_REQUIRED_BUILD = '2026-09-17';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-15.4';
+const G_PAGE_BUILD = '2026-09-15.5';
 function gShowPageBuild() {
   const el = document.getElementById('g_page_build');
   if (el) { el.className = 'field-hint'; el.textContent = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요`; }
@@ -5084,9 +5084,38 @@ function gSelectCampaignFromList(t, id, name) {
   const box = document.getElementById(`${t}_캠페인목록`); if (box) box.classList.remove('show');
   gLoadCampaign(t, id, name);
 }
+/* 캠페인 ID를 직접 입력한 경우 — 어느 계정의 캠페인인지 중계 함수로 찾아서
+   목록에서 고른 것과 똑같이 광고그룹·광고·잠재고객·지역까지 불러온다 */
+const gManualLookedUp = { g2: '' };
 async function gOnCampaignId(t) {
-  const id = document.getElementById(`${t}_캠페인ID`).value.trim();
+  const input = document.getElementById(`${t}_캠페인ID`);
+  const id = String(input.value || '').replace(/[^0-9]/g, '');
   if (!id) return;
+  input.value = id;
+  if (gManualLookedUp[t] === id) return;   // 같은 ID로 이미 불러왔으면(또는 불러오는 중이면) 다시 안 부른다
+  gManualLookedUp[t] = id;
+  const disp = document.getElementById(`${t}_캠페인명_display`);
+  if (disp) disp.textContent = `🔎 캠페인 ${id} 를 어느 계정에서 쓰는지 찾는 중...`;
+  const box = document.getElementById('g2_group_list');
+  if (box) box.innerHTML = '<div class="ad-subloading">캠페인 확인 중...</div>';
+  const list = await gLookup('campaign', { campaignId: id });
+  if (input.value.replace(/[^0-9]/g, '') !== id) return;   // 기다리는 사이 다른 ID를 입력함
+  const c = Array.isArray(list) ? list[0] : null;
+  if (c) {
+    gLastCampaignList[t] = [c];
+    gPickCampaign(t, 0);   // 목록에서 고른 것과 같은 흐름 (계정 · 광고그룹 · 광고 · 잠재고객 · 지역)
+    return;
+  }
+  gManualLookedUp[t] = '';   // 실패 → 같은 ID로 다시 시도할 수 있게
+  if (Array.isArray(list)) {
+    showToast('접근 가능한 계정에서 이 ID의 캠페인을 찾지 못했어요 — ID를 다시 확인하세요', 'error');
+    if (disp) disp.textContent = `⚠ 캠페인 ID ${id} — 접근 가능한 계정에 없어요`;
+    if (box) box.innerHTML = '<div class="adset-empty">캠페인을 찾지 못해 광고그룹을 불러올 수 없어요 — 캠페인 ID를 확인하세요</div>';
+    gToggleCampaignClear(t, true);
+    return;
+  }
+  // 중계 함수가 구버전(campaign 조회 없음)이거나 연결 실패 → 예전 방식(계정 없이 진행)
+  showToast('캠페인 계정을 찾지 못했어요 — 설정 → 연동에서 중계 함수(api/gads.js) 버전을 확인하세요', 'error');
   gLoadCampaign(t, id, '');
 }
 async function gLoadCampaign(t, campaignId, campaignName) {
@@ -5190,8 +5219,9 @@ function gClearCampaignSelection(t) {
   if (box) box.innerHTML = '<div class="adset-empty">위에서 캠페인을 먼저 선택하세요</div>';
   const hint = document.getElementById('g2_group_hint'); if (hint) hint.textContent = '캠페인을 불러오면 목록이 표시돼요';
   gNextSetNumber.g2 = 1; gToggleCampaignClear(t, false); gAutoGenNames(t);
-  gPickedCampaign.g2 = null;
+  gPickedCampaign.g2 = null; gManualLookedUp.g2 = '';
   document.getElementById(`${t}_광고계정ID`).value = '';
+  const accDisp = document.getElementById(`${t}_계정명_display`); if (accDisp) accDisp.value = '';
   if (document.getElementById(`${t}_치과명`).value) { gFindCampaigns(t); showToast('캠페인만 해제했어요 — 목록에서 다시 고르세요', 'info'); }
   else showToast('캠페인 선택을 해제했어요', 'info');
 }
