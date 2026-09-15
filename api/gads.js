@@ -186,6 +186,7 @@
   .chpick-item .nologo { font-size: 10px; color: #b45309; }
   .set-table .logo-prev { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); background: var(--bg); flex-shrink: 0; }
   .set-table .logo-prev.hidden { visibility: hidden; }
+  .creative-card .is-invalid, .creative-card input.is-invalid, .creative-card .creative-drop.is-invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(255,59,48,0.15) !important; }
   .set-table .logo-open { font-size: 11px; color: var(--blue); white-space: nowrap; text-decoration: none; flex-shrink: 0; }
   .set-table .logo-open:hover { text-decoration: underline; }
 
@@ -5308,6 +5309,32 @@ function gEnrichForMake(d, t, uploadedIds) {
   d.업로드파일IDs = Array.from(uploaded);
   return d;
 }
+/* 소재 카드 필수값 점검 — 첫 문제만 돌려주고 그 칸으로 스크롤한다 */
+function gValidateCreatives(t) {
+  const common = document.getElementById(`${t}_creative_common`)?.checked;
+  const cards = gCollectCreatives(t);
+  const first = cards[0] || {};
+  const focus = (block, role) => {
+    const el = block && block.querySelector(`[data-role="${role}"]`);
+    if (el) { el.classList.add('is-invalid'); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); try { el.focus(); } catch (e) {} setTimeout(() => el.classList.remove('is-invalid'), 4000); }
+  };
+  for (let i = 0; i < cards.length; i++) {
+    const c = cards[i];
+    // 문구 공통이면 2번째 카드부터는 첫 카드 값을 쓴다
+    const url = (common && i > 0) ? first.최종URL : c.최종URL;
+    const heads = (common && i > 0) ? first.광고제목목록 : c.광고제목목록;
+    const longs = (common && i > 0) ? first.긴광고제목목록 : c.긴광고제목목록;
+    const descs = (common && i > 0) ? first.설명목록 : c.설명목록;
+    const target = (common && i > 0) ? cards[0].block : c.block;
+    if (!c.파일ID && !c.파일첨부) { focus(c.block, 'dropzone'); return `소재 ${i + 1}: 영상을 첨부하거나 파일ID를 넣어주세요`; }
+    if (!(c.유튜브제목 || '').trim()) { focus(c.block, '유튜브제목'); return `소재 ${i + 1}: YouTube 제목이 비어 있어요`; }
+    if (!/^https?:\/\/\S+$/i.test(url || '')) { focus(target, '최종URL'); return `소재 ${i + 1}: 최종 URL이 비어 있거나 https:// 로 시작하지 않아요`; }
+    if (!(heads || []).length) { focus(target, '광고제목'); return `소재 ${i + 1}: 광고제목을 1개 이상 넣어주세요`; }
+    if (!(longs || []).length) { focus(target, '긴광고제목'); return `소재 ${i + 1}: 긴 광고제목을 1개 이상 넣어주세요`; }
+    if (!(descs || []).length) { focus(target, '설명'); return `소재 ${i + 1}: 설명을 1개 이상 넣어주세요`; }
+  }
+  return '';
+}
 const gRows = { g1: [], g2: [] };
 function gAddCard(t, data) {
   const idx = gRows[t].length; gRows[t].push(data);
@@ -5472,6 +5499,9 @@ async function gSubmitAd(t) {
   if (isT2 && !data.캠페인ID) { showToast('캠페인 ID를 입력해주세요', 'error'); return; }
   if (!isT2 && !data.캠페인명) { showToast('캠페인명을 입력해주세요', 'error'); return; }
   if ((data.영상목록||[]).length + (data.업로드대기수||0) === 0) { showToast('영상을 1개 이상 추가해주세요', 'error'); return; }
+  // 구글이 거절할 게 뻔한 빈칸은 보내기 전에 잡는다 (최종 URL 없이 보내면 final_urls 오류로 멈춘다)
+  const problem = gValidateCreatives(t);
+  if (problem) { showToast(problem, 'error'); return; }
   const btn = document.getElementById(`${t}_submitBtn`); btn.disabled = true; btn.textContent = '전송 중...';
   const btnLabel = isT2 ? '세트 추가하기' : '캠페인 등록하기';
   const restore = () => { btn.disabled = false; btn.textContent = btnLabel; };
