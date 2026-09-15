@@ -1879,7 +1879,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-17';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-15.7';
+const G_PAGE_BUILD = '2026-09-15.8';
 function gShowPageBuild() {
   const el = document.getElementById('g_page_build');
   if (el) { el.className = 'field-hint'; el.textContent = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요`; }
@@ -4374,6 +4374,7 @@ function gTokenMaintenance() {
     gSilentRefresh(key, 8000).catch(() => {});
   });
   gRenderLoginStatus();
+  if (typeof gCleanupOldTempFiles === 'function') gCleanupOldTempFiles();   // 로그인돼 있으면 한 번만 실행
 }
 function gResetTokens() {
   Object.keys(gTokens).forEach(k => delete gTokens[k]);
@@ -4426,7 +4427,8 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) gTok
 window.addEventListener('storage', (e) => { if (e.key === G_TOKEN_KEY) gLoadTokens(); });
 
 async function uploadFileToDrive(file) {
-  const metadata = { name: file.name, mimeType: file.type };
+  // appProperties 표식: 이 도구가 올린 임시 파일이라는 뜻 — 등록이 끝나면 페이지가 직접 지우고, 남은 것은 나중에 정리한다
+  const metadata = { name: file.name, mimeType: file.type, appProperties: { adtoolTemp: '1' } };
   const form = new FormData();
   form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
   form.append('file', file);
@@ -4448,6 +4450,37 @@ async function uploadFileToDrive(file) {
   return json.id;
 }
 const gUploadPermissionFailed = {};   // 파일ID → 공유 설정 실패 여부 (Make가 못 읽을 수 있음)
+
+/* 임시 영상 정리 — Drive에서 파일을 지울 수 있는 건 올린 계정(=지금 로그인한 계정)뿐이다.
+   Make의 삭제 모듈은 fbwlfyd9271 계정이라 다른 사람이 올린 파일은 403이 난다. 그래서 등록이 확인되면 페이지가 직접 지운다. */
+async function gDeleteTempFiles(ids) {
+  const list = (ids || []).filter(Boolean);
+  if (!list.length || !gTokenValid('core')) return { deleted: 0, skipped: list.length };
+  let deleted = 0;
+  for (const id of list) {
+    try {
+      const r = await gAuthFetch('core', `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (r.ok || r.status === 404) deleted++;   // 404 = Make가 이미 지움
+      else console.warn('임시 영상 삭제 실패', id, r.status);
+    } catch (e) { console.warn('임시 영상 삭제 실패', id, e.message); }
+  }
+  return { deleted, skipped: list.length - deleted };
+}
+/* 창을 닫아서 못 지운 임시 영상은 7일 뒤 정리 (이 도구가 올린 것만 — appProperties 표식이 있는 파일) */
+let gOldTempCleanupDone = false;
+async function gCleanupOldTempFiles() {
+  if (gOldTempCleanupDone || !ENV.isHttp || !gTokenValid('core')) return;   // 아직 로그인 전이면 다음 점검 때 다시
+  gOldTempCleanupDone = true;
+  try {
+    const before = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+    const q = `appProperties has { key='adtoolTemp' and value='1' } and trashed=false and modifiedTime < '${before}'`;
+    const r = await gAuthFetch('core', 'https://www.googleapis.com/drive/v3/files?' + new URLSearchParams({ q, fields: 'files(id,name)', pageSize: '50' }).toString());
+    if (!r.ok) return;
+    const j = await r.json();
+    const ids = (j.files || []).map(f => f.id);
+    if (ids.length) { const res = await gDeleteTempFiles(ids); console.log(`[광고 자동등록] 7일 지난 임시 영상 ${res.deleted}개 정리`); }
+  } catch (e) { console.warn('임시 영상 정리 실패', e.message); }
+}
 
 /* 디맨드젠 광고의 CTA는 Google이 정한 고정 목록이라 API 조회가 없다 */
 const GOOGLE_CTA = [
@@ -5538,6 +5571,8 @@ async function gTrackRegistration(t, idx, data) {
     if (state.check && expected > 0 && state.check.found.length >= expected) {
       state.running = false;
       gUpdateCard(t, idx, '완료', `광고 ${state.check.found.length}개가 Google Ads에 생성됐어요 · 광고그룹 ${state.check.groupId}${last && last.status === '오류' ? ' (마지막 기록은 오류였지만 광고는 확인됨)' : ''}`);
+      // 광고가 확인됐으니 직접 첨부로 올린 임시 영상은 올린 계정(지금 로그인)으로 지운다 — Make가 먼저 지웠으면 404라 그냥 넘어간다
+      gDeleteTempFiles(data.업로드파일IDs).then(res => { if (res.deleted) console.log(`[광고 자동등록] 임시 영상 ${res.deleted}개 삭제`); }).catch(() => {});
       return;
     }
     if (last && last.status === '오류') {
