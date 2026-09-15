@@ -1049,7 +1049,8 @@
           <button class="btn-sm" onclick="gSwitchGoogleAccount()">다른 계정으로</button>
         </div>
         <div class="set-note"><b>Google Ads API</b> — 계정·잠재고객·캠페인·광고그룹을 직접 불러오려면 developer token이 필요합니다. 브라우저에서 막힐 수 있으니 아래 버튼으로 먼저 확인하세요.</div>
-        <div class="field-hint" id="g_proxy_status" style="margin:-6px 0 12px;">중계 함수 확인 중...</div>
+        <div class="field-hint" id="g_page_build" style="margin:-6px 0 4px;"></div>
+        <div class="field-hint" id="g_proxy_status" style="margin:0 0 12px;">중계 함수 확인 중...</div>
         <div class="row2">
           <div class="field"><label>developer token</label><input type="text" id="g_dev_token" placeholder="Google Ads API developer token"></div>
           <div class="field"><label>MCC(login customer) ID</label><input type="text" id="g_login_cid" placeholder="하이픈 없이 숫자만"></div>
@@ -1876,7 +1877,15 @@ async function gAdsSearch(customerId, query) {
 /* 배포된 api/gads.js 가 최신인지 — 로그인 없이 ping 으로 확인한다.
    잠재고객이 세그먼트로 나오는 문제는 대부분 이 파일이 구버전인 경우였다. */
 const G_PROXY_REQUIRED_BUILD = '2026-09-16';
+/* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
+   (파일을 새로 받을 때마다 올라간다) */
+const G_PAGE_BUILD = '2026-09-15.3';
+function gShowPageBuild() {
+  const el = document.getElementById('g_page_build');
+  if (el) { el.className = 'field-hint'; el.textContent = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요`; }
+}
 async function gCheckProxyBuild() {
+  gShowPageBuild();
   const el = document.getElementById('g_proxy_status');
   if (!el) return;
   if (!ENV.isHttp) { el.className = 'field-hint'; el.textContent = '배포된 주소에서만 확인할 수 있어요'; return; }
@@ -5607,6 +5616,7 @@ function gClearForm(t) {
 document.getElementById('g1_시작일').value = new Date().toISOString().split('T')[0];
 
 /* 시작 */
+console.log(`[광고 자동등록] 페이지 빌드 ${G_PAGE_BUILD}`);
 loadSettings();
 applySettingsToDB();
 populateDropdowns();
