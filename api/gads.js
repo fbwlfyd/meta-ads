@@ -4443,7 +4443,8 @@ const GOOGLE_CTA = [
 let GDB = {
   accounts: [], staff: [], googleRegions: [], audiencesByAccount: {},
   clinicNames: [], clinicToShortName: {}, youtubeChannels: [],
-  ctaTypes: [], logoByChannel: {}, logoByChannelId: {},
+  ctaTypes: GOOGLE_CTA,   // 고정 목록 — 카드가 처음 만들어질 때부터 CTA 목록이 있어야 기본값(문의하기)이 잡힌다
+  logoByChannel: {}, logoByChannelId: {},
 };
 const gSelectedAccount = { g1: '', g2: '' };
 const gNextSetNumber = { g2: 1 };
@@ -4474,8 +4475,8 @@ function gPopulateDropdowns() {
       if (prev) accSel.value = prev;
     }
     gFillRegionSelects(t);
-    // 카드 안 CTA 도 목록이 준비된 뒤 다시 채운다 (초기 카드는 목록 로드 전에 만들어짐)
-    if (t === 'g2' && typeof gCreativeBlocks === 'function') gCreativeBlocks('g2').forEach(b => { if (typeof gFillCta === 'function') gFillCta(b); });
+    // 카드 안 CTA 도 목록이 준비된 뒤 다시 채운다 (두 탭 모두)
+    if (typeof gCreativeBlocks === 'function') gCreativeBlocks(t).forEach(b => { if (typeof gFillCta === 'function') gFillCta(b); });
     const staffSel = document.getElementById(`${t}_제작자`);
     if (staffSel && staffSel.tagName === 'SELECT') {
       const prev = staffSel.value;
@@ -4752,12 +4753,14 @@ function gUpdateCreativeCount(t) {
 function gFillCta(block) {
   const sel = block.querySelector('[data-role="CTA버튼"]');
   if (!sel) return;
+  const hadList = sel.options.length > 1;   // 이미 목록이 있었으면 사용자가 고른 값('자동' 포함)을 지킨다
   const prev = sel.value;
   sel.innerHTML = '<option value="">자동</option>';
-  (GDB.ctaTypes || []).forEach(c => {
+  (GDB.ctaTypes && GDB.ctaTypes.length ? GDB.ctaTypes : GOOGLE_CTA).forEach(c => {
     const o = document.createElement('option'); o.value = c.value; o.textContent = c.label; sel.appendChild(o);
   });
-  sel.value = (prev && Array.from(sel.options).some(x => x.value === prev)) ? prev : 'CONTACT_US';
+  if (hadList) sel.value = Array.from(sel.options).some(x => x.value === prev) ? prev : 'CONTACT_US';
+  else sel.value = 'CONTACT_US';   // 처음 만들 때 기본값은 문의하기
 }
 // 카드 안의 작은 반복 입력 (광고제목 / 긴 광고제목 / 설명)
 function gMiniList(role, label, maxLen, t) {
