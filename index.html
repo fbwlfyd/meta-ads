@@ -118,6 +118,22 @@
   .card-result { margin-top: 10px; padding: 8px 12px; background: var(--bg); border-radius: var(--radius-sm); font-size: 12px; color: var(--text2); border-left: 3px solid var(--border2); }
   .card-result.success { background: var(--green-bg); border-left-color: var(--green); color: #047857; }
   .card-result.fail { background: var(--red-bg); border-left-color: var(--red); color: #b91c1c; }
+  /* Google 등록 진행 기록 (Make 등록로그 시트 + Google Ads 확인) */
+  .gtrack { margin-top: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--white); }
+  .gtrack-steps { max-height: 190px; overflow-y: auto; padding: 4px 0; }
+  .gt-row { display: flex; align-items: baseline; gap: 8px; padding: 4px 12px; font-size: 12px; color: var(--text2); border-bottom: 1px dashed var(--border); }
+  .gt-row:last-child { border-bottom: none; }
+  .gt-row.err { background: var(--red-bg); color: #b91c1c; }
+  .gt-ic { width: 14px; flex-shrink: 0; font-weight: 700; text-align: center; }
+  .gt-ic.ok { color: #047857; } .gt-ic.run { color: var(--blue); } .gt-ic.err { color: var(--red); }
+  .gt-time { color: var(--text3); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; flex-shrink: 0; }
+  .gt-step { font-weight: 600; color: var(--text1); flex-shrink: 0; }
+  .gt-step small { font-weight: 400; color: var(--text3); }
+  .gt-row.err .gt-step { color: #b91c1c; }
+  .gt-msg { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gtrack-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 12px; border-top: 1px solid var(--border); background: var(--bg); font-size: 11px; color: var(--text2); }
+  .gtrack-actions { display: flex; gap: 6px; align-items: center; }
+  .gtrack-actions .sync-btn { text-decoration: none; }
   .tab-panel { display: none; height: 100%; }
   .tab-panel.active { display: flex; }
   .platform-panel { display: none; height: calc(100% - 32px); flex-direction: column; }
@@ -170,6 +186,8 @@
   .chpick-item .nologo { font-size: 10px; color: #b45309; }
   .set-table .logo-prev { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); background: var(--bg); flex-shrink: 0; }
   .set-table .logo-prev.hidden { visibility: hidden; }
+  .set-table .logo-open { font-size: 11px; color: var(--blue); white-space: nowrap; text-decoration: none; flex-shrink: 0; }
+  .set-table .logo-open:hover { text-decoration: underline; }
 
   .adset-picker { border: 1px solid var(--border); border-radius: var(--radius); background: var(--white); margin-bottom: 16px; overflow: hidden; }
   .adset-picker-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
@@ -704,22 +722,7 @@
         <div class="field"><label>잠재고객</label><select id="g1_잠재고객"><option value="">계정 선택 후 사용 가능</option></select></div>
       </div>
       <div class="divider"></div>
-      <div class="section">
-        <div class="sec-label" style="display:flex;align-items:center;justify-content:space-between;">
-          <span>영상 소재 (1~5개)</span>
-          <label style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--text2);text-transform:none;letter-spacing:0;cursor:pointer;">
-            <input type="checkbox" id="g1_video_common" onchange="gToggleVideoCommon('g1')"> 공통
-          </label>
-        </div>
-        <div id="g1_video_list"></div>
-        <button type="button" class="repeat-add" onclick="gAddVideoBlock('g1')">+ 영상 추가</button>
-      </div>
-      <div class="divider"></div>
-      <div class="section"><div class="sec-label">광고 텍스트</div>
-        <div class="field"><label>최종 URL</label><input type="text" id="g1_최종URL" placeholder="https://..."></div>
-        <div class="field"><label>광고제목 (헤드라인, 최대 5개)</label><div id="g1_headline_list"></div><button type="button" class="repeat-add" onclick="gAddTextBlock('g1','headline')">+ 광고제목 추가</button></div>
-        <div class="field"><label>긴 광고제목 (최대 5개, 최대 90자)</label><div id="g1_longheadline_list"></div><button type="button" class="repeat-add" onclick="gAddLongHeadlineBlock('g1')">+ 긴 광고제목 추가</button></div>
-        <div class="field"><label>설명 (최대 5개)</label><div id="g1_desc_list"></div><button type="button" class="repeat-add" onclick="gAddTextBlock('g1','desc')">+ 설명 추가</button></div>
+      <div class="section"><div class="sec-label">공통 설정</div>
         <div class="field"><label>YouTube 채널</label>
           <div class="chpick" id="g1_chpick">
             <button type="button" class="chpick-btn" id="g1_chpick_btn" onclick="gToggleChannelMenu('g1')" aria-haspopup="listbox"><span class="chpick-logo noimg"><img alt=""></span><span class="chpick-name">오늘의병원</span><span class="chpick-id"></span><span class="chpick-caret">▾</span></button>
@@ -729,19 +732,15 @@
             <option value="UChg_3mq-CO2kFPkbXlTR3pw">오늘의병원</option>
           </select>
         </div>
-        <div class="field"><label>CTA버튼</label>
-          <select id="g1_CTA">
-            <option value="">자동</option>
-          </select>
-        </div>
+        <div class="field"><label>업체명 <span class="auto-tag g">자동</span></label><input type="text" id="g1_업체명" readonly placeholder="채널 선택 시 자동입력"></div>
+        <div class="field-hint">영상·광고 문구·CTA는 오른쪽 <b>광고 소재</b> 카드에서 넣어요 (소재 1개 = 광고 1개)</div>
       </div>
       <div class="divider"></div>
       <div class="section"><div class="sec-label">자동생성 / 고정 값</div>
         <div class="field"><label>광고계정 ID(customerId) <span class="auto-tag g">자동</span></label><input type="text" id="g1_광고계정ID" readonly placeholder="계정 선택 시 자동입력"></div>
         <div class="field"><label>캠페인명 <span class="auto-tag g">자동</span></label><input type="text" id="g1_캠페인명" readonly placeholder="자동생성"></div>
         <div class="field"><label>광고그룹명 <span class="auto-tag g">자동</span></label><input type="text" id="g1_광고그룹명" readonly placeholder="자동생성"></div>
-        <div class="field"><label>광고명 <span class="auto-tag g">자동</span></label><input type="text" id="g1_광고명" readonly placeholder="영상 개수만큼 1.1U, 1.2U ..."></div>
-        <div class="field"><label>업체명 <span class="auto-tag g">자동</span></label><input type="text" id="g1_업체명" readonly placeholder="치과명 선택 시 자동입력"></div>
+        <div class="field"><label>광고명 <span class="auto-tag g">자동</span></label><input type="text" id="g1_광고명" readonly placeholder="소재 개수만큼 1.1U, 1.2U ..."></div>
         <div class="row2">
           <div class="field"><label>캠페인목표 <span class="auto-tag g">고정</span></label><input type="text" value="리드 (SUBMIT_LEAD_FORM)" readonly></div>
           <div class="field"><label>언어 <span class="auto-tag g">고정</span></label><input type="text" value="한국어 (ko)" readonly></div>
@@ -759,10 +758,22 @@
     </div>
   </div>
   <div class="main">
-    <div class="main-head"><div><h3>등록 현황</h3><p id="g1_count">등록된 캠페인이 없습니다</p></div><div class="live-pill" style="color:var(--g-red);background:var(--g-red-bg);"><div class="live-dot" style="background:var(--g-red);"></div>실시간</div></div>
-    <div class="content">
-      <div class="empty" id="g1_empty"><div class="empty-icon">🟥</div><h4>아직 등록된 캠페인이 없어요</h4><p>왼쪽에서 캠페인 정보를 입력하세요</p></div>
-      <div class="cards" id="g1_cards" style="display:none;"></div>
+    <div class="main-top">
+      <div class="main-head"><div><h3>등록 현황</h3><p id="g1_count">등록된 캠페인이 없습니다</p></div><div class="live-pill" style="color:var(--g-red);background:var(--g-red-bg);"><div class="live-dot" style="background:var(--g-red);"></div>실시간</div></div>
+      <div class="content">
+        <div class="empty" id="g1_empty"><div class="empty-icon">🟥</div><h4>아직 등록된 캠페인이 없어요</h4><p>왼쪽에서 캠페인 정보를, 아래 카드에서 소재를 넣으세요</p></div>
+        <div class="cards" id="g1_cards" style="display:none;"></div>
+      </div>
+    </div>
+    <div class="creative-pane">
+      <div class="creative-head">
+        <div><h3>광고 소재</h3><p id="g1_creative_count">소재 1개 · 광고그룹 1개에 광고 1개가 만들어져요</p></div>
+        <div class="creative-actions">
+          <label class="common-toggle"><input type="checkbox" id="g1_creative_common" checked onchange="gToggleCreativeCommon('g1')"> 문구 공통</label>
+          <button type="button" class="btn-add-creative" onclick="gAddCreativeBlock('g1')">+ 소재 추가</button>
+        </div>
+      </div>
+      <div class="creative-strip" id="g1_creative_list"></div>
     </div>
   </div>
 </div>
@@ -1016,7 +1027,7 @@
       </div>
 
       <div class="modal-sec" id="msec_gchannel">
-        <div class="set-note">YouTube 채널과 로고입니다. 채널은 어느 계정에서든 고를 수 있고, 업체명은 채널명이 그대로 들어갑니다.<br>로고는 Drive <b>공유 링크를 통째로 붙여넣으면</b> 파일ID만 자동으로 남습니다.</div>
+        <div class="set-note">YouTube 채널과 로고입니다. 채널은 어느 계정에서든 고를 수 있고, 업체명은 채널명이 그대로 들어갑니다.<br>로고는 Drive <b>공유 링크를 통째로 붙여넣으면</b> 파일ID만 자동으로 남습니다. 미리보기가 안 뜨면 그 파일의 공유가 <b>"링크가 있는 모든 사용자"</b>가 아닌 경우예요 — Make도 같은 파일을 읽으니 링크 공유로 두세요 (<b>열기</b>로 바로 확인).</div>
         <table class="set-table">
           <thead><tr><th style="width:30%">채널명</th><th style="width:32%">채널 ID</th><th style="width:34%">로고 (Drive 링크 또는 파일ID)</th><th></th></tr></thead>
           <tbody id="gset_channel_body"></tbody>
@@ -1655,8 +1666,11 @@ function gOnLogoInput(el) {
   if (img) {
     const url = gLogoUrl(id, 56);
     img.classList.toggle('hidden', !url);
+    img.classList.remove('failed');
     if (url) img.src = url;
   }
+  const open = el.parentNode && el.parentNode.querySelector('.logo-open');
+  if (open) { open.href = id ? `https://drive.google.com/file/d/${encodeURIComponent(id)}/view` : '#'; open.style.display = id ? '' : 'none'; }
 }
 function gRenderTable(key) {
   const cfg = G_TABLES[key];
@@ -1678,9 +1692,10 @@ function gRenderTable(key) {
       const val = isLogo ? gExtractDriveId(r[f]) : r[f];
       const input = `<input type="text" data-g="${key}" data-f="${f}" data-i="${i}" value="${esc(val)}" placeholder="${esc(ph)}"${extra}>`;
       if (isLogo) {
-        // 로고 미리보기 — 링크 공유가 안 된 파일은 안 보인다
+        // 로고 미리보기 — 링크 공유가 안 된(또는 이 브라우저의 구글 계정이 못 보는) 파일은 안 보인다
         const url = gLogoUrl(val, 56);
-        return `<td><div style="display:flex;gap:6px;align-items:center;">${input}<img class="logo-prev${url ? '' : ' hidden'}" alt="" src="${esc(url)}" onerror="this.classList.add('hidden')" title="로고 미리보기 (링크 공유된 파일만 보여요)"></div></td>`;
+        const open = val ? `<a class="logo-open" href="https://drive.google.com/file/d/${encodeURIComponent(val)}/view" target="_blank" rel="noopener" title="Drive에서 열어 공유 설정 확인">열기</a>` : '';
+        return `<td><div style="display:flex;gap:6px;align-items:center;">${input}<img class="logo-prev${url ? '' : ' hidden'}" alt="" src="${esc(url)}" onerror="this.classList.add('hidden');this.classList.add('failed')" title="로고 미리보기">${open}</div></td>`;
       }
       return `<td>${input}</td>`;
     }).join('');
@@ -1859,7 +1874,7 @@ async function gAdsSearch(customerId, query) {
 
 /* 배포된 api/gads.js 가 최신인지 — 로그인 없이 ping 으로 확인한다.
    잠재고객이 세그먼트로 나오는 문제는 대부분 이 파일이 구버전인 경우였다. */
-const G_PROXY_REQUIRED_BUILD = '2026-09-15';
+const G_PROXY_REQUIRED_BUILD = '2026-09-16';
 async function gCheckProxyBuild() {
   const el = document.getElementById('g_proxy_status');
   if (!el) return;
@@ -4081,12 +4096,9 @@ const G_WEBHOOKS = {
   g1: 'https://hook.eu1.make.com/feqfvpytm8fr92wgp1yha705vfnz944c',
   g2: 'https://hook.eu1.make.com/feqfvpytm8fr92wgp1yha705vfnz944c',
 };
-const COPY_SUGGEST_WEBHOOK = 'https://hook.eu1.make.com/m2o5gs9ms2iewctp68enxcs7ipesgneg';
 const GDRIVE_CLIENT_ID = '907431503239-ijcprs8pppon0r7eh0q4nj5pvimpes9m.apps.googleusercontent.com';
 let gDriveAccessToken = null;
 
-let gCopySuggestions = { g1: { headline: [], desc: [], longheadline: [] }, g2: { headline: [], desc: [], longheadline: [] } };
-let gCopySuggestTimer = null;
 let gLearnedCopies = [];
 
 async function gLoadLearnedCopies() {
@@ -4112,58 +4124,6 @@ async function gSaveCopies(copies) {
     gLearnedCopies = [...existing, ...newCopies];
   } catch(e) { console.warn('카피 저장 실패:', e); }
 }
-async function gGenerateCopySuggestions(t, keyword, type, dropdownId) {
-  if (!keyword || keyword.length < 4) return;
-  const dropdown = document.getElementById(dropdownId);
-  if (!dropdown) return;
-  dropdown.innerHTML = '<div class="copy-suggest-loading">✨ AI 카피 생성 중...</div>';
-  dropdown.classList.add('show');
-  try {
-    const res = await fetch(COPY_SUGGEST_WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ keyword, type }) });
-    const text = await res.text();
-    const clean = text.replace(/```json|```/g, '').trim();
-    const suggestions = JSON.parse(clean);
-    gCopySuggestions[t][type] = suggestions;
-    dropdown.innerHTML = suggestions.map(s => `<div class="copy-suggest-item" onclick="gSelectCopySuggest(this)">${s}</div>`).join('');
-  } catch(e) {
-    dropdown.innerHTML = '<div class="copy-suggest-loading">추천 생성 실패</div>';
-  }
-}
-function gShowCopySuggest(t, blockId, type) {
-  const block = document.getElementById(blockId);
-  if (!block) return;
-  const dropdown = document.getElementById('suggest_' + blockId);
-  if (!dropdown) return;
-  let keyword = '';
-  const listId = type === 'headline' ? t + '_headline_list' : (type === 'desc' ? t + '_desc_list' : t + '_longheadline_list');
-  keyword = document.getElementById(listId)?.children[0]?.querySelector('[data-role="text"]')?.value || '';
-  const cached = gCopySuggestions[t][type] || [];
-  if (cached.length > 0) {
-    dropdown.innerHTML = cached.map(s => '<div class="copy-suggest-item" onclick="gSelectCopySuggest(this)">' + s + '</div>').join('');
-    dropdown.classList.add('show');
-  } else if (keyword.length >= 4) {
-    clearTimeout(gCopySuggestTimer);
-    gCopySuggestTimer = setTimeout(() => gGenerateCopySuggestions(t, keyword, type, 'suggest_' + blockId), 800);
-    dropdown.innerHTML = '<div class="copy-suggest-loading">✨ AI 카피 생성 중...</div>';
-    dropdown.classList.add('show');
-  }
-}
-function gHideCopySuggest(blockId) {
-  const dropdown = document.getElementById(`suggest_${blockId}`);
-  if (dropdown) dropdown.classList.remove('show');
-}
-function gSelectCopySuggest(el) {
-  const block = el.closest('.repeat-block');
-  if (!block) return;
-  const input = block.querySelector('[data-role="text"]') || block.querySelector('input[type="text"]');
-  if (input) input.value = el.textContent;
-  const dropdown = el.closest('.copy-suggest-dropdown');
-  if (dropdown) dropdown.classList.remove('show');
-}
-function gOnFirstHeadlineInput(t) { gCopySuggestions[t].headline = []; clearTimeout(gCopySuggestTimer); }
-function gOnFirstDescInput(t) { gCopySuggestions[t].desc = []; clearTimeout(gCopySuggestTimer); }
-function gOnFirstLongHeadlineInput(t) { gCopySuggestions[t].longheadline = []; clearTimeout(gCopySuggestTimer); }
-
 /* =========================================================
    Google OAuth — 로그인 유지
    · 토큰을 만료시간과 함께 localStorage에 보관 → 새로고침해도 다시 로그인하지 않는다
@@ -4708,14 +4668,12 @@ function gAutoGenNames(t) {
   if (t === 'g1') document.getElementById('g1_캠페인명').value = campaignName;
   document.getElementById(`${t}_광고그룹명`).value = groupName;
   // 광고명 (소재 개수만큼 1.1U, 1.2U ...)
-  const n = (t === 'g2')
-    ? (document.getElementById('g2_creative_list')?.children.length || 1)
-    : (document.getElementById(`${t}_video_list`)?.children.length || 1);
+  const n = document.getElementById(`${t}_creative_list`)?.children.length || 1;
   const start = gAdSubStart[t] || 1;
   const first = build(`1.${start}U`);   // 광고 번호 앞자리는 그룹 번호와 무관하게 항상 1
   const adEl = document.getElementById(`${t}_광고명`);
   if (adEl) adEl.value = n > 1 ? `${first} 외 ${n - 1}개 (1.${start + 1}U~1.${start + n - 1}U)` : first;
-  if (t === 'g2' && typeof gUpdateCardAdNames === 'function') gUpdateCardAdNames(t);
+  if (typeof gUpdateCardAdNames === 'function') gUpdateCardAdNames(t);
 }
 function gAdNameFor(t, i) {
   const acc = GDB.accounts.find(a => a.name === gGetAccountName(t)) || (t === 'g2' ? {} : null);
@@ -4733,7 +4691,53 @@ function gAdNameFor(t, i) {
    카드 1개 = 영상 1개 + 그 광고의 텍스트 + CTA
    ========================================================= */
 const G_CREATIVE_MAX = 5;
-const gCreativeSeq = { g2: 0 };
+const gCreativeSeq = { g1: 0, g2: 0 };
+
+/* 카드 드롭존 — 메타와 같은 방식. 파일을 붙이는 순간 Drive에 미리 올려 두고(등록 때 재업로드 없음),
+   올린 파일ID는 카드에 기억해 두었다가 Make가 등록을 마치면 지운다 */
+function gOpenCardFile(dz) { const input = dz.parentElement.querySelector('[data-role="파일첨부"]'); if (input) input.click(); }
+function gOnCardDrop(e, dz) {
+  e.preventDefault(); onCreativeDragLeave(dz);
+  const file = e.dataTransfer.files[0]; if (!file) return;
+  const input = dz.parentElement.querySelector('[data-role="파일첨부"]');
+  const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files;
+  gOnCardFileSelected(input);
+}
+function gOnCardFileSelected(input) {
+  const block = input.closest('.creative-card'); if (!block) return;
+  const dz = block.querySelector('[data-role="dropzone"]');
+  const file = input.files[0]; if (!file) return;
+  setCreativeDropText(dz, file.name);
+  const t = block.id.startsWith('g1') ? 'g1' : 'g2';
+  // 새 파일을 붙이면 이전 업로드 기록은 버린다
+  block.dataset.uploadedId = '';
+  block.querySelector('[data-role="파일ID"]').value = '';
+  gPrefetchDriveUpload(t, block);
+}
+const gUploadInFlight = new WeakMap();
+async function gPrefetchDriveUpload(t, block) {
+  const dz = block.querySelector('[data-role="dropzone"]');
+  const input = block.querySelector('[data-role="파일첨부"]');
+  const file = input && input.files[0]; if (!file) return;
+  const badge = (txt, color) => {
+    let el = dz.querySelector('[data-role="upstat"]');
+    if (!el) { el = document.createElement('div'); el.dataset.role = 'upstat'; el.style.cssText = 'font-size:10px;margin-top:4px;'; dz.appendChild(el); }
+    el.style.color = color; el.textContent = txt;
+  };
+  badge(`Drive에 올리는 중... (${(file.size / 1048576).toFixed(1)}MB)`, 'var(--blue)');
+  const p = (async () => {
+    const id = await uploadFileToDrive(file);
+    if (input.files[0] !== file) return null;   // 그 사이 다른 파일로 바뀜
+    block.dataset.uploadedId = id;
+    block.querySelector('[data-role="파일ID"]').value = id;
+    badge('✓ Drive 업로드 완료 — 등록 시 바로 사용', '#047857');
+    return id;
+  })();
+  gUploadInFlight.set(block, p);
+  try { await p; }
+  catch (e) { badge('미리 올리기 실패 — 등록할 때 다시 올립니다 (' + e.message + ')', 'var(--red)'); block.dataset.uploadedId = ''; block.querySelector('[data-role="파일ID"]').value = ''; }
+  finally { if (gUploadInFlight.get(block) === p) gUploadInFlight.delete(block); }
+}
 
 function gCreativeBlocks(t) {
   const list = document.getElementById(`${t}_creative_list`);
@@ -4786,19 +4790,22 @@ function gAddCreativeBlock(t) {
     <div class="creative-card-head"><span class="creative-card-title">소재 ${idx}</span>
       <button type="button" class="creative-remove" onclick="gRemoveCreativeBlock('${t}','${id}')">삭제</button>
     </div>
-    <div class="creative-adname is-empty" data-role="광고명">캠페인 선택 시 광고명 자동생성</div>
+    <div class="creative-adname is-empty" data-role="광고명">${t === 'g1' ? '계정 선택 시 광고명 자동생성' : '캠페인 선택 시 광고명 자동생성'}</div>
 
     <div class="gcard-cols">
       <div class="gcard-col">
         <div class="gcard-sub">영상</div>
         <div class="field"><label>파일 업로드 방식</label>
           <select data-role="파일방식" onchange="gOnCardFileMethod('${t}','${id}')">
-            <option value="drive" selected>Drive 파일ID</option>
-            <option value="upload">직접 첨부</option>
+            <option value="upload" selected>직접 첨부</option>
+            <option value="drive">Drive 파일ID</option>
           </select>
         </div>
-        <div class="field" data-role="drive_wrap"><label>파일ID</label><input type="text" data-role="파일ID" placeholder="Drive 링크 붙여넣기" oninput="extractDriveId(this)"></div>
-        <div class="field" data-role="upload_wrap" style="display:none;"><label>영상 첨부</label><input type="file" data-role="파일첨부" accept="video/*"></div>
+        <div class="field" data-role="upload_wrap">
+          <div class="creative-drop" data-role="dropzone" onclick="gOpenCardFile(this)" ondragover="onCreativeDragOver(event,this)" ondragleave="onCreativeDragLeave(this)" ondrop="gOnCardDrop(event,this)">📎 클릭하거나 드래그<br><span style="font-size:11px;color:var(--text3);">영상 (mp4)</span></div>
+          <input type="file" data-role="파일첨부" accept="video/*" style="display:none;" onchange="gOnCardFileSelected(this)">
+        </div>
+        <div class="field" data-role="drive_wrap" style="display:none;"><label>파일ID (Google Drive)</label><input type="text" data-role="파일ID" placeholder="Drive 링크 붙여넣기" oninput="extractDriveId(this)"></div>
         <div class="field"><label>YouTube 제목</label><input type="text" data-role="유튜브제목" placeholder="영상 제목" oninput="gSyncCreativeCommon('${t}')"></div>
         <div class="field"><label>YouTube 설명</label><textarea data-role="유튜브설명" placeholder="#shorts 등" oninput="gSyncCreativeCommon('${t}')"></textarea></div>
       </div>
@@ -5177,160 +5184,14 @@ function gClearCampaignSelection(t) {
   if (document.getElementById(`${t}_치과명`).value) { gFindCampaigns(t); showToast('캠페인만 해제했어요 — 목록에서 다시 고르세요', 'info'); }
   else showToast('캠페인 선택을 해제했어요', 'info');
 }
-let gVideoBlockSeq = { g1: 0, g2: 0 };
-function gAddVideoBlock(t) {
-  const list = document.getElementById(`${t}_video_list`);
-  if (list.children.length >= 5) { showToast('영상은 최대 5개까지 추가할 수 있어요', 'error'); return; }
-  const id = `${t}_video_${gVideoBlockSeq[t]++}`;
-  const idx = list.children.length + 1;
-  const block = document.createElement('div');
-  block.className = 'repeat-block'; block.id = id;
-  block.innerHTML = `
-    <div class="repeat-block-head"><span class="repeat-block-title">영상 ${idx}</span><button type="button" class="repeat-remove" onclick="gRemoveBlock('${t}','video_list','${id}')">삭제</button></div>
-    <div class="field"><label>파일 업로드 방식</label><select onchange="gOnVideoFileMethod('${id}')"><option value="drive">Drive 파일ID</option><option value="upload">직접 첨부</option></select></div>
-    <div class="field" data-role="drive_wrap"><label>파일ID (Google Drive)</label><input type="text" data-role="파일ID" placeholder="Drive 전체 링크 복사 후 붙여넣기" oninput="extractDriveId(this)"></div>
-    <div class="field" data-role="upload_wrap" style="display:none;"><label>파일 첨부</label><input type="file" data-role="파일첨부" accept="video/*"></div>
-    <div class="field" data-role="title_wrap"><label>YouTube 제목</label><input type="text" data-role="유튜브제목" placeholder="YouTube 영상 제목" oninput="gSyncVideoCommon('${t}')"></div>
-    <div class="field" data-role="desc_wrap"><label>YouTube 설명</label><textarea data-role="유튜브설명" placeholder="#shorts 등 설명/해시태그" oninput="gSyncVideoCommon('${t}')"></textarea></div>
-  `;
-  list.appendChild(block);
-  gApplyVideoCommonState(t);
-  gAutoGenNames(t);
-}
-function gOnVideoFileMethod(blockId) {
-  const block = document.getElementById(blockId);
-  const method = block.querySelector('select').value;
-  block.querySelector('[data-role="drive_wrap"]').style.display = method === 'drive' ? 'block' : 'none';
-  block.querySelector('[data-role="upload_wrap"]').style.display = method === 'upload' ? 'block' : 'none';
-  if (method === 'upload') block.querySelector('[data-role="파일ID"]').value = '';
-  const list = block.parentElement;
-  if (list && list.children[0] === block) {
-    Array.from(list.children).forEach((b, i) => {
-      if (i === 0) return;
-      const sel = b.querySelector('select'); if (!sel) return;
-      sel.value = method;
-      b.querySelector('[data-role="drive_wrap"]').style.display = method === 'drive' ? 'block' : 'none';
-      b.querySelector('[data-role="upload_wrap"]').style.display = method === 'upload' ? 'block' : 'none';
-      if (method === 'upload') b.querySelector('[data-role="파일ID"]').value = '';
-    });
-  }
-}
-function gToggleVideoCommon(t) { gApplyVideoCommonState(t); gSyncVideoCommon(t); }
-function gApplyVideoCommonState(t) {
-  const isCommon = document.getElementById(`${t}_video_common`).checked;
-  const list = document.getElementById(`${t}_video_list`);
-  Array.from(list.children).forEach((block, i) => {
-    const titleWrap = block.querySelector('[data-role="title_wrap"]');
-    const descWrap = block.querySelector('[data-role="desc_wrap"]');
-    if (!titleWrap || !descWrap) return;
-    if (isCommon && i > 0) { titleWrap.style.display = 'none'; descWrap.style.display = 'none'; }
-    else { titleWrap.style.display = 'block'; descWrap.style.display = 'block'; }
-  });
-}
-function gSyncVideoCommon(t) {
-  const isCommon = document.getElementById(`${t}_video_common`).checked; if (!isCommon) return;
-  const list = document.getElementById(`${t}_video_list`);
-  const first = list.children[0]; if (!first) return;
-  const titleVal = first.querySelector('[data-role="유튜브제목"]').value;
-  const descVal = first.querySelector('[data-role="유튜브설명"]').value;
-  Array.from(list.children).forEach((block, i) => {
-    if (i === 0) return;
-    block.querySelector('[data-role="유튜브제목"]').value = titleVal;
-    block.querySelector('[data-role="유튜브설명"]').value = descVal;
-  });
-}
-function gRemoveBlock(t, listKey, id) {
-  const el = document.getElementById(id); if (el) el.remove();
-  const list = document.getElementById(`${t}_${listKey}`);
-  Array.from(list.children).forEach((child, i) => {
-    const titleEl = child.querySelector('.repeat-block-title');
-    if (!titleEl) return;
-    let label = '광고제목';
-    if (listKey === 'video_list') label = '영상';
-    else if (child.dataset.kind === 'desc') label = '설명';
-    else if (child.dataset.kind === 'longheadline') label = '긴 광고제목';
-    titleEl.textContent = `${label} ${i+1}`;
-  });
-  if (listKey === 'video_list') { gApplyVideoCommonState(t); gAutoGenNames(t); }
-}
-let gTextBlockSeq = { g1: 0, g2: 0 };
-function gAddTextBlock(t, kind) {
-  const listKey = kind === 'desc' ? 'desc_list' : 'headline_list';
-  const list = document.getElementById(`${t}_${listKey}`);
-  if (list.children.length >= 5) { showToast('최대 5개까지 추가할 수 있어요', 'error'); return; }
-  const id = `${t}_${kind}_${gTextBlockSeq[t]++}`;
-  const idx = list.children.length + 1;
-  const label = kind === 'desc' ? '설명' : '광고제목';
-  const maxLen = kind === 'desc' ? 90 : 40;
-  const block = document.createElement('div');
-  block.className = 'repeat-block'; block.id = id; block.dataset.kind = kind;
-  const removeBtn = `<button type="button" class="repeat-remove" onclick="gRemoveBlock('${t}','${listKey}','${id}')">삭제</button>`;
-  const head = `<div class="repeat-block-head"><span class="repeat-block-title">${label} ${idx}</span>${removeBtn}</div>`;
-  if ((kind === 'headline' || kind === 'desc') && idx === 1) {
-    const onInput = kind === 'headline' ? `gOnFirstHeadlineInput('${t}')` : `gOnFirstDescInput('${t}')`;
-    block.innerHTML = head + `<input type="text" data-role="text" maxlength="${maxLen}" placeholder="${label} 입력 (최대 ${maxLen}자)" oninput="${onInput}">`;
-  } else if (kind === 'headline' || kind === 'desc') {
-    block.innerHTML = head + `<div class="copy-suggest-wrap"><input type="text" data-role="text" maxlength="${maxLen}" placeholder="${label} 입력 (최대 ${maxLen}자)" onfocus="gShowCopySuggest('${t}','${id}','${kind}')" oninput="gShowCopySuggest('${t}','${id}','${kind}')" onblur="setTimeout(function(){gHideCopySuggest('${id}')},200)" autocomplete="off"><div class="copy-suggest-dropdown" id="suggest_${id}"></div></div>`;
-  } else {
-    block.innerHTML = head + `<input type="text" data-role="text" maxlength="${maxLen}" placeholder="${label} 입력 (최대 ${maxLen}자)">`;
-  }
-  list.appendChild(block);
-}
-function gCollectVideos(t) {
-  const list = document.getElementById(`${t}_video_list`);
-  if (!list) return [];   // 세트 추가 탭은 소재 카드를 쓴다
-  const isCommon = document.getElementById(`${t}_video_common`)?.checked;
-  const firstTitle = list.children[0]?.querySelector('[data-role="유튜브제목"]')?.value || '';
-  const firstDesc = list.children[0]?.querySelector('[data-role="유튜브설명"]')?.value || '';
-  return Array.from(list.children).map((block, i) => {
-    const method = block.querySelector('select').value;
-    const fileInput = block.querySelector('[data-role="파일첨부"]');
-    const file = (fileInput && fileInput.files[0]) ? fileInput.files[0] : null;
-    return {
-      파일유형: method,
-      파일ID: (block.querySelector('[data-role="파일ID"]').value || '').trim(),
-      파일첨부: file,
-      파일명: file ? file.name : '',
-      유튜브제목: (isCommon && i > 0) ? firstTitle : block.querySelector('[data-role="유튜브제목"]').value,
-      유튜브설명: (isCommon && i > 0) ? firstDesc : block.querySelector('[data-role="유튜브설명"]').value,
-      공개상태: 'unlisted',
-      아동용: 'false',
-    };
-  }).filter(v => v.파일ID || v.파일첨부);
-}
-function gVideoPayload(t) {
-  return gCollectVideos(t).filter(v => v.파일ID).map(v => { const o = { ...v }; delete o.파일첨부; return o; });
-}
-let gLongHeadlineSeq = { g1: 0, g2: 0 };
-function gAddLongHeadlineBlock(t) {
-  const list = document.getElementById(`${t}_longheadline_list`);
-  if (list.children.length >= 5) { showToast('긴 광고제목은 최대 5개까지 추가할 수 있어요', 'error'); return; }
-  const seq = gLongHeadlineSeq[t]++;
-  const id = `${t}_longheadline_${seq}`;
-  const idx = list.children.length + 1;
-  const block = document.createElement('div');
-  block.className = 'repeat-block'; block.id = id; block.dataset.kind = 'longheadline';
-  const head = `<div class="repeat-block-head"><span class="repeat-block-title">긴 광고제목 ${idx}</span><button type="button" class="repeat-remove" onclick="gRemoveBlock('${t}','longheadline_list','${id}')">삭제</button></div>`;
-  if (idx === 1) {
-    block.innerHTML = head + `<input type="text" data-role="text" maxlength="90" placeholder="긴 광고 제목 입력 (최대 90자)" oninput="gOnFirstLongHeadlineInput('${t}')">`;
-  } else {
-    block.innerHTML = head + `<div class="copy-suggest-wrap"><input type="text" data-role="text" maxlength="90" placeholder="긴 광고 제목 입력 (최대 90자)" onfocus="gShowCopySuggest('${t}','${id}','longheadline')" oninput="gShowCopySuggest('${t}','${id}','longheadline')" onblur="setTimeout(function(){gHideCopySuggest('${id}')},200)" autocomplete="off"><div class="copy-suggest-dropdown" id="suggest_${id}"></div></div>`;
-  }
-  list.appendChild(block);
-}
-function gCollectTexts(t, kind) {
-  const listKey = kind === 'desc' ? 'desc_list' : 'headline_list';
-  const list = document.getElementById(`${t}_${listKey}`);
-  if (!list) return [];   // 세트 추가 탭은 소재 카드를 쓴다
-  return Array.from(list.children).map(b => b.querySelector('[data-role="text"]').value).filter(Boolean);
-}
+/* 광고그룹 채널 — YouTube는 항상, 나머지는 칩에서 고른 것 (Make가 indexOf 로 확인) */
 function gCollectChannels(t) {
-  const channels = ['YOUTUBE'];
-  if (document.getElementById(`${t}_ch_discover`)?.checked) channels.push('DISCOVER');
-  if (document.getElementById(`${t}_ch_gmail`)?.checked) channels.push('GMAIL');
-  if (document.getElementById(`${t}_ch_display`)?.checked) channels.push('DISPLAY');
-  if (document.getElementById(`${t}_ch_maps`)?.checked) channels.push('MAPS');
-  return channels;
+  const out = ['YOUTUBE'];
+  [['ch_discover', 'DISCOVER'], ['ch_gmail', 'GMAIL'], ['ch_display', 'DISPLAY'], ['ch_maps', 'MAPS']].forEach(([k, v]) => {
+    const el = document.getElementById(`${t}_${k}`);
+    if (el && el.checked) out.push(v);
+  });
+  return out;
 }
 function gGetData(t) {
   const isT2 = t === 'g2';
@@ -5360,38 +5221,32 @@ function gGetData(t) {
       if (device === 'MOBILE') excluded.push('DESKTOP');
       return excluded;
     })(),
-    영상목록: gVideoPayload(t),
-    업로드대기수: gCollectVideos(t).filter(v => !v.파일ID && v.파일첨부).length,
-    최종URL: g(`${t}_최종URL`),
-    광고제목목록: gCollectTexts(t, 'headline'),
-    긴광고제목목록: (() => {
-      const list = document.getElementById(t + '_longheadline_list');
-      if (!list) return [];
-      return Array.from(list.children).map(b => b.querySelector('[data-role="text"]')?.value || '').filter(Boolean);
-    })(),
-    설명목록: gCollectTexts(t, 'desc'),
+    영상목록: [],
+    업로드대기수: 0,
+    최종URL: '',
+    광고제목목록: [],
+    긴광고제목목록: [],
+    설명목록: [],
     업체명: g(`${t}_업체명`),
-    CTA버튼: g(`${t}_CTA`),
+    CTA버튼: '',
     로고파일ID: gLogoForChannelSelect(document.getElementById(`${t}_유튜브채널`)),
   };
   d.광고명 = g(`${t}_광고명`);
+  // 소재 카드(영상 1개 = 광고 1개)에서 모아온다 — 두 탭 공통. 상단 문구 값은 첫 카드 기준(호환용)
+  const cards = gCollectCreatives(t);
+  d.영상목록 = cards.filter(c => c.파일ID).map(c => { const o = { ...c }; delete o.block; delete o.파일첨부; return o; });
+  d.업로드대기수 = cards.filter(c => !c.파일ID && c.파일첨부).length;
+  d.소재수 = cards.length;
+  const f = cards[0] || {};
+  d.최종URL = f.최종URL || '';
+  d.광고제목목록 = f.광고제목목록 || [];
+  d.긴광고제목목록 = f.긴광고제목목록 || [];
+  d.설명목록 = f.설명목록 || [];
+  d.CTA버튼 = f.CTA버튼 || '';
   if (isT2) {
-    // 세트 추가 탭은 소재 카드에서 모아온다
-    const cards = gCollectCreatives('g2');
-    d.영상목록 = cards.filter(c => c.파일ID).map(c => { const o = { ...c }; delete o.block; delete o.파일첨부; return o; });
-    d.업로드대기수 = cards.filter(c => !c.파일ID && c.파일첨부).length;
-    d.소재수 = cards.length;
-    const f = cards[0] || {};
-    d.최종URL = f.최종URL || '';
-    d.광고제목목록 = f.광고제목목록 || [];
-    d.긴광고제목목록 = f.긴광고제목목록 || [];
-    d.설명목록 = f.설명목록 || [];
-    d.CTA버튼 = f.CTA버튼 || '';
     const locked = !!(gCampaignGeo.g2 && gCampaignGeo.g2.length > 0);
     if (locked) { d.지역구분자 = ''; d.구글지역ID = ''; d.구글좌표목록 = []; d.지역타겟방식 = 'CAMPAIGN'; }
-    d.캠페인지역설정됨 = !!(gCampaignGeo.g2 && gCampaignGeo.g2.length > 0);
-  } else {
-    d.영상목록.forEach((v, i) => { v.광고명 = gAdNameFor(t, i + 1); });
+    d.캠페인지역설정됨 = locked;
   }
   if (!isT2) { d.캠페인명 = g('g1_캠페인명'); d.캠페인목표 = 'LEADS'; d.일일예산 = g('g1_일일예산'); d.시작일 = g('g1_시작일'); d.등록모드 = 'NEW_ADGROUP'; }
   else {
@@ -5458,15 +5313,154 @@ function gAddCard(t, data) {
   const isT2 = t === 'g2';
   const title = isT2 ? (data.광고그룹명||'그룹명 없음') : (data.캠페인명||'캠페인명 없음');
   const card = document.createElement('div'); card.className = 'card'; card.id = `gcard_${t}_${idx}`;
-  card.innerHTML = `<div class="card-top"><div class="card-title-wrap"><span class="card-type type-g-new">${isT2?'세트 추가':'신규 등록'}</span><span class="card-title">${title}</span></div><span class="badge badge-sending" id="gbadge_${t}_${idx}">전송중</span></div><div class="card-meta"><span class="meta-item"><span class="meta-label">계정</span>${data.계정명||'-'}</span><span class="meta-item"><span class="meta-label">광고그룹</span>${data.광고그룹명||'-'}</span><span class="meta-item"><span class="meta-label">영상</span>${(data.영상목록||[]).length}개</span></div><div class="card-result" id="gresult_${t}_${idx}">Make로 전송 중...</div>`;
+  card.innerHTML = `<div class="card-top"><div class="card-title-wrap"><span class="card-type type-g-new">${isT2 ? (data.등록모드 === 'EXISTING_ADGROUP' ? '광고 추가' : '세트 추가') : '신규 등록'}</span><span class="card-title">${esc(title)}</span></div><span class="badge badge-sending" id="gbadge_${t}_${idx}">전송중</span></div>
+    <div class="card-meta"><span class="meta-item"><span class="meta-label">계정</span>${esc(data.계정명||'-')}</span><span class="meta-item"><span class="meta-label">광고그룹</span>${esc(data.광고그룹명||'-')}</span><span class="meta-item"><span class="meta-label">소재</span>${(data.영상목록||[]).length}개</span><span class="meta-item"><span class="meta-label">요청ID</span><code style="font-size:11px;">${esc(data.요청ID||'-')}</code></span></div>
+    <div class="card-result" id="gresult_${t}_${idx}">Make로 전송 중...</div>
+    <div class="gtrack" id="gtrack_${t}_${idx}" style="display:none;">
+      <div class="gtrack-steps" id="gsteps_${t}_${idx}"></div>
+      <div class="gtrack-foot"><span id="gcheck_${t}_${idx}" class="gtrack-check"></span><span class="gtrack-actions"><button type="button" class="sync-btn" onclick="gTrackNow('${t}',${idx})">지금 확인</button><a class="sync-btn" href="https://docs.google.com/spreadsheets/d/${SHEET_ID}" target="_blank" rel="noopener">로그 시트</a></span></div>
+    </div>`;
   list.appendChild(card);
   document.getElementById(`${t}_count`).textContent = `총 ${gRows[t].length}${isT2?'개 세트 추가됨':'건 등록됨'}`;
   return idx;
 }
-function gUpdateCard(t, idx, status, msg) {
+function gUpdateCard(t, idx, status, msg, html) {
   const badge = document.getElementById(`gbadge_${t}_${idx}`); const result = document.getElementById(`gresult_${t}_${idx}`);
-  if (status === '완료') { badge.className = 'badge badge-done'; badge.textContent = '전송됨'; result.className = 'card-result success'; result.textContent = msg; }
-  else { badge.className = 'badge badge-fail'; badge.textContent = '실패'; result.className = 'card-result fail'; result.textContent = msg; }
+  if (!badge || !result) return;
+  const styles = {
+    '전송중': ['badge badge-sending', '전송 중', 'card-result'],
+    '진행중': ['badge badge-sending', '진행 중', 'card-result'],
+    '완료':   ['badge badge-done', '등록 확인됨', 'card-result success'],
+    '주의':   ['badge badge-wait', '확인 필요', 'card-result'],
+    '실패':   ['badge badge-fail', '실패', 'card-result fail'],
+  };
+  const [bc, bt, rc] = styles[status] || styles['실패'];
+  badge.className = bc; badge.textContent = bt; result.className = rc;
+  if (html) result.innerHTML = msg; else result.textContent = msg;
+}
+
+/* =========================================================
+   등록 진행 확인 (Google)
+   Make 웹훅은 접수만 하고 바로 200을 주므로, 어디까지 갔는지는 두 군데서 본다.
+   ① Make가 '등록로그' 시트에 적는 단계별 기록 (수신 → 광고그룹 생성 → 유튜브 업로드 → 광고 생성, 오류는 원인까지)
+   ② Google Ads에 실제로 광고가 생겼는지 (프록시로 광고그룹 안 광고 이름 대조)
+   ========================================================= */
+const G_LOG_SHEET = '등록로그';
+const G_LOG_HEADERS = ['요청ID', '시각', '단계', '상태', '메시지', '광고명', '상세'];
+const G_TRACK_INTERVAL_MS = 10000;
+const G_TRACK_MAX_MS = 25 * 60 * 1000;
+const gTrack = {};
+function gNewRequestId() {
+  const d = new Date(); const p = n => String(n).padStart(2, '0');
+  return `G${String(d.getFullYear()).slice(2)}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}-${Math.random().toString(36).slice(2, 6)}`;
+}
+/* 등록로그 시트가 없으면 만들고 머리글을 넣는다 (한 세션에 한 번만 확인) */
+async function gEnsureLogSheet() {
+  if (gEnsureLogSheet.ok) return true;
+  try {
+    const res = await gAuthFetch('core', `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties.title`);
+    const j = await res.json();
+    if (!res.ok) throw new Error((j.error && j.error.message) || `HTTP ${res.status}`);
+    const titles = (j.sheets || []).map(s => s.properties && s.properties.title);
+    if (!titles.includes(G_LOG_SHEET)) {
+      const add = await gAuthFetch('core', `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}:batchUpdate`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requests: [{ addSheet: { properties: { title: G_LOG_SHEET } } }] }),
+      });
+      if (!add.ok) throw new Error('시트 추가 실패 HTTP ' + add.status);
+      await gAuthFetch('core', `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(G_LOG_SHEET + '!A1:G1')}?valueInputOption=RAW`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ values: [G_LOG_HEADERS] }),
+      });
+    }
+    gEnsureLogSheet.ok = true;
+    return true;
+  } catch (e) { console.warn('등록로그 시트 준비 실패:', e.message); return false; }
+}
+async function gReadLogRows(reqId) {
+  const res = await gAuthFetch('core', `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(G_LOG_SHEET + '!A2:G')}`);
+  const j = await res.json();
+  if (!res.ok) throw new Error((j.error && j.error.message) || `HTTP ${res.status}`);
+  return (j.values || []).filter(r => (r[0] || '') === reqId)
+    .map(r => ({ time: r[1] || '', step: r[2] || '', status: r[3] || '', msg: r[4] || '', ad: r[5] || '', detail: r[6] || '' }));
+}
+/* Google Ads에 광고가 실제로 생겼는지 — 기대한 광고명이 광고그룹 안에 보이는지 센다 */
+async function gCheckAdsCreated(data, state) {
+  const cid = String(data.광고계정ID || '').replace(/[^0-9]/g, '');
+  const expected = (data.영상목록 || []).map(v => v.광고명).filter(Boolean);
+  let campaignId = state.campaignId || String(data.캠페인ID || '').replace(/[^0-9]/g, '');
+  let groupId = state.groupId || String(data.광고그룹ID || '').replace(/[^0-9]/g, '');
+  if (!campaignId && data.캠페인명) {
+    // 새 캠페인: Make가 이름 뒤에 _시각 을 붙이므로 이름 포함 검색 (일시중지 상태도 포함)
+    const camps = await gLookupViaProxy('findcampaigns', { q: data.캠페인명, status: 'all' });
+    const mine = (camps || []).filter(c => !cid || String(c.customerId) === cid).sort((a, b) => Number(b.id) - Number(a.id));
+    if (mine[0]) campaignId = mine[0].id;
+  }
+  if (!groupId && campaignId) {
+    const groups = await gLookupViaProxy('adgroups', { customerId: cid, campaignId });
+    const g = (groups || []).find(x => x.name === data.광고그룹명);
+    if (g) groupId = g.id;
+  }
+  state.campaignId = campaignId; state.groupId = groupId;
+  if (!groupId) return { found: [], total: expected.length, groupId: '', campaignId };
+  const ads = await gLookupViaProxy('ads', { customerId: cid, adGroupId: groupId });
+  const names = (ads || []).map(a => a.name);
+  return { found: expected.filter(n => names.includes(n)), total: expected.length, groupId, campaignId, adsInGroup: names.length };
+}
+function gRenderTrack(t, idx, data, state) {
+  const box = document.getElementById(`gtrack_${t}_${idx}`);
+  const steps = document.getElementById(`gsteps_${t}_${idx}`);
+  const check = document.getElementById(`gcheck_${t}_${idx}`);
+  if (!box || !steps) return;
+  box.style.display = 'block';
+  const rows = state.rows || [];
+  const icon = s => s === '오류' ? '<span class="gt-ic err">✕</span>' : (s === '완료' ? '<span class="gt-ic ok">✓</span>' : '<span class="gt-ic run">●</span>');
+  steps.innerHTML = rows.length
+    ? rows.map(r => `<div class="gt-row ${r.status === '오류' ? 'err' : ''}">${icon(r.status)}<span class="gt-time">${esc((r.time || '').slice(11, 19))}</span><span class="gt-step">${esc(r.step)}${r.ad ? ` <small>${esc(r.ad)}</small>` : ''}</span><span class="gt-msg" title="${esc(r.detail || r.msg)}">${esc(r.msg)}${r.detail ? ' · ' + esc(r.detail).slice(0, 160) : ''}</span></div>`).join('')
+    : `<div class="gt-row"><span class="gt-ic run">●</span><span class="gt-step">Make 처리 대기 중</span><span class="gt-msg">${state.sheetOk === false ? '등록로그 시트를 읽을 수 없어요 — 구글 로그인 상태를 확인하세요' : (state.elapsed > 90000 ? 'Make 기록이 아직 없어요 — 시나리오가 꺼져 있거나 로그 모듈이 없는 버전일 수 있어요' : '기록이 올라오면 여기 단계별로 표시됩니다')}</span></div>`;
+  if (check) {
+    const c = state.check;
+    if (!c) check.textContent = 'Google Ads 확인 대기…';
+    else if (!c.groupId) check.textContent = `Google Ads 확인: 광고그룹이 아직 없어요 (${state.checks}회 확인)`;
+    else check.textContent = `Google Ads 확인: 광고 ${c.found.length}/${c.total}개 생성됨` + (c.found.length < c.total ? ` (${state.checks}회 확인)` : '');
+  }
+}
+async function gTrackRegistration(t, idx, data) {
+  const key = `${t}_${idx}`;
+  const state = gTrack[key] = { running: true, started: Date.now(), rows: [], check: null, checks: 0, sheetOk: null, wake: null, campaignId: '', groupId: '' };
+  const expected = (data.영상목록 || []).length;
+  state.sheetOk = await gEnsureLogSheet();
+  let n = 0;
+  while (state.running) {
+    await new Promise(r => { state.wake = r; setTimeout(r, G_TRACK_INTERVAL_MS); });
+    state.wake = null;
+    n++;
+    state.elapsed = Date.now() - state.started;
+    if (state.sheetOk) { try { state.rows = await gReadLogRows(data.요청ID); } catch (e) { console.warn('등록로그 읽기 실패:', e.message); } }
+    if (n % 3 === 0 || state.forceCheck) {
+      state.forceCheck = false;
+      try { state.check = await gCheckAdsCreated(data, state); state.checks++; } catch (e) { console.warn('광고 확인 실패:', e.message); }
+    }
+    gRenderTrack(t, idx, data, state);
+    const last = state.rows[state.rows.length - 1];
+    if (state.check && expected > 0 && state.check.found.length >= expected) {
+      state.running = false;
+      gUpdateCard(t, idx, '완료', `광고 ${state.check.found.length}개가 Google Ads에 생성됐어요 · 광고그룹 ${state.check.groupId}${last && last.status === '오류' ? ' (마지막 기록은 오류였지만 광고는 확인됨)' : ''}`);
+      return;
+    }
+    if (last && last.status === '오류') gUpdateCard(t, idx, '실패', `${last.step}에서 멈췄어요 — ${last.msg}${/재시도/.test(last.msg) ? '' : ' · Make가 자동 재시도하면 기록이 이어집니다'}`);
+    else if (last) gUpdateCard(t, idx, '진행중', `${last.step}${last.ad ? ' (' + last.ad + ')' : ''} ${last.status === '완료' ? '완료' : '진행 중'} — 다음 단계를 기다리는 중`);
+    if (state.elapsed > G_TRACK_MAX_MS) {
+      state.running = false;
+      gUpdateCard(t, idx, '주의', '25분 동안 완료를 확인하지 못했어요 — Make 실행 기록과 Google Ads에서 직접 확인해 주세요');
+      return;
+    }
+  }
+}
+function gTrackNow(t, idx) {
+  const st = gTrack[`${t}_${idx}`];
+  if (!st || !st.running) { showToast('이미 확인이 끝난 항목이에요', 'info'); return; }
+  st.forceCheck = true;
+  if (st.wake) st.wake();
 }
 async function gSubmitAd(t) {
   const data = gGetData(t); const isT2 = t === 'g2';
@@ -5476,14 +5470,26 @@ async function gSubmitAd(t) {
   if (!isT2 && !data.캠페인명) { showToast('캠페인명을 입력해주세요', 'error'); return; }
   if ((data.영상목록||[]).length + (data.업로드대기수||0) === 0) { showToast('영상을 1개 이상 추가해주세요', 'error'); return; }
   const btn = document.getElementById(`${t}_submitBtn`); btn.disabled = true; btn.textContent = '전송 중...';
+  const btnLabel = isT2 ? '세트 추가하기' : '캠페인 등록하기';
+  const restore = () => { btn.disabled = false; btn.textContent = btnLabel; };
   showToast('Make로 전송 중...', 'info');
-  const videoList = document.getElementById(isT2 ? `${t}_creative_list` : `${t}_video_list`);
-  const uploadBlocks = Array.from(videoList.children).filter(block => {
+  const videoList = document.getElementById(`${t}_creative_list`);
+  const blocks = Array.from(videoList.children);
+  // 붙이자마자 올리는 중인 파일이 있으면 끝날 때까지 기다린다
+  for (const block of blocks) {
+    const p = gUploadInFlight.get(block);
+    if (p) { showToast('영상 업로드 마무리 중...', 'info'); try { await p; } catch (e) { /* 아래에서 다시 올린다 */ } }
+  }
+  const uploadBlocks = blocks.filter(block => {
     const fileInput = block.querySelector('[data-role="파일첨부"]');
     const fileIdInput = block.querySelector('[data-role="파일ID"]');
     return fileInput && fileInput.files[0] && !(fileIdInput.value || '').trim();
   });
   const uploadedIds = [];   // 이번에 첨부로 올린 임시 파일 — Make가 등록 후 지운다
+  blocks.forEach(block => {
+    const id = (block.querySelector('[data-role="파일ID"]').value || '').trim();
+    if (id && block.dataset.uploadedId === id) uploadedIds.push(id);   // 미리 올려둔 파일
+  });
   if (uploadBlocks.length > 0) {
     showToast('영상 드라이브 업로드 중...', 'info');
     for (const block of uploadBlocks) {
@@ -5492,40 +5498,41 @@ async function gSubmitAd(t) {
         const fileIdInput = block.querySelector('[data-role="파일ID"]');
         const fileId = await uploadFileToDrive(fileInput.files[0]);
         fileIdInput.value = fileId;
+        block.dataset.uploadedId = fileId;
         uploadedIds.push(fileId);
-        const ms = block.querySelector('[data-role="파일방식"]') || block.querySelector('select');
-        if (ms) ms.value = 'drive';
+        const dz = block.querySelector('[data-role="dropzone"]');
+        if (dz) { let el = dz.querySelector('[data-role="upstat"]'); if (!el) { el = document.createElement('div'); el.dataset.role = 'upstat'; el.style.cssText = 'font-size:10px;margin-top:4px;'; dz.appendChild(el); } el.style.color = '#047857'; el.textContent = '✓ Drive 업로드 완료'; }
       } catch(err) {
         showToast('드라이브 업로드 실패: ' + err.message, 'error');
-        btn.disabled = false; btn.textContent = isT2 ? '세트 추가하기' : '캠페인 등록하기';
+        restore();
         return;
       }
     }
   }
-  data.영상목록 = isT2
-    ? gCollectCreatives('g2').filter(c => c.파일ID).map(c => { const o = { ...c }; delete o.block; delete o.파일첨부; return o; })
-    : gVideoPayload(t);
+  data.영상목록 = gCollectCreatives(t).filter(c => c.파일ID).map(c => { const o = { ...c }; delete o.block; delete o.파일첨부; return o; });
   delete data.업로드대기수;
   if (data.영상목록.length === 0) {
     showToast('전송할 영상이 없어요. 파일ID나 첨부파일을 확인해주세요', 'error');
-    btn.disabled = false; btn.textContent = isT2 ? '세트 추가하기' : '캠페인 등록하기';
+    restore();
     return;
   }
+  data.요청ID = gNewRequestId();
   gEnrichForMake(data, t, uploadedIds);
+  // Make가 진행 상황을 적을 시트를 미리 준비해 둔다 (실패해도 전송은 계속)
+  await gEnsureLogSheet();
   const idx = gAddCard(t, data);
   try {
     const res = await fetch(G_WEBHOOKS[t], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     if (res.ok) {
-      gUpdateCard(t, idx, '완료', 'Make로 전송됨 — 결과는 Make 실행 기록 / Google Ads에서 확인하세요');
+      gUpdateCard(t, idx, '진행중', 'Make가 받았어요 — 진행 상황을 확인하는 중입니다');
       showToast(isT2?'세트 추가 요청 완료!':'캠페인 등록 요청 완료!', 'success');
-      const usedCopies = isT2
-        ? (data.영상목록 || []).flatMap(v => (v.광고제목목록 || []).concat(v.설명목록 || []))
-        : gCollectTexts(t, 'headline').concat(gCollectTexts(t, 'desc'));
+      const usedCopies = (data.영상목록 || []).flatMap(v => (v.광고제목목록 || []).concat(v.설명목록 || []));
       gSaveCopies(usedCopies).catch(() => {});
+      gTrackRegistration(t, idx, data);
     }
-    else { gUpdateCard(t, idx, '실패', `HTTP ${res.status}`); showToast(`전송 실패 (${res.status})`, 'error'); }
-  } catch (err) { gUpdateCard(t, idx, '실패', '오류: ' + err.message); showToast('오류: ' + err.message, 'error'); }
-  btn.disabled = false; btn.textContent = isT2 ? '세트 추가하기' : '캠페인 등록하기';
+    else { gUpdateCard(t, idx, '실패', `Make 전송 실패 (HTTP ${res.status})`); showToast(`전송 실패 (${res.status})`, 'error'); }
+  } catch (err) { gUpdateCard(t, idx, '실패', '전송 오류: ' + err.message); showToast('오류: ' + err.message, 'error'); }
+  restore();
 }
 function gClearForm(t) {
   ['제작자','날짜','지역구분자'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
@@ -5534,23 +5541,15 @@ function gClearForm(t) {
   const deviceEl = document.getElementById(`${t}_기기`); if (deviceEl) deviceEl.value = 'ALL';
   ['ch_discover','ch_gmail','ch_display','ch_maps'].forEach(k => { const el = document.getElementById(`${t}_${k}`); if (el) { el.checked = false; gToggleChip(el); } });
   const audSel = document.getElementById(`${t}_잠재고객`); if (audSel) audSel.innerHTML = '<option value="">선택 안함</option>';
+  // 소재 카드는 두 탭 모두 같은 방식 — 비우고 1장부터 다시
+  const cl = document.getElementById(`${t}_creative_list`);
+  if (cl) { cl.innerHTML = ''; gAddCreativeBlock(t); }
+  const cc = document.getElementById(`${t}_creative_common`); if (cc) { cc.checked = true; gToggleCreativeCommon(t); }
   if (t === 'g2') {
-    const cl = document.getElementById('g2_creative_list');
-    if (cl) { cl.innerHTML = ''; gAddCreativeBlock('g2'); }
-    const cc = document.getElementById('g2_creative_common'); if (cc) { cc.checked = true; gToggleCreativeCommon('g2'); }
     gCampaignGeo.g2 = null;
     const rs = document.getElementById('g2_지역구분자'); if (rs) rs.disabled = false;
     const rh = document.getElementById('g2_region_hint'); if (rh) { rh.className = 'field-hint'; rh.textContent = '캠페인을 불러오면 지역 설정 여부를 확인합니다'; }
     document.getElementById('g2_sec_region')?.classList.remove('dimmed');
-  } else {
-    document.getElementById(`${t}_video_list`).innerHTML = '';
-    document.getElementById(`${t}_headline_list`).innerHTML = '';
-    document.getElementById(`${t}_desc_list`).innerHTML = '';
-    gAddVideoBlock(t); gAddVideoBlock(t); gAddVideoBlock(t);
-    const commonEl = document.getElementById(`${t}_video_common`); if (commonEl) { commonEl.checked = true; gToggleVideoCommon(t); }
-    gAddTextBlock(t,'headline'); gAddTextBlock(t,'desc');
-    const longList = document.getElementById(t + '_longheadline_list'); if (longList) { longList.innerHTML = ''; gLongHeadlineSeq[t] = 0; gAddLongHeadlineBlock(t); }
-    const ctaEl = document.getElementById(`${t}_CTA`); if (ctaEl) ctaEl.value = 'CONTACT_US';
   }
   ['최종URL','업체명'].forEach(f => { const el = document.getElementById(t + '_' + f); if (el) el.value = ''; });
   const chSel = document.getElementById(`${t}_유튜브채널`); if (chSel) chSel.value = 'UChg_3mq-CO2kFPkbXlTR3pw';
@@ -5570,15 +5569,7 @@ function gClearForm(t) {
   gPopulateDropdowns();
 }
 ['g1','g2'].forEach(t => {
-  if (t === 'g1') {
-    gAddVideoBlock(t); gAddVideoBlock(t); gAddVideoBlock(t);
-    const commonEl = document.getElementById(`${t}_video_common`);
-    if (commonEl) { commonEl.checked = true; gToggleVideoCommon(t); }
-    gAddTextBlock(t, 'headline'); gAddTextBlock(t, 'desc');
-    gAddLongHeadlineBlock(t);
-  } else {
-    gAddCreativeBlock('g2');
-  }
+  gAddCreativeBlock(t);
   ['유형','날짜','제작자'].forEach(field => {
     const el = document.getElementById(`${t}_${field}`);
     if (el) { el.addEventListener('input', () => gAutoGenNames(t)); el.addEventListener('change', () => gAutoGenNames(t)); }
