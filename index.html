@@ -186,6 +186,7 @@
   .chpick-item .nologo { font-size: 10px; color: #b45309; }
   .set-table .logo-prev { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); background: var(--bg); flex-shrink: 0; }
   .set-table .logo-prev.hidden { visibility: hidden; }
+  .creative-card .is-invalid, .creative-card input.is-invalid, .creative-card .creative-drop.is-invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(255,59,48,0.15) !important; }
   .set-table .logo-open { font-size: 11px; color: var(--blue); white-space: nowrap; text-decoration: none; flex-shrink: 0; }
   .set-table .logo-open:hover { text-decoration: underline; }
 
@@ -1048,7 +1049,8 @@
           <button class="btn-sm" onclick="gSwitchGoogleAccount()">다른 계정으로</button>
         </div>
         <div class="set-note"><b>Google Ads API</b> — 계정·잠재고객·캠페인·광고그룹을 직접 불러오려면 developer token이 필요합니다. 브라우저에서 막힐 수 있으니 아래 버튼으로 먼저 확인하세요.</div>
-        <div class="field-hint" id="g_proxy_status" style="margin:-6px 0 12px;">중계 함수 확인 중...</div>
+        <div class="field-hint" id="g_page_build" style="margin:-6px 0 4px;"></div>
+        <div class="field-hint" id="g_proxy_status" style="margin:0 0 12px;">중계 함수 확인 중...</div>
         <div class="row2">
           <div class="field"><label>developer token</label><input type="text" id="g_dev_token" placeholder="Google Ads API developer token"></div>
           <div class="field"><label>MCC(login customer) ID</label><input type="text" id="g_login_cid" placeholder="하이픈 없이 숫자만"></div>
@@ -1875,7 +1877,15 @@ async function gAdsSearch(customerId, query) {
 /* 배포된 api/gads.js 가 최신인지 — 로그인 없이 ping 으로 확인한다.
    잠재고객이 세그먼트로 나오는 문제는 대부분 이 파일이 구버전인 경우였다. */
 const G_PROXY_REQUIRED_BUILD = '2026-09-16';
+/* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
+   (파일을 새로 받을 때마다 올라간다) */
+const G_PAGE_BUILD = '2026-09-15.4';
+function gShowPageBuild() {
+  const el = document.getElementById('g_page_build');
+  if (el) { el.className = 'field-hint'; el.textContent = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요`; }
+}
 async function gCheckProxyBuild() {
+  gShowPageBuild();
   const el = document.getElementById('g_proxy_status');
   if (!el) return;
   if (!ENV.isHttp) { el.className = 'field-hint'; el.textContent = '배포된 주소에서만 확인할 수 있어요'; return; }
@@ -1887,7 +1897,14 @@ async function gCheckProxyBuild() {
     let j = null; try { j = JSON.parse(text); } catch (e) { /* JSON 아님 */ }
     if (!j) {
       el.className = 'field-hint err';
-      el.textContent = '⚠ 중계 함수가 응답하지 않아요 — api/gads.js 가 배포에 없거나 웹페이지를 돌려줬어요';
+      if (/FUNCTION_INVOCATION_FAILED/.test(text)) {
+        // 파일은 있는데 실행이 안 되는 경우 — 지금까지는 전부 HTML 파일이 gads.js 이름으로 올라간 경우였다
+        el.textContent = '⚠ api/gads.js 가 실행되지 못해요 (FUNCTION_INVOCATION_FAILED) — 파일 내용이 잘못 올라간 거예요. GitHub의 api 폴더에서 gads.js 를 새 gads.js 파일로 교체하세요 (HTML 파일이 아니라 js 파일!)';
+      } else if (res.status === 404) {
+        el.textContent = '⚠ 중계 함수가 없어요 (404) — GitHub 저장소의 api 폴더 안에 gads.js 가 있어야 해요';
+      } else {
+        el.textContent = `⚠ 중계 함수가 응답하지 않아요 (HTTP ${res.status}) — api/gads.js 가 배포에 없거나 웹페이지를 돌려줬어요`;
+      }
       return;
     }
     if (j.ok && j.build) {
@@ -4442,7 +4459,8 @@ const GOOGLE_CTA = [
 let GDB = {
   accounts: [], staff: [], googleRegions: [], audiencesByAccount: {},
   clinicNames: [], clinicToShortName: {}, youtubeChannels: [],
-  ctaTypes: [], logoByChannel: {}, logoByChannelId: {},
+  ctaTypes: GOOGLE_CTA,   // 고정 목록 — 카드가 처음 만들어질 때부터 CTA 목록이 있어야 기본값(문의하기)이 잡힌다
+  logoByChannel: {}, logoByChannelId: {},
 };
 const gSelectedAccount = { g1: '', g2: '' };
 const gNextSetNumber = { g2: 1 };
@@ -4473,8 +4491,8 @@ function gPopulateDropdowns() {
       if (prev) accSel.value = prev;
     }
     gFillRegionSelects(t);
-    // 카드 안 CTA 도 목록이 준비된 뒤 다시 채운다 (초기 카드는 목록 로드 전에 만들어짐)
-    if (t === 'g2' && typeof gCreativeBlocks === 'function') gCreativeBlocks('g2').forEach(b => { if (typeof gFillCta === 'function') gFillCta(b); });
+    // 카드 안 CTA 도 목록이 준비된 뒤 다시 채운다 (두 탭 모두)
+    if (typeof gCreativeBlocks === 'function') gCreativeBlocks(t).forEach(b => { if (typeof gFillCta === 'function') gFillCta(b); });
     const staffSel = document.getElementById(`${t}_제작자`);
     if (staffSel && staffSel.tagName === 'SELECT') {
       const prev = staffSel.value;
@@ -4496,14 +4514,6 @@ function gPopulateDropdowns() {
       campAccSel.innerHTML = '<option value="">계정을 선택하세요</option>';
       GDB.accounts.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; campAccSel.appendChild(o); });
       if (prev) campAccSel.value = prev;
-    }
-    const ctaSel = document.getElementById(`${t}_CTA`);
-    if (ctaSel) {
-      const prev = ctaSel.value;
-      ctaSel.innerHTML = '<option value="">자동</option>';
-      GDB.ctaTypes.forEach(c => { const o = document.createElement('option'); o.value = c.value; o.textContent = c.label; ctaSel.appendChild(o); });
-      const want = prev || 'CONTACT_US';
-      ctaSel.value = Array.from(ctaSel.options).some(o => o.value === want) ? want : '';
     }
   });
 }
@@ -4751,9 +4761,10 @@ function gUpdateCreativeCount(t) {
 function gFillCta(block) {
   const sel = block.querySelector('[data-role="CTA버튼"]');
   if (!sel) return;
+  // '자동'은 없다 — 항상 CTA를 하나 고른다 (기본 문의하기)
   const prev = sel.value;
-  sel.innerHTML = '<option value="">자동</option>';
-  (GDB.ctaTypes || []).forEach(c => {
+  sel.innerHTML = '';
+  GOOGLE_CTA.forEach(c => {
     const o = document.createElement('option'); o.value = c.value; o.textContent = c.label; sel.appendChild(o);
   });
   sel.value = (prev && Array.from(sel.options).some(x => x.value === prev)) ? prev : 'CONTACT_US';
@@ -5283,8 +5294,11 @@ function gEnrichForMake(d, t, uploadedIds) {
     v.광고제목JSON = jsonTexts(v.광고제목목록);
     v.긴광고제목JSON = jsonTexts(v.긴광고제목목록);
     v.설명JSON = jsonTexts(v.설명목록);
+    // CTA '자동'(빈값)이면 광고에 callToActions 를 아예 안 넣는다 → Google이 자동 선택. Make는 __CTA__ 만 바꿔 끼운다
+    v.CTA연산JSON = v.CTA버튼 ? '[{"asset":"__CTA__"}]' : '[]';
     v.직접업로드 = uploaded.has(v.파일ID) ? 'true' : 'false';
   });
+  d.CTA연산JSON = d.CTA버튼 ? '[{"asset":"__CTA__"}]' : '[]';
   const campId = digits(d.캠페인ID), groupId = digits(d.광고그룹ID);
   d.캠페인리소스명 = (cid && campId) ? `customers/${cid}/campaigns/${campId}` : '';
   d.광고그룹리소스명 = (cid && groupId) ? `customers/${cid}/adGroups/${groupId}` : '';
@@ -5304,6 +5318,34 @@ function gEnrichForMake(d, t, uploadedIds) {
   d.지역설정필요 = ops.length ? 'true' : 'false';
   d.업로드파일IDs = Array.from(uploaded);
   return d;
+}
+/* 소재 카드 필수값 점검 — 첫 문제만 돌려주고 그 칸으로 스크롤한다 */
+function gValidateCreatives(t) {
+  const common = document.getElementById(`${t}_creative_common`)?.checked;
+  const cards = gCollectCreatives(t);
+  const first = cards[0] || {};
+  const focus = (block, role) => {
+    const el = block && block.querySelector(`[data-role="${role}"]`);
+    if (el) { el.classList.add('is-invalid'); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); try { el.focus(); } catch (e) {} setTimeout(() => el.classList.remove('is-invalid'), 4000); }
+  };
+  for (let i = 0; i < cards.length; i++) {
+    const c = cards[i];
+    // 문구 공통이면 2번째 카드부터는 첫 카드 값을 쓴다
+    const url = (common && i > 0) ? first.최종URL : c.최종URL;
+    const heads = (common && i > 0) ? first.광고제목목록 : c.광고제목목록;
+    const longs = (common && i > 0) ? first.긴광고제목목록 : c.긴광고제목목록;
+    const descs = (common && i > 0) ? first.설명목록 : c.설명목록;
+    const target = (common && i > 0) ? cards[0].block : c.block;
+    if (!c.파일ID && !c.파일첨부) { focus(c.block, 'dropzone'); return `소재 ${i + 1}: 영상을 첨부하거나 파일ID를 넣어주세요`; }
+    if (!(c.유튜브제목 || '').trim()) { focus(c.block, '유튜브제목'); return `소재 ${i + 1}: YouTube 제목이 비어 있어요`; }
+    if (!/^https?:\/\/\S+$/i.test(url || '')) { focus(target, '최종URL'); return `소재 ${i + 1}: 최종 URL이 비어 있거나 https:// 로 시작하지 않아요`; }
+    if (!(heads || []).length) { focus(target, '광고제목'); return `소재 ${i + 1}: 광고제목을 1개 이상 넣어주세요`; }
+    if (!(longs || []).length) { focus(target, '긴광고제목'); return `소재 ${i + 1}: 긴 광고제목을 1개 이상 넣어주세요`; }
+    if (!(descs || []).length) { focus(target, '설명'); return `소재 ${i + 1}: 설명을 1개 이상 넣어주세요`; }
+    const cta = (common && i > 0) ? first.CTA버튼 : c.CTA버튼;
+    if (!cta) { focus(target, 'CTA버튼'); return `소재 ${i + 1}: CTA 버튼을 골라주세요`; }
+  }
+  return '';
 }
 const gRows = { g1: [], g2: [] };
 function gAddCard(t, data) {
@@ -5469,6 +5511,9 @@ async function gSubmitAd(t) {
   if (isT2 && !data.캠페인ID) { showToast('캠페인 ID를 입력해주세요', 'error'); return; }
   if (!isT2 && !data.캠페인명) { showToast('캠페인명을 입력해주세요', 'error'); return; }
   if ((data.영상목록||[]).length + (data.업로드대기수||0) === 0) { showToast('영상을 1개 이상 추가해주세요', 'error'); return; }
+  // 구글이 거절할 게 뻔한 빈칸은 보내기 전에 잡는다 (최종 URL 없이 보내면 final_urls 오류로 멈춘다)
+  const problem = gValidateCreatives(t);
+  if (problem) { showToast(problem, 'error'); return; }
   const btn = document.getElementById(`${t}_submitBtn`); btn.disabled = true; btn.textContent = '전송 중...';
   const btnLabel = isT2 ? '세트 추가하기' : '캠페인 등록하기';
   const restore = () => { btn.disabled = false; btn.textContent = btnLabel; };
@@ -5578,6 +5623,7 @@ function gClearForm(t) {
 document.getElementById('g1_시작일').value = new Date().toISOString().split('T')[0];
 
 /* 시작 */
+console.log(`[광고 자동등록] 페이지 빌드 ${G_PAGE_BUILD}`);
 loadSettings();
 applySettingsToDB();
 populateDropdowns();
