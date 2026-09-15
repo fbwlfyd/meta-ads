@@ -4489,8 +4489,11 @@ const gNextSetNumber = { g2: 1 };
 
 function gGetAccountName(t) {
   if (t === 'g1') return document.getElementById('g1_계정명').value;
+  // 세트 추가 탭은 캠페인을 고르면 계정이 정해진다 — 설정 목록에 없는 계정이어도 그 이름을 그대로 쓴다
   const sel = document.getElementById('g2_계정명');
-  return sel ? sel.value : gSelectedAccount.g2;
+  if (sel && sel.value) return sel.value;
+  const disp = document.getElementById('g2_계정명_display');
+  return (disp && disp.value) || gSelectedAccount.g2 || (gPickedCampaign.g2 && gPickedCampaign.g2.customerName) || '';
 }
 function gSetAccountName(t, name) {
   if (t === 'g1') document.getElementById('g1_계정명').value = name;
@@ -5400,6 +5403,53 @@ function gGetData(t) {
   }
   return d;
 }
+/* Make 시나리오가 그대로 꽂아 쓰기 좋게 값을 덧붙인다 (기존 필드는 건드리지 않는다)
+   · 캠페인리소스명 / 광고그룹리소스명 : customers/… 형태 — Google Ads API가 요구하는 이름
+   · 광고그룹기준연산JSON            : 지역(criterion 또는 핀 반경)·언어·잠재고객 연산 목록.
+                                       Make에서는 __AD_GROUP__ 만 새 광고그룹 이름으로 바꿔 끼우면 된다
+   · 소재별 광고제목JSON 등            : [{"text":"…"}] 조각 — 광고 생성 본문에 바로 넣는다
+   · 직접업로드                       : 이번에 첨부해서 올린 파일이면 true (Make가 끝나고 지운다) */
+function gEnrichForMake(d, t, uploadedIds) {
+  const digits = v => String(v || '').split('/').pop().replace(/[^0-9]/g, '');
+  const cid = digits(d.광고계정ID);
+  const jsonTexts = arr => JSON.stringify((arr || []).map(x => String(x || '').trim()).filter(Boolean).map(text => ({ text })));
+  const uploaded = new Set(uploadedIds || []);
+  d.광고제목JSON = jsonTexts(d.광고제목목록);
+  d.긴광고제목JSON = jsonTexts(d.긴광고제목목록);
+  d.설명JSON = jsonTexts(d.설명목록);
+  (d.영상목록 || []).forEach((v, i) => {
+    v.순번 = i + 1;
+    if (!v.광고명) v.광고명 = gAdNameFor(t, i + 1) || d.광고그룹명 || '';
+    if (!(v.광고제목목록 || []).length) v.광고제목목록 = (d.광고제목목록 || []).slice();
+    if (!(v.긴광고제목목록 || []).length) v.긴광고제목목록 = (d.긴광고제목목록 || []).slice();
+    if (!(v.설명목록 || []).length) v.설명목록 = (d.설명목록 || []).slice();
+    if (!v.최종URL) v.최종URL = d.최종URL || '';
+    if (!v.CTA버튼) v.CTA버튼 = d.CTA버튼 || '';
+    v.광고제목JSON = jsonTexts(v.광고제목목록);
+    v.긴광고제목JSON = jsonTexts(v.긴광고제목목록);
+    v.설명JSON = jsonTexts(v.설명목록);
+    v.직접업로드 = uploaded.has(v.파일ID) ? 'true' : 'false';
+  });
+  const campId = digits(d.캠페인ID), groupId = digits(d.광고그룹ID);
+  d.캠페인리소스명 = (cid && campId) ? `customers/${cid}/campaigns/${campId}` : '';
+  d.광고그룹리소스명 = (cid && groupId) ? `customers/${cid}/adGroups/${groupId}` : '';
+  const ops = [];
+  if (d.등록모드 !== 'EXISTING_ADGROUP') {   // 기존 그룹에 광고만 넣을 땐 타겟을 다시 걸지 않는다
+    if (d.지역타겟방식 === 'PROXIMITY') {
+      (d.구글좌표목록 || []).forEach(c => ops.push({ create: { ad_group: '__AD_GROUP__', proximity: {
+        geo_point: { latitude_in_micro_degrees: Math.round(Number(c.latitude) * 1e6), longitude_in_micro_degrees: Math.round(Number(c.longitude) * 1e6) },
+        radius: Number(c.radiusKm) || 10, radius_units: 'KILOMETERS' } } }));
+    } else if (d.지역타겟방식 === 'LOCATION' && d.구글지역ID) {
+      ops.push({ create: { ad_group: '__AD_GROUP__', location: { geo_target_constant: `geoTargetConstants/${digits(d.구글지역ID)}` } } });
+    }
+    ops.push({ create: { ad_group: '__AD_GROUP__', language: { language_constant: 'languageConstants/1012' } } });
+    if (cid && digits(d.잠재고객ID)) ops.push({ create: { ad_group: '__AD_GROUP__', audience: { audience: `customers/${cid}/audiences/${digits(d.잠재고객ID)}` } } });
+  }
+  d.광고그룹기준연산JSON = JSON.stringify(ops);
+  d.지역설정필요 = ops.length ? 'true' : 'false';
+  d.업로드파일IDs = Array.from(uploaded);
+  return d;
+}
 const gRows = { g1: [], g2: [] };
 function gAddCard(t, data) {
   const idx = gRows[t].length; gRows[t].push(data);
@@ -5433,6 +5483,7 @@ async function gSubmitAd(t) {
     const fileIdInput = block.querySelector('[data-role="파일ID"]');
     return fileInput && fileInput.files[0] && !(fileIdInput.value || '').trim();
   });
+  const uploadedIds = [];   // 이번에 첨부로 올린 임시 파일 — Make가 등록 후 지운다
   if (uploadBlocks.length > 0) {
     showToast('영상 드라이브 업로드 중...', 'info');
     for (const block of uploadBlocks) {
@@ -5441,6 +5492,7 @@ async function gSubmitAd(t) {
         const fileIdInput = block.querySelector('[data-role="파일ID"]');
         const fileId = await uploadFileToDrive(fileInput.files[0]);
         fileIdInput.value = fileId;
+        uploadedIds.push(fileId);
         const ms = block.querySelector('[data-role="파일방식"]') || block.querySelector('select');
         if (ms) ms.value = 'drive';
       } catch(err) {
@@ -5459,6 +5511,7 @@ async function gSubmitAd(t) {
     btn.disabled = false; btn.textContent = isT2 ? '세트 추가하기' : '캠페인 등록하기';
     return;
   }
+  gEnrichForMake(data, t, uploadedIds);
   const idx = gAddCard(t, data);
   try {
     const res = await fetch(G_WEBHOOKS[t], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
