@@ -5283,8 +5283,11 @@ function gEnrichForMake(d, t, uploadedIds) {
     v.광고제목JSON = jsonTexts(v.광고제목목록);
     v.긴광고제목JSON = jsonTexts(v.긴광고제목목록);
     v.설명JSON = jsonTexts(v.설명목록);
+    // CTA '자동'(빈값)이면 광고에 callToActions 를 아예 안 넣는다 → Google이 자동 선택. Make는 __CTA__ 만 바꿔 끼운다
+    v.CTA연산JSON = v.CTA버튼 ? '[{"asset":"__CTA__"}]' : '[]';
     v.직접업로드 = uploaded.has(v.파일ID) ? 'true' : 'false';
   });
+  d.CTA연산JSON = d.CTA버튼 ? '[{"asset":"__CTA__"}]' : '[]';
   const campId = digits(d.캠페인ID), groupId = digits(d.광고그룹ID);
   d.캠페인리소스명 = (cid && campId) ? `customers/${cid}/campaigns/${campId}` : '';
   d.광고그룹리소스명 = (cid && groupId) ? `customers/${cid}/adGroups/${groupId}` : '';
