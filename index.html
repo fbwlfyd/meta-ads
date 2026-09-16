@@ -268,7 +268,8 @@
   .gvideo { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px; margin-bottom: 8px; background: var(--white); }
   .gvideo-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
   .gvideo-title { font-size: 12px; font-weight: 600; color: var(--text1); flex: 1; }
-  .gvideo-method { height: 26px !important; width: auto !important; font-size: 11px !important; padding: 0 22px 0 8px !important; }
+  .gvideo-link { display: inline-block; font-size: 11px; color: var(--blue); cursor: pointer; margin-top: 4px; user-select: none; }
+  .gvideo-link:hover { text-decoration: underline; }
   .gvideo .field textarea { height: 40px; padding: 8px 12px; resize: vertical; }
   .btn-mini-add { width: 100%; height: 26px; border: 1px dashed var(--border2); border-radius: 6px; background: none; color: var(--text3); font-family: inherit; font-size: 11px; cursor: pointer; margin-top: 2px; }
   .btn-mini-add:hover { border-color: var(--g-red); color: var(--g-red); }
@@ -1910,7 +1911,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-17';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-16.1';
+const G_PAGE_BUILD = '2026-09-16.3';
 function gShowPageBuild() {
   const el = document.getElementById('g_page_build');
   if (el) { el.className = 'field-hint'; el.textContent = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요`; }
@@ -4839,7 +4840,7 @@ function gAdNameFor(t, i) {
   const sub = (gAdSubStart[t] || 1) + i - 1;
   let refName = region ? (region.refName || '') : '';
   if (t === 'g2' && gCampaignGeo.g2 && gCampaignGeo.g2.length > 0) refName = '';
-  return [clinicName, '임플란트', refName, `1.${sub}U`, staffObj ? staffObj.id : ''].filter(Boolean).join(' ');
+  return [clinicName, '임플란트', refName, `${gAdPrefix[t] || 1}.${sub}U`, staffObj ? staffObj.id : ''].filter(Boolean).join(' ');
 }
 /* =========================================================
    Google 광고 소재 카드 (세트 추가 탭) — 메타와 동일한 카드 UI
@@ -4868,9 +4869,11 @@ function gOnCardFileSelected(input) {
   const file = input.files[0]; if (!file) return;
   setCreativeDropText(dz, file.name);
   const t = block.id.startsWith('g1') ? 'g1' : 'g2';
-  // 새 파일을 붙이면 이전 업로드 기록은 버린다
+  // 새 파일을 붙이면 이전 업로드 기록·Drive ID는 버린다
   slot.dataset.uploadedId = '';
   slot.querySelector('[data-role="파일ID"]').value = '';
+  const dw = slot.querySelector('[data-role="drive_wrap"]'); const dl = slot.querySelector('[data-role="drive_toggle"]');
+  if (dw) dw.style.display = 'none'; if (dl) dl.textContent = 'Drive에 있는 영상이면 링크·파일ID로 넣기';
   // YouTube 제목이 비어 있으면 파일명으로 채워 둔다 (고쳐도 됨)
   const title = slot.querySelector('[data-role="유튜브제목"]');
   if (title && !title.value.trim()) title.value = file.name.replace(/\.[^.]+$/, '');
@@ -4898,7 +4901,12 @@ async function gPrefetchDriveUpload(t, slot) {
   })();
   gUploadInFlight.set(slot, p);
   try { await p; }
-  catch (e) { badge('미리 올리기 실패 — 등록할 때 다시 올립니다 (' + e.message + ')', 'var(--red)'); slot.dataset.uploadedId = ''; slot.querySelector('[data-role="파일ID"]').value = ''; }
+  catch (e) {
+    badge('미리 올리기 실패 — 등록할 때 다시 올립니다 (' + e.message + ')', 'var(--red)');
+    const el = dz.querySelector('[data-role="upstat"]');
+    if (el) { const a = document.createElement('a'); a.href = '#'; a.textContent = ' 다시 올리기'; a.style.cssText = 'color:var(--blue);font-weight:600;margin-left:4px;'; a.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); gPrefetchDriveUpload(t, slot); }; el.appendChild(a); }
+    slot.dataset.uploadedId = ''; slot.querySelector('[data-role="파일ID"]').value = '';
+  }
   finally { if (gUploadInFlight.get(slot) === p) gUploadInFlight.delete(slot); }
 }
 
@@ -4991,16 +4999,41 @@ function gCardTexts(block, role) {
 function gVideoSlotHtml(t, n) {
   return `<div class="gvideo" data-role="video">
     <div class="gvideo-head"><span class="gvideo-title" data-role="video_no">영상 ${n}</span>
-      <select data-role="파일방식" class="gvideo-method" onchange="gOnSlotFileMethod(this)"><option value="upload" selected>직접 첨부</option><option value="drive">Drive 파일ID</option></select>
       <button type="button" class="creative-remove" title="이 영상 빼기" onclick="gRemoveVideoSlot('${t}', this)">✕</button></div>
     <div data-role="upload_wrap">
       <div class="creative-drop" data-role="dropzone" onclick="gOpenCardFile(this)" ondragover="onCreativeDragOver(event,this)" ondragleave="onCreativeDragLeave(this)" ondrop="gOnCardDrop(event,this)">📎 클릭하거나 드래그<br><span style="font-size:11px;color:var(--text3);">영상 (mp4)</span></div>
       <input type="file" data-role="파일첨부" accept="video/*" style="display:none;" onchange="gOnCardFileSelected(this)">
     </div>
-    <div data-role="drive_wrap" style="display:none;"><input type="text" data-role="파일ID" placeholder="Drive 링크 붙여넣기" oninput="extractDriveId(this)"></div>
+    <span class="gvideo-link" data-role="drive_toggle" onclick="gToggleSlotDrive(this)">Drive에 있는 영상이면 링크·파일ID로 넣기</span>
+    <div data-role="drive_wrap" style="display:none;margin-top:4px;"><input type="text" data-role="파일ID" placeholder="Drive 링크 또는 파일ID 붙여넣기" oninput="extractDriveId(this);gOnSlotDriveInput(this)"></div>
     <div class="field" style="margin:6px 0 4px;"><input type="text" data-role="유튜브제목" placeholder="YouTube 제목"></div>
     <div class="field" style="margin:0;"><textarea data-role="유튜브설명" placeholder="YouTube 설명 (#shorts 등)"></textarea></div>
   </div>`;
+}
+/* 파일 방식은 따로 고르지 않는다 — 붙인 파일이 있으면 직접 첨부, Drive ID를 넣었으면 그걸 쓴다 */
+function gSlotMethod(slot) {
+  const id = (slot.querySelector('[data-role="파일ID"]').value || '').trim();
+  return (id && id !== (slot.dataset.uploadedId || '')) ? 'drive' : 'upload';
+}
+function gToggleSlotDrive(link) {
+  const slot = link.closest('[data-role="video"]'); if (!slot) return;
+  const wrap = slot.querySelector('[data-role="drive_wrap"]');
+  const open = wrap.style.display === 'none';
+  wrap.style.display = open ? 'block' : 'none';
+  link.textContent = open ? '접기' : 'Drive에 있는 영상이면 링크·파일ID로 넣기';
+  if (open) { try { wrap.querySelector('input').focus({ preventScroll: true }); } catch (e) {} }
+}
+function gOnSlotDriveInput(input) {
+  const slot = input.closest('[data-role="video"]'); if (!slot) return;
+  const dz = slot.querySelector('[data-role="dropzone"]');
+  const id = (input.value || '').trim();
+  if (id && id !== (slot.dataset.uploadedId || '')) {
+    dz.innerHTML = `🔗 Drive 파일 사용<br><span style="font-size:11px;color:var(--text3);">${esc(id)} · 클릭하면 대신 파일 첨부</span>`;
+  } else if (!id) {
+    const f = slot.querySelector('[data-role="파일첨부"]');
+    if (f && f.files[0]) setCreativeDropText(dz, f.files[0].name);
+    else dz.innerHTML = '📎 클릭하거나 드래그<br><span style="font-size:11px;color:var(--text3);">영상 (mp4)</span>';
+  }
 }
 function gAddVideoSlot(t, blockOrId) {
   const block = typeof blockOrId === 'string' ? document.getElementById(blockOrId) : blockOrId; if (!block) return null;
@@ -5023,12 +5056,6 @@ function gRenumberVideoSlots(t, block) {
   const cnt = block.querySelector('[data-role="video_count"]'); if (cnt) cnt.textContent = `${slots.length}/${G_VIDEOS_PER_AD}`;
   const addBtn = block.querySelector('[data-role="add_video"]'); if (addBtn) addBtn.style.display = slots.length >= G_VIDEOS_PER_AD ? 'none' : '';
   gUpdateCreativeCount(t);
-}
-function gOnSlotFileMethod(sel) {
-  const slot = sel.closest('[data-role="video"]'); if (!slot) return;
-  const m = sel.value;
-  slot.querySelector('[data-role="drive_wrap"]').style.display = m === 'drive' ? 'block' : 'none';
-  slot.querySelector('[data-role="upload_wrap"]').style.display = m === 'upload' ? 'block' : 'none';
 }
 function gAddCreativeBlock(t) {
   const list = document.getElementById(`${t}_creative_list`);
@@ -5076,7 +5103,7 @@ function gAddCreativeBlock(t) {
 function gCollectCreatives(t) {
   return gCreativeBlocks(t).map((b, i) => {
     const videos = gVideoSlots(b).map((s, j) => {
-      const method = s.querySelector('[data-role="파일방식"]').value;
+      const method = gSlotMethod(s);
       const fileInput = s.querySelector('[data-role="파일첨부"]');
       const file = (method === 'upload' && fileInput && fileInput.files[0]) ? fileInput.files[0] : null;
       return {
@@ -5158,14 +5185,43 @@ function gParseSetSeq(name) {
   return m ? parseInt(m[1], 10) : 0;
 }
 function gMaxSetSeq(list) { let mx = 0; (list || []).forEach(x => { const n = gParseSetSeq(x.name); if (n > mx) mx = n; }); return mx; }
-// 광고 번호는 그룹 번호와 무관하게 항상 1.N — 그룹 안에서 가장 큰 N을 찾는다
-function gMaxAdSubSeq(list) {
+/* 광고 번호 "A.BU" — A는 사람(팀)마다 다르게 쓰는 접두 번호(1.x 또는 그룹 번호 3.x), B가 광고 개수.
+   기존 광고 이름을 보고 A를 그대로 따르고 B만 이어서 매긴다 */
+function gParseAdNums(name) { const m = String(name || '').match(/(\d+)\.(\d+)U(?![0-9A-Za-z가-힣])/); return m ? { a: parseInt(m[1], 10), b: parseInt(m[2], 10) } : null; }
+function gAdPrefixOf(list) {
+  const counts = {};
+  (list || []).forEach(x => { const p = gParseAdNums(x.name); if (p) counts[p.a] = (counts[p.a] || 0) + 1; });
+  let best = null;
+  Object.keys(counts).forEach(k => { if (best === null || counts[k] > counts[best] || (counts[k] === counts[best] && Number(k) > Number(best))) best = k; });
+  return best === null ? null : Number(best);
+}
+// 그룹 안에서 (같은 접두 번호의) 가장 큰 B
+function gMaxAdSubSeq(list, prefix) {
   let mx = 0;
   (list || []).forEach(x => {
     const re = /(\d+)\.(\d+)U(?![0-9A-Za-z가-힣])/g; let m;
-    while ((m = re.exec(x.name || '')) !== null) { const v = parseInt(m[2], 10); if (v > mx) mx = v; }
+    while ((m = re.exec(x.name || '')) !== null) { if (prefix !== undefined && prefix !== null && parseInt(m[1], 10) !== prefix) continue; const v = parseInt(m[2], 10); if (v > mx) mx = v; }
   });
   return mx;
+}
+const gAdPrefix = { g1: 1, g2: 1 };        // 지금 카드 이름에 쓸 접두 번호
+const gNewGroupPrefix = { g2: 1 };          // 새 그룹 모드에서 쓸 접두 번호 (캠페인의 최근 그룹에서 배움)
+const gPrefixRule = { g2: { mode: 'fixed', value: 1 } };   // 'own' = 그룹 번호를 접두로(3U → 3.x), 'fixed' = 늘 같은 번호(1.x)
+/* 캠페인의 최근 그룹 광고 이름을 보고 새 그룹의 접두 번호를 정한다:
+   최근 그룹이 자기 그룹 번호를 접두로 썼으면(3U 그룹에 3.x) 새 그룹도 자기 번호, 아니면(1.x 고정) 그 번호 그대로 */
+async function gLearnAdPrefixForNewGroup(t, groups, customerId) {
+  gPrefixRule.g2 = { mode: 'fixed', value: 1 }; gNewGroupPrefix.g2 = 1;
+  const withSeq = (groups || []).map(g => ({ g, seq: gParseSetSeq(g.name) })).filter(x => x.seq > 0).sort((a, b) => b.seq - a.seq);
+  const latest = withSeq[0];
+  if (latest) {
+    try {
+      const ads = await gLookup('ads', { customerId, adGroupId: latest.g.id });
+      const p = gAdPrefixOf(ads);
+      if (p !== null) gPrefixRule.g2 = (p === latest.seq) ? { mode: 'own', value: p } : { mode: 'fixed', value: p };
+    } catch (e) { /* 못 읽으면 1.x */ }
+  }
+  gNewGroupPrefix.g2 = gPrefixRule.g2.mode === 'own' ? (gNextSetNumber.g2 || 1) : gPrefixRule.g2.value;
+  if (!gSelectedGroup.g2) { gAdPrefix[t] = gNewGroupPrefix.g2; gAutoGenNames(t); }
 }
 
 /* 치과 + 지역으로 모든 계정을 훑어 캠페인을 찾는다 (계정 선택 불필요) */
@@ -5309,7 +5365,7 @@ async function gLoadCampaign(t, campaignId, campaignName) {
   const disp = document.getElementById(`${t}_캠페인명_display`);
   if (disp) disp.textContent = campaignName ? `📌 ${campaignName}` : `📌 캠페인 ID ${campaignId}`;
   gToggleCampaignClear(t, true);
-  gSelectedGroup.g2 = null; gAdSubStart.g2 = 1; gClearAdSublist(); gApplyG2Mode();
+  gSelectedGroup.g2 = null; gAdSubStart.g2 = 1; gAdPrefix.g2 = 1; gNewGroupPrefix.g2 = 1; gClearAdSublist(); gApplyG2Mode();
   // 캠페인명에서 지역 표기 추정
   const m = String(campaignName || '').match(/([가-힣]+)타겟/);
   if (m) {
@@ -5330,6 +5386,7 @@ async function gLoadCampaign(t, campaignId, campaignName) {
   }
   gNextSetNumber.g2 = gMaxSetSeq(groups) + 1;
   gAutoGenNames(t);
+  gLearnAdPrefixForNewGroup(t, groups, cid);   // 최근 그룹의 광고 이름 규칙(1.x / 3.x)을 새 그룹에도 이어 쓴다
   if (groups.length === 0) {
     if (box) box.innerHTML = '<div class="adset-empty">이 캠페인에 광고그룹이 없어요 — 새로 만들어집니다</div>';
     if (hint) hint.textContent = '';
@@ -5348,7 +5405,7 @@ async function gToggleGroupSelect(id, name) {
   const already = gSelectedGroup.g2 && gSelectedGroup.g2.id === id;
   document.querySelectorAll('#g2_group_list .adset-row').forEach(r => r.classList.remove('selected'));
   if (already) {
-    gSelectedGroup.g2 = null; gAdSubStart.g2 = 1; gClearAdSublist(); gApplyG2Mode(); gAutoGenNames('g2');
+    gSelectedGroup.g2 = null; gAdSubStart.g2 = 1; gAdPrefix.g2 = gNewGroupPrefix.g2; gClearAdSublist(); gApplyG2Mode(); gAutoGenNames('g2');
     return;
   }
   gSelectedGroup.g2 = { id, name, seq: gParseSetSeq(name) || 1 };
@@ -5363,14 +5420,17 @@ async function gToggleGroupSelect(id, name) {
     if (hint) hint.textContent = `선택됨 · ${name}`;
     return;
   }
-  gAdSubStart.g2 = gMaxAdSubSeq(ads) + 1;
+  // 접두 번호는 이 그룹의 기존 광고를 따른다 (없으면 새 그룹 규칙, 그것도 없으면 1)
+  const learned = gAdPrefixOf(ads);
+  gAdPrefix.g2 = learned !== null ? learned : (gPrefixRule.g2.mode === 'own' ? (gParseSetSeq(name) || gPrefixRule.g2.value) : gPrefixRule.g2.value);
+  gAdSubStart.g2 = gMaxAdSubSeq(ads, learned) + 1;
   gAutoGenNames('g2');
   gRenderAdSublist(ads.length ? ads.map(a => {
       const on = String(a.status || '').toUpperCase() === 'ENABLED';
       const nm = (a.name || '(이름 없음)').replace(/</g, '&lt;');
       return `<div class="ad-subrow"><span class="dot"></span><span class="nm" title="${nm}">${nm}</span><span class="adset-status ${on ? 'on' : ''}">${on ? '게재중' : (a.status || '')}</span></div>`;
     }).join('') : '<div class="ad-subloading">이 그룹에 광고가 없어요</div>',
-    ads.length ? `${ads.length}개 · 새 광고는 1.${gAdSubStart.g2}U 부터` : '광고 없음 · 1.1U 부터 시작');
+    ads.length ? `${ads.length}개 · 새 광고는 ${gAdPrefix.g2}.${gAdSubStart.g2}U 부터 (기존 이름 규칙을 따름)` : `광고 없음 · ${gAdPrefix.g2}.1U 부터 시작`);
   if (hint) hint.textContent = `선택됨 · ${name}`;
 }
 function gRenderAdSublist(html, hintText) {
@@ -5401,7 +5461,7 @@ function gToggleManualCampaignId(t) {
 function gClearCampaignSelection(t) {
   const idEl = document.getElementById(`${t}_캠페인ID`); if (idEl) idEl.value = '';
   const disp = document.getElementById(`${t}_캠페인명_display`); if (disp) disp.textContent = '';
-  gSelectedGroup.g2 = null; gAdSubStart.g2 = 1; gClearAdSublist(); gApplyG2Mode();
+  gSelectedGroup.g2 = null; gAdSubStart.g2 = 1; gAdPrefix.g2 = 1; gNewGroupPrefix.g2 = 1; gPrefixRule.g2 = { mode: 'fixed', value: 1 }; gClearAdSublist(); gApplyG2Mode();
   const box = document.getElementById('g2_group_list');
   if (box) box.innerHTML = '<div class="adset-empty">위에서 캠페인을 먼저 선택하세요</div>';
   const hint = document.getElementById('g2_group_hint'); if (hint) hint.textContent = '캠페인을 불러오면 목록이 표시돼요';
@@ -5910,7 +5970,7 @@ function gClearForm(t) {
     const campDisp = document.getElementById('g2_캠페인명_display'); if (campDisp) campDisp.textContent = '';
     const campIdEl = document.getElementById('g2_캠페인ID'); if (campIdEl) campIdEl.value = '';
     const campListBox = document.getElementById('g2_캠페인목록'); if (campListBox) { campListBox.classList.remove('show'); campListBox.innerHTML = ''; }
-    gSelectedGroup.g2 = null; gAdSubStart.g2 = 1; gClearAdSublist(); gApplyG2Mode(); gToggleCampaignClear('g2', false);
+    gSelectedGroup.g2 = null; gAdSubStart.g2 = 1; gAdPrefix.g2 = 1; gNewGroupPrefix.g2 = 1; gClearAdSublist(); gApplyG2Mode(); gToggleCampaignClear('g2', false);
     gPickedCampaign.g2 = null; gManualLookedUp.g2 = '';
     const gBox = document.getElementById('g2_group_list');
     if (gBox) gBox.innerHTML = '<div class="adset-empty">위에서 캠페인을 먼저 선택하세요</div>';
