@@ -326,6 +326,31 @@
   .btn-sm.blue { background: var(--blue); border-color: var(--blue); color: white; }
   .btn-sm.blue:hover { background: #0066dd; color: white; }
   .set-note { font-size: 12px; color: var(--text2); background: var(--bg); border-radius: var(--radius-sm); padding: 10px 12px; line-height: 1.55; margin-bottom: 14px; }
+  .geo-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; align-items: center; }
+  .geo-chip { padding: 5px 11px; border: 1px solid var(--border2); border-radius: 20px; font-size: 11px; cursor: pointer; background: var(--white); color: var(--text2); user-select: none; white-space: nowrap; }
+  .geo-chip.on { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); font-weight: 600; }
+  .geo-chip.g.on { border-color: var(--g-red); color: var(--g-red); background: var(--g-red-bg); }
+  .region-result .kind { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; background: var(--bg); color: var(--text2); flex-shrink: 0; }
+  .region-result .kind.pin { background: var(--blue-bg); color: var(--blue); }
+  .btn-pin { height: 34px; padding: 0 9px; border: 1px solid var(--border2); border-radius: 6px; background: var(--white); cursor: pointer; font-size: 13px; flex-shrink: 0; font-family: inherit; }
+  .btn-pin:hover { border-color: var(--blue); background: var(--blue-bg); }
+  .btn-pin.has { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); font-weight: 600; font-size: 11px; }
+  /* 지역 핀(반경) 지도 */
+  #pinModal { z-index: 10000; }
+  .pin-modal { width: 100%; max-width: 1020px; height: 86vh; background: var(--white); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+  .pin-body { flex: 1; display: flex; min-height: 0; }
+  .pin-map { flex: 1; min-width: 0; background: var(--bg); position: relative; }
+  .pin-map-msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 12px; color: var(--text3); padding: 24px; line-height: 1.7; }
+  .pin-side { width: 320px; flex-shrink: 0; border-left: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
+  .pin-side-inner { padding: 14px 16px; overflow-y: auto; }
+  .pin-row { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; font-size: 12px; cursor: pointer; background: var(--white); }
+  .pin-row.sel { border-color: var(--blue); background: var(--blue-bg); }
+  .pin-row .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pin-row .rd { color: var(--text3); font-size: 11px; flex-shrink: 0; }
+  .pin-num { width: 20px; height: 20px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .pin-marker { background: none; border: none; }
+  .pin-marker span { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50% 50% 50% 0; background: var(--blue); color: #fff; font-size: 11px; font-weight: 700; transform: rotate(-45deg); box-shadow: 0 2px 6px rgba(0,0,0,0.3); border: 2px solid #fff; }
+  .pin-marker span i { transform: rotate(45deg); font-style: normal; }
   .region-search-wrap { position: relative; margin-bottom: 14px; }
   .region-search-wrap input { width: 100%; height: 40px; border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 0 12px; font-family: inherit; font-size: 13px; outline: none; }
   .region-search-wrap input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
@@ -971,17 +996,25 @@
       </div>
       <!-- 지역 -->
       <div class="modal-sec" id="msec_region">
-        <div class="set-note">Meta 지역 검색 API로 도시를 찾아 추가합니다. <b>표기명</b>은 캠페인명·세트명에 들어가는 이름이에요 (예: 울산타겟).<br><b>표기명을 비우면 이름에 지역이 붙지 않습니다</b> — 해당 지역이 기본 지역이라 따로 구분할 필요가 없을 때 비워두세요.<br>반경 지역(울주처럼 좌표 여러 개)은 아래 표의 <b>커스텀 좌표</b>에 <code>위도,경도,반경(mile)</code> 을 세미콜론으로 구분해 넣으면 됩니다.</div>
+        <div class="set-note">Meta 광고관리자처럼 <b>도시·지역·장소</b>를 찾아 추가합니다. <b>장소</b>를 고르면 그 자리에 <b>핀(반경 타겟)</b>이 찍히고 지도가 열려요.<br><b>표기명</b>은 캠페인명·세트명에 들어가는 이름이에요 (예: 울산타겟). <b>비우면 이름에 지역이 붙지 않습니다</b>.<br>이미 있는 줄도 <b>📍 지도</b> 버튼으로 핀을 찍거나 반경을 고칠 수 있어요 (Meta 반경 단위는 마일).</div>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
           <span style="font-size:12px;color:var(--text2);white-space:nowrap;">이 지역을 쓸 계정</span>
           <select id="region_target_account" style="flex:1;height:36px;border:1px solid var(--border2);border-radius:8px;padding:0 10px;font-family:inherit;font-size:12px;"><option value="">공통 (모든 계정)</option></select>
         </div>
+        <div class="geo-chips" id="meta_geo_chips">
+          <span style="font-size:12px;color:var(--text2);margin-right:2px;">찾을 종류</span>
+          <span class="geo-chip on" data-kind="city" onclick="toggleGeoChip('meta','city',this)">도시</span>
+          <span class="geo-chip on" data-kind="region" onclick="toggleGeoChip('meta','region',this)">지역(도·광역시)</span>
+          <span class="geo-chip" data-kind="subcity" onclick="toggleGeoChip('meta','subcity',this)">구·군</span>
+          <span class="geo-chip" data-kind="zip" onclick="toggleGeoChip('meta','zip',this)">우편번호</span>
+          <span class="geo-chip on" data-kind="place" onclick="toggleGeoChip('meta','place',this)">📍 장소(핀)</span>
+        </div>
         <div class="region-search-wrap">
-          <input type="text" id="region_search_input" placeholder="도시 이름을 입력하세요 (예: 울산, Seoul)" oninput="onRegionSearchInput()" autocomplete="off">
+          <input type="text" id="region_search_input" placeholder="지역·장소 이름을 입력하세요 (예: 울산, 양산부산대병원)" oninput="onRegionSearchInput()" autocomplete="off">
           <div class="region-results" id="region_search_results"></div>
         </div>
         <table class="set-table">
-          <thead><tr><th style="width:16%">계정</th><th style="width:15%">지역명</th><th style="width:13%">지역 Key</th><th style="width:11%">종류</th><th style="width:15%">표기명</th><th style="width:26%">커스텀 좌표 (선택)</th><th></th></tr></thead>
+          <thead><tr><th style="width:16%">계정</th><th style="width:15%">지역명</th><th style="width:13%">지역 Key</th><th style="width:11%">종류</th><th style="width:15%">표기명</th><th style="width:26%">핀 · 반경 타겟 (선택)</th><th></th></tr></thead>
           <tbody id="set_region_body"></tbody>
         </table>
         <div class="field-hint" style="margin-top:6px;">계정을 고르면 그 계정의 세트에서만 이 지역이 보여요 (공통은 모든 계정). 종류는 검색으로 추가하면 자동으로 들어가고, Meta에 보낼 때 도시·지역·구·군에 맞는 형식으로 나갑니다.</div>
@@ -1030,17 +1063,22 @@
       </div>
 
       <div class="modal-sec" id="msec_gregion">
-        <div class="set-note">지역은 <b>치과별로</b> 묶입니다 — 치과를 고르면 그 치과의 지역만 드롭다운에 나옵니다 (치과를 비우면 모든 치과에서 보임).<br><b>표기명</b>을 비우면 이름에 지역이 붙지 않습니다. 반경 타겟(핀)은 <b>커스텀 좌표</b>에 <code>위도,경도,반경km</code> 를 세미콜론으로 구분해 넣으세요 — 좌표가 있으면 criterion ID 대신 반경으로 타겟합니다.</div>
+        <div class="set-note">지역은 <b>치과별로</b> 묶입니다 — 치과를 고르면 그 치과의 지역만 드롭다운에 나옵니다 (치과를 비우면 모든 치과에서 보임).<br><b>표기명</b>을 비우면 이름에 지역이 붙지 않습니다.<br><b>장소</b>로 찾거나 <b>📍 지도</b> 버튼을 누르면 지도에서 핀을 찍어 반경 타겟을 만들 수 있어요 (Google 반경 단위는 km · 좌표가 있으면 criterion ID 대신 반경으로 타겟합니다).</div>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
           <span style="font-size:12px;color:var(--text2);white-space:nowrap;">검색 결과를 추가할 치과</span>
           <select id="g_region_target_clinic" style="flex:1;height:36px;border:1px solid var(--border2);border-radius:8px;padding:0 10px;font-family:inherit;font-size:12px;"><option value="">공통 (모든 치과)</option></select>
         </div>
+        <div class="geo-chips" id="g_geo_chips">
+          <span style="font-size:12px;color:var(--text2);margin-right:2px;">찾을 종류</span>
+          <span class="geo-chip g on" data-kind="geo" onclick="toggleGeoChip('google','geo',this)">지역 (Google 타겟 ID)</span>
+          <span class="geo-chip g on" data-kind="place" onclick="toggleGeoChip('google','place',this)">📍 장소(핀)</span>
+        </div>
         <div class="region-search-wrap">
-          <input type="text" id="g_region_search" placeholder="지역 이름을 입력하세요 (예: 부산, 울주)" oninput="gOnRegionSearchInput()" autocomplete="off">
+          <input type="text" id="g_region_search" placeholder="지역·장소 이름을 입력하세요 (예: 부산, 양산부산대병원)" oninput="gOnRegionSearchInput()" autocomplete="off">
           <div class="region-results" id="g_region_results"></div>
         </div>
         <table class="set-table">
-          <thead><tr><th style="width:20%">치과</th><th style="width:15%">지역명</th><th style="width:15%">criterion ID</th><th style="width:16%">표기명</th><th style="width:30%">커스텀 좌표 (핀)</th><th></th></tr></thead>
+          <thead><tr><th style="width:20%">치과</th><th style="width:15%">지역명</th><th style="width:15%">criterion ID</th><th style="width:16%">표기명</th><th style="width:30%">핀 · 반경 타겟 (선택)</th><th></th></tr></thead>
           <tbody id="gset_region_body"></tbody>
         </table>
         <button class="btn-sm" style="margin-top:10px;" onclick="gAddRow('regions')">+ 지역 추가</button>
@@ -1109,6 +1147,43 @@
     </div>
     <div class="preview-formats" id="pv_formats"></div>
     <div class="preview-body" id="pv_body"><div class="preview-msg">형식을 선택하세요</div></div>
+  </div>
+</div>
+
+<div class="modal-back" id="pinModal" onclick="if(event.target===this)closePinMap()">
+  <div class="pin-modal">
+    <div class="modal-head">
+      <div><h3>핀(반경) 설정</h3><p id="pin_sub">지도를 클릭하면 핀이 찍혀요</p></div>
+      <button class="modal-close" onclick="closePinMap()">✕</button>
+    </div>
+    <div class="pin-body">
+      <div class="pin-map" id="pin_map"><div class="pin-map-msg" id="pin_map_msg">지도를 불러오는 중...</div></div>
+      <div class="pin-side">
+        <div class="pin-side-inner">
+          <div class="field"><label>장소 검색</label>
+            <input type="text" id="pin_search" placeholder="예: 울산 무거동, 양산부산대병원" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();pinSearch();}">
+            <div class="field-hint" id="pin_search_hint">주소·건물 이름으로 찾아서 핀을 찍어요 (Enter)</div>
+            <div class="region-results" id="pin_search_results" style="position:static;margin-top:6px;max-height:150px;"></div>
+          </div>
+          <div class="field"><label>선택한 핀의 반경 <span id="pin_radius_unit">(km)</span></label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="range" id="pin_radius_range" min="1" max="50" step="1" value="10" oninput="pinSetRadius(this.value)" style="flex:1;padding:0;height:24px;">
+              <input type="number" id="pin_radius_num" min="1" max="50" step="0.5" value="10" oninput="pinSetRadius(this.value)" style="width:84px;">
+            </div>
+            <div class="field-hint" id="pin_radius_hint"></div>
+          </div>
+          <div id="pin_list"></div>
+          <div class="field-hint" style="margin-top:10px;line-height:1.7;">지도를 클릭하면 핀이 추가되고, 핀을 끌어서 옮길 수 있어요. 핀을 여러 개 찍으면 그 반경을 모두 타겟합니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span id="pin_count" style="font-size:12px;color:var(--text2);"></span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-sm" onclick="closePinMap()">취소</button>
+        <button class="btn-sm blue" onclick="pinSave()">이 핀으로 저장</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1392,7 +1467,7 @@ function renderRegionRows() {
       <td><input type="text" data-set="reg-key" data-i="${i}" value="${esc(r.key)}"></td>
       <td><select data-set="reg-type" data-i="${i}" style="width:100%;height:34px;border:1px solid var(--border2);border-radius:6px;font-family:inherit;font-size:12px;padding:0 4px;"><option value="">자동</option>${META_GEO_TYPES.map(x => `<option value="${x[0]}"${r.type === x[0] ? ' selected' : ''}>${x[1]}</option>`).join('')}</select></td>
       <td><input type="text" data-set="reg-refName" data-i="${i}" value="${esc(r.refName)}" placeholder="비우면 이름에 안 붙음"></td>
-      <td><input type="text" data-set="reg-custom" data-i="${i}" value="${esc(r.custom)}" placeholder="위도,경도,반경; 위도,경도,반경"></td>
+      <td><div style="display:flex;gap:4px;align-items:center;"><input type="text" data-set="reg-custom" data-i="${i}" value="${esc(r.custom)}" placeholder="비우면 지역 Key로 타겟"><button type="button" class="btn-pin${pinCount(r.custom) ? ' has' : ''}" onclick="openPinMap('meta',${i})" title="지도에서 핀 찍기 (반경 타겟)">${pinCount(r.custom) ? '📍 ' + pinCount(r.custom) : '📍 지도'}</button></div></td>
       <td><button class="set-del" onclick="removeRegionRow(${i})">✕</button></td>
     </tr>`).join('');
   if (SETTINGS.regions.length === 0) rb.innerHTML = '<tr><td colspan="7" style="padding:14px 4px;color:var(--text3);font-size:12px;">위 검색창에서 도시를 찾아 추가하세요.</td></tr>';
@@ -1734,6 +1809,10 @@ function gRenderTable(key) {
             .map(n => `<option value="${esc(n)}"${normName(n) === normName(cur) ? ' selected' : ''}>${esc(n)}</option>`));
         return `<td><select data-g="${key}" data-f="${f}" data-i="${i}" style="width:100%;height:34px;border:1px solid var(--border2);border-radius:6px;padding:0 8px;font-family:inherit;font-size:12px;">${opts.join('')}</select></td>`;
       }
+      if (key === 'regions' && f === 'custom') {
+        const n = pinCount(r.custom);
+        return `<td><div style="display:flex;gap:4px;align-items:center;"><input type="text" data-g="${key}" data-f="${f}" data-i="${i}" value="${esc(r[f] || '')}" placeholder="비우면 criterion ID로 타겟"><button type="button" class="btn-pin${n ? ' has' : ''}" onclick="openPinMap('google',${i})" title="지도에서 핀 찍기 (반경 타겟)">${n ? '📍 ' + n : '📍 지도'}</button></div></td>`;
+      }
       const isLogo = key === 'channels' && f === 'logoFileId';
       const extra = isLogo ? ' onchange="gOnLogoInput(this)" onpaste="setTimeout(() => gOnLogoInput(this), 0)"' : '';
       const val = isLogo ? gExtractDriveId(r[f]) : r[f];
@@ -1820,19 +1899,26 @@ function gOnRegionSearchInput() {
 }
 async function gSearchGeo(q) {
   const box = document.getElementById('g_region_results');
-  try {
-    const list = await gLookup('geo', { q });
-    if (!list) throw new Error('연결이 안 됐어요 — 설정 → 연동에서 중계 함수 연결을 확인하세요');
-    const items = list.slice(0, 25);
-    if (items.length === 0) { box.innerHTML = '<div class="region-result">결과가 없어요</div>'; return; }
-    window._gGeo = items;
-    box.innerHTML = items.map((it, i) => {
-      const sub = [it.status, it.canonical].filter(Boolean).join(' · ');
-      return `<div class="region-result" onclick="gAddRegionFromSearch(${i})"><span>${esc(it.name || '')}</span><span class="sub">${esc(sub)}</span></div>`;
-    }).join('');
-  } catch (e) {
-    box.innerHTML = `<div class="region-result">검색 실패: ${esc(e.message)}</div>`;
-  }
+  const f = GEO_FILTER.google;
+  const errs = [];
+  const geoJob = f.geo
+    ? gLookup('geo', { q }).then(l => {
+        if (!l) { errs.push('지역 검색: 중계 함수 연결을 확인하세요'); return []; }
+        return l.slice(0, 20).map(x => Object.assign({ __kind: 'geo' }, x));
+      }).catch(e => { errs.push('지역 검색: ' + e.message); return []; })
+    : Promise.resolve([]);
+  const placeJob = f.place
+    ? geocodeSearch(q).then(l => l.map(x => Object.assign({ __kind: 'place' }, x))).catch(e => { errs.push('장소 검색: ' + e.message); return []; })
+    : Promise.resolve([]);
+  const [geo, place] = await Promise.all([pinTimeout(geoJob, 12000, []), pinTimeout(placeJob, 12000, [])]);
+  const items = geo.concat(place);
+  window._gGeo = items;
+  if (!items.length) { box.innerHTML = `<div class="region-result">결과가 없어요${errs.length ? ' — ' + esc(errs.join(' / ')) : ''}</div>`; return; }
+  box.innerHTML = items.map((it, i) => {
+    const isPlace = it.__kind === 'place';
+    const sub = isPlace ? String(it.full || '').slice(0, 42) : [it.status, it.canonical].filter(Boolean).join(' · ');
+    return `<div class="region-result" onclick="gAddRegionFromSearch(${i})"><span>${esc(it.name || '')}</span><span class="sub">${esc(sub)}</span><span class="kind${isPlace ? ' pin' : ''}">${isPlace ? '📍 장소' : '지역'}</span></div>`;
+  }).join('') + (errs.length ? `<div class="region-result" style="color:var(--red);">${esc(errs.join(' / '))}</div>` : '');
 }
 function gAddRegionFromSearch(i) {
   const it = (window._gGeo || [])[i]; if (!it) return;
@@ -1840,11 +1926,20 @@ function gAddRegionFromSearch(i) {
   const name = it.name || '';
   gCollectSettings();
   const clinic = (document.getElementById('g_region_target_clinic') || {}).value || '';
+  const closeSearch = () => {
+    const box = document.getElementById('g_region_results'); if (box) box.classList.remove('show');
+    const inp = document.getElementById('g_region_search'); if (inp) inp.value = '';
+  };
+  // 장소 = 핀(반경)
+  if (it.__kind === 'place') {
+    (GSET.regions = GSET.regions || []).push({ clinic, name, criterionId: '', refName: `${name}타겟`, custom: `${it.lat.toFixed(6)},${it.lng.toFixed(6)},${PIN_UNIT.google.def}` });
+    gRenderTable('regions'); closeSearch(); markSettingsDirty();
+    openPinMap('google', GSET.regions.length - 1);
+    return;
+  }
   if ((GSET.regions || []).some(r => r.criterionId === id && normName(r.clinic || '') === normName(clinic))) { showToast('이미 추가된 지역이에요', 'error'); return; }
   (GSET.regions = GSET.regions || []).push({ clinic, name, criterionId: id, refName: `${name}타겟`, custom: '' });
-  gRenderTable('regions');
-  document.getElementById('g_region_results').classList.remove('show');
-  document.getElementById('g_region_search').value = '';
+  gRenderTable('regions'); closeSearch();
   showToast(`${name} 추가됨 — 표기명을 확인하고 저장하세요`, 'success');
 }
 
@@ -1924,7 +2019,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-17';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-16.4';
+const G_PAGE_BUILD = '2026-09-16.5';
 function gShowPageBuild() {
   const el = document.getElementById('g_page_build');
   if (el) { el.className = 'field-hint'; el.textContent = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요`; }
@@ -2186,32 +2281,46 @@ function onRegionSearchInput() {
 }
 async function searchGeo(q) {
   const box = document.getElementById('region_search_results');
-  try {
-    const json = await fbGet('search', {
-      type: 'adgeolocation',
-      location_types: JSON.stringify(['city', 'region', 'subcity']),
-      q, locale: 'ko_KR', limit: 25,
-    });
-    const items = json.data || [];
-    if (items.length === 0) { box.innerHTML = '<div class="region-result">결과가 없어요</div>'; return; }
-    box.innerHTML = items.map((it, i) => {
-      window._geoResults = items;
-      const sub = [it.region, it.country_name, metaGeoTypeLabel(it.type)].filter(Boolean).join(' · ');
-      return `<div class="region-result" onclick="addRegionFromSearch(${i})"><span>${esc(it.name)}</span><span class="sub">${esc(sub)}</span></div>`;
-    }).join('');
-  } catch (err) {
-    box.innerHTML = `<div class="region-result">검색 실패: ${esc(err.message)}</div>`;
-  }
+  const f = GEO_FILTER.meta;
+  const types = ['city', 'region', 'subcity', 'zip'].filter(k => f[k]);
+  const errs = [];
+  const geoJob = types.length
+    ? fbGet('search', { type: 'adgeolocation', location_types: JSON.stringify(types), q, locale: 'ko_KR', limit: 25 })
+        .then(j => (j.data || []).map(x => Object.assign({ __kind: 'geo' }, x)))
+        .catch(e => { errs.push('지역 검색: ' + e.message); return []; })
+    : Promise.resolve([]);
+  const placeJob = f.place
+    ? geocodeSearch(q).then(l => l.map(x => Object.assign({ __kind: 'place' }, x))).catch(e => { errs.push('장소 검색: ' + e.message); return []; })
+    : Promise.resolve([]);
+  const [geo, place] = await Promise.all([pinTimeout(geoJob, 12000, []), pinTimeout(placeJob, 12000, [])]);
+  const items = geo.concat(place);
+  window._geoResults = items;
+  if (!items.length) { box.innerHTML = `<div class="region-result">결과가 없어요${errs.length ? ' — ' + esc(errs.join(' / ')) : ''}</div>`; return; }
+  box.innerHTML = items.map((it, i) => {
+    const isPlace = it.__kind === 'place';
+    const kind = isPlace ? '📍 장소' : (GEO_KIND_LABEL[it.type] || it.type || '');
+    const sub = isPlace ? String(it.full || '').slice(0, 42) : [it.region, it.country_name].filter(Boolean).join(' · ');
+    return `<div class="region-result" onclick="addRegionFromSearch(${i})"><span>${esc(it.name)}</span><span class="sub">${esc(sub)}</span><span class="kind${isPlace ? ' pin' : ''}">${esc(kind)}</span></div>`;
+  }).join('') + (errs.length ? `<div class="region-result" style="color:var(--red);">${esc(errs.join(' / '))}</div>` : '');
 }
 function addRegionFromSearch(i) {
   const it = (window._geoResults || [])[i]; if (!it) return;
   collectSettingsFromDom();
   const accountId = (document.getElementById('region_target_account') || {}).value || '';
+  const closeSearch = () => {
+    const box = document.getElementById('region_search_results'); if (box) box.classList.remove('show');
+    const inp = document.getElementById('region_search_input'); if (inp) inp.value = '';
+  };
+  // 장소 = 핀(반경) — 좌표로 넣고 바로 지도에서 반경을 정한다
+  if (it.__kind === 'place') {
+    SETTINGS.regions.push({ name: it.name, key: '', type: '', country: 'KR', accountId, refName: `${it.name}타겟`, custom: `${it.lat.toFixed(6)},${it.lng.toFixed(6)},${PIN_UNIT.meta.def}` });
+    renderRegionRows(); closeSearch(); markSettingsDirty();
+    openPinMap('meta', SETTINGS.regions.length - 1, { suggest: true });
+    return;
+  }
   if (SETTINGS.regions.some(r => r.key === it.key && (r.accountId || '') === accountId)) { showToast('이미 추가된 지역이에요', 'error'); return; }
   SETTINGS.regions.push({ name: it.name, key: it.key, type: it.type || 'city', country: it.country_code || '', accountId, refName: `${it.name}타겟`, custom: '' });
-  renderRegionRows();
-  document.getElementById('region_search_results').classList.remove('show');
-  document.getElementById('region_search_input').value = '';
+  renderRegionRows(); closeSearch();
   showToast(`${it.name} 추가됨 — 표기명을 확인하고 저장하세요`, 'success');
 }
 
@@ -6126,6 +6235,255 @@ async function shareSettingsNow() {
   renderSharedStatus(); done();
   showToast('모두에게 적용했어요 — 다른 사람은 다음에 페이지를 열 때(약 1분 뒤부터) 이 설정을 받아요', 'success');
 }
+
+/* =========================================================
+   지역 핀(반경) — 메타·구글 공통 지도 편집기
+   각 매체가 쓰는 단위 그대로 저장한다 (Meta = 마일, Google = km).
+   저장 형식은 기존과 같은 "위도,경도,반경; 위도,경도,반경" 문자열.
+   ========================================================= */
+const PIN_UNIT = {
+  meta:   { label: '마일', m: 1609.344, min: 1, max: 50,  def: 10, api: 'Meta' },
+  google: { label: 'km',   m: 1000,     min: 1, max: 500, def: 10, api: 'Google' },
+};
+let pinS = null;            // { platform, index, unit, pins:[{lat,lng,r,name}], sel, map, layers }
+let pinLeafletPromise = null;
+
+function pinParse(str, def) {
+  return String(str || '').split(';').map(chunk => {
+    const p = chunk.split(',').map(x => parseFloat(String(x).trim()));
+    if (p.length < 2 || isNaN(p[0]) || isNaN(p[1])) return null;
+    return { lat: p[0], lng: p[1], r: (isNaN(p[2]) || p[2] <= 0) ? def : p[2], name: '' };
+  }).filter(Boolean);
+}
+function pinCount(str) { return pinParse(str, 1).length; }
+function pinText(pins) {
+  return (pins || []).map(p => `${Number(p.lat).toFixed(6)},${Number(p.lng).toFixed(6)},${Math.round(Number(p.r) * 10) / 10}`).join('; ');
+}
+function pinTimeout(promise, ms, fallback) {
+  return Promise.race([promise, new Promise(res => setTimeout(() => res(fallback), ms))]);
+}
+function pinRowOf(platform, index) {
+  const list = platform === 'meta' ? (SETTINGS.regions || []) : (GSET.regions || []);
+  return list[index] || null;
+}
+/* 지도 라이브러리는 필요할 때만 불러온다 (못 불러와도 목록·반경 편집은 그대로 된다) */
+function ensureLeaflet() {
+  if (window.L && window.L.map) return Promise.resolve(window.L);
+  if (pinLeafletPromise) return pinLeafletPromise;
+  pinLeafletPromise = new Promise((resolve, reject) => {
+    const css = document.createElement('link');
+    css.rel = 'stylesheet'; css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
+    document.head.appendChild(css);
+    const js = document.createElement('script');
+    js.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js';
+    js.onload = () => (window.L && window.L.map) ? resolve(window.L) : reject(new Error('지도 라이브러리가 비어 있어요'));
+    js.onerror = () => reject(new Error('지도 라이브러리를 불러오지 못했어요 (네트워크 차단일 수 있어요)'));
+    document.head.appendChild(js);
+    setTimeout(() => { if (!(window.L && window.L.map)) reject(new Error('지도 로딩이 너무 오래 걸려요')); }, 10000);
+  }).catch(e => { pinLeafletPromise = null; throw e; });
+  return pinLeafletPromise;
+}
+function openPinMap(platform, index, opts) {
+  // 표에 입력 중인 값을 먼저 담아 둔다 (모달을 열면 표가 다시 그려진다)
+  try { if (platform === 'meta') collectSettingsFromDom(); else gCollectSettings(); } catch (e) {}
+  const row = pinRowOf(platform, index);
+  if (!row) { showToast('지역 줄을 찾지 못했어요', 'error'); return; }
+  const unit = PIN_UNIT[platform];
+  pinS = { platform, index, unit, pins: pinParse(row.custom, unit.def), sel: 0, map: null, layers: [], markers: [] };
+  const sub = document.getElementById('pin_sub');
+  if (sub) sub.textContent = `${row.name || '이름 없는 지역'} · ${unit.api} · 반경 단위 ${unit.label}`;
+  const uEl = document.getElementById('pin_radius_unit'); if (uEl) uEl.textContent = `(${unit.label})`;
+  ['pin_radius_range', 'pin_radius_num'].forEach(id => { const el = document.getElementById(id); if (el) { el.min = unit.min; el.max = unit.max; } });
+  const hint = document.getElementById('pin_radius_hint');
+  if (hint) hint.textContent = platform === 'meta' ? `Meta는 ${unit.min}~${unit.max}마일까지 됩니다` : `Google은 ${unit.min}~${unit.max}km까지 됩니다`;
+  const sr = document.getElementById('pin_search_results'); if (sr) { sr.innerHTML = ''; sr.classList.remove('show'); }
+  const si = document.getElementById('pin_search'); if (si) si.value = '';
+  document.getElementById('pinModal').classList.add('show');
+  pinRenderList(); pinSyncRadiusUI();
+  pinInitMap();
+  if (opts && opts.suggest) pinApplySuggested(0);
+}
+function closePinMap() {
+  const m = document.getElementById('pinModal'); if (m) m.classList.remove('show');
+  if (pinS && pinS.map) { try { pinS.map.remove(); } catch (e) {} }
+  pinS = null;
+}
+async function pinInitMap() {
+  const box = document.getElementById('pin_map'); const msg = document.getElementById('pin_map_msg');
+  if (!box) return;
+  if (msg) msg.textContent = '지도를 불러오는 중...';
+  let L;
+  try { L = await ensureLeaflet(); }
+  catch (e) {
+    if (msg) msg.innerHTML = `${esc(e.message)}<br><span style="font-size:11px;">지도 없이도 오른쪽에서 장소를 검색해 핀을 찍고 반경을 정할 수 있어요</span>`;
+    return;
+  }
+  if (!pinS) return;
+  if (msg) msg.remove();
+  const el = document.createElement('div'); el.style.cssText = 'position:absolute;inset:0;'; box.appendChild(el);
+  const first = pinS.pins[0];
+  const map = L.map(el, { zoomControl: true }).setView(first ? [first.lat, first.lng] : [36.5, 127.9], first ? 11 : 7);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+  map.on('click', e => pinAdd(e.latlng.lat, e.latlng.lng));
+  pinS.map = map;
+  pinDrawMap(true);
+  setTimeout(() => { try { map.invalidateSize(); } catch (e) {} }, 100);
+}
+function pinDrawMap(fit) {
+  if (!pinS || !pinS.map || !window.L) return;
+  const L = window.L, map = pinS.map;
+  (pinS.layers || []).forEach(l => { try { map.removeLayer(l); } catch (e) {} });
+  pinS.layers = [];
+  pinS.pins.forEach((p, i) => {
+    const sel = i === pinS.sel;
+    const circle = L.circle([p.lat, p.lng], { radius: Number(p.r) * pinS.unit.m, color: sel ? '#007aff' : '#8e8e93', weight: sel ? 2 : 1, fillOpacity: sel ? 0.16 : 0.08 }).addTo(map);
+    const marker = L.marker([p.lat, p.lng], {
+      draggable: true,
+      icon: L.divIcon({ className: 'pin-marker', html: `<span><i>${i + 1}</i></span>`, iconSize: [24, 24], iconAnchor: [12, 24] }),
+    }).addTo(map);
+    marker.on('drag', ev => { const ll = ev.target.getLatLng(); circle.setLatLng(ll); });
+    marker.on('dragend', ev => {
+      const ll = ev.target.getLatLng();
+      pinS.pins[i].lat = ll.lat; pinS.pins[i].lng = ll.lng; pinS.sel = i;
+      pinRenderList(); pinSyncRadiusUI(); pinDrawMap(false);
+    });
+    marker.on('click', () => { pinS.sel = i; pinRenderList(); pinSyncRadiusUI(); pinDrawMap(false); });
+    pinS.layers.push(circle, marker);
+  });
+  if (fit && pinS.pins.length) {
+    try {
+      const g = L.featureGroup(pinS.layers.filter(x => x.getBounds));
+      map.fitBounds(g.getBounds().pad(0.2));
+    } catch (e) {}
+  }
+}
+function pinAdd(lat, lng, r, name) {
+  if (!pinS) return;
+  const unit = pinS.unit;
+  pinS.pins.push({ lat: Number(lat), lng: Number(lng), r: Number(r) || unit.def, name: name || '' });
+  pinS.sel = pinS.pins.length - 1;
+  pinRenderList(); pinSyncRadiusUI(); pinDrawMap(false);
+  if (pinS.map && window.L) { try { pinS.map.setView([lat, lng], Math.max(pinS.map.getZoom(), 11)); } catch (e) {} }
+  // Meta는 그 좌표에 맞는 반경을 추천해 준다 (실패하면 기본값 그대로)
+  if (!r) pinApplySuggested(pinS.pins.length - 1);
+}
+/* Meta가 추천하는 반경으로 맞춘다 (Google은 추천 API가 없어 기본값 유지) */
+function pinApplySuggested(at) {
+  if (!pinS || pinS.platform !== 'meta') return;
+  const p = pinS.pins[at]; if (!p) return;
+  metaSuggestRadius(p.lat, p.lng).then(v => {
+    if (!pinS || !pinS.pins[at] || !v || pinS.pins[at].touched) return;   // 그 사이 사용자가 반경을 바꿨으면 그대로 둔다
+    pinS.pins[at].r = Math.min(Math.max(v, pinS.unit.min), pinS.unit.max);
+    pinRenderList(); pinSyncRadiusUI(); pinDrawMap(false);
+  }).catch(() => {});
+}
+function pinSelect(i) { if (!pinS) return; pinS.sel = i; pinRenderList(); pinSyncRadiusUI(); pinDrawMap(false); }
+function pinRemove(i, ev) {
+  if (ev) ev.stopPropagation();
+  if (!pinS) return;
+  pinS.pins.splice(i, 1);
+  if (pinS.sel >= pinS.pins.length) pinS.sel = Math.max(0, pinS.pins.length - 1);
+  pinRenderList(); pinSyncRadiusUI(); pinDrawMap(false);
+}
+function pinSetRadius(v) {
+  if (!pinS) return;
+  const p = pinS.pins[pinS.sel]; if (!p) return;
+  let n = parseFloat(v); if (isNaN(n)) return;
+  n = Math.min(Math.max(n, pinS.unit.min), pinS.unit.max);
+  p.r = n; p.touched = true;
+  pinSyncRadiusUI(); pinRenderList(); pinDrawMap(false);
+}
+function pinSyncRadiusUI() {
+  if (!pinS) return;
+  const p = pinS.pins[pinS.sel];
+  const rg = document.getElementById('pin_radius_range'), nm = document.getElementById('pin_radius_num');
+  const on = !!p;
+  [rg, nm].forEach(el => { if (el) { el.disabled = !on; if (on) el.value = p.r; } });
+}
+function pinRenderList() {
+  const box = document.getElementById('pin_list'); const cnt = document.getElementById('pin_count');
+  if (!pinS || !box) return;
+  box.innerHTML = pinS.pins.length
+    ? pinS.pins.map((p, i) => `<div class="pin-row${i === pinS.sel ? ' sel' : ''}" onclick="pinSelect(${i})">
+        <span class="pin-num">${i + 1}</span>
+        <span class="nm">${esc(p.name || `${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`)}</span>
+        <span class="rd">${p.r}${pinS.unit.label === 'km' ? 'km' : 'mi'}</span>
+        <button class="set-del" onclick="pinRemove(${i},event)" title="이 핀 빼기">✕</button>
+      </div>`).join('')
+    : '<div class="field-hint">아직 핀이 없어요 — 지도를 클릭하거나 위에서 장소를 검색하세요</div>';
+  if (cnt) cnt.textContent = pinS.pins.length ? `핀 ${pinS.pins.length}개` : '핀 없음 (저장하면 반경 타겟이 없어져요)';
+}
+function pinSave() {
+  if (!pinS) return;
+  const { platform, index, pins } = pinS;
+  const txt = pinText(pins);
+  const row = pinRowOf(platform, index);
+  if (row) row.custom = txt;
+  if (platform === 'meta') { persistSettings(); applySettingsToDB(); populateDropdowns(); renderRegionRows(); }
+  else { persistGoogleSettings(); applyGoogleSettings(); gPopulateDropdowns(); gRenderTable('regions'); }
+  markSettingsDirty();
+  closePinMap();
+  showToast(pins.length ? `핀 ${pins.length}개를 저장했어요 — 설정 창에서 "저장하고 적용"까지 눌러주세요` : '핀을 모두 지웠어요', 'success');
+}
+/* 장소 검색 (주소·건물 이름) — OpenStreetMap 지오코딩 */
+async function geocodeSearch(q) {
+  const call = async (params) => {
+    const r = await fetch('https://nominatim.openstreetmap.org/search?' + new URLSearchParams(params).toString(), { headers: { Accept: 'application/json' } });
+    if (!r.ok) throw new Error(`장소 검색 실패 (HTTP ${r.status})`);
+    return await r.json();
+  };
+  const base = { format: 'jsonv2', q, limit: '8', 'accept-language': 'ko', addressdetails: '1' };
+  let j = await call(Object.assign({}, base, { countrycodes: 'kr' }));
+  if (!Array.isArray(j) || j.length === 0) j = await call(base);
+  return (Array.isArray(j) ? j : []).map(x => ({
+    name: x.name || String(x.display_name || '').split(',')[0],
+    full: x.display_name || '',
+    lat: parseFloat(x.lat), lng: parseFloat(x.lon),
+  })).filter(x => !isNaN(x.lat) && !isNaN(x.lng));
+}
+/* Meta가 그 좌표에 추천하는 반경 (마일) */
+async function metaSuggestRadius(lat, lng) {
+  try {
+    const j = await fbGet('search', { type: 'adradiussuggestion', latitude: lat, longitude: lng });
+    const d = (j.data || [])[0];
+    return d && Number(d.suggested_radius) ? Number(d.suggested_radius) : 0;
+  } catch (e) { return 0; }
+}
+async function pinSearch() {
+  const inp = document.getElementById('pin_search'); const box = document.getElementById('pin_search_results');
+  if (!inp || !box) return;
+  const q = inp.value.trim(); if (q.length < 2) return;
+  box.classList.add('show'); box.innerHTML = '<div class="region-result">찾는 중...</div>';
+  try {
+    const list = await geocodeSearch(q);
+    if (!list.length) { box.innerHTML = '<div class="region-result">결과가 없어요</div>'; return; }
+    window._pinGeo = list;
+    box.innerHTML = list.map((x, i) => `<div class="region-result" onclick="pinPickSearch(${i})"><span>${esc(x.name)}</span><span class="sub">${esc(String(x.full).slice(0, 40))}</span></div>`).join('');
+  } catch (e) {
+    box.innerHTML = `<div class="region-result">${esc(e.message)} — 지도를 직접 클릭해 핀을 찍어도 돼요</div>`;
+  }
+}
+function pinPickSearch(i) {
+  const x = (window._pinGeo || [])[i]; if (!x) return;
+  pinAdd(x.lat, x.lng, 0, x.name);
+  const box = document.getElementById('pin_search_results'); if (box) { box.innerHTML = ''; box.classList.remove('show'); }
+  const inp = document.getElementById('pin_search'); if (inp) inp.value = '';
+}
+/* 검색 종류 칩 (도시 / 지역 / 장소 …) */
+const GEO_FILTER = {
+  meta: { city: true, region: true, subcity: false, zip: false, place: true },
+  google: { geo: true, place: true },
+};
+function toggleGeoChip(platform, kind, el) {
+  const f = GEO_FILTER[platform];
+  const others = Object.keys(f).filter(k => k !== kind);
+  if (f[kind] && !others.some(k => f[k])) { showToast('한 가지는 켜 두세요', 'error'); return; }
+  f[kind] = !f[kind];
+  if (el) el.classList.toggle('on', f[kind]);
+  if (platform === 'meta') { if ((document.getElementById('region_search_input') || {}).value) onRegionSearchInput(); }
+  else if ((document.getElementById('g_region_search') || {}).value) gOnRegionSearchInput();
+}
+const GEO_KIND_LABEL = { city: '도시', region: '지역(도·광역시)', subcity: '구·군', neighborhood: '동네', zip: '우편번호', country: '국가', place: '장소' };
 
 /* 상단바가 화면 밖으로 밀리는 일이 없도록 — 문서(뷰포트)는 절대 스크롤되지 않아야 한다 */
 function gKeepViewportTop() { if (window.scrollY || window.scrollX) window.scrollTo(0, 0); setTimeout(() => { if (window.scrollY || window.scrollX) window.scrollTo(0, 0); }, 400); }
