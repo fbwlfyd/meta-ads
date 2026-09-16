@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-16T07:21:38.237Z",
-  "updatedBy": "kwon0914kjh@gmail.com",
+  "updatedAt": "2026-09-16T07:47:15.719Z",
+  "updatedBy": "asdf778984@gmail.com",
   "meta": {
     "staff": [
       {
@@ -23,6 +23,10 @@
       {
         "name": "조예은",
         "id": "250606"
+      },
+      {
+        "name": "박지현",
+        "id": "231212"
       }
     ],
     "accounts": {
