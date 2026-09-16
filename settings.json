@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-16T06:21:12.098Z",
+  "updatedAt": "2026-09-16T06:29:39.602Z",
   "updatedBy": "fbwlfyd9271@gmail.com",
   "meta": {
     "staff": [
@@ -23,6 +23,14 @@
       {
         "name": "조예은",
         "id": "250606"
+      },
+      {
+        "name": "한유진",
+        "id": "230301"
+      },
+      {
+        "name": "박지현",
+        "id": "231212"
       }
     ],
     "accounts": {
