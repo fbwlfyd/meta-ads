@@ -306,6 +306,10 @@
   .modal-tab { padding: 8px 14px; border: none; background: none; border-bottom: 2px solid transparent; font-family: inherit; font-size: 13px; font-weight: 500; color: var(--text2); cursor: pointer; }
   .modal-tab.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 600; }
   .modal-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+  .share-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 24px; border-top: 1px solid var(--border); background: var(--blue-bg); font-size: 12px; color: var(--text2); flex-wrap: wrap; }
+  .share-bar.dirty { background: var(--yellow-bg); }
+  .share-status { flex: 1; min-width: 200px; line-height: 1.4; }
+  .share-actions { display: flex; align-items: center; gap: 6px; }
   .modal-foot { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .modal-sec { display: none; }
   .modal-sec.active { display: block; }
@@ -1079,6 +1083,14 @@
         <div id="g_api_out" style="margin-top:12px;font-size:12px;line-height:1.7;white-space:pre-wrap;background:var(--bg);border-radius:8px;padding:12px;color:var(--text2);min-height:40px;">아직 테스트하지 않았습니다.</div>
       </div>
     </div>
+    <div class="share-bar" id="share_bar">
+      <span id="share_status" class="share-status">공유 설정 확인 중...</span>
+      <span class="share-actions">
+        <input type="text" id="share_admin_key" placeholder="관리자 키" style="display:none;height:30px;width:130px;border:1px solid var(--border2);border-radius:6px;padding:0 8px;font-family:inherit;font-size:12px;" onkeydown="if(event.key==='Enter'){event.preventDefault();shareSettingsNow();}">
+        <button class="btn-sm" id="share_revert_btn" style="display:none;" onclick="revertToSharedSettings()">공유 설정으로 되돌리기</button>
+        <button class="btn-sm blue" id="share_push_btn" onclick="shareSettingsNow()" title="지금 설정을 모든 사람에게 적용합니다 (관리자)">모두에게 적용</button>
+      </span>
+    </div>
     <div class="modal-foot">
       <button class="btn-sm" id="settingsResetBtn" onclick="resetSettings()" style="color:var(--red);">초기화</button>
       <div style="display:flex;gap:8px;">
@@ -1304,13 +1316,14 @@ function openSettings(tab) {
   const isG = currentPlatform === 'google';
   document.getElementById('settingsTitle').textContent = isG ? 'Google 설정' : 'Meta 설정';
   document.getElementById('settingsDesc').textContent = isG
-    ? 'Google Ads API로 가져올 수 없는 사내 규칙(제작자·치과·지역·채널)과 로그인·연동 상태를 여기서 관리합니다 (이 브라우저에 저장)'
-    : 'Meta API로 가져올 수 없는 사내 규칙만 여기서 관리합니다 (이 브라우저에 저장)';
+    ? 'Google Ads API로 가져올 수 없는 사내 규칙(제작자·치과·지역·채널)과 로그인·연동 상태를 여기서 관리합니다'
+    : 'Meta API로 가져올 수 없는 사내 규칙만 여기서 관리합니다';
   document.getElementById('metaSettingsTabs').style.display = isG ? 'none' : 'flex';
   document.getElementById('googleSettingsTabs').style.display = isG ? 'flex' : 'none';
   document.getElementById('settingsSaveBtn').style.display = 'inline-block';
   document.getElementById('settingsResetBtn').style.display = isG ? 'none' : 'inline-block';
   if (isG) renderGoogleSettings(); else renderSettings();
+  renderSharedStatus();
   const valid = isG ? GOOGLE_TABS : META_TABS;
   const want = tab && valid.includes(tab) ? tab : (valid.includes(settingsTab) ? settingsTab : valid[0]);
   switchSettingsTab(want);
@@ -1655,7 +1668,7 @@ function copyDiagnostics() {
 }
 function saveSettings() {
   collectSettingsFromDom();
-  persistSettings();
+  persistSettings(); markSettingsDirty();
   applySettingsToDB();
   populateDropdowns();
   ['t1','t2'].forEach(t => autoGenNames(t));
@@ -1782,7 +1795,7 @@ function renderGoogleSettings() {
 }
 function saveGoogleSettingsNow() {
   gCollectSettings();
-  persistGoogleSettings();
+  persistGoogleSettings(); markSettingsDirty();
   applyGoogleSettings();
   gPopulateDropdowns();
   ['g1','g2'].forEach(t => gAutoGenNames(t));
@@ -1911,7 +1924,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-17';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-16.3';
+const G_PAGE_BUILD = '2026-09-16.4';
 function gShowPageBuild() {
   const el = document.getElementById('g_page_build');
   if (el) { el.className = 'field-hint'; el.textContent = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요`; }
@@ -5986,6 +5999,134 @@ function gClearForm(t) {
 });
 document.getElementById('g1_시작일').value = new Date().toISOString().split('T')[0];
 
+/* =========================================================
+   공유 설정 — 관리자가 "모두에게 적용"한 settings.json 을 모두가 받아 쓴다.
+   · 페이지를 열 때 /settings.json (배포에 포함) 과 /api/settings (GitHub 최신) 을 읽어 더 새 것을 적용
+   · 브라우저 저장소는 캐시. 이 브라우저에서만 고친 게 있으면(dirty) 관리자가 더 새 걸 올리기 전까진 그대로 둔다
+   · "모두에게 적용" = /api/settings 로 저장(관리자 키) → GitHub 커밋 → 재배포. 저장소가 없으면 settings.json 파일을 내려받아 GitHub에 올린다
+   ========================================================= */
+const SHARED_SETTINGS_URL = '/settings.json';
+const SHARED_API_URL = '/api/settings';
+const SHARED_META_KEYS = ['staff', 'accounts', 'pages', 'pageInstagram', 'regions'];
+const SHARED_GOOGLE_KEYS = ['staff', 'clinics', 'regions', 'channels', 'cta', 'accounts', 'audiences'];
+const SHARED_STAMP_KEY = 'adtool_shared_settings_stamp';   // 마지막으로 적용한 공유 설정의 updatedAt
+const SHARED_DIRTY_KEY = 'adtool_settings_local_dirty';    // 이 브라우저에서만 바꾼 게 있음
+const ADMIN_KEY_STORE = 'adtool_admin_key';
+const sharedInfo = { updatedAt: '', updatedBy: '', available: false, checked: false, applied: false, source: '' };
+const lsGet = k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+function markSettingsDirty() { lsSet(SHARED_DIRTY_KEY, '1'); renderSharedStatus(); }
+function buildSharedPayload() {
+  const meta = {}; SHARED_META_KEYS.forEach(k => { meta[k] = SETTINGS[k] === undefined ? null : SETTINGS[k]; });
+  const google = {}; SHARED_GOOGLE_KEYS.forEach(k => { google[k] = GSET[k] === undefined ? null : GSET[k]; });
+  const who = (typeof gTokens !== 'undefined' && gTokens.core && gTokens.core.hint) || '관리자';
+  return { version: 1, updatedAt: new Date().toISOString(), updatedBy: who, meta, google };
+}
+function applySharedSettings(shared, source) {
+  if (!shared || typeof shared !== 'object' || (!shared.meta && !shared.google)) return false;
+  if (shared.meta) { SHARED_META_KEYS.forEach(k => { if (shared.meta[k] !== undefined && shared.meta[k] !== null) SETTINGS[k] = shared.meta[k]; }); persistSettings(); }
+  if (shared.google) { SHARED_GOOGLE_KEYS.forEach(k => { if (shared.google[k] !== undefined && shared.google[k] !== null) GSET[k] = shared.google[k]; }); GSET.seeded = true; persistGoogleSettings(); }
+  lsSet(SHARED_STAMP_KEY, shared.updatedAt || ''); lsSet(SHARED_DIRTY_KEY, '');
+  Object.assign(sharedInfo, { updatedAt: shared.updatedAt || '', updatedBy: shared.updatedBy || '', available: true, applied: true, source: source || '' });
+  applySettingsToDB(); populateDropdowns(); ['t1', 't2'].forEach(t => { try { autoGenNames(t); } catch (e) {} });
+  if (typeof applyGoogleSettings === 'function') { applyGoogleSettings(); if (typeof gPopulateDropdowns === 'function') gPopulateDropdowns(); ['g1', 'g2'].forEach(t => { try { gAutoGenNames(t); } catch (e) {} }); }
+  const modal = document.getElementById('settingsModal');
+  if (modal && modal.classList.contains('show')) { if (currentPlatform === 'google') renderGoogleSettings(); else renderSettings(); }
+  renderSharedStatus();
+  return true;
+}
+async function fetchSharedFrom(url) {
+  try {
+    const r = await fetch(url + (url.includes('?') ? '&' : '?') + '_=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) return { status: r.status, data: null };
+    const j = await r.json().catch(() => null);
+    return { status: r.status, data: (j && (j.meta || j.google)) ? j : null };
+  } catch (e) { return { status: 0, data: null }; }
+}
+async function loadSharedSettings() {
+  if (!ENV.isHttp) { sharedInfo.checked = true; renderSharedStatus(); return; }
+  const [stat, api] = await Promise.all([fetchSharedFrom(SHARED_SETTINGS_URL), fetchSharedFrom(SHARED_API_URL)]);
+  sharedInfo.checked = true;
+  const cands = [stat.data, api.data].filter(Boolean).sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
+  const newest = cands[0];
+  if (!newest) { sharedInfo.available = false; renderSharedStatus(); return; }
+  Object.assign(sharedInfo, { available: true, updatedAt: newest.updatedAt || '', updatedBy: newest.updatedBy || '' });
+  const stamp = lsGet(SHARED_STAMP_KEY), dirty = lsGet(SHARED_DIRTY_KEY) === '1';
+  // 이 브라우저에서만 고친 게 있고 공유 설정이 그때 그대로면 로컬을 지킨다. 관리자가 더 새 걸 올렸으면 그걸 적용
+  if (dirty && stamp && String(newest.updatedAt || '') <= stamp) { renderSharedStatus(); return; }
+  applySharedSettings(newest, newest === api.data ? 'api' : 'file');
+}
+function sharedTimeLabel(iso) {
+  if (!iso) return '';
+  const d = new Date(iso); if (isNaN(d.getTime())) return iso;
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getMonth() + 1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function renderSharedStatus() {
+  const el = document.getElementById('share_status'); const bar = document.getElementById('share_bar'); const revert = document.getElementById('share_revert_btn');
+  if (!el) return;
+  const dirty = lsGet(SHARED_DIRTY_KEY) === '1';
+  let txt;
+  if (!sharedInfo.checked) txt = '공유 설정 확인 중...';
+  else if (!sharedInfo.available) txt = '아직 공유된 설정이 없어요 — 지금은 이 브라우저 설정만 쓰는 중. 관리자가 "모두에게 적용"을 누르면 모든 사람이 같은 설정을 받아요';
+  else if (dirty) txt = `이 브라우저에서 바꾼 설정을 쓰는 중 (공유 설정과 다를 수 있어요 · 공유본: ${sharedTimeLabel(sharedInfo.updatedAt)} ${esc(sharedInfo.updatedBy)})`;
+  else txt = `✅ 공유 설정 적용 중 — 관리자 저장 ${sharedTimeLabel(sharedInfo.updatedAt)} (${esc(sharedInfo.updatedBy)})`;
+  el.innerHTML = txt;
+  if (bar) bar.classList.toggle('dirty', !!(sharedInfo.checked && dirty));
+  if (revert) revert.style.display = (sharedInfo.available && dirty) ? '' : 'none';
+}
+async function revertToSharedSettings() {
+  const [stat, api] = await Promise.all([fetchSharedFrom(SHARED_SETTINGS_URL), fetchSharedFrom(SHARED_API_URL)]);
+  const cands = [stat.data, api.data].filter(Boolean).sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
+  if (!cands[0]) { showToast('공유 설정을 읽지 못했어요', 'error'); return; }
+  applySharedSettings(cands[0], 'revert');
+  showToast('공유 설정으로 되돌렸어요', 'success');
+}
+function downloadSharedSettingsFile(payload) {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'settings.json';
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+/* 관리자: 지금 설정을 모두에게 */
+async function shareSettingsNow() {
+  // 모달에 입력 중인 값을 먼저 담는다
+  try { if (currentPlatform === 'google') gCollectSettings(); else collectSettingsFromDom(); } catch (e) {}
+  persistSettings(); persistGoogleSettings();
+  const payload = buildSharedPayload();
+  const keyInput = document.getElementById('share_admin_key');
+  let key = lsGet(ADMIN_KEY_STORE) || (keyInput && keyInput.value.trim()) || '';
+  const btn = document.getElementById('share_push_btn');
+  if (btn) { btn.disabled = true; btn.textContent = '적용 중...'; }
+  const done = () => { if (btn) { btn.disabled = false; btn.textContent = '모두에게 적용'; } };
+  let r = null;
+  try {
+    r = await fetch(SHARED_API_URL, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, key ? { 'x-admin-key': key } : {}), body: JSON.stringify(payload) });
+  } catch (e) { r = null; }
+  if (!r || r.status === 404 || r.status === 501) {
+    // 저장소가 없으면 파일로 — GitHub에 올리면 같은 효과
+    downloadSharedSettingsFile(payload);
+    lsSet(SHARED_STAMP_KEY, payload.updatedAt); lsSet(SHARED_DIRTY_KEY, '');
+    Object.assign(sharedInfo, { available: true, updatedAt: payload.updatedAt, updatedBy: payload.updatedBy, checked: true });
+    renderSharedStatus(); done();
+    showToast('settings.json 을 내려받았어요 — GitHub 저장소 맨 위(index.html 옆)에 올리면 1분쯤 뒤 모두에게 적용돼요', 'info');
+    return;
+  }
+  if (r.status === 401 || r.status === 403) {
+    lsSet(ADMIN_KEY_STORE, '');
+    if (keyInput) { keyInput.style.display = ''; keyInput.focus(); }
+    showToast(key ? '관리자 키가 맞지 않아요 — 다시 입력해 주세요' : '관리자 키를 입력하고 다시 눌러주세요', 'error');
+    done(); return;
+  }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { showToast('공유 설정 저장 실패: ' + (j.error || `HTTP ${r.status}`), 'error'); done(); return; }
+  if (key) lsSet(ADMIN_KEY_STORE, key);
+  if (keyInput) { keyInput.style.display = 'none'; keyInput.value = ''; }
+  lsSet(SHARED_STAMP_KEY, j.updatedAt || payload.updatedAt); lsSet(SHARED_DIRTY_KEY, '');
+  Object.assign(sharedInfo, { available: true, updatedAt: j.updatedAt || payload.updatedAt, updatedBy: payload.updatedBy, checked: true, applied: true, source: 'api' });
+  renderSharedStatus(); done();
+  showToast('모두에게 적용했어요 — 다른 사람은 다음에 페이지를 열 때(약 1분 뒤부터) 이 설정을 받아요', 'success');
+}
+
 /* 상단바가 화면 밖으로 밀리는 일이 없도록 — 문서(뷰포트)는 절대 스크롤되지 않아야 한다 */
 function gKeepViewportTop() { if (window.scrollY || window.scrollX) window.scrollTo(0, 0); setTimeout(() => { if (window.scrollY || window.scrollX) window.scrollTo(0, 0); }, 400); }
 window.addEventListener('scroll', gKeepViewportTop, { passive: true });
@@ -5996,6 +6137,7 @@ loadSettings();
 applySettingsToDB();
 populateDropdowns();
 loadAll();
+loadSharedSettings();   // 관리자가 올린 공유 설정이 있으면 그걸로 (브라우저 설정은 캐시)
 </script>
 </body>
 </html>
