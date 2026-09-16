@@ -343,6 +343,7 @@
   .pin-map-msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 12px; color: var(--text3); padding: 24px; line-height: 1.7; }
   .pin-side { width: 320px; flex-shrink: 0; border-left: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
   .pin-side-inner { padding: 14px 16px; overflow-y: auto; }
+  .pin-tip { background: var(--blue-bg); border: 1px solid #c8dffe; border-radius: 8px; padding: 9px 11px; font-size: 11px; color: var(--blue); line-height: 1.6; margin-bottom: 10px; }
   .pin-row { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; font-size: 12px; cursor: pointer; background: var(--white); }
   .pin-row.sel { border-color: var(--blue); background: var(--blue-bg); }
   .pin-row .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1160,6 +1161,8 @@
       <div class="pin-map" id="pin_map"><div class="pin-map-msg" id="pin_map_msg">지도를 불러오는 중...</div></div>
       <div class="pin-side">
         <div class="pin-side-inner">
+          <div class="pin-tip">📍 <b>지도를 클릭할 때마다 핀이 계속 추가돼요</b><br>핀은 여러 개 찍을 수 있고, 뒤에 찍는 핀은 앞 핀과 같은 반경으로 들어갑니다.</div>
+          <button type="button" class="btn-sm" style="width:100%;margin-bottom:12px;" onclick="pinAddCenter()">＋ 지도 가운데에 핀 추가</button>
           <div class="field"><label>장소 검색</label>
             <input type="text" id="pin_search" placeholder="예: 울산 무거동, 양산부산대병원" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();pinSearch();}">
             <div class="field-hint" id="pin_search_hint">주소·건물 이름으로 찾아서 핀을 찍어요 (Enter)</div>
@@ -1173,7 +1176,7 @@
             <div class="field-hint" id="pin_radius_hint"></div>
           </div>
           <div id="pin_list"></div>
-          <div class="field-hint" style="margin-top:10px;line-height:1.7;">지도를 클릭하면 핀이 추가되고, 핀을 끌어서 옮길 수 있어요. 핀을 여러 개 찍으면 그 반경을 모두 타겟합니다.</div>
+          <div class="field-hint" style="margin-top:10px;line-height:1.7;">핀을 끌어서 옮길 수 있고, 목록에서 고른 핀의 반경이 위에서 바뀝니다. 찍은 핀의 반경을 모두 합쳐 타겟해요.</div>
         </div>
       </div>
     </div>
@@ -2019,7 +2022,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-17';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-16.5';
+const G_PAGE_BUILD = '2026-09-16.6';
 function gShowPageBuild() {
   const el = document.getElementById('g_page_build');
   if (el) { el.className = 'field-hint'; el.textContent = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요`; }
@@ -6336,7 +6339,7 @@ function pinDrawMap(fit) {
   pinS.layers = [];
   pinS.pins.forEach((p, i) => {
     const sel = i === pinS.sel;
-    const circle = L.circle([p.lat, p.lng], { radius: Number(p.r) * pinS.unit.m, color: sel ? '#007aff' : '#8e8e93', weight: sel ? 2 : 1, fillOpacity: sel ? 0.16 : 0.08 }).addTo(map);
+    const circle = L.circle([p.lat, p.lng], { radius: Number(p.r) * pinS.unit.m, color: sel ? '#007aff' : '#8e8e93', weight: sel ? 2 : 1, fillOpacity: sel ? 0.16 : 0.08, interactive: false }).addTo(map);
     const marker = L.marker([p.lat, p.lng], {
       draggable: true,
       icon: L.divIcon({ className: 'pin-marker', html: `<span><i>${i + 1}</i></span>`, iconSize: [24, 24], iconAnchor: [12, 24] }),
@@ -6357,15 +6360,31 @@ function pinDrawMap(fit) {
     } catch (e) {}
   }
 }
-function pinAdd(lat, lng, r, name) {
+function pinAdd(lat, lng, r, name, focus) {
   if (!pinS) return;
-  const unit = pinS.unit;
-  pinS.pins.push({ lat: Number(lat), lng: Number(lng), r: Number(r) || unit.def, name: name || '' });
+  if (pinS.pins.length >= 50) { showToast('핀은 50개까지 찍을 수 있어요', 'error'); return; }
+  // 이미 찍어 둔 핀이 있으면 그 반경을 그대로 이어 쓴다 (반경 한 번 정하고 계속 찍는 흐름)
+  const prev = pinS.pins[pinS.sel] || pinS.pins[pinS.pins.length - 1];
+  const copied = (!r && prev) ? prev.r : 0;
+  pinS.pins.push({ lat: Number(lat), lng: Number(lng), r: Number(r) || copied || pinS.unit.def, name: name || '', touched: !!copied });
   pinS.sel = pinS.pins.length - 1;
   pinRenderList(); pinSyncRadiusUI(); pinDrawMap(false);
-  if (pinS.map && window.L) { try { pinS.map.setView([lat, lng], Math.max(pinS.map.getZoom(), 11)); } catch (e) {} }
-  // Meta는 그 좌표에 맞는 반경을 추천해 준다 (실패하면 기본값 그대로)
-  if (!r) pinApplySuggested(pinS.pins.length - 1);
+  if (pinS.map && window.L) {
+    try {
+      const ll = [Number(lat), Number(lng)];
+      if (focus || !pinS.map.getBounds().contains(ll)) pinS.map.setView(ll, Math.max(pinS.map.getZoom(), 11));
+    } catch (e) {}
+  }
+  // 첫 핀만 Meta 추천 반경을 받아온다 (뒤 핀은 앞 핀 반경을 따라간다)
+  if (!r && !copied) pinApplySuggested(pinS.pins.length - 1);
+}
+/* 지금 보이는 지도 한가운데에 핀 추가 (지도가 안 뜬 경우에도 쓸 수 있게) */
+function pinAddCenter() {
+  if (!pinS) return;
+  let lat = 36.5, lng = 127.9;
+  if (pinS.map && window.L) { try { const c = pinS.map.getCenter(); lat = c.lat; lng = c.lng; } catch (e) {} }
+  else if (pinS.pins.length) { const last = pinS.pins[pinS.pins.length - 1]; lat = last.lat + 0.05; lng = last.lng + 0.05; }
+  pinAdd(lat, lng);
 }
 /* Meta가 추천하는 반경으로 맞춘다 (Google은 추천 API가 없어 기본값 유지) */
 function pinApplySuggested(at) {
@@ -6465,7 +6484,7 @@ async function pinSearch() {
 }
 function pinPickSearch(i) {
   const x = (window._pinGeo || [])[i]; if (!x) return;
-  pinAdd(x.lat, x.lng, 0, x.name);
+  pinAdd(x.lat, x.lng, 0, x.name, true);
   const box = document.getElementById('pin_search_results'); if (box) { box.innerHTML = ''; box.classList.remove('show'); }
   const inp = document.getElementById('pin_search'); if (inp) inp.value = '';
 }
