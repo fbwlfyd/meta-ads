@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-16T06:17:03.393Z",
+  "updatedAt": "2026-09-16T06:21:12.098Z",
   "updatedBy": "fbwlfyd9271@gmail.com",
   "meta": {
     "staff": [
@@ -11,6 +11,18 @@
       {
         "name": "권지희",
         "id": "230308"
+      },
+      {
+        "name": "김부영",
+        "id": "230807"
+      },
+      {
+        "name": "김수희",
+        "id": "230102"
+      },
+      {
+        "name": "조예은",
+        "id": "250606"
       }
     ],
     "accounts": {
@@ -76,24 +88,29 @@
       {
         "name": "울주",
         "key": "",
+        "type": "",
+        "country": "",
+        "accountId": "",
         "refName": "울주타겟",
         "custom": "35.4491,129.1587,6; 35.5184,129.0763,5; 35.5519,129.0228,5"
       },
       {
         "name": "울산",
         "key": "2014",
-        "refName": "",
-        "custom": "",
         "type": "region",
-        "country": "KR"
+        "country": "KR",
+        "accountId": "",
+        "refName": "",
+        "custom": ""
       },
       {
         "name": "양산",
         "key": "1287651",
-        "refName": "",
-        "custom": "",
         "type": "city",
-        "country": "KR"
+        "country": "KR",
+        "accountId": "",
+        "refName": "",
+        "custom": ""
       }
     ]
   },
