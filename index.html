@@ -2022,7 +2022,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-17';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-16.6';
+const G_PAGE_BUILD = '2026-09-16.8';
 function gShowPageBuild() {
   const el = document.getElementById('g_page_build');
   if (el) { el.className = 'field-hint'; el.textContent = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요`; }
@@ -5310,8 +5310,8 @@ function gParseSetSeq(name) {
   return m ? parseInt(m[1], 10) : 0;
 }
 function gMaxSetSeq(list) { let mx = 0; (list || []).forEach(x => { const n = gParseSetSeq(x.name); if (n > mx) mx = n; }); return mx; }
-/* 광고 번호 "A.BU" — A는 사람(팀)마다 다르게 쓰는 접두 번호(1.x 또는 그룹 번호 3.x), B가 광고 개수.
-   기존 광고 이름을 보고 A를 그대로 따르고 B만 이어서 매긴다 */
+/* 광고 번호 "A.BU" — A는 그 광고가 들어가는 광고그룹 번호(2U 그룹이면 2), B는 그룹 안에서 몇 번째 광고인지.
+   그룹에 이미 다른 규칙(그룹 번호와 무관하게 늘 1.x 같은)으로 쓴 광고가 있으면 그 규칙을 그대로 따른다 */
 function gParseAdNums(name) { const m = String(name || '').match(/(\d+)\.(\d+)U(?![0-9A-Za-z가-힣])/); return m ? { a: parseInt(m[1], 10), b: parseInt(m[2], 10) } : null; }
 function gAdPrefixOf(list) {
   const counts = {};
@@ -5329,21 +5329,33 @@ function gMaxAdSubSeq(list, prefix) {
   });
   return mx;
 }
+/* 광고그룹 하나를 보고 다음 광고 번호를 정한다.
+   · 접두(A) : 그 그룹 광고들이 쓰던 번호 → 없으면 그룹 번호(2U → 2) → 그것도 없으면 1
+   · 순번(B) : 그룹 안 광고 개수와 이미 쓰인 가장 큰 번호 중 큰 값 + 1
+               (번호 없이 그룹명 그대로 쓴 광고도 한 개로 센다) */
+function gAdNumbersFor(groupName, ads) {
+  const list = ads || [];
+  const learned = gAdPrefixOf(list);
+  const groupSeq = gParseSetSeq(groupName) || 0;
+  const prefix = learned !== null ? learned : (groupSeq || 1);
+  const next = Math.max(gMaxAdSubSeq(list, learned), list.length) + 1;
+  return { prefix, next };
+}
 const gAdPrefix = { g1: 1, g2: 1 };        // 지금 카드 이름에 쓸 접두 번호
-const gNewGroupPrefix = { g2: 1 };          // 새 그룹 모드에서 쓸 접두 번호 (캠페인의 최근 그룹에서 배움)
-const gPrefixRule = { g2: { mode: 'fixed', value: 1 } };   // 'own' = 그룹 번호를 접두로(3U → 3.x), 'fixed' = 늘 같은 번호(1.x)
-/* 캠페인의 최근 그룹 광고 이름을 보고 새 그룹의 접두 번호를 정한다:
-   최근 그룹이 자기 그룹 번호를 접두로 썼으면(3U 그룹에 3.x) 새 그룹도 자기 번호, 아니면(1.x 고정) 그 번호 그대로 */
+const gNewGroupPrefix = { g2: 1 };          // 새 그룹을 만들 때 쓸 접두 번호
+const gPrefixRule = { g2: { mode: 'own', value: 1 } };   // 'own' = 그룹 번호를 접두로(기본) · 'fixed' = 그룹과 상관없이 같은 번호
+/* 캠페인의 가장 최근 그룹 광고 이름을 보고, 새로 만들 그룹의 접두 번호를 정한다 */
 async function gLearnAdPrefixForNewGroup(t, groups, customerId) {
-  gPrefixRule.g2 = { mode: 'fixed', value: 1 }; gNewGroupPrefix.g2 = 1;
+  gPrefixRule.g2 = { mode: 'own', value: 1 };
   const withSeq = (groups || []).map(g => ({ g, seq: gParseSetSeq(g.name) })).filter(x => x.seq > 0).sort((a, b) => b.seq - a.seq);
   const latest = withSeq[0];
   if (latest) {
     try {
       const ads = await gLookup('ads', { customerId, adGroupId: latest.g.id });
       const p = gAdPrefixOf(ads);
-      if (p !== null) gPrefixRule.g2 = (p === latest.seq) ? { mode: 'own', value: p } : { mode: 'fixed', value: p };
-    } catch (e) { /* 못 읽으면 1.x */ }
+      // 그룹 번호와 다른 번호를 쓰고 있으면(예: 3U 그룹인데 광고가 1.x) 그 규칙을 이어간다
+      if (p !== null && p !== latest.seq) gPrefixRule.g2 = { mode: 'fixed', value: p };
+    } catch (e) { /* 못 읽으면 그룹 번호 규칙 */ }
   }
   gNewGroupPrefix.g2 = gPrefixRule.g2.mode === 'own' ? (gNextSetNumber.g2 || 1) : gPrefixRule.g2.value;
   if (!gSelectedGroup.g2) { gAdPrefix[t] = gNewGroupPrefix.g2; gAutoGenNames(t); }
@@ -5545,10 +5557,11 @@ async function gToggleGroupSelect(id, name) {
     if (hint) hint.textContent = `선택됨 · ${name}`;
     return;
   }
-  // 접두 번호는 이 그룹의 기존 광고를 따른다 (없으면 새 그룹 규칙, 그것도 없으면 1)
+  // 이 그룹의 기존 광고를 보고 번호를 정한다 (그룹 번호.광고순번)
   const learned = gAdPrefixOf(ads);
-  gAdPrefix.g2 = learned !== null ? learned : (gPrefixRule.g2.mode === 'own' ? (gParseSetSeq(name) || gPrefixRule.g2.value) : gPrefixRule.g2.value);
-  gAdSubStart.g2 = gMaxAdSubSeq(ads, learned) + 1;
+  const nums = gAdNumbersFor(name, ads);
+  gAdPrefix.g2 = learned !== null ? learned : (gPrefixRule.g2.mode === 'fixed' ? gPrefixRule.g2.value : nums.prefix);
+  gAdSubStart.g2 = nums.next;
   gAutoGenNames('g2');
   gRenderAdSublist(ads.length ? ads.map(a => {
       const on = String(a.status || '').toUpperCase() === 'ENABLED';
@@ -5586,7 +5599,7 @@ function gToggleManualCampaignId(t) {
 function gClearCampaignSelection(t) {
   const idEl = document.getElementById(`${t}_캠페인ID`); if (idEl) idEl.value = '';
   const disp = document.getElementById(`${t}_캠페인명_display`); if (disp) disp.textContent = '';
-  gSelectedGroup.g2 = null; gAdSubStart.g2 = 1; gAdPrefix.g2 = 1; gNewGroupPrefix.g2 = 1; gPrefixRule.g2 = { mode: 'fixed', value: 1 }; gClearAdSublist(); gApplyG2Mode();
+  gSelectedGroup.g2 = null; gAdSubStart.g2 = 1; gAdPrefix.g2 = 1; gNewGroupPrefix.g2 = 1; gPrefixRule.g2 = { mode: 'own', value: 1 }; gClearAdSublist(); gApplyG2Mode();
   const box = document.getElementById('g2_group_list');
   if (box) box.innerHTML = '<div class="adset-empty">위에서 캠페인을 먼저 선택하세요</div>';
   const hint = document.getElementById('g2_group_hint'); if (hint) hint.textContent = '캠페인을 불러오면 목록이 표시돼요';
@@ -5874,6 +5887,22 @@ async function gReadLogRows(reqId) {
   return (j.values || []).filter(r => (r[0] || '') === reqId)
     .map(r => ({ time: r[1] || '', step: r[2] || '', status: r[3] || '', msg: r[4] || '', ad: r[5] || '', detail: r[6] || '' }));
 }
+/* Make가 등록로그에 남긴 리소스 이름에서 실제 ID를 뽑는다 — 이름으로 찾는 것보다 정확하다
+   예) customers/8105151070/adGroups/203321485914 · customers/…/adGroupAds/203321485914~824832409635 */
+function gIdsFromLog(rows) {
+  const out = { customerId: '', campaignId: '', groupId: '', adIds: [], doneAds: 0 };
+  (rows || []).forEach(r => {
+    const t = `${r.msg || ''} ${r.detail || ''}`;
+    const c = t.match(/customers\/(\d+)\/campaigns\/(\d+)/);
+    if (c) { out.customerId = c[1]; out.campaignId = c[2]; }
+    const g = t.match(/customers\/(\d+)\/adGroups\/(\d+)(?!~)/);
+    if (g) { out.customerId = g[1]; out.groupId = g[2]; }
+    const a = t.match(/customers\/(\d+)\/adGroupAds\/(\d+)~(\d+)/);
+    if (a) { out.customerId = a[1]; if (!out.groupId) out.groupId = a[2]; out.adIds.push(a[3]); }
+    if (r.step === '광고 생성' && r.status === '완료') out.doneAds++;
+  });
+  return out;
+}
 /* Google Ads에 광고가 실제로 생겼는지 — 기대한 광고명이 광고그룹 안에 보이는지 센다 */
 async function gCheckAdsCreated(data, state) {
   const cid = String(data.광고계정ID || '').replace(/[^0-9]/g, '');
@@ -5923,8 +5952,10 @@ function gRenderTrack(t, idx, data, state) {
   if (check) {
     const c = state.check;
     if (state.footText !== undefined) check.textContent = state.footText;
-    else if (!c) check.textContent = 'Google Ads 확인 대기…';
-    else if (!c.groupId) check.textContent = `Google Ads 확인: 광고그룹이 아직 없어요 (${state.checks}회 확인)`;
+    else if (!c) check.textContent = state.logIds && state.logIds.doneAds ? `Make 기록: 광고 ${state.logIds.doneAds}개 생성됨` : 'Google Ads 확인 대기…';
+    else if (!c.groupId) check.textContent = state.logIds && state.logIds.groupId
+      ? `광고그룹 ${state.logIds.groupId} (Make 기록) · Google Ads 조회는 잠시 뒤 반영돼요`
+      : `Google Ads 확인: 광고그룹이 아직 없어요 (${state.checks}회 확인)`;
     else check.textContent = `Google Ads 확인: 광고 ${c.found.length}/${c.total}개 생성됨` + (c.found.length < c.total ? ` (${state.checks}회 확인)` : '');
   }
 }
@@ -5940,15 +5971,26 @@ async function gTrackRegistration(t, idx, data) {
     n++;
     state.elapsed = Date.now() - state.started;
     if (state.sheetOk) { try { state.rows = await gReadLogRows(data.요청ID); } catch (e) { console.warn('등록로그 읽기 실패:', e.message); } }
+    // Make가 남긴 리소스 이름에서 캠페인·광고그룹 ID를 가져온다 (이름으로 찾지 않아도 된다)
+    const logIds = gIdsFromLog(state.rows);
+    state.logIds = logIds;
+    if (logIds.campaignId) state.campaignId = logIds.campaignId;
+    if (logIds.groupId) state.groupId = logIds.groupId;
     if (n % 3 === 0 || state.forceCheck) {
       state.forceCheck = false;
       try { state.check = await gCheckAdsCreated(data, state); state.checks++; } catch (e) { console.warn('광고 확인 실패:', e.message); }
     }
     gRenderTrack(t, idx, data, state);
     const last = state.rows[state.rows.length - 1];
-    if (state.check && expected > 0 && state.check.found.length >= expected) {
+    // ① Make가 "광고 생성 완료"를 기대 개수만큼 남겼으면 완료 (가장 확실한 신호)
+    // ② 그게 없더라도 Google Ads에서 기대한 광고명이 다 보이면 완료
+    const doneByLog = expected > 0 && logIds.doneAds >= expected;
+    const doneByAds = !!(state.check && expected > 0 && state.check.found.length >= expected);
+    if (doneByLog || doneByAds) {
       state.running = false;
-      gUpdateCard(t, idx, '완료', `광고 ${state.check.found.length}개가 Google Ads에 생성됐어요 · 광고그룹 ${state.check.groupId}${last && last.status === '오류' ? ' (마지막 기록은 오류였지만 광고는 확인됨)' : ''}`);
+      const cnt = doneByLog ? logIds.doneAds : state.check.found.length;
+      const gid = (state.check && state.check.groupId) || logIds.groupId || '';
+      gUpdateCard(t, idx, '완료', `광고 ${cnt}개 생성 완료${gid ? ' · 광고그룹 ' + gid : ''}${doneByLog && !doneByAds ? ' (Make 기록 기준)' : ''}`);
       // 광고가 확인됐으니 직접 첨부로 올린 임시 영상은 올린 계정(지금 로그인)으로 지운다 — Make가 먼저 지웠으면 404라 그냥 넘어간다
       gDeleteTempFiles(data.업로드파일IDs).then(res => { if (res.deleted) console.log(`[광고 자동등록] 임시 영상 ${res.deleted}개 삭제`); }).catch(() => {});
       return;
