@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-16T07:12:35.232Z",
-  "updatedBy": "fbwlfyd9271@gmail.com",
+  "updatedAt": "2026-09-16T07:21:38.237Z",
+  "updatedBy": "kwon0914kjh@gmail.com",
   "meta": {
     "staff": [
       {
@@ -109,6 +109,15 @@
         "type": "city",
         "country": "KR",
         "accountId": "",
+        "refName": "",
+        "custom": ""
+      },
+      {
+        "name": "부산",
+        "key": "1265558",
+        "type": "city",
+        "country": "KR",
+        "accountId": "1611866049351970",
         "refName": "",
         "custom": ""
       }
