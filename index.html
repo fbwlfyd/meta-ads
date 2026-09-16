@@ -119,6 +119,10 @@
   .card-result.success { background: var(--green-bg); border-left-color: var(--green); color: #047857; }
   .card-result.fail { background: var(--red-bg); border-left-color: var(--red); color: #b91c1c; }
   /* Google 등록 진행 기록 (Make 등록로그 시트 + Google Ads 확인) */
+  .card-top-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .card-del { height: 24px; padding: 0 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--white); font-family: inherit; font-size: 11px; color: var(--text3); cursor: pointer; }
+  .card-del:hover { color: var(--red); border-color: var(--red); }
+  .card-del.confirm { color: #fff; background: var(--red); border-color: var(--red); }
   .gtrack { margin-top: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--white); }
   .gtrack-steps { max-height: 190px; overflow-y: auto; padding: 4px 0; }
   .gt-row { display: flex; align-items: baseline; gap: 8px; padding: 4px 12px; font-size: 12px; color: var(--text2); border-bottom: 1px dashed var(--border); }
@@ -136,7 +140,7 @@
   .gtrack-actions .sync-btn { text-decoration: none; }
   .tab-panel { display: none; height: 100%; }
   .tab-panel.active { display: flex; }
-  .platform-panel { display: none; height: calc(100% - 32px); flex-direction: column; }
+  .platform-panel { display: none; flex: 1; min-height: 0; flex-direction: column; }   /* 예전엔 calc(100% - 32px)라 상단바 높이(56px)만큼 문서가 넘쳐서, 입력칸 포커스 때 화면이 56px 밀려 상단 탭이 사라졌다 */
   .platform-panel.active { display: flex; }
   .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(16px); padding: 12px 20px; border-radius: var(--radius); font-size: 13px; font-weight: 500; z-index: 9999; opacity: 0; transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1); pointer-events: none; white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,0.12); display: flex; align-items: center; gap: 8px; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -261,6 +265,11 @@
   .gcard-col { flex: 1 1 0; min-width: 0; }
   .gcard-col.right { border-left: 1px dashed var(--border2); padding-left: 14px; }
   .gcard-sub { font-size: 10px; font-weight: 600; color: var(--text3); letter-spacing: .05em; text-transform: uppercase; margin-bottom: 6px; }
+  .gvideo { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px; margin-bottom: 8px; background: var(--white); }
+  .gvideo-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .gvideo-title { font-size: 12px; font-weight: 600; color: var(--text1); flex: 1; }
+  .gvideo-method { height: 26px !important; width: auto !important; font-size: 11px !important; padding: 0 22px 0 8px !important; }
+  .gvideo .field textarea { height: 40px; padding: 8px 12px; resize: vertical; }
   .btn-mini-add { width: 100%; height: 26px; border: 1px dashed var(--border2); border-radius: 6px; background: none; color: var(--text3); font-family: inherit; font-size: 11px; cursor: pointer; margin-top: 2px; }
   .btn-mini-add:hover { border-color: var(--g-red); color: var(--g-red); }
   .creative-card [data-role$="_list"] input { height: 30px; font-size: 12px; }
@@ -771,7 +780,7 @@
         <div><h3>광고 소재</h3><p id="g1_creative_count">소재 1개 · 광고그룹 1개에 광고 1개가 만들어져요</p></div>
         <div class="creative-actions">
           <label class="common-toggle"><input type="checkbox" id="g1_creative_common" checked onchange="gToggleCreativeCommon('g1')"> 문구 공통</label>
-          <button type="button" class="btn-add-creative" onclick="gAddCreativeBlock('g1')">+ 소재 추가</button>
+          <button type="button" class="btn-add-creative" onclick="gAddCreativeBlock('g1')">+ 광고 추가</button>
         </div>
       </div>
       <div class="creative-strip" id="g1_creative_list"></div>
@@ -904,7 +913,7 @@
         <div><h3>광고 소재</h3><p id="g2_creative_count">소재 1개 · 광고그룹 1개에 광고 1개가 만들어져요</p></div>
         <div class="creative-actions">
           <label class="common-toggle"><input type="checkbox" id="g2_creative_common" checked onchange="gToggleCreativeCommon('g2')"> 문구 공통</label>
-          <button type="button" class="btn-add-creative" onclick="gAddCreativeBlock('g2')">+ 소재 추가</button>
+          <button type="button" class="btn-add-creative" onclick="gAddCreativeBlock('g2')">+ 광고 추가</button>
         </div>
       </div>
       <div class="creative-strip" id="g2_creative_list"></div>
@@ -958,14 +967,19 @@
       <!-- 지역 -->
       <div class="modal-sec" id="msec_region">
         <div class="set-note">Meta 지역 검색 API로 도시를 찾아 추가합니다. <b>표기명</b>은 캠페인명·세트명에 들어가는 이름이에요 (예: 울산타겟).<br><b>표기명을 비우면 이름에 지역이 붙지 않습니다</b> — 해당 지역이 기본 지역이라 따로 구분할 필요가 없을 때 비워두세요.<br>반경 지역(울주처럼 좌표 여러 개)은 아래 표의 <b>커스텀 좌표</b>에 <code>위도,경도,반경(mile)</code> 을 세미콜론으로 구분해 넣으면 됩니다.</div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+          <span style="font-size:12px;color:var(--text2);white-space:nowrap;">이 지역을 쓸 계정</span>
+          <select id="region_target_account" style="flex:1;height:36px;border:1px solid var(--border2);border-radius:8px;padding:0 10px;font-family:inherit;font-size:12px;"><option value="">공통 (모든 계정)</option></select>
+        </div>
         <div class="region-search-wrap">
           <input type="text" id="region_search_input" placeholder="도시 이름을 입력하세요 (예: 울산, Seoul)" oninput="onRegionSearchInput()" autocomplete="off">
           <div class="region-results" id="region_search_results"></div>
         </div>
         <table class="set-table">
-          <thead><tr><th style="width:20%">지역명</th><th style="width:18%">지역 Key</th><th style="width:20%">표기명</th><th style="width:36%">커스텀 좌표 (선택)</th><th></th></tr></thead>
+          <thead><tr><th style="width:16%">계정</th><th style="width:15%">지역명</th><th style="width:13%">지역 Key</th><th style="width:11%">종류</th><th style="width:15%">표기명</th><th style="width:26%">커스텀 좌표 (선택)</th><th></th></tr></thead>
           <tbody id="set_region_body"></tbody>
         </table>
+        <div class="field-hint" style="margin-top:6px;">계정을 고르면 그 계정의 세트에서만 이 지역이 보여요 (공통은 모든 계정). 종류는 검색으로 추가하면 자동으로 들어가고, Meta에 보낼 때 도시·지역·구·군에 맞는 형식으로 나갑니다.</div>
         <button class="btn-sm" style="margin-top:10px;" onclick="addRegionRow()">+ 빈 줄 추가</button>
       </div>
       <!-- 페이지 직접 입력 -->
@@ -1342,18 +1356,34 @@ function renderSettings() {
   renderPageRows();
   renderPageIgRows();
 }
+/* Meta 지역 종류 — 검색 결과의 type 그대로. 보낼 때 geo_locations 의 어느 배열에 넣을지 정한다 */
+const META_GEO_TYPES = [
+  ['city', '도시', 'cities'], ['region', '지역(도·광역시)', 'regions'], ['subcity', '구·군', 'subcities'], ['neighborhood', '동네', 'neighborhoods'],
+  ['zip', '우편번호', 'zips'], ['country', '국가', 'countries'], ['metro_area', '광역권', 'metro_areas'], ['geo_market', 'DMA', 'geo_markets'],
+  ['large_geo_area', '대권역', 'large_geo_areas'], ['medium_geo_area', '중권역', 'medium_geo_areas'], ['small_geo_area', '소권역', 'small_geo_areas'],
+];
+function metaGeoTypeLabel(type) { const f = META_GEO_TYPES.find(x => x[0] === type); return f ? f[1] : (type || ''); }
+function metaAccountOptions(selectedId) {
+  return '<option value="">공통</option>' + DB.accounts.filter(a => a.ok !== false).map(a => `<option value="${esc(a.id)}"${String(a.id) === String(selectedId || '') ? ' selected' : ''}>${esc(a.name)}</option>`).join('');
+}
 function renderRegionRows() {
   const rb = document.getElementById('set_region_body');
   if (!rb) return;
+  const tgt = document.getElementById('region_target_account');
+  if (tgt) { const prev = tgt.value; tgt.innerHTML = '<option value="">공통 (모든 계정)</option>' + DB.accounts.filter(a => a.ok !== false).map(a => `<option value="${esc(a.id)}">${esc(a.name)}</option>`).join(''); if (prev) tgt.value = prev; }
   rb.innerHTML = SETTINGS.regions.map((r, i) => `
     <tr>
+      <td><select data-set="reg-accountId" data-i="${i}" style="width:100%;height:34px;border:1px solid var(--border2);border-radius:6px;font-family:inherit;font-size:12px;padding:0 6px;">${metaAccountOptions(r.accountId)}</select></td>
       <td><input type="text" data-set="reg-name" data-i="${i}" value="${esc(r.name)}"></td>
       <td><input type="text" data-set="reg-key" data-i="${i}" value="${esc(r.key)}"></td>
+      <td><select data-set="reg-type" data-i="${i}" style="width:100%;height:34px;border:1px solid var(--border2);border-radius:6px;font-family:inherit;font-size:12px;padding:0 4px;"><option value="">자동</option>${META_GEO_TYPES.map(x => `<option value="${x[0]}"${r.type === x[0] ? ' selected' : ''}>${x[1]}</option>`).join('')}</select></td>
       <td><input type="text" data-set="reg-refName" data-i="${i}" value="${esc(r.refName)}" placeholder="비우면 이름에 안 붙음"></td>
       <td><input type="text" data-set="reg-custom" data-i="${i}" value="${esc(r.custom)}" placeholder="위도,경도,반경; 위도,경도,반경"></td>
       <td><button class="set-del" onclick="removeRegionRow(${i})">✕</button></td>
     </tr>`).join('');
-  if (SETTINGS.regions.length === 0) rb.innerHTML = '<tr><td colspan="5" style="padding:14px 4px;color:var(--text3);font-size:12px;">위 검색창에서 도시를 찾아 추가하세요.</td></tr>';
+  if (SETTINGS.regions.length === 0) rb.innerHTML = '<tr><td colspan="7" style="padding:14px 4px;color:var(--text3);font-size:12px;">위 검색창에서 도시를 찾아 추가하세요.</td></tr>';
+  // 종류가 비어 있는 옛 지역은 Meta에 물어봐서 채워 둔다 (한 번만)
+  resolveMetaRegionTypes().then(changed => { if (changed) renderRegionRows(); }).catch(() => {});
 }
 function renderPageRows() {
   const pb = document.getElementById('set_page_body');
@@ -1410,7 +1440,8 @@ function collectSettingsFromDom() {
     const i = el.dataset.i;
     const get = k => { const e = document.querySelector(`[data-set="reg-${k}"][data-i="${i}"]`); return e ? e.value.trim() : ''; };
     const name = el.value.trim();
-    if (name) regions.push({ name, key: get('key'), refName: get('refName'), custom: get('custom') });
+    const prev = (SETTINGS.regions || [])[Number(i)] || {};
+    if (name) regions.push({ name, key: get('key'), type: get('type') || (get('key') === (prev.key || '') ? (prev.type || '') : ''), country: prev.country || '', accountId: get('accountId'), refName: get('refName'), custom: get('custom') });
   });
   if (document.querySelectorAll('[data-set="reg-name"]').length > 0) SETTINGS.regions = regions;
 
@@ -1632,7 +1663,7 @@ function saveSettings() {
 }
 function addStaffRow() { collectSettingsFromDom(); SETTINGS.staff.push({ name: '', id: '' }); renderSettings(); }
 function removeStaffRow(i) { collectSettingsFromDom(); SETTINGS.staff.splice(i, 1); renderSettings(); }
-function addRegionRow() { collectSettingsFromDom(); SETTINGS.regions.push({ name: '', key: '', refName: '', custom: '' }); renderRegionRows(); }
+function addRegionRow() { collectSettingsFromDom(); SETTINGS.regions.push({ name: '', key: '', type: '', country: '', accountId: (document.getElementById('region_target_account') || {}).value || '', refName: '', custom: '' }); renderRegionRows(); }
 function removeRegionRow(i) { collectSettingsFromDom(); SETTINGS.regions.splice(i, 1); renderRegionRows(); }
 function resetSettings() {
   if (!confirm('설정을 모두 초기화할까요? (제작자 · 계정 약칭 · 지역이 지워집니다)')) return;
@@ -1879,7 +1910,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-17';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-15.8';
+const G_PAGE_BUILD = '2026-09-16.1';
 function gShowPageBuild() {
   const el = document.getElementById('g_page_build');
   if (el) { el.className = 'field-hint'; el.textContent = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요`; }
@@ -2151,7 +2182,7 @@ async function searchGeo(q) {
     if (items.length === 0) { box.innerHTML = '<div class="region-result">결과가 없어요</div>'; return; }
     box.innerHTML = items.map((it, i) => {
       window._geoResults = items;
-      const sub = [it.region, it.country_name, it.type].filter(Boolean).join(' · ');
+      const sub = [it.region, it.country_name, metaGeoTypeLabel(it.type)].filter(Boolean).join(' · ');
       return `<div class="region-result" onclick="addRegionFromSearch(${i})"><span>${esc(it.name)}</span><span class="sub">${esc(sub)}</span></div>`;
     }).join('');
   } catch (err) {
@@ -2161,8 +2192,9 @@ async function searchGeo(q) {
 function addRegionFromSearch(i) {
   const it = (window._geoResults || [])[i]; if (!it) return;
   collectSettingsFromDom();
-  if (SETTINGS.regions.some(r => r.key === it.key)) { showToast('이미 추가된 지역이에요', 'error'); return; }
-  SETTINGS.regions.push({ name: it.name, key: it.key, refName: `${it.name}타겟`, custom: '' });
+  const accountId = (document.getElementById('region_target_account') || {}).value || '';
+  if (SETTINGS.regions.some(r => r.key === it.key && (r.accountId || '') === accountId)) { showToast('이미 추가된 지역이에요', 'error'); return; }
+  SETTINGS.regions.push({ name: it.name, key: it.key, type: it.type || 'city', country: it.country_code || '', accountId, refName: `${it.name}타겟`, custom: '' });
   renderRegionRows();
   document.getElementById('region_search_results').classList.remove('show');
   document.getElementById('region_search_input').value = '';
@@ -2250,7 +2282,7 @@ let DB = {
 
 function applySettingsToDB() {
   DB.staff = SETTINGS.staff.filter(s => s.name);
-  DB.regions = SETTINGS.regions.filter(r => r.name).map(r => ({ name: r.name, id: r.key || '', refName: r.refName || '', custom: r.custom || '' }));
+  DB.regions = SETTINGS.regions.filter(r => r.name).map(r => ({ name: r.name, id: r.key || '', type: r.type || '', country: r.country || '', accountId: r.accountId || '', refName: r.refName || '', custom: r.custom || '' }));
   // 계정에 네이밍 약칭 얹기
   DB.accounts.forEach(a => {
     const s = accountSetting(a.id);
@@ -2984,13 +3016,7 @@ function populateDropdowns() {
       DB.pages.forEach(p => { const o = document.createElement('option'); o.value = p.name; o.textContent = p.name; pageSel.appendChild(o); });
       if (prevPage && Array.from(pageSel.options).some(o => o.value === prevPage)) pageSel.value = prevPage;
     }
-    const regSel = document.getElementById(`${t}_지역구분자`);
-    if (regSel) {
-      const prevReg = regSel.value;
-      regSel.innerHTML = '<option value="">선택</option>';
-      DB.regions.forEach(r => { const o = document.createElement('option'); o.value = r.name; o.textContent = r.refName ? `${r.name} — ${r.refName}` : r.name; regSel.appendChild(o); });
-      if (prevReg && Array.from(regSel.options).some(o => o.value === prevReg)) regSel.value = prevReg;
-    }
+    fillMetaRegionSelect(t);
     fill('전환위치', DB.destinations, 'ON_AD');
     fill('성과목표', DB.optimizations, 'LEAD_GENERATION');
     fill('노출위치1', DB.platforms, DB.platforms[0]?.value);
@@ -3128,15 +3154,70 @@ function toArray(str) {
   return str.split(',').map(s => s.trim()).filter(Boolean).filter(v => !DEPRECATED_POSITIONS.has(v));
 }
 const selectedAccount = { t1: '', t2: '' };
+/* 계정에 맞는 지역만 — 공통(accountId 없음) + 그 계정 전용 */
+function metaRegionsForAccount(accountId) {
+  const id = String(accountId || '').replace('act_', '');
+  return DB.regions.filter(r => !r.accountId || String(r.accountId).replace('act_', '') === id);
+}
+function metaCurrentAccountId(t) {
+  const v = (document.getElementById(`${t}_광고계정ID`) || {}).value || '';
+  if (v) return v;
+  const acc = DB.accounts.find(a => a.name === getAccountName(t));
+  return acc ? acc.id : '';
+}
+function fillMetaRegionSelect(t) {
+  const regSel = document.getElementById(`${t}_지역구분자`);
+  if (!regSel) return;
+  const prevReg = regSel.value;
+  const list = metaRegionsForAccount(metaCurrentAccountId(t));
+  regSel.innerHTML = '<option value="">선택</option>';
+  list.forEach(r => { const o = document.createElement('option'); o.value = r.name; o.textContent = (r.refName ? `${r.name} — ${r.refName}` : r.name) + (r.accountId ? ' (계정 전용)' : ''); regSel.appendChild(o); });
+  if (prevReg && Array.from(regSel.options).some(o => o.value === prevReg)) regSel.value = prevReg;
+  else if (prevReg) { regSel.value = ''; if (typeof onRegion === 'function') onRegion(t); }
+}
+/* 종류(type)가 비어 있는 지역은 Meta 검색으로 알아낸다 — 같은 key를 찾으면 그 type */
+let metaRegionTypeResolving = null;
+async function resolveMetaRegionTypes() {
+  if (metaRegionTypeResolving) return metaRegionTypeResolving;
+  metaRegionTypeResolving = (async () => {
+    let changed = false;
+    const todo = (SETTINGS.regions || []).filter(r => r.key && !r.type && !r.custom);
+    if (!todo.length || typeof fbGet !== 'function' || !META_ACCESS_TOKEN) return false;
+    for (const r of todo) {
+      try {
+        const json = await fbGet('search', { type: 'adgeolocation', location_types: JSON.stringify(['city', 'region', 'subcity', 'zip', 'country', 'neighborhood', 'metro_area']), q: r.name, locale: 'ko_KR', limit: 25 });
+        const hit = (json.data || []).find(x => String(x.key) === String(r.key));
+        if (hit) { r.type = hit.type; r.country = hit.country_code || r.country || ''; changed = true; }
+      } catch (e) { /* 토큰 없음 등 — 보낼 때 다시 시도 */ }
+    }
+    if (changed) { persistSettings(); applySettingsToDB(); }
+    return changed;
+  })();
+  try { return await metaRegionTypeResolving; } finally { metaRegionTypeResolving = null; }
+}
+/* 지역 한 건 → Meta geo_locations 조각. 도시는 cities, 도/광역시는 regions, 구·군은 subcities … */
+function metaGeoLocationsFor(regionObj) {
+  const customs = parseCustomCoords(regionObj && regionObj.custom);
+  if (customs.length > 0) return { custom_locations: customs };
+  const key = regionObj && regionObj.id;
+  if (!key) return { countries: ['KR'] };
+  const type = (regionObj.type || 'city');
+  if (type === 'country') return { countries: [key] };
+  const f = META_GEO_TYPES.find(x => x[0] === type);
+  const field = f ? f[2] : 'cities';
+  return { [field]: [{ key: String(key) }] };
+}
 function getAccountName(t) { if (t === 't1') return document.getElementById('t1_계정명').value; return selectedAccount.t2; }
 function setAccountName(t, name) {
   if (t === 't1') document.getElementById('t1_계정명').value = name;
   else { selectedAccount.t2 = name; document.getElementById('t2_계정명_display').value = name; }
+  fillMetaRegionSelect(t);
 }
 function onAccount(t) {
   const name = getAccountName(t);
   const acc = DB.accounts.find(a => a.name === name);
   document.getElementById(`${t}_광고계정ID`).value = acc ? acc.id : '';
+  fillMetaRegionSelect(t);   // 계정 전용 지역은 그 계정에서만
   selectedExcludes[t] = []; renderExcludeTags(t); updateExcludeIds(t);
   document.getElementById(`${t}_제외타겟ID`).value = '';
   autoGenNames(t);
@@ -3375,7 +3456,7 @@ function removeCreativeBlock(t, id) {
   const el = document.getElementById(id); if (el) el.remove();
   creativeBlocks(t).forEach((b, i) => {
     const title = b.querySelector('.creative-card-title');
-    if (title) title.textContent = `소재 ${i + 1}`;
+    if (title) title.textContent = `광고 ${i + 1}`;
   });
   applyCreativeCommon(t);
   updateCreativeCount(t);
@@ -3758,12 +3839,8 @@ function getData(t) {
     targeting: (function() {
       const regionName = g(`${t}_지역구분자`);
       const regionKey = g(`${t}_타겟국가`);
-      const regionObj = DB.regions.find(r => r.name === regionName);
-      const customs = parseCustomCoords(regionObj && regionObj.custom);
-      let geoLocations;
-      if (customs.length > 0) geoLocations = { custom_locations: customs };
-      else if (regionKey) geoLocations = { cities: [{ key: regionKey }] };
-      else geoLocations = { countries: ['KR'] };
+      const regionObj = DB.regions.find(r => r.name === regionName) || (regionKey ? { id: regionKey, type: '' } : null);
+      const geoLocations = metaGeoLocationsFor(regionObj);
       let ageMin = parseInt(g(`${t}_최소나이`), 10); if (isNaN(ageMin)) ageMin = 45;
       let ageMax = parseInt(g(`${t}_최대나이`), 10); if (isNaN(ageMax)) ageMax = 65;
       ageMin = Math.min(Math.max(ageMin, 18), 65);
@@ -3833,9 +3910,13 @@ function addCard(t, data) {
   const toExisting = data.등록모드 === 'EXISTING_ADSET';
   const title = isT2 ? (data.광고세트명||'세트명 없음') : (data.캠페인명||'캠페인명 없음');
   const card = document.createElement('div'); card.className = 'card'; card.id = `card_${t}_${idx}`;
-  card.innerHTML = `<div class="card-top"><div class="card-title-wrap"><span class="card-type ${isT2?'type-add':'type-new'}">${toExisting ? '광고 추가' : (isT2 ? '세트 추가' : '신규 등록')}</span><span class="card-title">${title}</span></div><span class="badge badge-sending" id="badge_${t}_${idx}">전송중</span></div><div class="card-meta"><span class="meta-item"><span class="meta-label">계정</span>${data.계정명||'-'}</span><span class="meta-item"><span class="meta-label">광고세트</span>${data.광고세트명||'-'}</span><span class="meta-item"><span class="meta-label">소재</span>${(data.소재목록||[]).length}개</span><span class="meta-item"><span class="meta-label">페이지</span>${data.페이지||'-'}</span><span class="meta-item"><span class="meta-label">기간</span>${data.시작일||'-'} ~ ${data.종료일||'-'}</span></div><div class="card-result" id="result_${t}_${idx}">Make로 전송 중...</div>`;
+  card.innerHTML = `<div class="card-top"><div class="card-title-wrap"><span class="card-type ${isT2?'type-add':'type-new'}">${toExisting ? '광고 추가' : (isT2 ? '세트 추가' : '신규 등록')}</span><span class="card-title">${esc(title)}</span></div><span class="card-top-right"><span class="badge badge-sending" id="badge_${t}_${idx}">전송중</span><button type="button" class="card-del" title="목록에서 삭제" onclick="removeRequestCard('${t}',${idx},this)">삭제</button></span></div><div class="card-meta"><span class="meta-item"><span class="meta-label">계정</span>${esc(data.계정명||'-')}</span><span class="meta-item"><span class="meta-label">광고세트</span>${esc(data.광고세트명||'-')}</span><span class="meta-item"><span class="meta-label">소재</span>${(data.소재목록||[]).length}개</span><span class="meta-item"><span class="meta-label">페이지</span>${esc(data.페이지||'-')}</span><span class="meta-item"><span class="meta-label">기간</span>${esc(data.시작일||'-')} ~ ${esc(data.종료일||'-')}</span><span class="meta-item"><span class="meta-label">요청ID</span><code style="font-size:11px;">${esc(data.요청ID||'-')}</code></span></div><div class="card-result" id="result_${t}_${idx}">Make로 전송 중...</div>
+    <div class="gtrack" id="gtrack_${t}_${idx}" style="display:none;">
+      <div class="gtrack-steps" id="gsteps_${t}_${idx}"></div>
+      <div class="gtrack-foot"><span id="gcheck_${t}_${idx}" class="gtrack-check"></span><span class="gtrack-actions"><button type="button" class="sync-btn" onclick="retryVerify('${t}',${idx})">지금 확인</button><a class="sync-btn" href="https://docs.google.com/spreadsheets/d/${SHEET_ID}" target="_blank" rel="noopener">로그 시트</a></span></div>
+    </div>`;
   list.appendChild(card);
-  document.getElementById(`${t}_count`).textContent = `총 ${rows[t].length}${isT2?'건 처리됨':'건 등록됨'}`;
+  document.getElementById(`${t}_count`).textContent = `총 ${rows[t].filter(Boolean).length}${isT2?'건 처리됨':'건 등록됨'}`;
   return idx;
 }
 function updateCard(t, idx, status, msg, html) {
@@ -3925,6 +4006,22 @@ async function findByName(edge, wantName, sinceTs) {
 async function verifyRegistration(t, idx, data) {
   const key = `${t}_${idx}`;
   verifyState[key] = { data, running: true };
+  // 구글처럼 Make 단계 기록(등록로그 시트)도 같이 보여준다 — 시트는 구글 로그인으로 읽는다
+  const logState = { rows: [], sheetOk: null, elapsed: 0, started: Date.now(), footText: '', emptyText: '' };
+  const readLog = async () => {
+    logState.elapsed = Date.now() - logState.started;
+    if (!data.요청ID) { logState.emptyText = '요청ID가 없는 옛 버전 요청이에요'; return; }
+    if (typeof gTokenValid !== 'function' || !gTokenValid('core')) { logState.footText = '단계 기록을 보려면 구글 로그인이 필요해요 (Google 탭 → 설정 → 연동)'; logState.emptyText = '구글 로그인 후 "지금 확인"을 누르면 Make 단계 기록이 보여요'; return; }
+    try { logState.rows = await gReadLogRows(data.요청ID); logState.sheetOk = true; logState.footText = logState.rows.length ? `Make 기록 ${logState.rows.length}건` : ''; logState.emptyText = logState.elapsed > 90000 ? 'Make 기록이 없어요 — 메타 시나리오에 기록(로그) 모듈이 아직 없으면 여기는 비어 있어요' : ''; }
+    catch (e) { logState.sheetOk = false; }
+  };
+  const lastLogError = () => { const last = logState.rows[logState.rows.length - 1]; return last && last.status === '오류' ? last : null; };
+  // 확인 중 문구 — Make 기록에 오류가 있으면 그 오류를 앞세운다
+  const report = (status, msg, html) => {
+    const err = status === '확인중' ? lastLogError() : null;
+    if (err) { const hint = gErrorHint(err); updateCard(t, idx, '실패', `${esc(err.step)}에서 멈췄어요 — ${esc(err.msg)}${hint ? ' · ' + esc(hint) : ''}<br><span style="font-size:11px;color:var(--text3)">계속 확인 중: ${esc(msg)}</span>`, true); }
+    else updateCard(t, idx, status, msg, html);
+  };
   const sinceTs = Math.floor(Date.now() / 1000) - 900;   // 최근 15분 내 생성분
   const accId = String(data.광고계정ID || '').replace('act_', '');
   const expected = (data.소재목록 || []).map(c => c.광고명).filter(Boolean);
@@ -3939,7 +4036,9 @@ async function verifyRegistration(t, idx, data) {
 
   for (let n = 1; n <= VERIFY_MAX_TRIES; n++) {
     await sleep(VERIFY_INTERVAL_MS);
+    if (!verifyState[key] || !verifyState[key].running) return;   // 카드가 삭제됨
     const secs = Math.round(n * VERIFY_INTERVAL_MS / 1000);
+    if (n % 2 === 1) { await readLog(); gRenderTrack(t, idx, data, logState); }
     try {
       // Make가 광고 ID를 알려준 경우 — 이름 검색 없이 ID로 바로 확인
       if (knownAdIds.length) {
@@ -3955,18 +4054,18 @@ async function verifyRegistration(t, idx, data) {
           return;
         }
         lastStage = `광고 생성 대기 중 (${got.length}/${knownAdIds.length}, ID 기준)`;
-        updateCard(t, idx, '확인중', `${lastStage}… (${secs}초)`);
+        report('확인중', `${lastStage}… (${secs}초)`);
         continue;
       }
       if (!campaignId && wantCampaign) {
         const c = await findByName(`act_${accId}/campaigns`, wantCampaign, sinceTs);
-        if (!c) { lastStage = '캠페인 생성 대기 중'; updateCard(t, idx, '확인중', `${lastStage}… (${secs}초)`); continue; }
+        if (!c) { lastStage = '캠페인 생성 대기 중'; report('확인중', `${lastStage}… (${secs}초)`); continue; }
         campaignId = c.id;
       }
       if (!adsetId) {
-        if (!campaignId) { lastStage = '캠페인 확인 대기 중'; updateCard(t, idx, '확인중', `${lastStage}… (${secs}초)`); continue; }
+        if (!campaignId) { lastStage = '캠페인 확인 대기 중'; report('확인중', `${lastStage}… (${secs}초)`); continue; }
         const st = await findByName(`${campaignId}/adsets`, wantAdset, null);
-        if (!st) { lastStage = '광고세트 생성 대기 중'; updateCard(t, idx, '확인중', `${lastStage}… (${secs}초)`); continue; }
+        if (!st) { lastStage = '광고세트 생성 대기 중'; report('확인중', `${lastStage}… (${secs}초)`); continue; }
         adsetId = st.id;
       }
       const ads = await fbGetAll(`${adsetId}/ads`, { fields: 'id,name,effective_status' }, 3);
@@ -3981,12 +4080,15 @@ async function verifyRegistration(t, idx, data) {
         return;
       }
       lastStage = `광고 생성 대기 중 (${hit.length}/${expected.length})`;
-      updateCard(t, idx, '확인중', `${lastStage}… (${secs}초)`);
+      report('확인중', `${lastStage}… (${secs}초)`);
     } catch (e) {
-      updateCard(t, idx, '확인중', `확인 중 오류: ${e.message} — 계속 시도합니다 (${secs}초)`);
+      report('확인중', `확인 중 오류: ${e.message} — 계속 시도합니다 (${secs}초)`);
     }
   }
   verifyState[key].running = false;
+  await readLog(); gRenderTrack(t, idx, data, logState);
+  const finalErr = lastLogError();
+  if (finalErr) { const hint = gErrorHint(finalErr); updateCard(t, idx, '실패', `${esc(finalErr.step)}에서 멈췄어요 — ${esc(finalErr.msg)}${hint ? ' · ' + esc(hint) : ''} <button class="sync-btn" style="margin-left:6px;" onclick="retryVerify('${t}',${idx})">다시 확인</button>`, true); return; }
   updateCard(t, idx, '주의',
     `2분 안에 확인되지 않았어요 — 마지막 단계: ${lastStage}<br>` +
     `<span style="font-size:11px;color:var(--text3)">이름이 정확히 일치하지 않거나 Make에서 실패했을 수 있어요. 광고 관리자에서 직접 확인하세요.</span> ` +
@@ -3999,6 +4101,7 @@ function retryVerify(t, idx) {
   verifyRegistration(t, idx, st.data);
 }
 async function submitAd(t) {
+  try { await resolveMetaRegionTypes(); } catch (e) { /* 종류를 못 알아내면 도시로 보낸다 */ }   // 옛 지역(종류 없음)은 보내기 전에 Meta에 물어본다
   const data = getData(t); const isT2 = t === 't2';
   const toExisting = data.등록모드 === 'EXISTING_ADSET';
   if (!data.계정명) { showToast('계정명은 필수입니다', 'error'); return; }
@@ -4018,6 +4121,7 @@ async function submitAd(t) {
   if (empty >= 0) { showToast(`소재 ${empty + 1}에 파일이 없어요`, 'error'); return; }
   const btn = document.getElementById(`${t}_submitBtn`); btn.disabled = true; btn.textContent = '전송 중...';
   showToast('Make로 전송 중...', 'info');
+  data.요청ID = gNewRequestId();   // 구글과 같은 등록로그 시트에 Make가 단계를 적을 수 있도록
   const idx = addCard(t, data);
   try {
     for (let n = 0; n < creatives.length; n++) {
@@ -4744,8 +4848,12 @@ function gAdNameFor(t, i) {
 const G_CREATIVE_MAX = 5;
 const gCreativeSeq = { g1: 0, g2: 0 };
 
-/* 카드 드롭존 — 메타와 같은 방식. 파일을 붙이는 순간 Drive에 미리 올려 두고(등록 때 재업로드 없음),
-   올린 파일ID는 카드에 기억해 두었다가 Make가 등록을 마치면 지운다 */
+/* 카드 = 광고 1개. 카드 안에 영상(소재) 슬롯 여러 개(최대 5) + 그 광고의 문구·CTA.
+   디맨드젠 영상 광고는 영상 5개까지 넣을 수 있고 Google이 섞어서 보여준다.
+   파일을 붙이는 순간 Drive에 미리 올려 두고(등록 때 재업로드 없음), 등록이 확인되면 페이지가 지운다 */
+const G_VIDEOS_PER_AD = 5;
+function gVideoSlots(block) { return Array.from(block.querySelectorAll('[data-role="video"]')); }
+function gAllVideoSlots(t) { return gCreativeBlocks(t).flatMap(b => gVideoSlots(b).map(s => ({ block: b, slot: s }))); }
 function gOpenCardFile(dz) { const input = dz.parentElement.querySelector('[data-role="파일첨부"]'); if (input) input.click(); }
 function gOnCardDrop(e, dz) {
   e.preventDefault(); onCreativeDragLeave(dz);
@@ -4755,20 +4863,23 @@ function gOnCardDrop(e, dz) {
   gOnCardFileSelected(input);
 }
 function gOnCardFileSelected(input) {
-  const block = input.closest('.creative-card'); if (!block) return;
-  const dz = block.querySelector('[data-role="dropzone"]');
+  const slot = input.closest('[data-role="video"]'); const block = input.closest('.creative-card'); if (!slot || !block) return;
+  const dz = slot.querySelector('[data-role="dropzone"]');
   const file = input.files[0]; if (!file) return;
   setCreativeDropText(dz, file.name);
   const t = block.id.startsWith('g1') ? 'g1' : 'g2';
   // 새 파일을 붙이면 이전 업로드 기록은 버린다
-  block.dataset.uploadedId = '';
-  block.querySelector('[data-role="파일ID"]').value = '';
-  gPrefetchDriveUpload(t, block);
+  slot.dataset.uploadedId = '';
+  slot.querySelector('[data-role="파일ID"]').value = '';
+  // YouTube 제목이 비어 있으면 파일명으로 채워 둔다 (고쳐도 됨)
+  const title = slot.querySelector('[data-role="유튜브제목"]');
+  if (title && !title.value.trim()) title.value = file.name.replace(/\.[^.]+$/, '');
+  gPrefetchDriveUpload(t, slot);
 }
 const gUploadInFlight = new WeakMap();
-async function gPrefetchDriveUpload(t, block) {
-  const dz = block.querySelector('[data-role="dropzone"]');
-  const input = block.querySelector('[data-role="파일첨부"]');
+async function gPrefetchDriveUpload(t, slot) {
+  const dz = slot.querySelector('[data-role="dropzone"]');
+  const input = slot.querySelector('[data-role="파일첨부"]');
   const file = input && input.files[0]; if (!file) return;
   const badge = (txt, color) => {
     let el = dz.querySelector('[data-role="upstat"]');
@@ -4779,26 +4890,37 @@ async function gPrefetchDriveUpload(t, block) {
   const p = (async () => {
     const id = await uploadFileToDrive(file);
     if (input.files[0] !== file) return null;   // 그 사이 다른 파일로 바뀜
-    block.dataset.uploadedId = id;
-    block.querySelector('[data-role="파일ID"]').value = id;
+    slot.dataset.uploadedId = id;
+    slot.querySelector('[data-role="파일ID"]').value = id;
     if (gUploadPermissionFailed[id]) badge('⚠ 올라갔지만 공유 설정에 실패했어요 — Make가 못 읽을 수 있으니 다시 첨부해 보세요', 'var(--red)');
     else badge('✓ Drive 업로드 완료 — 등록 시 바로 사용', '#047857');
     return id;
   })();
-  gUploadInFlight.set(block, p);
+  gUploadInFlight.set(slot, p);
   try { await p; }
-  catch (e) { badge('미리 올리기 실패 — 등록할 때 다시 올립니다 (' + e.message + ')', 'var(--red)'); block.dataset.uploadedId = ''; block.querySelector('[data-role="파일ID"]').value = ''; }
-  finally { if (gUploadInFlight.get(block) === p) gUploadInFlight.delete(block); }
+  catch (e) { badge('미리 올리기 실패 — 등록할 때 다시 올립니다 (' + e.message + ')', 'var(--red)'); slot.dataset.uploadedId = ''; slot.querySelector('[data-role="파일ID"]').value = ''; }
+  finally { if (gUploadInFlight.get(slot) === p) gUploadInFlight.delete(slot); }
 }
 
 function gCreativeBlocks(t) {
   const list = document.getElementById(`${t}_creative_list`);
   return list ? Array.from(list.children) : [];
 }
+function gRemoveCreativeBlock(t, id) {
+  const list = document.getElementById(`${t}_creative_list`);
+  if (list.children.length <= 1) { showToast('소재는 1개 이상 있어야 해요', 'error'); return; }
+  document.getElementById(id)?.remove();
+  gCreativeBlocks(t).forEach((b, i) => {
+    const title = b.querySelector('.creative-card-title');
+    if (title) title.textContent = `광고 ${i + 1}`;
+  });
+  gApplyCreativeCommon(t); gUpdateCreativeCount(t); gAutoGenNames(t);
+}
 function gUpdateCreativeCount(t) {
-  const n = gCreativeBlocks(t).length;
+  const blocks = gCreativeBlocks(t);
+  const n = blocks.length; const v = blocks.reduce((a, b) => a + gVideoSlots(b).length, 0);
   const el = document.getElementById(`${t}_creative_count`);
-  if (el) el.textContent = `소재 ${n}개 · 광고그룹 1개에 광고 ${n}개가 만들어져요`;
+  if (el) el.textContent = `광고 ${n}개 · 영상 ${v}개 · 광고그룹 1개에 광고 ${n}개가 만들어져요`;
 }
 function gFillCta(block) {
   const sel = block.querySelector('[data-role="CTA버튼"]');
@@ -4829,74 +4951,6 @@ function gAddMini(btn, role, maxLen, t, value) {
   list.appendChild(row);
   if (value) row.querySelector('input').value = value;
   return row;
-}
-function gAddCreativeBlock(t) {
-  const list = document.getElementById(`${t}_creative_list`);
-  if (!list) return;
-  if (list.children.length >= G_CREATIVE_MAX) { showToast(`소재는 최대 ${G_CREATIVE_MAX}개까지예요 (Google 제한)`, 'error'); return; }
-  const id = `${t}_gcr_${gCreativeSeq[t]++}`;
-  const idx = list.children.length + 1;
-  const block = document.createElement('div');
-  block.className = 'creative-card'; block.id = id;
-  block.style.flex = '0 0 560px';
-  block.innerHTML = `
-    <div class="creative-card-head"><span class="creative-card-title">소재 ${idx}</span>
-      <button type="button" class="creative-remove" onclick="gRemoveCreativeBlock('${t}','${id}')">삭제</button>
-    </div>
-    <div class="creative-adname is-empty" data-role="광고명">${t === 'g1' ? '계정 선택 시 광고명 자동생성' : '캠페인 선택 시 광고명 자동생성'}</div>
-
-    <div class="gcard-cols">
-      <div class="gcard-col">
-        <div class="gcard-sub">영상</div>
-        <div class="field"><label>파일 업로드 방식</label>
-          <select data-role="파일방식" onchange="gOnCardFileMethod('${t}','${id}')">
-            <option value="upload" selected>직접 첨부</option>
-            <option value="drive">Drive 파일ID</option>
-          </select>
-        </div>
-        <div class="field" data-role="upload_wrap">
-          <div class="creative-drop" data-role="dropzone" onclick="gOpenCardFile(this)" ondragover="onCreativeDragOver(event,this)" ondragleave="onCreativeDragLeave(this)" ondrop="gOnCardDrop(event,this)">📎 클릭하거나 드래그<br><span style="font-size:11px;color:var(--text3);">영상 (mp4)</span></div>
-          <input type="file" data-role="파일첨부" accept="video/*" style="display:none;" onchange="gOnCardFileSelected(this)">
-        </div>
-        <div class="field" data-role="drive_wrap" style="display:none;"><label>파일ID (Google Drive)</label><input type="text" data-role="파일ID" placeholder="Drive 링크 붙여넣기" oninput="extractDriveId(this)"></div>
-        <div class="field"><label>YouTube 제목</label><input type="text" data-role="유튜브제목" placeholder="영상 제목" oninput="gSyncCreativeCommon('${t}')"></div>
-        <div class="field"><label>YouTube 설명</label><textarea data-role="유튜브설명" placeholder="#shorts 등" oninput="gSyncCreativeCommon('${t}')"></textarea></div>
-      </div>
-      <div class="gcard-col right" data-role="text_wrap">
-        <div class="gcard-sub">광고 문구</div>
-        <div class="field"><label>최종 URL</label><input type="text" data-role="최종URL" placeholder="https://..." oninput="gSyncCreativeCommon('${t}')"></div>
-        ${gMiniList('광고제목', '광고제목', 40, t)}
-        ${gMiniList('긴광고제목', '긴 광고제목', 90, t)}
-        ${gMiniList('설명', '설명', 90, t)}
-        <div class="field"><label>CTA버튼</label><select data-role="CTA버튼" onchange="gSyncCreativeCommon('${t}')"></select></div>
-      </div>
-    </div>`;
-  list.appendChild(block);
-  gFillCta(block);
-  ['광고제목', '긴광고제목', '설명'].forEach(role => {
-    const btn = block.querySelector(`[onclick*="'${role}'"]`);
-    if (btn) gAddMini(btn, role, role === '광고제목' ? 40 : 90, t);
-  });
-  gApplyCreativeCommon(t);
-  gSyncCreativeCommon(t);
-  gUpdateCreativeCount(t);
-  gAutoGenNames(t);
-}
-function gRemoveCreativeBlock(t, id) {
-  const list = document.getElementById(`${t}_creative_list`);
-  if (list.children.length <= 1) { showToast('소재는 1개 이상 있어야 해요', 'error'); return; }
-  document.getElementById(id)?.remove();
-  gCreativeBlocks(t).forEach((b, i) => {
-    const title = b.querySelector('.creative-card-title');
-    if (title) title.textContent = `소재 ${i + 1}`;
-  });
-  gApplyCreativeCommon(t); gUpdateCreativeCount(t); gAutoGenNames(t);
-}
-function gOnCardFileMethod(t, id) {
-  const b = document.getElementById(id); if (!b) return;
-  const m = b.querySelector('[data-role="파일방식"]').value;
-  b.querySelector('[data-role="drive_wrap"]').style.display = m === 'drive' ? 'block' : 'none';
-  b.querySelector('[data-role="upload_wrap"]').style.display = m === 'upload' ? 'block' : 'none';
 }
 function gToggleCreativeCommon(t) { gApplyCreativeCommon(t); gSyncCreativeCommon(t); }
 function gApplyCreativeCommon(t) {
@@ -4932,23 +4986,114 @@ function gSyncCreativeCommon(t) {
 function gCardTexts(block, role) {
   return Array.from(block.querySelectorAll(`[data-role="${role}"]`)).map(x => x.value.trim()).filter(Boolean);
 }
+
+/* 영상 슬롯 (카드 안) */
+function gVideoSlotHtml(t, n) {
+  return `<div class="gvideo" data-role="video">
+    <div class="gvideo-head"><span class="gvideo-title" data-role="video_no">영상 ${n}</span>
+      <select data-role="파일방식" class="gvideo-method" onchange="gOnSlotFileMethod(this)"><option value="upload" selected>직접 첨부</option><option value="drive">Drive 파일ID</option></select>
+      <button type="button" class="creative-remove" title="이 영상 빼기" onclick="gRemoveVideoSlot('${t}', this)">✕</button></div>
+    <div data-role="upload_wrap">
+      <div class="creative-drop" data-role="dropzone" onclick="gOpenCardFile(this)" ondragover="onCreativeDragOver(event,this)" ondragleave="onCreativeDragLeave(this)" ondrop="gOnCardDrop(event,this)">📎 클릭하거나 드래그<br><span style="font-size:11px;color:var(--text3);">영상 (mp4)</span></div>
+      <input type="file" data-role="파일첨부" accept="video/*" style="display:none;" onchange="gOnCardFileSelected(this)">
+    </div>
+    <div data-role="drive_wrap" style="display:none;"><input type="text" data-role="파일ID" placeholder="Drive 링크 붙여넣기" oninput="extractDriveId(this)"></div>
+    <div class="field" style="margin:6px 0 4px;"><input type="text" data-role="유튜브제목" placeholder="YouTube 제목"></div>
+    <div class="field" style="margin:0;"><textarea data-role="유튜브설명" placeholder="YouTube 설명 (#shorts 등)"></textarea></div>
+  </div>`;
+}
+function gAddVideoSlot(t, blockOrId) {
+  const block = typeof blockOrId === 'string' ? document.getElementById(blockOrId) : blockOrId; if (!block) return null;
+  const list = block.querySelector('[data-role="video_list"]');
+  if (list.children.length >= G_VIDEOS_PER_AD) { showToast(`광고 하나에 영상은 최대 ${G_VIDEOS_PER_AD}개예요 (Google 제한)`, 'error'); return null; }
+  const wrap = document.createElement('div'); wrap.innerHTML = gVideoSlotHtml(t, list.children.length + 1);
+  const slot = wrap.firstElementChild; list.appendChild(slot);
+  gRenumberVideoSlots(t, block);
+  return slot;
+}
+function gRemoveVideoSlot(t, btn) {
+  const slot = btn.closest('[data-role="video"]'); const block = btn.closest('.creative-card'); if (!slot || !block) return;
+  const list = block.querySelector('[data-role="video_list"]');
+  if (list.children.length <= 1) { showToast('영상은 1개 이상 있어야 해요', 'error'); return; }
+  slot.remove(); gRenumberVideoSlots(t, block);
+}
+function gRenumberVideoSlots(t, block) {
+  const slots = gVideoSlots(block);
+  slots.forEach((s, i) => { const no = s.querySelector('[data-role="video_no"]'); if (no) no.textContent = `영상 ${i + 1}`; });
+  const cnt = block.querySelector('[data-role="video_count"]'); if (cnt) cnt.textContent = `${slots.length}/${G_VIDEOS_PER_AD}`;
+  const addBtn = block.querySelector('[data-role="add_video"]'); if (addBtn) addBtn.style.display = slots.length >= G_VIDEOS_PER_AD ? 'none' : '';
+  gUpdateCreativeCount(t);
+}
+function gOnSlotFileMethod(sel) {
+  const slot = sel.closest('[data-role="video"]'); if (!slot) return;
+  const m = sel.value;
+  slot.querySelector('[data-role="drive_wrap"]').style.display = m === 'drive' ? 'block' : 'none';
+  slot.querySelector('[data-role="upload_wrap"]').style.display = m === 'upload' ? 'block' : 'none';
+}
+function gAddCreativeBlock(t) {
+  const list = document.getElementById(`${t}_creative_list`);
+  if (!list) return;
+  if (list.children.length >= G_CREATIVE_MAX) { showToast(`광고는 한 번에 최대 ${G_CREATIVE_MAX}개까지예요`, 'error'); return; }
+  const id = `${t}_gcr_${gCreativeSeq[t]++}`;
+  const idx = list.children.length + 1;
+  const block = document.createElement('div');
+  block.className = 'creative-card'; block.id = id;
+  block.style.flex = '0 0 560px';
+  block.innerHTML = `
+    <div class="creative-card-head"><span class="creative-card-title">광고 ${idx}</span>
+      <button type="button" class="creative-remove" onclick="gRemoveCreativeBlock('${t}','${id}')">삭제</button>
+    </div>
+    <div class="creative-adname is-empty" data-role="광고명">${t === 'g1' ? '계정 선택 시 광고명 자동생성' : '캠페인 선택 시 광고명 자동생성'}</div>
+
+    <div class="gcard-cols">
+      <div class="gcard-col">
+        <div class="gcard-sub" title="한 광고에 영상을 여러 개 넣으면 Google이 섞어서 보여줘요">영상 <span data-role="video_count" style="font-weight:400;color:var(--text3);">1/${G_VIDEOS_PER_AD}</span> <span style="font-weight:400;color:var(--text3);">· 한 광고에 여러 개 가능</span></div>
+        <div data-role="video_list"></div>
+        <button type="button" class="btn-mini-add" data-role="add_video" onclick="gAddVideoSlot('${t}','${id}')">+ 영상 추가 (최대 ${G_VIDEOS_PER_AD}개)</button>
+      </div>
+      <div class="gcard-col right" data-role="text_wrap">
+        <div class="gcard-sub">광고 문구</div>
+        <div class="field"><label>최종 URL</label><input type="text" data-role="최종URL" placeholder="https://..." oninput="gSyncCreativeCommon('${t}')"></div>
+        ${gMiniList('광고제목', '광고제목', 40, t)}
+        ${gMiniList('긴광고제목', '긴 광고제목', 90, t)}
+        ${gMiniList('설명', '설명', 90, t)}
+        <div class="field"><label>CTA버튼</label><select data-role="CTA버튼" onchange="gSyncCreativeCommon('${t}')"></select></div>
+      </div>
+    </div>`;
+  list.appendChild(block);
+  gFillCta(block);
+  gAddVideoSlot(t, block);
+  ['광고제목', '긴광고제목', '설명'].forEach(role => {
+    const btn = block.querySelector(`[onclick*="'${role}'"]`);
+    if (btn) gAddMini(btn, role, role === '광고제목' ? 40 : 90, t);
+  });
+  gApplyCreativeCommon(t);
+  gSyncCreativeCommon(t);
+  gUpdateCreativeCount(t);
+  gAutoGenNames(t);
+}
+/* 카드(광고) 목록 — 광고마다 영상 여러 개 */
 function gCollectCreatives(t) {
   return gCreativeBlocks(t).map((b, i) => {
-    const method = b.querySelector('[data-role="파일방식"]').value;
-    const fileInput = b.querySelector('[data-role="파일첨부"]');
-    const file = (method === 'upload' && fileInput && fileInput.files[0]) ? fileInput.files[0] : null;
+    const videos = gVideoSlots(b).map((s, j) => {
+      const method = s.querySelector('[data-role="파일방식"]').value;
+      const fileInput = s.querySelector('[data-role="파일첨부"]');
+      const file = (method === 'upload' && fileInput && fileInput.files[0]) ? fileInput.files[0] : null;
+      return {
+        slot: s, 순번: j + 1, 파일유형: method,
+        파일ID: (s.querySelector('[data-role="파일ID"]').value || '').trim(),
+        파일첨부: file, 파일명: file ? file.name : '',
+        유튜브제목: s.querySelector('[data-role="유튜브제목"]').value,
+        유튜브설명: s.querySelector('[data-role="유튜브설명"]').value,
+        공개상태: 'unlisted', 아동용: 'false',
+      };
+    });
     return {
       block: b,
       순번: i + 1,
       광고명: gAdNameFor(t, i + 1),
-      파일유형: method,
-      파일ID: (b.querySelector('[data-role="파일ID"]').value || '').trim(),
-      파일첨부: file,
-      파일명: file ? file.name : '',
-      유튜브제목: b.querySelector('[data-role="유튜브제목"]').value,
-      유튜브설명: b.querySelector('[data-role="유튜브설명"]').value,
-      공개상태: 'unlisted',
-      아동용: 'false',
+      영상목록: videos,
+      영상수: videos.length,
       최종URL: (b.querySelector('[data-role="최종URL"]').value || '').trim(),
       광고제목목록: gCardTexts(b, '광고제목'),
       긴광고제목목록: gCardTexts(b, '긴광고제목'),
@@ -5276,6 +5421,17 @@ function gCollectChannels(t) {
   });
   return out;
 }
+/* 카드 → 광고목록(광고마다 영상 여러 개) + 호환용 평면 영상목록(영상 1개 = 항목 1개, 광고 문구 복사) */
+function gFillAdLists(d, cards) {
+  const stripVideo = v => { const o = { ...v }; delete o.slot; delete o.파일첨부; return o; };
+  d.광고목록 = cards.map(c => { const o = { ...c }; delete o.block; o.영상목록 = c.영상목록.filter(v => v.파일ID).map(stripVideo); o.영상수 = o.영상목록.length; return o; });
+  d.영상목록 = [];
+  cards.forEach(c => c.영상목록.filter(v => v.파일ID).forEach(v => d.영상목록.push(Object.assign(stripVideo(v), {
+    광고명: c.광고명, 광고순번: c.순번, 최종URL: c.최종URL, 광고제목목록: c.광고제목목록, 긴광고제목목록: c.긴광고제목목록, 설명목록: c.설명목록, CTA버튼: c.CTA버튼,
+  }))));
+  d.영상수 = d.영상목록.length;
+  d.페이로드버전 = '2';
+}
 function gGetData(t) {
   const isT2 = t === 'g2';
   const regionName = document.getElementById(`${t}_지역구분자`).value;
@@ -5315,10 +5471,10 @@ function gGetData(t) {
     로고파일ID: gLogoForChannelSelect(document.getElementById(`${t}_유튜브채널`)),
   };
   d.광고명 = g(`${t}_광고명`);
-  // 소재 카드(영상 1개 = 광고 1개)에서 모아온다 — 두 탭 공통. 상단 문구 값은 첫 카드 기준(호환용)
+  // 카드(광고 1개 = 영상 여러 개)에서 모아온다 — 두 탭 공통. 상단 문구 값은 첫 카드 기준(호환용)
   const cards = gCollectCreatives(t);
-  d.영상목록 = cards.filter(c => c.파일ID).map(c => { const o = { ...c }; delete o.block; delete o.파일첨부; return o; });
-  d.업로드대기수 = cards.filter(c => !c.파일ID && c.파일첨부).length;
+  gFillAdLists(d, cards);
+  d.업로드대기수 = cards.flatMap(c => c.영상목록).filter(v => !v.파일ID && v.파일첨부).length;
   d.소재수 = cards.length;
   const f = cards[0] || {};
   d.최종URL = f.최종URL || '';
@@ -5355,9 +5511,22 @@ function gEnrichForMake(d, t, uploadedIds) {
   d.광고제목JSON = jsonTexts(d.광고제목목록);
   d.긴광고제목JSON = jsonTexts(d.긴광고제목목록);
   d.설명JSON = jsonTexts(d.설명목록);
+  (d.광고목록 || []).forEach((a, i) => {
+    a.순번 = i + 1;
+    if (!a.광고명) a.광고명 = gAdNameFor(t, i + 1) || d.광고그룹명 || '';
+    if (!(a.광고제목목록 || []).length) a.광고제목목록 = (d.광고제목목록 || []).slice();
+    if (!(a.긴광고제목목록 || []).length) a.긴광고제목목록 = (d.긴광고제목목록 || []).slice();
+    if (!(a.설명목록 || []).length) a.설명목록 = (d.설명목록 || []).slice();
+    if (!a.최종URL) a.최종URL = d.최종URL || '';
+    if (!a.CTA버튼) a.CTA버튼 = d.CTA버튼 || '';
+    a.광고제목JSON = jsonTexts(a.광고제목목록); a.긴광고제목JSON = jsonTexts(a.긴광고제목목록); a.설명JSON = jsonTexts(a.설명목록);
+    a.CTA연산JSON = a.CTA버튼 ? '[{"asset":"__CTA__"}]' : '[]';
+    (a.영상목록 || []).forEach((v, j) => { v.순번 = j + 1; v.직접업로드 = uploaded.has(v.파일ID) ? 'true' : 'false'; });
+    a.영상수 = (a.영상목록 || []).length;
+  });
   (d.영상목록 || []).forEach((v, i) => {
     v.순번 = i + 1;
-    if (!v.광고명) v.광고명 = gAdNameFor(t, i + 1) || d.광고그룹명 || '';
+    if (!v.광고명) v.광고명 = gAdNameFor(t, v.광고순번 || (i + 1)) || d.광고그룹명 || '';
     if (!(v.광고제목목록 || []).length) v.광고제목목록 = (d.광고제목목록 || []).slice();
     if (!(v.긴광고제목목록 || []).length) v.긴광고제목목록 = (d.긴광고제목목록 || []).slice();
     if (!(v.설명목록 || []).length) v.설명목록 = (d.설명목록 || []).slice();
@@ -5398,7 +5567,7 @@ function gValidateCreatives(t) {
   const first = cards[0] || {};
   const focus = (block, role) => {
     const el = block && block.querySelector(`[data-role="${role}"]`);
-    if (el) { el.classList.add('is-invalid'); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); try { el.focus(); } catch (e) {} setTimeout(() => el.classList.remove('is-invalid'), 4000); }
+    if (el) { el.classList.add('is-invalid'); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); try { el.focus({ preventScroll: true }); } catch (e) {} gKeepViewportTop(); setTimeout(() => el.classList.remove('is-invalid'), 4000); }
   };
   for (let i = 0; i < cards.length; i++) {
     const c = cards[i];
@@ -5408,14 +5577,18 @@ function gValidateCreatives(t) {
     const longs = (common && i > 0) ? first.긴광고제목목록 : c.긴광고제목목록;
     const descs = (common && i > 0) ? first.설명목록 : c.설명목록;
     const target = (common && i > 0) ? cards[0].block : c.block;
-    if (!c.파일ID && !c.파일첨부) { focus(c.block, 'dropzone'); return `소재 ${i + 1}: 영상을 첨부하거나 파일ID를 넣어주세요`; }
-    if (!(c.유튜브제목 || '').trim()) { focus(c.block, '유튜브제목'); return `소재 ${i + 1}: YouTube 제목이 비어 있어요`; }
-    if (!/^https?:\/\/\S+$/i.test(url || '')) { focus(target, '최종URL'); return `소재 ${i + 1}: 최종 URL이 비어 있거나 https:// 로 시작하지 않아요`; }
-    if (!(heads || []).length) { focus(target, '광고제목'); return `소재 ${i + 1}: 광고제목을 1개 이상 넣어주세요`; }
-    if (!(longs || []).length) { focus(target, '긴광고제목'); return `소재 ${i + 1}: 긴 광고제목을 1개 이상 넣어주세요`; }
-    if (!(descs || []).length) { focus(target, '설명'); return `소재 ${i + 1}: 설명을 1개 이상 넣어주세요`; }
+    for (let j = 0; j < (c.영상목록 || []).length; j++) {
+      const v = c.영상목록[j];
+      if (!v.파일ID && !v.파일첨부) { focus(v.slot, 'dropzone'); return `광고 ${i + 1} 영상 ${j + 1}: 영상을 첨부하거나 파일ID를 넣어주세요`; }
+      if (!(v.유튜브제목 || '').trim()) { focus(v.slot, '유튜브제목'); return `광고 ${i + 1} 영상 ${j + 1}: YouTube 제목이 비어 있어요`; }
+    }
+    if (!(c.영상목록 || []).length) { return `광고 ${i + 1}: 영상이 1개 이상 있어야 해요`; }
+    if (!/^https?:\/\/\S+$/i.test(url || '')) { focus(target, '최종URL'); return `광고 ${i + 1}: 최종 URL이 비어 있거나 https:// 로 시작하지 않아요`; }
+    if (!(heads || []).length) { focus(target, '광고제목'); return `광고 ${i + 1}: 광고제목을 1개 이상 넣어주세요`; }
+    if (!(longs || []).length) { focus(target, '긴광고제목'); return `광고 ${i + 1}: 긴 광고제목을 1개 이상 넣어주세요`; }
+    if (!(descs || []).length) { focus(target, '설명'); return `광고 ${i + 1}: 설명을 1개 이상 넣어주세요`; }
     const cta = (common && i > 0) ? first.CTA버튼 : c.CTA버튼;
-    if (!cta) { focus(target, 'CTA버튼'); return `소재 ${i + 1}: CTA 버튼을 골라주세요`; }
+    if (!cta) { focus(target, 'CTA버튼'); return `광고 ${i + 1}: CTA 버튼을 골라주세요`; }
   }
   return '';
 }
@@ -5427,16 +5600,35 @@ function gAddCard(t, data) {
   const isT2 = t === 'g2';
   const title = isT2 ? (data.광고그룹명||'그룹명 없음') : (data.캠페인명||'캠페인명 없음');
   const card = document.createElement('div'); card.className = 'card'; card.id = `gcard_${t}_${idx}`;
-  card.innerHTML = `<div class="card-top"><div class="card-title-wrap"><span class="card-type type-g-new">${isT2 ? (data.등록모드 === 'EXISTING_ADGROUP' ? '광고 추가' : '세트 추가') : '신규 등록'}</span><span class="card-title">${esc(title)}</span></div><span class="badge badge-sending" id="gbadge_${t}_${idx}">전송중</span></div>
-    <div class="card-meta"><span class="meta-item"><span class="meta-label">계정</span>${esc(data.계정명||'-')}</span><span class="meta-item"><span class="meta-label">광고그룹</span>${esc(data.광고그룹명||'-')}</span><span class="meta-item"><span class="meta-label">소재</span>${(data.영상목록||[]).length}개</span><span class="meta-item"><span class="meta-label">요청ID</span><code style="font-size:11px;">${esc(data.요청ID||'-')}</code></span></div>
+  card.innerHTML = `<div class="card-top"><div class="card-title-wrap"><span class="card-type type-g-new">${isT2 ? (data.등록모드 === 'EXISTING_ADGROUP' ? '광고 추가' : '세트 추가') : '신규 등록'}</span><span class="card-title">${esc(title)}</span></div><span class="card-top-right"><span class="badge badge-sending" id="gbadge_${t}_${idx}">전송중</span><button type="button" class="card-del" title="목록에서 삭제" onclick="removeRequestCard('${t}',${idx},this)">삭제</button></span></div>
+    <div class="card-meta"><span class="meta-item"><span class="meta-label">계정</span>${esc(data.계정명||'-')}</span><span class="meta-item"><span class="meta-label">광고그룹</span>${esc(data.광고그룹명||'-')}</span><span class="meta-item"><span class="meta-label">광고</span>${(data.광고목록||[]).length || (data.영상목록||[]).length}개 · 영상 ${(data.영상목록||[]).length}개</span><span class="meta-item"><span class="meta-label">요청ID</span><code style="font-size:11px;">${esc(data.요청ID||'-')}</code></span></div>
     <div class="card-result" id="gresult_${t}_${idx}">Make로 전송 중...</div>
     <div class="gtrack" id="gtrack_${t}_${idx}" style="display:none;">
       <div class="gtrack-steps" id="gsteps_${t}_${idx}"></div>
       <div class="gtrack-foot"><span id="gcheck_${t}_${idx}" class="gtrack-check"></span><span class="gtrack-actions"><button type="button" class="sync-btn" onclick="gTrackNow('${t}',${idx})">지금 확인</button><a class="sync-btn" href="https://docs.google.com/spreadsheets/d/${SHEET_ID}" target="_blank" rel="noopener">로그 시트</a></span></div>
     </div>`;
   list.appendChild(card);
-  document.getElementById(`${t}_count`).textContent = `총 ${gRows[t].length}${isT2?'개 세트 추가됨':'건 등록됨'}`;
+  document.getElementById(`${t}_count`).textContent = `총 ${gRows[t].filter(Boolean).length}${isT2?'개 세트 추가됨':'건 등록됨'}`;
   return idx;
+}
+/* 요청 카드 삭제 — 두 번 눌러 확인. 목록·추적만 지운다 (Make에 이미 보낸 처리는 취소되지 않는다) */
+function removeRequestCard(t, idx, btn) {
+  if (btn && !btn.classList.contains('confirm')) {
+    btn.classList.add('confirm'); btn.textContent = '정말 삭제?';
+    setTimeout(() => { if (btn.isConnected) { btn.classList.remove('confirm'); btn.textContent = '삭제'; } }, 3000);
+    return;
+  }
+  const isG = t === 'g1' || t === 'g2';
+  const key = `${t}_${idx}`;
+  if (isG) { const st = gTrack[key]; if (st) { st.running = false; if (st.wake) st.wake(); } gRows[t][idx] = null; }
+  else { const st = verifyState[key]; if (st) st.running = false; rows[t][idx] = null; }
+  const card = document.getElementById(isG ? `gcard_${key}` : `card_${key}`); if (card) card.remove();
+  const remain = (isG ? gRows[t] : rows[t]).filter(Boolean).length;
+  const list = document.getElementById(`${t}_cards`); const empty = document.getElementById(`${t}_empty`);
+  if (remain === 0) { if (list) list.style.display = 'none'; if (empty) empty.style.display = ''; }
+  const cnt = document.getElementById(`${t}_count`);
+  if (cnt) cnt.textContent = remain === 0 ? (t.endsWith('2') ? '추가된 세트가 없습니다' : '등록된 광고가 없습니다') : `총 ${remain}${t.endsWith('2') ? '건 처리됨' : '건 등록됨'}`;
+  showToast('목록에서 지웠어요 — 이미 Make로 보낸 처리는 그대로 진행돼요', 'info');
 }
 function gUpdateCard(t, idx, status, msg, html) {
   const badge = document.getElementById(`gbadge_${t}_${idx}`); const result = document.getElementById(`gresult_${t}_${idx}`);
@@ -5500,7 +5692,7 @@ async function gReadLogRows(reqId) {
 /* Google Ads에 광고가 실제로 생겼는지 — 기대한 광고명이 광고그룹 안에 보이는지 센다 */
 async function gCheckAdsCreated(data, state) {
   const cid = String(data.광고계정ID || '').replace(/[^0-9]/g, '');
-  const expected = (data.영상목록 || []).map(v => v.광고명).filter(Boolean);
+  const expected = ((data.광고목록 && data.광고목록.length) ? data.광고목록 : (data.영상목록 || [])).map(v => v.광고명).filter(Boolean);
   let campaignId = state.campaignId || String(data.캠페인ID || '').replace(/[^0-9]/g, '');
   let groupId = state.groupId || String(data.광고그룹ID || '').replace(/[^0-9]/g, '');
   if (!campaignId && data.캠페인명) {
@@ -5542,10 +5734,11 @@ function gRenderTrack(t, idx, data, state) {
   const icon = s => s === '오류' ? '<span class="gt-ic err">✕</span>' : (s === '완료' ? '<span class="gt-ic ok">✓</span>' : '<span class="gt-ic run">●</span>');
   steps.innerHTML = rows.length
     ? rows.map(r => `<div class="gt-row ${r.status === '오류' ? 'err' : ''}">${icon(r.status)}<span class="gt-time">${esc((r.time || '').slice(11, 19))}</span><span class="gt-step">${esc(r.step)}${r.ad ? ` <small>${esc(r.ad)}</small>` : ''}</span><span class="gt-msg" title="${esc(r.detail || r.msg)}">${esc(r.msg)}${r.detail ? ' · ' + esc(r.detail).slice(0, 160) : ''}</span></div>`).join('')
-    : `<div class="gt-row"><span class="gt-ic run">●</span><span class="gt-step">Make 처리 대기 중</span><span class="gt-msg">${state.sheetOk === false ? '등록로그 시트를 읽을 수 없어요 — 구글 로그인 상태를 확인하세요' : (state.elapsed > 90000 ? 'Make 기록이 아직 없어요 — 시나리오가 꺼져 있거나 로그 모듈이 없는 버전일 수 있어요' : '기록이 올라오면 여기 단계별로 표시됩니다')}</span></div>`;
+    : `<div class="gt-row"><span class="gt-ic run">●</span><span class="gt-step">Make 처리 대기 중</span><span class="gt-msg">${state.emptyText || (state.sheetOk === false ? '등록로그 시트를 읽을 수 없어요 — 구글 로그인 상태를 확인하세요' : (state.elapsed > 90000 ? 'Make 기록이 아직 없어요 — 시나리오가 꺼져 있거나 로그 모듈이 없는 버전일 수 있어요' : '기록이 올라오면 여기 단계별로 표시됩니다'))}</span></div>`;
   if (check) {
     const c = state.check;
-    if (!c) check.textContent = 'Google Ads 확인 대기…';
+    if (state.footText !== undefined) check.textContent = state.footText;
+    else if (!c) check.textContent = 'Google Ads 확인 대기…';
     else if (!c.groupId) check.textContent = `Google Ads 확인: 광고그룹이 아직 없어요 (${state.checks}회 확인)`;
     else check.textContent = `Google Ads 확인: 광고 ${c.found.length}/${c.total}개 생성됨` + (c.found.length < c.total ? ` (${state.checks}회 확인)` : '');
   }
@@ -5553,7 +5746,7 @@ function gRenderTrack(t, idx, data, state) {
 async function gTrackRegistration(t, idx, data) {
   const key = `${t}_${idx}`;
   const state = gTrack[key] = { running: true, started: Date.now(), rows: [], check: null, checks: 0, sheetOk: null, wake: null, campaignId: '', groupId: '' };
-  const expected = (data.영상목록 || []).length;
+  const expected = (data.광고목록 && data.광고목록.length) ? data.광고목록.length : (data.영상목록 || []).length;
   state.sheetOk = await gEnsureLogSheet();
   let n = 0;
   while (state.running) {
@@ -5617,8 +5810,7 @@ async function gSubmitAd(t) {
   const btnLabel = isT2 ? '세트 추가하기' : '캠페인 등록하기';
   const restore = () => { btn.disabled = false; btn.textContent = btnLabel; };
   showToast('Make로 전송 중...', 'info');
-  const videoList = document.getElementById(`${t}_creative_list`);
-  const blocks = Array.from(videoList.children);
+  const blocks = gAllVideoSlots(t).map(x => x.slot);   // 영상 슬롯 단위 (광고 여러 개 × 영상 여러 개)
   // 붙이자마자 올리는 중인 파일이 있으면 끝날 때까지 기다린다
   for (const block of blocks) {
     const p = gUploadInFlight.get(block);
@@ -5629,7 +5821,7 @@ async function gSubmitAd(t) {
     const fileIdInput = block.querySelector('[data-role="파일ID"]');
     return fileInput && fileInput.files[0] && !(fileIdInput.value || '').trim();
   });
-  const uploadedIds = [];   // 이번에 첨부로 올린 임시 파일 — Make가 등록 후 지운다
+  const uploadedIds = [];   // 이번에 첨부로 올린 임시 파일 — 등록이 확인되면 페이지가 지운다
   blocks.forEach(block => {
     const id = (block.querySelector('[data-role="파일ID"]').value || '').trim();
     if (id && block.dataset.uploadedId === id) uploadedIds.push(id);   // 미리 올려둔 파일
@@ -5653,10 +5845,11 @@ async function gSubmitAd(t) {
       }
     }
   }
-  data.영상목록 = gCollectCreatives(t).filter(c => c.파일ID).map(c => { const o = { ...c }; delete o.block; delete o.파일첨부; return o; });
+  gFillAdLists(data, gCollectCreatives(t));   // 업로드가 끝난 파일ID로 다시 모은다
   delete data.업로드대기수;
-  if (data.영상목록.length === 0) {
-    showToast('전송할 영상이 없어요. 파일ID나 첨부파일을 확인해주세요', 'error');
+  const noVideo = (data.광고목록 || []).findIndex(a => !(a.영상목록 || []).length);
+  if (data.영상목록.length === 0 || noVideo >= 0) {
+    showToast(noVideo >= 0 ? `광고 ${noVideo + 1}에 전송할 영상이 없어요. 파일ID나 첨부파일을 확인해주세요` : '전송할 영상이 없어요. 파일ID나 첨부파일을 확인해주세요', 'error');
     restore();
     return;
   }
@@ -5732,6 +5925,10 @@ function gClearForm(t) {
   });
 });
 document.getElementById('g1_시작일').value = new Date().toISOString().split('T')[0];
+
+/* 상단바가 화면 밖으로 밀리는 일이 없도록 — 문서(뷰포트)는 절대 스크롤되지 않아야 한다 */
+function gKeepViewportTop() { if (window.scrollY || window.scrollX) window.scrollTo(0, 0); setTimeout(() => { if (window.scrollY || window.scrollX) window.scrollTo(0, 0); }, 400); }
+window.addEventListener('scroll', gKeepViewportTop, { passive: true });
 
 /* 시작 */
 console.log(`[광고 자동등록] 페이지 빌드 ${G_PAGE_BUILD}`);
