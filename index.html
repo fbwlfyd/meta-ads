@@ -496,7 +496,7 @@
           <div class="field"><label>종료일</label><input type="date" id="t1_종료일"></div>
         </div>
         <div class="row2">
-          <div class="field"><label>최소나이</label><input type="number" id="t1_최소나이" value="45" min="18" max="65"></div>
+          <div class="field"><label>최소나이</label><input type="number" id="t1_최소나이" value="45" min="18" max="65" oninput="onAdvantageAgeHint('t1')"></div>
           <div class="field"><label>최대나이</label><input type="number" id="t1_최대나이" value="65" min="18" max="65"></div>
         </div>
         <div class="row2">
@@ -648,7 +648,7 @@
           <div class="field"><label>종료일</label><input type="date" id="t2_종료일"></div>
         </div>
         <div class="row2">
-          <div class="field"><label>최소나이</label><input type="number" id="t2_최소나이" value="45" min="18" max="65"></div>
+          <div class="field"><label>최소나이</label><input type="number" id="t2_최소나이" value="45" min="18" max="65" oninput="onAdvantageAgeHint('t2')"></div>
           <div class="field"><label>최대나이</label><input type="number" id="t2_최대나이" value="65" min="18" max="65"></div>
         </div>
         <div class="row2">
@@ -2022,7 +2022,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-17';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-16.8';
+const G_PAGE_BUILD = '2026-09-17.1';
 function gShowPageBuild() {
   const el = document.getElementById('g_page_build');
   if (el) { el.className = 'field-hint'; el.textContent = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요`; }
@@ -3731,8 +3731,31 @@ function onAdvantage(t, val) {
   const offBtn = document.getElementById(`${t}_adv_off`);
   if (onBtn) onBtn.classList.toggle('active', v === '1');
   if (offBtn) offBtn.classList.toggle('active', v === '0');
+  onAdvantageAgeHint(t);
+}
+/* Meta 규칙: 어드밴티지+ 타겟을 쓰면 최소 연령을 25세보다 높게 둘 수 없다 (error_subcode 1870188) */
+const ADV_MAX_AGE_MIN = 25;
+function advAgeConflict(t) {
+  const on = (document.getElementById(`${t}_어드밴티지타겟`) || {}).value === '1';
+  const ageMin = parseInt((document.getElementById(`${t}_최소나이`) || {}).value, 10);
+  return on && !isNaN(ageMin) && ageMin > ADV_MAX_AGE_MIN;
+}
+function onAdvantageAgeHint(t) {
   const hint = document.getElementById(`${t}_adv_hint`);
-  if (hint) hint.textContent = v === '1'
+  const on = (document.getElementById(`${t}_어드밴티지타겟`) || {}).value === '1';
+  const ageEl = document.getElementById(`${t}_최소나이`);
+  const bad = advAgeConflict(t);
+  if (ageEl) ageEl.classList.toggle('is-invalid', bad);
+  if (!hint) return;
+  if (bad) {
+    hint.className = 'field-hint err';
+    hint.innerHTML = `⚠ 어드밴티지+ 타겟은 <b>최소 연령을 ${ADV_MAX_AGE_MIN}세보다 높게</b> 둘 수 없어요 (지금 ${(ageEl || {}).value}세). `
+      + `<button type="button" class="sync-btn" onclick="onAdvantage('${t}',0)">어드밴티지+ 끄기</button> `
+      + `<button type="button" class="sync-btn" onclick="document.getElementById('${t}_최소나이').value=${ADV_MAX_AGE_MIN};onAdvantageAgeHint('${t}')">최소 ${ADV_MAX_AGE_MIN}세로</button>`;
+    return;
+  }
+  hint.className = 'field-hint';
+  hint.textContent = on
     ? '나이·성별은 제안으로만 쓰여요 (범위 밖 노출 가능). 지역·제외타겟은 그대로 적용됩니다'
     : '입력한 나이·성별 범위를 그대로 지킵니다';
 }
@@ -4233,6 +4256,12 @@ async function submitAd(t) {
   if (!data.계정명) { showToast('계정명은 필수입니다', 'error'); return; }
   if (!toExisting && !data.광고세트명) { showToast('광고세트명은 필수입니다 — 설정에서 계정 약칭을 채워주세요', 'error'); return; }
   if (!data.페이지ID) { showToast('페이지를 선택해주세요 (페이지ID가 비어 있으면 소재 생성이 실패해요)', 'error'); return; }
+  if (advAgeConflict(t)) {
+    onAdvantageAgeHint(t);
+    const el = document.getElementById(`${t}_최소나이`); if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+    showToast(`어드밴티지+ 타겟은 최소 연령 ${ADV_MAX_AGE_MIN}세까지만 돼요 — 어드밴티지+를 끄거나 최소 연령을 낮춰주세요`, 'error');
+    return;
+  }
   if (isT2 && !data.캠페인ID) { showToast('캠페인 ID를 입력해주세요', 'error'); return; }
   if (!isT2 && !data.캠페인명) { showToast('캠페인명을 입력해주세요', 'error'); return; }
   const isWeb = data.전환위치타입 === 'WEBSITE';
@@ -4288,6 +4317,7 @@ function clearForm(t) {
   const cb = document.getElementById(`${t}_캠페인예산`); if (cb) cb.value = 30000;
   onAdvantage(t, 0);
   document.getElementById(`${t}_최소나이`).value = 45;
+  setTimeout(() => onAdvantageAgeHint(t), 0);
   document.getElementById(`${t}_최대나이`).value = 65;
   document.getElementById(`${t}_시작일`).value = new Date().toISOString().split('T')[0];
   document.getElementById(`${t}_타겟국가`).value = '';
@@ -5936,6 +5966,8 @@ function gErrorHint(row) {
   if (/final_urls|ILLEGAL_CHARS|INVALID_URL/i.test(s)) return '최종 URL 형식을 확인하세요 (https:// 로 시작)';
   if (/quotaExceeded|uploadLimitExceeded/i.test(s)) return 'YouTube 업로드 한도에 걸렸어요 — 내일 다시 시도하거나 다른 채널로';
   if (/invalid_grant|Unauthorized|401/.test(s)) return 'Make의 Google 연결이 풀렸어요 — Make에서 해당 모듈의 연결을 다시 인증하세요';
+  if (/1870188/.test(s) || /어드밴티지/.test(s)) return '어드밴티지+ 타겟은 최소 연령 25세까지만 돼요 — 어드밴티지+를 끄거나 최소 연령을 낮춰서 다시 등록하세요';
+  if (/is_adset_budget_sharing_enabled/.test(s)) return 'Make 캠페인 생성 모듈에 is_adset_budget_sharing_enabled 값을 넣어야 해요';
   return '';
 }
 function gRenderTrack(t, idx, data, state) {
