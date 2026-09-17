@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-17T02:08:34.905Z",
+  "updatedAt": "2026-09-17T04:37:45.870Z",
   "updatedBy": "asdf778984@gmail.com",
   "meta": {
     "staff": [
@@ -238,6 +238,14 @@
       {
         "clinic": "진주리더플란트치과",
         "short": "진주"
+      },
+      {
+        "clinic": "울산서울탑치과",
+        "short": "울산서울탑치과"
+      },
+      {
+        "clinic": "울산더조은플란트치과",
+        "short": "울산더조은플란트치과"
       }
     ],
     "regions": [
