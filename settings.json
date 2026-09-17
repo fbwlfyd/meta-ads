@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-17T02:05:55.096Z",
+  "updatedAt": "2026-09-17T02:08:34.905Z",
   "updatedBy": "asdf778984@gmail.com",
   "meta": {
     "staff": [
@@ -105,7 +105,7 @@
         "country": "KR",
         "accountId": "",
         "refName": "",
-        "custom": ""
+        "custom": "35.524692,129.309425,13; 35.536690,129.230804,13"
       },
       {
         "name": "양산",
