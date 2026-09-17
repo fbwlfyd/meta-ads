@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-17T06:29:12.887Z",
+  "updatedAt": "2026-09-17T06:29:17.320Z",
   "updatedBy": "fbwlfyd9271@gmail.com",
   "meta": {
     "staff": [
@@ -83,14 +83,14 @@
       {
         "id": "383834457603938",
         "label": "치아교정",
-        "campaignName": "울산더조은플란트치과 치아교정",
-        "setName": "울산더조은플란트치과 치아교정"
+        "campaignName": "울산서울탑치과 치아교정",
+        "setName": "울산서울탑치과 치아교정"
       },
       {
         "id": "328544192521713",
         "label": "치아교정",
-        "campaignName": "울산서울탑치과 치아교정",
-        "setName": "울산서울탑치과 치아교정"
+        "campaignName": "울산더조은플란트치과 치아교정",
+        "setName": "울산더조은플란트치과 치아교정"
       }
     ],
     "pages": [],
