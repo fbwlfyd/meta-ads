@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-16T07:47:15.719Z",
+  "updatedAt": "2026-09-17T02:05:41.625Z",
   "updatedBy": "asdf778984@gmail.com",
   "meta": {
     "staff": [
@@ -123,6 +123,78 @@
         "country": "KR",
         "accountId": "1611866049351970",
         "refName": "",
+        "custom": ""
+      },
+      {
+        "name": "진주",
+        "key": "",
+        "type": "city",
+        "country": "",
+        "accountId": "316162427633460",
+        "refName": "",
+        "custom": ""
+      },
+      {
+        "name": "사천",
+        "key": "",
+        "type": "",
+        "country": "",
+        "accountId": "316162427633460",
+        "refName": "사천타겟",
+        "custom": ""
+      },
+      {
+        "name": "고성",
+        "key": "",
+        "type": "",
+        "country": "",
+        "accountId": "316162427633460",
+        "refName": "고성타겟",
+        "custom": "34.973278,128.322233,5"
+      },
+      {
+        "name": "하동",
+        "key": "",
+        "type": "",
+        "country": "",
+        "accountId": "316162427633460",
+        "refName": "하동타겟",
+        "custom": ""
+      },
+      {
+        "name": "산청",
+        "key": "",
+        "type": "",
+        "country": "",
+        "accountId": "316162427633460",
+        "refName": "산청타겟",
+        "custom": ""
+      },
+      {
+        "name": "함안",
+        "key": "",
+        "type": "",
+        "country": "",
+        "accountId": "316162427633460",
+        "refName": "함안타겟",
+        "custom": ""
+      },
+      {
+        "name": "의령",
+        "key": "",
+        "type": "",
+        "country": "",
+        "accountId": "316162427633460",
+        "refName": "의령타겟",
+        "custom": ""
+      },
+      {
+        "name": "통영",
+        "key": "",
+        "type": "",
+        "country": "",
+        "accountId": "316162427633460",
+        "refName": "통영타겟",
         "custom": ""
       }
     ]
