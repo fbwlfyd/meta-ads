@@ -21,8 +21,8 @@
 
 const HOST = 'https://googleads.googleapis.com';
 // 이 파일의 빌드 표식 — HTML(연동 탭)이 /api/gads?type=ping 으로 읽어 구버전 배포를 잡아낸다
-const BUILD = '2026-09-17';
-const FEATURES = ['audience', 'geo', 'findcampaigns', 'campaigngeo', 'campaign'];
+const BUILD = '2026-09-17.2';
+const FEATURES = ['audience', 'geo', 'findcampaigns', 'campaigngeo', 'campaign', 'mcc', 'exclude', 'access'];
 
 // 최신 버전부터 훑는다. 지원 종료된 버전은 HTML 404를 돌려주므로 건너뛴다.
 const CANDIDATE_VERSIONS = ['v23', 'v22', 'v21', 'v20', 'v19', 'v18'];
@@ -164,14 +164,76 @@ module.exports = async function handler(req, res) {
 
     const V = await resolveVersion(headers);
     const API = `${HOST}/${V}`;
+    const MCC = headers['login-customer-id'] || '';
+
+    /* 이 사람이 볼 수 있는 광고계정 전부를 모은다.
+       listAccessibleCustomers 는 "직접 권한을 준 계정"만 돌려준다.
+       MCC(관리자 계정) 권한만 있는 사람은 MCC 하나만 나오고, MCC 에는 캠페인이 없어서
+       검색 결과가 0개가 된다 → MCC 를 customer_client 로 펼쳐 하위 계정을 전부 넣는다. */
+    async function listCustomerIds() {
+      const found = new Map();      // id → 이름
+      let mccOk = false, accessible = [], accessErr = '';
+      if (MCC) {
+        try {
+          const rr = await fetch(`${API}/customers/${MCC}/googleAds:searchStream`, {
+            method: 'POST', headers,
+            body: JSON.stringify({ query:
+              'SELECT customer_client.id, customer_client.descriptive_name, customer_client.manager, ' +
+              "customer_client.status FROM customer_client WHERE customer_client.status = 'ENABLED' LIMIT 1000" }),
+          });
+          const bb = await readBody(rr);
+          if (rr.ok && bb.ok) {
+            (Array.isArray(bb.json) ? bb.json : [bb.json]).forEach((chunk) =>
+              (chunk.results || []).forEach((x) => {
+                const c = x.customerClient || {};
+                if (c.manager) return;                     // 관리자 계정에는 캠페인이 없다
+                const id = String(c.id || '');
+                if (id) found.set(id, c.descriptiveName || `계정 ${id}`);
+              }));
+            mccOk = found.size > 0;
+          }
+        } catch (e) { /* MCC 권한이 없으면 아래 목록만 쓴다 */ }
+      }
+      try {
+        const r = await fetch(`${API}/customers:listAccessibleCustomers`, { headers });
+        const body = await readBody(r);
+        if (r.ok && body.ok) {
+          accessible = (body.json.resourceNames || []).map((n) => n.split('/').pop());
+          accessible.forEach((id) => { if (id !== MCC && !found.has(id)) found.set(id, `계정 ${id}`); });
+        } else {
+          accessErr = gadsError(body, r);
+          if (!mccOk) { const err = new Error(accessErr); err.http = r.status; throw err; }
+        }
+      } catch (e) {
+        if (!mccOk) throw e;
+      }
+      const list = [...found.entries()].map(([id, name]) => ({ id, name })).slice(0, 150);
+      return { list, mccOk, accessible, accessErr };
+    }
+
+    // 로그인한 사람이 어떤 계정을 볼 수 있는지 (권한 진단용)
+    if (type === 'access') {
+      try {
+        const info = await listCustomerIds();
+        return res.status(200).json({
+          apiVersion: V,
+          loginCustomerId: MCC || null,
+          mccExpanded: info.mccOk,
+          directCount: info.accessible.length,
+          accountCount: info.list.length,
+          accounts: info.list.slice(0, 60),
+          note: info.list.length === 0
+            ? '이 Google 계정에는 볼 수 있는 광고계정이 없어요 — Google Ads 관리자 계정(MCC)에 이 이메일을 초대해야 합니다'
+            : (info.mccOk ? 'MCC 하위 계정까지 전부 조회됩니다' : '직접 권한이 있는 계정만 조회됩니다 (MCC 권한 없음)'),
+          error: info.accessErr || undefined,
+        });
+      } catch (e) { return res.status(e.http || 500).json({ error: e.message, apiVersion: V }); }
+    }
 
     // 접근 가능한 모든 계정에서 캠페인 조건으로 찾는다 (findcampaigns · campaign 공용)
     //   stopWhenFound: ID 하나를 찾는 경우 첫 결과가 나오면 나머지 계정은 안 본다
     async function searchCampaignsEverywhere(query, stopWhenFound) {
-      const r = await fetch(`${API}/customers:listAccessibleCustomers`, { headers });
-      const body = await readBody(r);
-      if (!r.ok || !body.ok) { const err = new Error(gadsError(body, r)); err.http = r.status; throw err; }
-      const ids = (body.json.resourceNames || []).map((n) => n.split('/').pop()).slice(0, 40);
+      const ids = (await listCustomerIds()).list.map((x) => x.id);
       const out = [];
       // 계정 수가 많을 수 있으니 8개씩 병렬로
       for (let i = 0; i < ids.length; i += 8) {
@@ -201,7 +263,10 @@ module.exports = async function handler(req, res) {
     if (type === 'findcampaigns') {
       const terms = String(req.query.q || '').split('|').map((x) => x.trim()).filter(Boolean);
       if (terms.length === 0) return res.status(400).json({ error: '검색어(q)가 필요합니다' });
-      const where = terms.map((t2) => `campaign.name LIKE '%${t2.replace(/'/g, "")}%'`).join(' AND ');
+      // nq = 제외어 (설정의 표기명에 "타겟 제외" 라고 적어 두면 여기로 온다)
+      const nots = String(req.query.nq || '').split('|').map((x) => x.trim()).filter(Boolean);
+      const where = terms.map((t2) => `campaign.name LIKE '%${t2.replace(/'/g, "")}%'`)
+        .concat(nots.map((t2) => `campaign.name NOT LIKE '%${t2.replace(/'/g, "")}%'`)).join(' AND ');
       // status=all 이면 일시중지 캠페인도 포함 (새로 만든 캠페인은 PAUSED 로 생성된다)
       const statusCond = req.query.status === 'all' ? "campaign.status != 'REMOVED'" : "campaign.status = 'ENABLED'";
       const query =
@@ -224,10 +289,9 @@ module.exports = async function handler(req, res) {
     }
 
     if (type === 'accounts') {
-      const r = await fetch(`${API}/customers:listAccessibleCustomers`, { headers });
-      const body = await readBody(r);
-      if (!r.ok || !body.ok) return res.status(r.status || 500).json({ error: gadsError(body, r), apiVersion: V });
-      const ids = (body.json.resourceNames || []).map((n) => n.split('/').pop());
+      let ids;
+      try { ids = (await listCustomerIds()).list.map((x) => x.id); }
+      catch (e) { return res.status(e.http || 500).json({ error: e.message, apiVersion: V }); }
       const out = [];
       for (const id of ids.slice(0, 50)) {
         try {
