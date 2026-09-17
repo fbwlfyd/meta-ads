@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-17T06:04:01.600Z",
+  "updatedAt": "2026-09-17T06:04:33.941Z",
   "updatedBy": "fbwlfyd9271@gmail.com",
   "meta": {
     "staff": [
@@ -359,7 +359,7 @@
         "clinic": "진주리더플란트치과",
         "name": "진주",
         "criterionId": "",
-        "refName": "제외",
+        "refName": "타겟 제외",
         "custom": ""
       },
       {
