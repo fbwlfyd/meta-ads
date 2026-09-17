@@ -997,7 +997,7 @@
       </div>
       <!-- 지역 -->
       <div class="modal-sec" id="msec_region">
-        <div class="set-note">Meta 광고관리자처럼 <b>도시·지역·장소</b>를 찾아 추가합니다. <b>장소</b>를 고르면 그 자리에 <b>핀(반경 타겟)</b>이 찍히고 지도가 열려요.<br><b>표기명</b>은 캠페인명·세트명에 들어가는 이름이에요 (예: 울산타겟). <b>비우면 이름에 지역이 붙지 않습니다</b>.<br>이미 있는 줄도 <b>📍 지도</b> 버튼으로 핀을 찍거나 반경을 고칠 수 있어요 (Meta 반경 단위는 마일).</div>
+        <div class="set-note">Meta 광고관리자처럼 <b>도시·지역·장소</b>를 찾아 추가합니다. <b>장소</b>를 고르면 그 자리에 <b>핀(반경 타겟)</b>이 찍히고 지도가 열려요.<br><b>표기명</b>은 캠페인명·세트명에 들어가는 이름이에요 (예: 울산타겟). <b>비우면 이름에 지역이 붙지 않습니다</b>.<br>표기명에 <b>«타겟 제외»</b> 처럼 <b>제외</b>를 붙이면 그 말은 이름에 안 붙고, <b>캠페인 찾기에서 그 말이 든 캠페인을 빼고</b> 보여줍니다 (예: 진주 임플란트 포함 + 타겟 제외).<br>이미 있는 줄도 <b>📍 지도</b> 버튼으로 핀을 찍거나 반경을 고칠 수 있어요 (Meta 반경 단위는 마일).</div>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
           <span style="font-size:12px;color:var(--text2);white-space:nowrap;">이 지역을 쓸 계정</span>
           <select id="region_target_account" style="flex:1;height:36px;border:1px solid var(--border2);border-radius:8px;padding:0 10px;font-family:inherit;font-size:12px;"><option value="">공통 (모든 계정)</option></select>
@@ -1064,7 +1064,7 @@
       </div>
 
       <div class="modal-sec" id="msec_gregion">
-        <div class="set-note">지역은 <b>치과별로</b> 묶입니다 — 치과를 고르면 그 치과의 지역만 드롭다운에 나옵니다 (치과를 비우면 모든 치과에서 보임).<br><b>표기명</b>을 비우면 이름에 지역이 붙지 않습니다.<br><b>장소</b>로 찾거나 <b>📍 지도</b> 버튼을 누르면 지도에서 핀을 찍어 반경 타겟을 만들 수 있어요 (Google 반경 단위는 km · 좌표가 있으면 criterion ID 대신 반경으로 타겟합니다).</div>
+        <div class="set-note">지역은 <b>치과별로</b> 묶입니다 — 치과를 고르면 그 치과의 지역만 드롭다운에 나옵니다 (치과를 비우면 모든 치과에서 보임).<br><b>표기명</b>을 비우면 이름에 지역이 붙지 않습니다. 표기명에 <b>«타겟 제외»</b> 처럼 <b>제외</b>를 붙이면 그 말은 이름(캠페인명·광고그룹명·광고명)에 안 붙고, <b>캠페인 고르기에서 그 말이 든 캠페인을 빼고</b> 찾습니다 — 예: 진주 줄의 표기명에 «타겟 제외» → 진주 임플란트(포함) + 타겟(제외).<br><b>장소</b>로 찾거나 <b>📍 지도</b> 버튼을 누르면 지도에서 핀을 찍어 반경 타겟을 만들 수 있어요 (Google 반경 단위는 km · 좌표가 있으면 criterion ID 대신 반경으로 타겟합니다).</div>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
           <span style="font-size:12px;color:var(--text2);white-space:nowrap;">검색 결과를 추가할 치과</span>
           <select id="g_region_target_clinic" style="flex:1;height:36px;border:1px solid var(--border2);border-radius:8px;padding:0 10px;font-family:inherit;font-size:12px;"><option value="">공통 (모든 치과)</option></select>
@@ -1116,6 +1116,7 @@
         <div class="field"><label>중계 함수 주소 (같은 도메인에 올린 파일)</label><input type="text" id="g_proxy_url" placeholder="/api/gads"></div>
         <div style="display:flex;gap:8px;">
           <button class="btn-sm blue" onclick="testGoogleProxy()">🔌 중계 함수 연결 테스트</button>
+          <button class="btn-sm" onclick="gCheckAccess()">👤 내 계정 권한 확인</button>
           <button class="btn-sm" onclick="testGoogleAdsApi()">브라우저 직접 호출 테스트</button>
           <button class="btn-sm" onclick="dumpProxyRaw()">🔍 원시 응답 보기</button>
         </div>
@@ -1369,6 +1370,30 @@ function accountSetting(accountId) {
 }
 // 페이지명은 띄어쓰기·대소문자 차이를 무시하고 비교한다
 function normName(v) { return String(v || '').replace(/\s+/g, '').toLowerCase(); }
+
+/* ── 표기명 파싱 ────────────────────────────────────────────────
+   표기명은 두 가지 일을 한다
+     ① 이름에 붙는 꼬리말        예) 사천타겟  → "진주리더플란트치과 임플란트 사천타겟 2U"
+     ② 캠페인 찾기의 제외 키워드   예) 타겟 제외 → 이름에는 안 붙고, 캠페인 검색에서 "타겟"이 든 건 뺀다
+   제외로 쓰는 법 : "타겟 제외" · "제외 타겟" · "타겟(제외)" · "-타겟"  (쉼표로 여러 개)
+   제외로 표시한 말은 캠페인명·광고그룹명·광고명·지역구분자 어디에도 나오지 않는다        */
+function parseRefName(raw) {
+  const label = [], exclude = [];
+  String(raw == null ? '' : raw).split(/[,;、·]+/).forEach(tk => {
+    let s = String(tk).trim();
+    if (!s) return;
+    if (/제외/.test(s)) {
+      const w = s.replace(/[()[\]<>「」]/g, ' ').replace(/제외/g, ' ').replace(/[:：=]/g, ' ').trim();
+      if (w) exclude.push(w);
+    } else if (/^[-—]\s*\S/.test(s)) {
+      const w = s.replace(/^[-—]\s*/, '').trim();
+      if (w) exclude.push(w);
+    } else label.push(s);
+  });
+  return { label: label.join(' ').trim(), exclude };
+}
+function refLabel(r) { return parseRefName(r && r.refName).label; }          // 이름에 붙일 표기명
+function refExcludes(r) { return parseRefName(r && r.refName).exclude; }     // 캠페인 검색 제외어
 function igMappingForPage(page) {
   if (!page) return null;
   const list = SETTINGS.pageInstagram || [];
@@ -1469,7 +1494,7 @@ function renderRegionRows() {
       <td><input type="text" data-set="reg-name" data-i="${i}" value="${esc(r.name)}"></td>
       <td><input type="text" data-set="reg-key" data-i="${i}" value="${esc(r.key)}"></td>
       <td><select data-set="reg-type" data-i="${i}" style="width:100%;height:34px;border:1px solid var(--border2);border-radius:6px;font-family:inherit;font-size:12px;padding:0 4px;"><option value="">자동</option>${META_GEO_TYPES.map(x => `<option value="${x[0]}"${r.type === x[0] ? ' selected' : ''}>${x[1]}</option>`).join('')}</select></td>
-      <td><input type="text" data-set="reg-refName" data-i="${i}" value="${esc(r.refName)}" placeholder="비우면 이름에 안 붙음"></td>
+      <td><input type="text" data-set="reg-refName" data-i="${i}" value="${esc(r.refName)}" placeholder="비우면 안 붙음 · 제외는 «타겟 제외»"></td>
       <td><div style="display:flex;gap:4px;align-items:center;"><input type="text" data-set="reg-custom" data-i="${i}" value="${esc(r.custom)}" placeholder="비우면 지역 Key로 타겟"><button type="button" class="btn-pin${pinCount(r.custom) ? ' has' : ''}" onclick="openPinMap('meta',${i})" title="지도에서 핀 찍기 (반경 타겟)">${pinCount(r.custom) ? '📍 ' + pinCount(r.custom) : '📍 지도'}</button></div></td>
       <td><button class="set-del" onclick="removeRegionRow(${i})">✕</button></td>
     </tr>`).join('');
@@ -1768,7 +1793,7 @@ function resetSettings() {
 const G_TABLES = {
   staff:     { body: 'gset_staff_body',     cols: [['name','홍길동'], ['id','KCS']] },
   clinics:   { body: 'gset_clinic_body',    cols: [['clinic','오늘의치과'], ['short','오늘']] },
-  regions:   { body: 'gset_region_body',    cols: [['clinic','공통'], ['name','부산'], ['criterionId','검색으로 자동 입력'], ['refName','비우면 이름에 안 붙음'], ['custom','35.18,128.11,10; 35.20,128.05,8']] },
+  regions:   { body: 'gset_region_body',    cols: [['clinic','공통'], ['name','부산'], ['criterionId','검색으로 자동 입력'], ['refName','비우면 안 붙음 · 제외는 «타겟 제외»'], ['custom','35.18,128.11,10; 35.20,128.05,8']] },
   channels:  { body: 'gset_channel_body',   cols: [['channelName','오늘의병원'], ['channelId','UC...'], ['logoFileId','Drive 링크를 붙여넣으면 파일ID만 남아요']] },
 };
 /* Drive 공유 링크 어떤 형태든 파일ID만 뽑는다 (이미 ID면 그대로)
@@ -2019,10 +2044,10 @@ async function gAdsSearch(customerId, query) {
 
 /* 배포된 api/gads.js 가 최신인지 — 로그인 없이 ping 으로 확인한다.
    잠재고객이 세그먼트로 나오는 문제는 대부분 이 파일이 구버전인 경우였다. */
-const G_PROXY_REQUIRED_BUILD = '2026-09-17';
+const G_PROXY_REQUIRED_BUILD = '2026-09-17.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-17.1';
+const G_PAGE_BUILD = '2026-09-17.2';
 function gShowPageBuild() {
   const el = document.getElementById('g_page_build');
   if (el) { el.className = 'field-hint'; el.textContent = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요`; }
@@ -2099,6 +2124,45 @@ async function dumpProxyRaw() {
     lines.push('요청 자체 실패: ' + e.message);
   }
   show();
+}
+
+/* 로그인한 사람이 어떤 광고계정을 볼 수 있는지 — "나는 캠페인이 뜨는데 쟤는 안 떠요" 진단용 */
+async function gCheckAccess() {
+  gCollectSettings(); persistGoogleSettings();
+  const out = document.getElementById('g_api_out');
+  const lines = []; const push = t => { lines.push(t); out.textContent = lines.join('\n'); };
+  push('내 Google 계정 권한 확인 중...');
+  if (!ENV.isHttp) { push('❌ 배포된 주소에서만 확인할 수 있어요'); return; }
+  try { await gDriveSignIn(); } catch (e) { push('❌ Google 로그인 실패: ' + e.message); return; }
+  try {
+    const res = await gAuthFetch('core', gProxyUrl('access', {}));
+    const text = await res.text();
+    let j = null; try { j = JSON.parse(text); } catch (e) { /* JSON 아님 */ }
+    if (!j) { push('❌ 중계 함수가 JSON을 주지 않았어요 — api/gads.js 를 새 파일로 바꿔 재배포하세요'); return; }
+    if (j.error && j.accountCount == null) { push('❌ ' + j.error); return; }
+    lines.length = 0;
+    push(`로그인 계정 : ${(gTokens.core && gTokens.core.hint) || '(이메일 확인 안 됨)'}`);
+    push(`API 버전    : ${j.apiVersion || '-'} · MCC ${j.loginCustomerId || '(설정 안 됨)'}`);
+    push('');
+    push(`볼 수 있는 광고계정 : ${j.accountCount}개`);
+    push(`  · MCC 하위까지 조회됨 : ${j.mccExpanded ? '예' : '아니오'}`);
+    push(`  · 직접 권한 준 계정   : ${j.directCount}개`);
+    push('');
+    (j.accounts || []).slice(0, 30).forEach(a => push(`   - ${a.name} (${a.id})`));
+    if ((j.accounts || []).length > 30) push(`   ... 외 ${j.accountCount - 30}개`);
+    push('');
+    if (j.accountCount === 0) {
+      push('❌ 이 Google 계정으로는 광고계정이 하나도 안 보여요.');
+      push('   → 캠페인 찾기도 당연히 0개가 나옵니다.');
+      push('   → Google Ads 관리자 계정(MCC)에서 이 이메일을 초대하고 권한을 주세요.');
+      push('     (Google Ads → 관리자 → 액세스 및 보안 → 사용자 초대 · 읽기 전용이어도 검색은 됩니다)');
+    } else if (!j.mccExpanded) {
+      push('⚠ MCC 권한이 없어서 직접 권한을 준 계정만 검색됩니다.');
+      push('   → 다른 치과 캠페인이 안 보이면 MCC 사용자로 초대받으세요.');
+    } else {
+      push('✅ 정상 — 이 계정은 MCC 하위 광고계정 전부에서 캠페인을 찾을 수 있어요.');
+    }
+  } catch (e) { push('❌ ' + e.message); }
 }
 
 async function testGoogleProxy() {
@@ -3297,7 +3361,7 @@ function fillMetaRegionSelect(t) {
   const prevReg = regSel.value;
   const list = metaRegionsForAccount(metaCurrentAccountId(t));
   regSel.innerHTML = '<option value="">선택</option>';
-  list.forEach(r => { const o = document.createElement('option'); o.value = r.name; o.textContent = (r.refName ? `${r.name} — ${r.refName}` : r.name) + (r.accountId ? ' (계정 전용)' : ''); regSel.appendChild(o); });
+  list.forEach(r => { const o = document.createElement('option'); o.value = r.name; const lb = refLabel(r); o.textContent = (lb ? `${r.name} — ${lb}` : r.name) + (r.accountId ? ' (계정 전용)' : ''); regSel.appendChild(o); });
   if (prevReg && Array.from(regSel.options).some(o => o.value === prevReg)) regSel.value = prevReg;
   else if (prevReg) { regSel.value = ''; if (typeof onRegion === 'function') onRegion(t); }
 }
@@ -3372,7 +3436,7 @@ function buildNames(t, seqToken) {
   const dateEl = document.getElementById(`${t}_날짜`);
   const date = dateEl ? dateEl.value : '';
   const type = document.getElementById(`${t}_유형`).value;
-  const refName = region ? (region.refName || '') : '';
+  const refName = refLabel(region);
   const staffId = staffObj ? staffObj.id : '';
   return {
     campaignName: [acc.campaignName, type, date ? `(${date})` : '', staffName, refName, '예비용'].filter(Boolean).join(' '),
@@ -4852,7 +4916,7 @@ function gRegionsForClinic(clinic) {
 function gFillRegionSelects(t) {
   const clinic = (document.getElementById(`${t}_치과명`) || {}).value || '';
   const list = gRegionsForClinic(clinic);
-  const label = r => (r.refName ? `${r.name} — ${r.refName}` : r.name) + (r.custom ? ' 📍' : '');
+  const label = r => { const lb = refLabel(r); return (lb ? `${r.name} — ${lb}` : r.name) + (r.custom ? ' 📍' : ''); };
   const regSel = document.getElementById(`${t}_지역구분자`);
   if (regSel) {
     const prev = regSel.value;
@@ -4966,7 +5030,7 @@ function gAutoGenNames(t) {
   const staffObj = GDB.staff.find(s => s.name === staffName);
   const dateEl = document.getElementById(`${t}_날짜`);
   const date = dateEl ? dateEl.value : '';
-  let refName = region ? (region.refName || '') : '';
+  let refName = refLabel(region);
   if (t === 'g2' && gCampaignGeo.g2 && gCampaignGeo.g2.length > 0) refName = '';
   const staffId = staffObj ? staffObj.id : '';
   const seq = gSetSeqFor(t);
@@ -4993,7 +5057,7 @@ function gAdNameFor(t, i) {
   const region = gRegionsForClinic(clinicName).find(r => r.name === document.getElementById(`${t}_지역구분자`).value);
   const staffObj = GDB.staff.find(x => x.name === document.getElementById(`${t}_제작자`).value);
   const sub = (gAdSubStart[t] || 1) + i - 1;
-  let refName = region ? (region.refName || '') : '';
+  let refName = refLabel(region);
   if (t === 'g2' && gCampaignGeo.g2 && gCampaignGeo.g2.length > 0) refName = '';
   return [clinicName, '임플란트', refName, `${gAdPrefix[t] || 1}.${sub}U`, staffObj ? staffObj.id : ''].filter(Boolean).join(' ');
 }
@@ -5391,6 +5455,15 @@ async function gLearnAdPrefixForNewGroup(t, groups, customerId) {
   if (!gSelectedGroup.g2) { gAdPrefix[t] = gNewGroupPrefix.g2; gAutoGenNames(t); }
 }
 
+/* 표기명에 "제외"로 적어 둔 말이 이름에 든 캠페인은 목록에서 뺀다
+   (중계 함수가 구버전이라 nq 를 몰라도 여기서 한 번 더 걸러 준다)  */
+function gExcludeCampaigns(list, excl) {
+  if (!Array.isArray(list) || !excl || !excl.length) return list;
+  const keys = excl.map(x => normName(x)).filter(Boolean);
+  if (!keys.length) return list;
+  return list.filter(c => { const n = normName(c && c.name); return !keys.some(k => n.includes(k)); });
+}
+
 /* 치과 + 지역으로 모든 계정을 훑어 캠페인을 찾는다 (계정 선택 불필요) */
 const gPickedCampaign = { g2: null };
 async function gFindCampaigns(t) {
@@ -5400,15 +5473,17 @@ async function gFindCampaigns(t) {
   if (!clinic) { showToast('치과를 먼저 선택하세요', 'error'); return; }
   const short = GDB.clinicToShortName[clinic] || clinic;
   const regionObj = gRegionsForClinic(clinic).find(r => r.name === region);
-  const regionLabel = regionObj ? (regionObj.refName || regionObj.name) : region;
+  const regionLabel = regionObj ? (refLabel(regionObj) || regionObj.name) : region;
+  const excl = regionObj ? refExcludes(regionObj) : [];          // 표기명에 "○○ 제외" 라고 쓴 말
   const terms = [short, regionLabel].filter(Boolean);
-  box.innerHTML = `<div class="copy-suggest-loading">캠페인 찾는 중... (검색어: ${terms.join(' + ')})</div>`;
+  const exTxt = excl.length ? ` · 제외: ${excl.join(', ')}` : '';
+  box.innerHTML = `<div class="copy-suggest-loading">캠페인 찾는 중... (검색어: ${esc(terms.join(' + ') + exTxt)})</div>`;
   box.classList.add('show');
-  let list = await gLookup('findcampaigns', { q: terms.join('|') });
-  // 지역까지 넣어 못 찾으면 치과명만으로 한 번 더
+  let list = gExcludeCampaigns(await gLookup('findcampaigns', { q: terms.join('|'), nq: excl.join('|') }), excl);
+  // 지역까지 넣어 못 찾으면 치과명만으로 한 번 더 (제외어는 그대로 유지)
   let widened = false;
   if (list && list.length === 0 && terms.length > 1) {
-    list = await gLookup('findcampaigns', { q: short });
+    list = gExcludeCampaigns(await gLookup('findcampaigns', { q: short, nq: excl.join('|') }), excl);
     widened = true;
   }
   if (!list) {
@@ -5427,10 +5502,10 @@ async function gFindCampaigns(t) {
   const head = widened
     ? `<div style="padding:7px 12px;font-size:11px;color:#b45309;background:var(--yellow-bg);border-bottom:1px solid var(--border);line-height:1.5;">
          지역까지 넣으면 결과가 없어서, 치과명만으로 다시 찾았어요<br>
-         <span style="color:var(--text3);">검색어: ${short} (지역 «${regionLabel}» 제외) · ${list.length}개</span>
+         <span style="color:var(--text3);">검색어: ${esc(short + exTxt)} (지역 «${esc(regionLabel)}» 빼고) · ${list.length}개</span>
        </div>`
     : `<div style="padding:7px 12px;font-size:11px;color:var(--text3);border-bottom:1px solid var(--border);">
-         검색어: ${terms.join(' + ')} · ${list.length}개
+         검색어: ${esc(terms.join(' + ') + exTxt)} · ${list.length}개
        </div>`;
   box.innerHTML = head + list.map((c, i) =>
     `<div class="copy-suggest-item" onclick="gPickCampaign('${t}',${i})">
