@@ -2131,7 +2131,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-17.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-17.7';
+const G_PAGE_BUILD = '2026-09-17.8';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -2506,7 +2506,28 @@ function netErrorHint() {
   return '요청이 차단됐어요 — 인터넷 연결, 광고차단 확장프로그램, 사내 방화벽(facebook.com 차단)을 확인해주세요.';
 }
 
+/* ── Meta 호출 한도(쓰로틀) 보호 ──────────────────────────────
+   Meta는 광고계정·사용자·앱 단위로 "시간당 호출량"을 잰다. 한도를 넘으면 한동안 전부 거절한다.
+   한 번 걸리면 잠시 모든 Graph 호출을 멈춰서 더 깊이 빠지지 않게 한다 (계속 두드리면 차단이 길어진다). */
+const META_THROTTLE = { until: 0, reason: '' };
+function metaThrottleLeft() { return Math.max(0, META_THROTTLE.until - Date.now()); }
+function isMetaThrottleError(e) {
+  const fb = e && e.fb;
+  const code = fb ? Number(fb.code) : 0;
+  const sub = fb ? Number(fb.error_subcode || 0) : 0;
+  if ([4, 17, 32, 613].includes(code) || sub === 2446079 || sub === 1349174) return true;
+  return /#80004|#17\b|#613|#4\b|too many calls|request limit reached|rate limit/i.test(String((e && e.message) || ''));
+}
+function noteMetaThrottle(e, ms) {
+  META_THROTTLE.until = Date.now() + (ms || 90000);
+  META_THROTTLE.reason = String((e && e.message) || '').slice(0, 160);
+  const bar = document.getElementById('syncMsg');
+  if (bar) bar.innerHTML = `⏳ Meta가 호출 한도로 잠시 막았어요 — ${Math.ceil(metaThrottleLeft() / 1000)}초 뒤에 자동으로 다시 시도합니다 (같은 계정으로 한꺼번에 여러 건 등록하면 자주 생겨요)`;
+}
+
 async function fbGetAs(path, params, token) {
+  const left = metaThrottleLeft();
+  if (left > 0) throw new Error(`Meta 호출 한도로 잠시 쉬는 중이에요 (${Math.ceil(left / 1000)}초 남음) — 등록 자체는 Make에서 계속됩니다`);
   const q = new URLSearchParams(Object.assign({}, params, { access_token: token || META_ACCESS_TOKEN }));
   let res;
   try {
@@ -2521,6 +2542,7 @@ async function fbGetAs(path, params, token) {
     const parts = [e.error_user_title, e.error_user_msg, e.message].filter(Boolean);
     const err = new Error(parts.join(' — ') || 'Graph API 오류');
     err.fb = e;
+    if (isMetaThrottleError(err)) noteMetaThrottle(err);
     throw err;
   }
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -4351,7 +4373,10 @@ function updateCard(t, idx, status, msg, html) {
    Make 웹훅은 접수만 하고 바로 200을 주기 때문에, 실제로 광고가 만들어졌는지는
    Meta에 직접 물어봐야 안다. 전송 후 주기적으로 조회해 기대한 광고가 보이면 '게재 확인됨'으로 바꾼다. */
 const VERIFY_INTERVAL_MS = 5000;
-const VERIFY_MAX_TRIES = 24;   // 약 2분
+const VERIFY_MAX_TRIES = 18;
+/* 확인 간격을 점점 늘린다 — 5·5·5·8·8·12·12·20·20… (약 3분 동안 호출은 예전의 절반 이하)
+   Meta 계정 단위 호출 한도에 걸리지 않게 하려는 목적이다. */
+function verifyDelayMs(n) { return n <= 3 ? 5000 : n <= 5 ? 8000 : n <= 8 ? 12000 : 20000; }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const verifyState = {};
 
@@ -4395,7 +4420,7 @@ async function readWebhookIds(res) {
 
 /* 계정에 캠페인이 수천 개일 수 있으므로 전체를 훑지 않는다.
    ① 최근 생성분만 필터 → ② 이름 포함 검색 → ③ 최후에만 순차 조회 */
-async function findByName(edge, wantName, sinceTs) {
+async function findByName(edge, wantName, sinceTs, deep) {
   if (!wantName) return null;
   const pick = list => list.find(x => x.name === wantName)
     || list.find(x => x.name && (x.name.includes(wantName) || wantName.includes(x.name)));
@@ -4413,7 +4438,8 @@ async function findByName(edge, wantName, sinceTs) {
     const h = await attempt({ filtering: JSON.stringify([{ field: 'name', operator: 'CONTAIN', value: wantName }]) }, 3);
     if (h) return h;
   } catch (e) { /* 다음 방법 */ }
-  try { return await attempt({}, 10) || null; } catch (e) { return null; }
+  if (!deep) return null;                       // 전수 조회는 가끔만 (계정 호출 한도 보호)
+  try { return await attempt({}, 3) || null; } catch (e) { return null; }
 }
 
 async function verifyRegistration(t, idx, data) {
@@ -4448,9 +4474,10 @@ async function verifyRegistration(t, idx, data) {
   let lastStage = 'Make 처리 대기 중';
 
   for (let n = 1; n <= VERIFY_MAX_TRIES; n++) {
-    await sleep(VERIFY_INTERVAL_MS);
+    await sleep(verifyDelayMs(n) + metaThrottleLeft());   // 한도에 걸린 동안은 더 기다린다
     if (!verifyState[key] || !verifyState[key].running) return;   // 카드가 삭제됨
-    const secs = Math.round(n * VERIFY_INTERVAL_MS / 1000);
+    const secs = Math.round(Array.from({ length: n }, (_, i) => verifyDelayMs(i + 1)).reduce((x, y) => x + y, 0) / 1000);
+    const deep = n % 4 === 0;   // 4번에 한 번만 계정 전체를 훑는다
     if (n % 2 === 1) { await readLog(); gRenderTrack(t, idx, data, logState); }
     try {
       // Make가 광고 ID를 알려준 경우 — 이름 검색 없이 ID로 바로 확인
@@ -4471,13 +4498,13 @@ async function verifyRegistration(t, idx, data) {
         continue;
       }
       if (!campaignId && wantCampaign) {
-        const c = await findByName(`act_${accId}/campaigns`, wantCampaign, sinceTs);
+        const c = await findByName(`act_${accId}/campaigns`, wantCampaign, sinceTs, deep);
         if (!c) { lastStage = '캠페인 생성 대기 중'; report('확인중', `${lastStage}… (${secs}초)`); continue; }
         campaignId = c.id;
       }
       if (!adsetId) {
         if (!campaignId) { lastStage = '캠페인 확인 대기 중'; report('확인중', `${lastStage}… (${secs}초)`); continue; }
-        const st = await findByName(`${campaignId}/adsets`, wantAdset, null);
+        const st = await findByName(`${campaignId}/adsets`, wantAdset, null, deep);
         if (!st) { lastStage = '광고세트 생성 대기 중'; report('확인중', `${lastStage}… (${secs}초)`); continue; }
         adsetId = st.id;
       }
@@ -4495,7 +4522,11 @@ async function verifyRegistration(t, idx, data) {
       lastStage = `광고 생성 대기 중 (${hit.length}/${expected.length})`;
       report('확인중', `${lastStage}… (${secs}초)`);
     } catch (e) {
-      report('확인중', `확인 중 오류: ${e.message} — 계속 시도합니다 (${secs}초)`);
+      if (isMetaThrottleError(e) || metaThrottleLeft() > 0) {
+        report('확인중', `Meta 호출 한도로 잠시 쉬는 중이에요 — 등록은 Make에서 계속 진행됩니다 (${secs}초)`);
+      } else {
+        report('확인중', `확인 중 오류: ${e.message} — 계속 시도합니다 (${secs}초)`);
+      }
     }
   }
   verifyState[key].running = false;
@@ -6224,18 +6255,59 @@ async function gCheckAdsCreated(data, state) {
   return { found: expected.filter(n => names.includes(n)), total: expected.length, groupId, campaignId, adsInGroup: names.length };
 }
 /* Make 오류 기록을 사람 말로 — 자주 나오는 것만 */
+/* Make 로그에 남은 오류 원문을 사람 말로 바꿔 준다.
+   Make 자체 오류뿐 아니라 Google Ads · YouTube · Meta · Drive 가 돌려준 오류도 함께 본다. */
 function gErrorHint(row) {
   const s = `${row.msg || ''} ${row.detail || ''}`;
-  if (/File not found/i.test(s)) return '첨부한 영상이 Drive에 없어요. 등록이 한 번 끝나면 임시 영상은 지워지니, 같은 소재를 다시 보낼 땐 영상을 다시 첨부하세요 (이제부터는 자동으로 새로 올립니다)';
-  if (/RESOURCE_NOT_FOUND/.test(s) && /campaign/i.test(s)) return '이 광고계정에 그 캠페인이 없어요 — 캠페인을 다시 골라주세요';
-  if (/RESOURCE_NOT_FOUND/.test(s) && /ad_group|adGroup/i.test(s)) return '광고그룹을 찾지 못했어요 — 목록에서 다시 골라주세요';
-  if (/CONCURRENT_MODIFICATION/.test(s)) return 'Google이 잠시 잠갔어요 — Make가 1분 뒤 자동 재시도합니다';
+
+  /* ── 이름 중복 ── */
+  if (/DUPLICATE_CAMPAIGN_NAME|CampaignError\.DUPLICATE_NAME/i.test(s)) return '같은 이름의 캠페인이 이미 있어요 — 날짜·유형·제작자 중 하나를 바꾸면 이름이 달라집니다 (지운 캠페인 이름도 한동안 못 씁니다)';
+  if (/CampaignBudgetError\.DUPLICATE_NAME/i.test(s)) return '같은 이름의 캠페인 예산이 이미 있어요 — 캠페인명을 조금 바꿔서 다시 보내주세요';
+  if (/DUPLICATE_ADGROUP_NAME|AdGroupError\.DUPLICATE/i.test(s)) return '같은 이름의 광고그룹이 이미 있어요 — 광고그룹 번호(2U 등)를 확인하세요';
+  if (/AdError\.DUPLICATE|DUPLICATE_AD/i.test(s)) return '같은 내용의 광고가 이미 있어요 — 문구와 영상이 완전히 같으면 Google이 거절합니다';
+  if (/DUPLICATE_NAME/i.test(s)) return '같은 이름이 이미 쓰이고 있어요 — 이름을 조금 바꿔서 다시 보내주세요';
+
+  /* ── YouTube ── */
+  if (/uploadLimitExceeded/i.test(s)) return '이 채널의 하루 업로드 한도를 넘었어요 — 24시간 뒤에 풀립니다. 오늘은 다른 채널로 등록하세요';
+  if (/youtubeSignupRequired/i.test(s)) return '이 연결의 구글 계정에 YouTube 채널이 없어요 — 채널이 있는 계정으로 연결을 다시 만들어 주세요';
+  if (/videoDurationTooLong|invalidVideoMetadata|invalidFilename|mediaBodyRequired/i.test(s)) return '영상 파일이나 제목·설명이 YouTube 기준에 안 맞아요 — 파일과 제목을 확인해 주세요';
+  if (/forbidden/i.test(s) && /youtube/i.test(s)) return '이 연결로는 그 채널에 올릴 권한이 없어요 — 채널별 연결을 다시 확인하세요';
+  if (/요청한 채널과 다릅니다|채널과 다름/.test(s)) return '영상이 고른 채널이 아닌 다른 채널에 올라갔어요 — Make의 그 채널 경로에 있는 「유튜브 업로드 시작 · 유튜브 업로드」 모듈의 연결(Connection)을 그 채널로 만든 연결로 바꿔주세요. 광고는 만들지 않고 멈췄습니다';
+
+  /* ── 한도 · 속도 제한 ── */
+  if (/#80004|too many calls to this ad-account/i.test(s)) return 'Meta가 이 광고계정 호출을 잠시 막았어요 (계정 단위 한도) — 보통 몇 분~1시간이면 풀립니다. 같은 계정으로 한꺼번에 여러 건 보내지 말고 나눠서 보내주세요';
+  if (/#17\b|User request limit reached/i.test(s)) return 'Meta 사용자 호출 한도에 걸렸어요 — 잠시 뒤 다시 시도됩니다. 동시에 여러 건 보내면 자주 생깁니다';
+  if (/#4\b|Application request limit reached/i.test(s)) return 'Meta 앱 전체 호출 한도에 걸렸어요 — 잠시 뒤 자동으로 다시 시도합니다';
+  if (/#613|exceeded the rate limit/i.test(s)) return 'Meta 호출 속도 제한이에요 — 잠시 뒤 다시 시도됩니다';
+  if (/rateLimitExceeded|userRateLimitExceeded|RESOURCE_EXHAUSTED|RATE_EXCEEDED/i.test(s)) return '짧은 사이에 너무 많이 호출했어요 — 잠시 뒤 자동으로 다시 시도합니다. 여러 명이 동시에 등록 중이면 나눠서 보내주세요';
+  if (/quotaExceeded|dailyLimitExceeded|QUOTA_ERROR/i.test(s)) return '오늘 쓸 수 있는 API 한도를 다 썼어요 — 보통 태평양시간 자정(한국 오후 4~5시)에 풀립니다';
+
+  /* ── 권한 · 인증 ── */
+  if (/invalid_grant|AUTHENTICATION_ERROR/i.test(s)) return 'Make의 Google 연결이 풀렸어요 — Make에서 해당 모듈의 연결을 다시 인증하세요';
+  if (/Session has expired|#190/i.test(s)) return 'Meta 액세스 토큰이 만료됐어요 — 토큰을 새로 발급해 설정에 넣어주세요';
+  if (/USER_PERMISSION_DENIED|CUSTOMER_NOT_ENABLED|NOT_ADS_USER/i.test(s)) return '이 구글 계정에 그 광고계정 권한이 없어요 — 설정 → 연동 → 「내 계정 권한 확인」을 눌러보세요';
+  if (/Unauthorized|\b401\b/i.test(s)) return '인증이 풀렸어요 — Make 연결 또는 Meta 토큰을 다시 확인하세요';
+
+  /* ── 값 · 형식 ── */
   if (/final_urls|ILLEGAL_CHARS|INVALID_URL/i.test(s)) return '최종 URL 형식을 확인하세요 (https:// 로 시작)';
-  if (/quotaExceeded|uploadLimitExceeded/i.test(s)) return 'YouTube 업로드 한도에 걸렸어요 — 내일 다시 시도하거나 다른 채널로';
-  if (/invalid_grant|Unauthorized|401/.test(s)) return 'Make의 Google 연결이 풀렸어요 — Make에서 해당 모듈의 연결을 다시 인증하세요';
+  if (/TOO_LONG|STRING_LENGTH|maximum length/i.test(s)) return '글자 수 제한을 넘었어요 — 광고제목 40자 · 긴 제목 90자 · 설명 90자를 확인하세요';
+  if (/TOO_FEW|collectionSizeError/i.test(s)) return '영상이나 문구가 최소 개수보다 적어요 — 영상이 제대로 업로드됐는지 위 단계 기록을 확인하세요';
+  if (/TOO_MANY/i.test(s)) return '개수 제한을 넘었어요 — 한 광고에 영상은 5개까지입니다';
+  if (/\bREQUIRED\b|MISSING/i.test(s)) return '필수 값이 빠졌어요 — 문구·최종 URL·로고가 다 들어갔는지 확인하세요';
+  if (/BUDGET.*TOO_LOW|amount_micros/i.test(s)) return '일일예산이 너무 적어요 — 최소 금액 이상으로 올려주세요';
+  if (/1487479/.test(s)) return '이 캠페인 목표에서는 도시 단위 타게팅을 못 써요 — 설정에서 지역 종류를 «지역(도)» 로 바꾸거나 핀(반경)으로 잡아주세요';
   if (/1870188/.test(s) || /어드밴티지/.test(s)) return '어드밴티지+ 타겟은 최소 연령 25세까지만 돼요 — 어드밴티지+를 끄거나 최소 연령을 낮춰서 다시 등록하세요';
   if (/is_adset_budget_sharing_enabled/.test(s)) return 'Make 캠페인 생성 모듈에 is_adset_budget_sharing_enabled 값을 넣어야 해요';
-  if (/요청한 채널과 다릅니다|채널과 다름/.test(s)) return '영상이 고른 채널이 아닌 다른 채널에 올라갔어요 — Make의 그 채널 경로에 있는 「유튜브 업로드 시작 · 유튜브 업로드」 모듈의 연결(Connection)을 그 채널로 만든 연결로 바꿔주세요. 광고는 만들지 않고 멈췄습니다';
+
+  /* ── 리소스 · 파일 · 일시 장애 ── */
+  if (/File not found/i.test(s)) return '첨부한 영상이 Drive에 없어요. 등록이 한 번 끝나면 임시 영상은 지워지니, 같은 소재를 다시 보낼 땐 영상을 다시 첨부하세요 (이제부터는 자동으로 새로 올립니다)';
+  if (/insufficient.*permission/i.test(s) && /drive|file/i.test(s)) return 'Drive 파일 권한 문제예요 — 파일을 올린 사람만 지울 수 있습니다. 등록 자체에는 영향 없어요';
+  if (/RESOURCE_NOT_FOUND/.test(s) && /campaign/i.test(s)) return '이 광고계정에 그 캠페인이 없어요 — 캠페인을 다시 골라주세요';
+  if (/RESOURCE_NOT_FOUND/.test(s) && /ad_group|adGroup/i.test(s)) return '광고그룹을 찾지 못했어요 — 목록에서 다시 골라주세요';
+  if (/RESOURCE_NOT_FOUND/.test(s)) return '참조한 항목을 Google에서 찾지 못했어요 — 계정·캠페인을 다시 골라주세요';
+  if (/CONCURRENT_MODIFICATION/.test(s)) return 'Google이 잠시 잠갔어요 — Make가 1분 뒤 자동 재시도합니다';
+  if (/INTERNAL_ERROR|backendError|\b50[0-3]\b|deadline/i.test(s)) return '구글·메타 서버가 잠깐 불안정했어요 — 자동으로 다시 시도합니다';
+  if (/ECONNRESET|ETIMEDOUT|socket hang up|ENOTFOUND/i.test(s)) return '네트워크가 끊겼어요 — 자동으로 다시 시도합니다';
   return '';
 }
 function gRenderTrack(t, idx, data, state) {
@@ -6313,6 +6385,23 @@ function gTrackNow(t, idx) {
   st.forceCheck = true;
   if (st.wake) st.wake();
 }
+/* 같은 이름의 캠페인이 이미 있으면 뒤에 «(2)», «(3)» 을 붙여 비어 있는 이름을 돌려준다.
+   조회를 못 하면(중계 함수 미배포 등) 원래 이름 그대로 보낸다 — 그 경우 Make 로그에 중복 오류가 우리말로 뜬다. */
+async function gUniqueCampaignName(name) {
+  const base = String(name || '').trim();
+  if (!base) return base;
+  let list = null;
+  try { list = await gLookup('findcampaigns', { q: base, status: 'all' }); } catch (e) { list = null; }
+  if (!Array.isArray(list)) return base;
+  const taken = new Set(list.map(c => normName(c.name)));
+  if (!taken.has(normName(base))) return base;
+  for (let i = 2; i <= 50; i++) {
+    const cand = `${base} (${i})`;
+    if (!taken.has(normName(cand))) return cand;
+  }
+  return base;
+}
+
 async function gSubmitAd(t) {
   const data = gGetData(t); const isT2 = t === 'g2';
   if (!data.계정명) { showToast('계정명은 필수입니다', 'error'); return; }
@@ -6379,6 +6468,15 @@ async function gSubmitAd(t) {
     showToast(noVideo >= 0 ? `광고 ${noVideo + 1}에 전송할 영상이 없어요. 파일ID나 첨부파일을 확인해주세요` : '전송할 영상이 없어요. 파일ID나 첨부파일을 확인해주세요', 'error');
     restore();
     return;
+  }
+  // 새 캠페인이면 같은 이름이 이미 있는지 먼저 본다 (Google은 이름이 겹치면 DUPLICATE_CAMPAIGN_NAME 으로 거절)
+  if (!isT2) {
+    const fixed = await gUniqueCampaignName(data.캠페인명);
+    if (fixed && fixed !== data.캠페인명) {
+      data.캠페인명 = fixed;
+      const el = document.getElementById(`${t}_캠페인명`); if (el) el.value = fixed;
+      showToast(`같은 이름의 캠페인이 있어서 «${fixed}» 로 보냅니다`, 'info');
+    }
   }
   data.요청ID = gNewRequestId();
   gEnrichForMake(data, t, uploadedIds);
