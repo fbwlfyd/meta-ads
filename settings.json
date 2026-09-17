@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-17T04:57:48.232Z",
+  "updatedAt": "2026-09-17T04:58:13.261Z",
   "updatedBy": "asdf778984@gmail.com",
   "meta": {
     "staff": [
@@ -140,7 +140,7 @@
         "type": "",
         "country": "",
         "accountId": "316162427633460",
-        "refName": "사천타겟",
+        "refName": "",
         "custom": ""
       },
       {
@@ -149,7 +149,7 @@
         "type": "",
         "country": "",
         "accountId": "316162427633460",
-        "refName": "고성타겟",
+        "refName": "",
         "custom": "34.973278,128.322233,5"
       },
       {
@@ -158,7 +158,7 @@
         "type": "",
         "country": "",
         "accountId": "316162427633460",
-        "refName": "하동타겟",
+        "refName": "",
         "custom": ""
       },
       {
@@ -167,7 +167,7 @@
         "type": "",
         "country": "",
         "accountId": "316162427633460",
-        "refName": "산청타겟",
+        "refName": "",
         "custom": ""
       },
       {
@@ -176,7 +176,7 @@
         "type": "",
         "country": "",
         "accountId": "316162427633460",
-        "refName": "함안타겟",
+        "refName": "",
         "custom": ""
       },
       {
@@ -185,7 +185,7 @@
         "type": "",
         "country": "",
         "accountId": "316162427633460",
-        "refName": "의령타겟",
+        "refName": "",
         "custom": ""
       },
       {
@@ -194,7 +194,7 @@
         "type": "",
         "country": "",
         "accountId": "316162427633460",
-        "refName": "통영타겟",
+        "refName": "",
         "custom": ""
       }
     ]
