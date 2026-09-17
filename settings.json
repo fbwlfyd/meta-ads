@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-17T05:03:21.652Z",
-  "updatedBy": "asdf778984@gmail.com",
+  "updatedAt": "2026-09-17T05:31:35.272Z",
+  "updatedBy": "kwon0914kjh@gmail.com",
   "meta": {
     "staff": [
       {
@@ -196,6 +196,69 @@
         "accountId": "316162427633460",
         "refName": "",
         "custom": ""
+      },
+      {
+        "name": "충청북도 충주",
+        "key": "1268112",
+        "type": "city",
+        "country": "KR",
+        "accountId": "700018491959752",
+        "refName": "충주타겟",
+        "custom": ""
+      },
+      {
+        "name": "충청북도 음성",
+        "key": "2674469",
+        "type": "city",
+        "country": "KR",
+        "accountId": "700018491959752",
+        "refName": "음성타겟",
+        "custom": ""
+      },
+      {
+        "name": "충청북도 제천",
+        "key": "1270824",
+        "type": "city",
+        "country": "KR",
+        "accountId": "700018491959752",
+        "refName": "제천타겟",
+        "custom": ""
+      },
+      {
+        "name": "강원도 원주",
+        "key": "1287287",
+        "type": "city",
+        "country": "KR",
+        "accountId": "700018491959752",
+        "refName": "원주타겟",
+        "custom": ""
+      },
+      {
+        "name": "부산",
+        "key": "2003",
+        "type": "region",
+        "country": "KR",
+        "accountId": "",
+        "refName": "부산타겟",
+        "custom": ""
+      },
+      {
+        "name": "경상남도 밀양",
+        "key": "1274712",
+        "type": "city",
+        "country": "KR",
+        "accountId": "812454993694009",
+        "refName": "밀양타겟",
+        "custom": ""
+      },
+      {
+        "name": "울주군",
+        "key": "",
+        "type": "",
+        "country": "KR",
+        "accountId": "812454993694009",
+        "refName": "울주군타겟",
+        "custom": "35.654293,129.201162,1.5; 35.569938,129.228075,1.5; 35.349765,129.326146,1.5; 35.434572,129.314320,1.5; 35.418880,129.280743,1"
       }
     ]
   },
