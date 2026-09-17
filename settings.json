@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-17T05:31:35.272Z",
+  "updatedAt": "2026-09-17T05:39:52.329Z",
   "updatedBy": "kwon0914kjh@gmail.com",
   "meta": {
     "staff": [
@@ -309,6 +309,14 @@
       {
         "clinic": "울산더조은플란트치과",
         "short": "울산더조은플란트치과 임플란트"
+      },
+      {
+        "clinic": "서면오늘플란트치과",
+        "short": "서면오늘플란트 임플란트"
+      },
+      {
+        "clinic": "충주인플란트치과",
+        "short": "충주 임플란트"
       }
     ],
     "regions": [
@@ -323,14 +331,7 @@
         "clinic": "양산서울에스원치과",
         "name": "부산",
         "criterionId": "1009866",
-        "refName": "사상구",
-        "custom": ""
-      },
-      {
-        "clinic": "양산서울에스원치과",
-        "name": "울주",
-        "criterionId": "",
-        "refName": "",
+        "refName": "부산타겟",
         "custom": ""
       },
       {
@@ -408,6 +409,48 @@
         "name": "통영",
         "criterionId": "",
         "refName": "통영타겟",
+        "custom": ""
+      },
+      {
+        "clinic": "양산서울에스원치과",
+        "name": "울주군",
+        "criterionId": "",
+        "refName": "울주군타겟",
+        "custom": "35.569508,129.125164,11; 35.522236,129.242369,2"
+      },
+      {
+        "clinic": "서면오늘플란트치과",
+        "name": "부산광역시",
+        "criterionId": "1009866",
+        "refName": "",
+        "custom": ""
+      },
+      {
+        "clinic": "충주인플란트치과",
+        "name": "충주시",
+        "criterionId": "1009844",
+        "refName": "",
+        "custom": ""
+      },
+      {
+        "clinic": "충주인플란트치과",
+        "name": "음성군",
+        "criterionId": "1030703",
+        "refName": "음성타겟",
+        "custom": ""
+      },
+      {
+        "clinic": "충주인플란트치과",
+        "name": "제천시",
+        "criterionId": "1030746",
+        "refName": "제천타겟",
+        "custom": ""
+      },
+      {
+        "clinic": "서면오늘플란트치과",
+        "name": "원주시",
+        "criterionId": "1009889",
+        "refName": "원주타겟",
         "custom": ""
       }
     ],
