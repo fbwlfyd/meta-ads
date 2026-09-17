@@ -1046,6 +1046,7 @@
       <!-- 진단 -->
       <div class="modal-sec" id="msec_diag">
         <div class="set-note">토큰이 어떤 권한을 가졌고 어떤 호출이 왜 실패했는지 그대로 보여줍니다. 목록이 비어 있을 때 여기부터 확인하세요.</div>
+        <div class="field-hint" id="m_page_build" style="margin:0 0 12px;"></div>
         <button class="btn-sm blue" onclick="runDiagnostics()">진단 실행</button>
         <button class="btn-sm" onclick="copyDiagnostics()">결과 복사</button>
         <div id="diag_out" style="margin-top:14px;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);border-radius:8px;padding:12px;min-height:60px;color:var(--text2);">진단 실행을 눌러주세요.</div>
@@ -1507,6 +1508,7 @@ function openSettings(tab) {
   const valid = isG ? GOOGLE_TABS : META_TABS;
   const want = tab && valid.includes(tab) ? tab : (valid.includes(settingsTab) ? settingsTab : valid[0]);
   switchSettingsTab(want);
+  if (typeof gShowPageBuild === 'function') gShowPageBuild();   // 진단·연동 탭에 페이지 빌드 표시
   document.getElementById('settingsModal').classList.add('show');
 }
 function closeSettings() { document.getElementById('settingsModal').classList.remove('show'); }
@@ -2129,10 +2131,13 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-17.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-17.5';
+const G_PAGE_BUILD = '2026-09-17.7';
 function gShowPageBuild() {
-  const el = document.getElementById('g_page_build');
-  if (el) { el.className = 'field-hint'; el.textContent = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요`; }
+  const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
+  ['g_page_build', 'm_page_build'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.className = 'field-hint'; el.textContent = txt; }
+  });
 }
 async function gCheckProxyBuild() {
   gShowPageBuild();
@@ -3082,20 +3087,12 @@ function setSeqFor(t) {
   if (selectedAdset.t2) return selectedAdset.t2.seq || 1;
   return nextSetNumber.t2 || 1;
 }
-/* 캠페인의 가장 최근 세트 광고 이름을 보고, 새로 만들 세트의 접두 번호를 정한다 */
-async function learnAdPrefixForNewSet(t, adsets) {
+/* 새로 만들 세트의 광고 접두 번호 — 언제나 그 세트의 번호를 따른다 (2A 세트 → 2.1A)
+   이전 세트가 다른 규칙을 쓰고 있어도 물려받지 않는다.
+   ※ 이미 있는 세트를 고른 경우에는 그 세트 안 광고들의 번호를 그대로 이어간다 (toggleAdsetSelect) */
+function learnAdPrefixForNewSet(t, adsets) {
   prefixRule.t2 = { mode: 'own', value: 1 };
-  const withSeq = (adsets || []).map(a => ({ a, seq: parseSetSeq(a.name) })).filter(x => x.seq > 0).sort((x, y) => y.seq - x.seq);
-  const latest = withSeq[0];
-  if (latest) {
-    try {
-      const ads = await fetchAdsInAdset(latest.a.id);
-      const p = adPrefixOf(ads);
-      // 세트 번호와 다른 번호를 쓰고 있으면(예: 3A 세트인데 광고가 1.x) 그 규칙을 이어간다
-      if (p !== null && p !== latest.seq) prefixRule.t2 = { mode: 'fixed', value: p };
-    } catch (e) { /* 못 읽으면 세트 번호 규칙 */ }
-  }
-  newSetPrefix.t2 = prefixRule.t2.mode === 'own' ? (nextSetNumber.t2 || 1) : prefixRule.t2.value;
+  newSetPrefix.t2 = nextSetNumber.t2 || 1;
   if (!selectedAdset.t2) { adPrefix[t] = newSetPrefix.t2; autoGenNames(t); }
 }
 
@@ -5641,20 +5638,12 @@ function gAdNumbersFor(groupName, ads) {
 const gAdPrefix = { g1: 1, g2: 1 };        // 지금 카드 이름에 쓸 접두 번호
 const gNewGroupPrefix = { g2: 1 };          // 새 그룹을 만들 때 쓸 접두 번호
 const gPrefixRule = { g2: { mode: 'own', value: 1 } };   // 'own' = 그룹 번호를 접두로(기본) · 'fixed' = 그룹과 상관없이 같은 번호
-/* 캠페인의 가장 최근 그룹 광고 이름을 보고, 새로 만들 그룹의 접두 번호를 정한다 */
-async function gLearnAdPrefixForNewGroup(t, groups, customerId) {
+/* 새로 만들 그룹의 광고 접두 번호 — 언제나 그 그룹의 번호를 따른다 (2U 그룹 → 2.1U)
+   이전 그룹이 다른 규칙을 쓰고 있어도 물려받지 않는다.
+   ※ 이미 있는 그룹을 고른 경우에는 그 그룹 안 광고들의 번호를 그대로 이어간다 (gToggleGroupSelect) */
+function gLearnAdPrefixForNewGroup(t, groups, customerId) {
   gPrefixRule.g2 = { mode: 'own', value: 1 };
-  const withSeq = (groups || []).map(g => ({ g, seq: gParseSetSeq(g.name) })).filter(x => x.seq > 0).sort((a, b) => b.seq - a.seq);
-  const latest = withSeq[0];
-  if (latest) {
-    try {
-      const ads = await gLookup('ads', { customerId, adGroupId: latest.g.id });
-      const p = gAdPrefixOf(ads);
-      // 그룹 번호와 다른 번호를 쓰고 있으면(예: 3U 그룹인데 광고가 1.x) 그 규칙을 이어간다
-      if (p !== null && p !== latest.seq) gPrefixRule.g2 = { mode: 'fixed', value: p };
-    } catch (e) { /* 못 읽으면 그룹 번호 규칙 */ }
-  }
-  gNewGroupPrefix.g2 = gPrefixRule.g2.mode === 'own' ? (gNextSetNumber.g2 || 1) : gPrefixRule.g2.value;
+  gNewGroupPrefix.g2 = gNextSetNumber.g2 || 1;
   if (!gSelectedGroup.g2) { gAdPrefix[t] = gNewGroupPrefix.g2; gAutoGenNames(t); }
 }
 
@@ -6246,6 +6235,7 @@ function gErrorHint(row) {
   if (/invalid_grant|Unauthorized|401/.test(s)) return 'Make의 Google 연결이 풀렸어요 — Make에서 해당 모듈의 연결을 다시 인증하세요';
   if (/1870188/.test(s) || /어드밴티지/.test(s)) return '어드밴티지+ 타겟은 최소 연령 25세까지만 돼요 — 어드밴티지+를 끄거나 최소 연령을 낮춰서 다시 등록하세요';
   if (/is_adset_budget_sharing_enabled/.test(s)) return 'Make 캠페인 생성 모듈에 is_adset_budget_sharing_enabled 값을 넣어야 해요';
+  if (/요청한 채널과 다릅니다|채널과 다름/.test(s)) return '영상이 고른 채널이 아닌 다른 채널에 올라갔어요 — Make의 그 채널 경로에 있는 「유튜브 업로드 시작 · 유튜브 업로드」 모듈의 연결(Connection)을 그 채널로 만든 연결로 바꿔주세요. 광고는 만들지 않고 멈췄습니다';
   return '';
 }
 function gRenderTrack(t, idx, data, state) {
