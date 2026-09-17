@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-17T06:17:10.581Z",
+  "updatedAt": "2026-09-17T06:20:17.197Z",
   "updatedBy": "asdf778984@gmail.com",
   "meta": {
     "staff": [
@@ -342,76 +342,6 @@
         "custom": ""
       },
       {
-        "clinic": "울산서울탑치과",
-        "name": "울산",
-        "criterionId": "",
-        "refName": "",
-        "custom": ""
-      },
-      {
-        "clinic": "울산더조은플란트치과",
-        "name": "울산",
-        "criterionId": "",
-        "refName": "",
-        "custom": ""
-      },
-      {
-        "clinic": "진주리더플란트치과",
-        "name": "진주",
-        "criterionId": "",
-        "refName": "타겟 제외",
-        "custom": ""
-      },
-      {
-        "clinic": "진주리더플란트치과",
-        "name": "사천",
-        "criterionId": "",
-        "refName": "사천타겟",
-        "custom": ""
-      },
-      {
-        "clinic": "진주리더플란트치과",
-        "name": "고성",
-        "criterionId": "",
-        "refName": "고성타겟",
-        "custom": "35.010866,128.347778,18"
-      },
-      {
-        "clinic": "진주리더플란트치과",
-        "name": "하동",
-        "criterionId": "",
-        "refName": "하동타겟",
-        "custom": ""
-      },
-      {
-        "clinic": "진주리더플란트치과",
-        "name": "산청",
-        "criterionId": "",
-        "refName": "산청타겟",
-        "custom": ""
-      },
-      {
-        "clinic": "진주리더플란트치과",
-        "name": "함안",
-        "criterionId": "",
-        "refName": "함안타겟",
-        "custom": ""
-      },
-      {
-        "clinic": "진주리더플란트치과",
-        "name": "의령",
-        "criterionId": "",
-        "refName": "의령타겟",
-        "custom": ""
-      },
-      {
-        "clinic": "진주리더플란트치과",
-        "name": "통영",
-        "criterionId": "",
-        "refName": "통영타겟",
-        "custom": ""
-      },
-      {
         "clinic": "양산서울에스원치과",
         "name": "울주군",
         "criterionId": "",
@@ -451,6 +381,76 @@
         "name": "원주시",
         "criterionId": "1009889",
         "refName": "원주타겟",
+        "custom": ""
+      },
+      {
+        "clinic": "울산더조은플란트치과",
+        "name": "울산광역시",
+        "criterionId": "1009887",
+        "refName": "타겟 제외",
+        "custom": ""
+      },
+      {
+        "clinic": "울산서울탑치과",
+        "name": "울산광역시",
+        "criterionId": "1009887",
+        "refName": "타겟 제외",
+        "custom": ""
+      },
+      {
+        "clinic": "진주리더플란트치과",
+        "name": "진주시",
+        "criterionId": "1009841",
+        "refName": "타겟 제외",
+        "custom": ""
+      },
+      {
+        "clinic": "진주리더플란트치과",
+        "name": "고성군",
+        "criterionId": "1030716",
+        "refName": "고성타겟",
+        "custom": ""
+      },
+      {
+        "clinic": "진주리더플란트치과",
+        "name": "사천시",
+        "criterionId": "1030766",
+        "refName": "사천타겟",
+        "custom": ""
+      },
+      {
+        "clinic": "진주리더플란트치과",
+        "name": "하동군",
+        "criterionId": "1030727",
+        "refName": "하동타겟",
+        "custom": ""
+      },
+      {
+        "clinic": "진주리더플란트치과",
+        "name": "산청군",
+        "criterionId": "1030767",
+        "refName": "산청타겟",
+        "custom": ""
+      },
+      {
+        "clinic": "진주리더플란트치과",
+        "name": "함안군",
+        "criterionId": "1030729",
+        "refName": "함안타겟",
+        "custom": ""
+      },
+      {
+        "clinic": "진주리더플란트치과",
+        "name": "의령군",
+        "criterionId": "1030774",
+        "refName": "의령타겟",
+        "custom": ""
+      },
+      {
+        "clinic": "진주리더플란트치과",
+        "name": "통영시",
+        "criterionId": "1009884",
+        "refName": "통영타겟",
         "custom": ""
       }
     ],
