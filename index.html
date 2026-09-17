@@ -2125,7 +2125,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-17.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-17.3';
+const G_PAGE_BUILD = '2026-09-17.4';
 function gShowPageBuild() {
   const el = document.getElementById('g_page_build');
   if (el) { el.className = 'field-hint'; el.textContent = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요`; }
@@ -3368,6 +3368,54 @@ function populateDropdowns() {
 /* =========================================================
    캠페인 선택 / 조회
    ========================================================= */
+/* 캠페인 목록을 «캠페인 약칭» 으로 거른다
+   · 그 계정 항목에 캠페인 약칭이 있으면 → 이름에 그 약칭이 든 캠페인만 (한 계정에서 임플란트/치아교정을 갈라 보는 방법)
+   · 약칭이 없는데 복제 항목이 있으면 → 복제들의 약칭이 든 캠페인을 빼서 보여준다
+   · 걸러서 하나도 안 남으면 전체를 보여주고 이유를 알려 준다 */
+function filterCampaignsForAccount(list, acc) {
+  const mine = normName(acc && acc.campaignName);
+  const others = DB.accounts
+    .filter(a => String(a.id) === String(acc.id) && a !== acc && a.campaignName)
+    .map(a => normName(a.campaignName)).filter(x => x && x !== mine);
+  if (!mine && !others.length) return { list, mode: 'all' };
+  const n = c => normName(c.name);
+  let out;
+  if (mine) {
+    const moreSpecific = others.filter(o => o.includes(mine));   // 내 약칭을 통째로 품은 더 긴 약칭 (예: 「…치과」 vs 「…치과 치아교정」)
+    out = list.filter(c => n(c).includes(mine) && !moreSpecific.some(o => n(c).includes(o)));
+  } else {
+    out = list.filter(c => !others.some(o => n(c).includes(o)));
+  }
+  if (out.length === 0) return { list, mode: 'empty', label: acc.campaignName || '' };
+  return { list: out, mode: mine ? 'byName' : 'exclude', label: acc.campaignName || '', hidden: list.length - out.length };
+}
+const lastMetaCampaigns = { t2: { accName: '', list: [] } };
+function renderCampaignChoices(t, showAll) {
+  const listBox = document.getElementById(`${t}_캠페인목록`);
+  const cache = lastMetaCampaigns[t] || { list: [] };
+  const acc = DB.accounts.find(a => a.name === cache.accName) || {};
+  const all = cache.list || [];
+  const f = showAll ? { list: all, mode: 'all' } : filterCampaignsForAccount(all, acc);
+  const item = c => `<div class="copy-suggest-item" onclick="selectCampaignFromList('${t}','${c.id}')">${(c.name || '(이름 없음)').replace(/</g, '&lt;')}</div>`;
+  const bar = (txt, link) =>
+    `<div style="padding:7px 12px;font-size:11px;color:var(--text3);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:8px;align-items:center;">
+       <span>${txt}</span>${link ? `<span class="manual-toggle" style="white-space:nowrap;" onclick="event.stopPropagation();renderCampaignChoices('${t}',${link === 'all' ? 'true' : 'false'})">${link === 'all' ? '전체 보기' : '약칭으로 거르기'}</span>` : ''}
+     </div>`;
+  let head = '';
+  if (f.mode === 'byName' || f.mode === 'exclude') {
+    head = bar(f.mode === 'byName'
+      ? `약칭 «${esc(f.label)}» ${f.list.length}개${f.hidden ? ` · 다른 시술 ${f.hidden}개 숨김` : ''}`
+      : `복제 계정 몫 ${f.hidden}개 제외 · ${f.list.length}개`, 'all');
+  } else if (f.mode === 'empty') {
+    head = bar(`약칭 «${esc(f.label)}» 에 맞는 캠페인이 없어 전체를 보여줍니다`, '');
+  } else if (!showAll) {
+    head = '';
+  } else {
+    head = bar(`전체 ${all.length}개`, 'filter');
+  }
+  listBox.innerHTML = head + f.list.map(item).join('');
+  listBox.classList.add('show');
+}
 async function onCampaignAccountSelect(t) {
   const accName = document.getElementById(`${t}_캠페인선택계정`).value;
   const listBox = document.getElementById(`${t}_캠페인목록`);
@@ -3379,10 +3427,9 @@ async function onCampaignAccountSelect(t) {
   listBox.classList.add('show');
   try {
     const campaigns = await fetchActiveCampaigns(acc.id);
+    lastMetaCampaigns[t] = { accName, list: campaigns };
     if (campaigns.length === 0) { listBox.innerHTML = '<div class="copy-suggest-loading">진행중인(ACTIVE) 캠페인이 없어요</div>'; return; }
-    listBox.innerHTML = campaigns.map(c =>
-      `<div class="copy-suggest-item" onclick="selectCampaignFromList('${t}','${c.id}')">${(c.name || '(이름 없음)').replace(/</g,'&lt;')}</div>`
-    ).join('');
+    renderCampaignChoices(t, false);
   } catch (err) {
     listBox.innerHTML = `<div class="copy-suggest-loading">불러오기 실패: ${err.message}</div>`;
   }
