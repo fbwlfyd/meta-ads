@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-17T04:37:45.870Z",
+  "updatedAt": "2026-09-17T04:38:42.903Z",
   "updatedBy": "asdf778984@gmail.com",
   "meta": {
     "staff": [
@@ -278,9 +278,16 @@
         "custom": ""
       },
       {
-        "clinic": "진주리더플란트치과",
-        "name": "김해",
-        "criterionId": "1009849",
+        "clinic": "울산서울탑치과",
+        "name": "울산",
+        "criterionId": "",
+        "refName": "",
+        "custom": ""
+      },
+      {
+        "clinic": "울산더조은플란트치과",
+        "name": "울산",
+        "criterionId": "",
         "refName": "",
         "custom": ""
       }
