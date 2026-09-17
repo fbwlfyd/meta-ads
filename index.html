@@ -320,6 +320,12 @@
   .set-table input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
   .set-table input[readonly] { background: var(--bg); color: var(--text2); }
   .set-del { width: 30px; height: 30px; border: none; background: none; color: var(--text3); font-size: 15px; cursor: pointer; border-radius: 6px; font-family: inherit; }
+  .set-dup { height: 30px; padding: 0 9px; border: 1px solid var(--border2); background: none; color: var(--text2); font-size: 11px; cursor: pointer; border-radius: 6px; font-family: inherit; white-space: nowrap; }
+  .set-dup:hover { border-color: var(--blue); color: var(--blue); }
+  .set-table tr.acc-variant td { padding-top: 0; }
+  .set-table tr.acc-variant input { background: #fbfbfd; }
+  .acc-var-cell { display: flex; align-items: center; gap: 6px; padding-left: 14px; }
+  .acc-var-mark { font-size: 11px; color: var(--text3); white-space: nowrap; }
   .set-del:hover { background: var(--red-bg); color: var(--red); }
   .btn-sm { height: 34px; padding: 0 14px; border: 1px solid var(--border2); border-radius: var(--radius-sm); background: var(--white); font-family: inherit; font-size: 12px; font-weight: 500; color: var(--text2); cursor: pointer; white-space: nowrap; }
   .btn-sm:hover { background: var(--bg); color: var(--text1); }
@@ -989,9 +995,9 @@
       </div>
       <!-- 계정 네이밍 -->
       <div class="modal-sec" id="msec_account">
-        <div class="set-note">계정 이름과 ID는 Meta API에서 자동으로 가져옵니다. 캠페인명·세트명을 만들 때 쓰는 <b>약칭</b>만 입력해 주세요.<br>캠페인명 = 캠페인약칭 + 유형 + (날짜) + 제작자 + 지역표기 + 예비용<br>광고세트명 = 세트약칭 + 유형 + 지역표기 + 순번 + 제작자코드</div>
+        <div class="set-note">계정 이름과 ID는 Meta API에서 자동으로 가져옵니다. 캠페인명·세트명을 만들 때 쓰는 <b>약칭</b>만 입력해 주세요.<br>캠페인명 = 캠페인약칭 + 유형 + (날짜) + 제작자 + 지역표기 + 예비용<br>광고세트명 = 세트약칭 + 유형 + 지역표기 + 순번 + 제작자코드<br><b>한 계정에서 시술을 둘 이상 돌린다면</b> 오른쪽 <b>⧉ 복제</b>를 누르세요 — 같은 광고계정을 «울산서울탑 (치아교정)» 처럼 따로 두고 약칭만 다르게 쓸 수 있어요 (광고계정 ID는 그대로입니다).</div>
         <table class="set-table">
-          <thead><tr><th style="width:44%">계정명 (API)</th><th style="width:28%">캠페인 약칭</th><th style="width:28%">세트 약칭</th></tr></thead>
+          <thead><tr><th style="width:40%">계정명 (API)</th><th style="width:26%">캠페인 약칭</th><th style="width:26%">세트 약칭</th><th style="width:8%"></th></tr></thead>
           <tbody id="set_account_body"></tbody>
         </table>
       </div>
@@ -1332,6 +1338,9 @@ const SETTINGS_KEY = 'adtool_meta_settings_v1';
 const DEFAULT_SETTINGS = {
   staff: [],
   accounts: {},   // { '<광고계정ID>': { campaignName, setName } }
+  // 한 계정에서 시술을 둘 이상 돌릴 때 (예: 울산서울탑 = 임플란트 + 치아교정)
+  // 같은 광고계정을 복제해 약칭만 따로 쓰는 항목 [{id, label, campaignName, setName}]
+  accountVariants: [],
   pages: [],      // API로 페이지를 못 가져올 때 직접 입력해 두는 목록 [{name, pageId}]
   // 페이지별로 쓸 인스타 계정 지정 [{pageName, pageId, igName, igId}]
   // 여기에 없는 페이지는 인스타 계정을 쓰지 않고 Facebook 페이지 이름으로 게재됩니다.
@@ -1352,6 +1361,7 @@ function loadSettings() {
       SETTINGS = {
         staff: Array.isArray(parsed.staff) ? parsed.staff : [],
         accounts: parsed.accounts && typeof parsed.accounts === 'object' ? parsed.accounts : {},
+        accountVariants: Array.isArray(parsed.accountVariants) ? parsed.accountVariants : [],
         pages: Array.isArray(parsed.pages) ? parsed.pages : [],
         pageInstagram: Array.isArray(parsed.pageInstagram) ? parsed.pageInstagram : JSON.parse(JSON.stringify(DEFAULT_SETTINGS.pageInstagram)),
         regions: Array.isArray(parsed.regions) ? parsed.regions : [],
@@ -1367,6 +1377,72 @@ function accountSetting(accountId) {
   const id = String(accountId || '').replace('act_', '');
   if (!SETTINGS.accounts[id]) SETTINGS.accounts[id] = { campaignName: '', setName: '' };
   return SETTINGS.accounts[id];
+}
+
+/* ── 계정 복제 ─────────────────────────────────────────────
+   한 광고계정에서 시술을 둘 이상 돌릴 때 (울산서울탑 = 임플란트 + 치아교정)
+   같은 계정을 «울산서울탑 (치아교정)» 으로 하나 더 만들어 약칭만 따로 쓴다.
+   광고계정 ID·페이지·픽셀·맞춤타겟은 원본과 같다 — 이름 만드는 약칭만 다르다. */
+function accountVariants() { return (SETTINGS.accountVariants = SETTINGS.accountVariants || []); }
+function variantDisplayName(base, v, usedNames) {
+  const raw = base.rawName || base.name || `계정 ${base.id}`;
+  let nm = `${raw} (${(v.label || '').trim() || '복제'})`;
+  let k = 2;
+  while (usedNames && usedNames.has(nm)) { nm = `${raw} (${(v.label || '').trim() || '복제'} ${k++})`; }
+  if (usedNames) usedNames.add(nm);
+  return nm;
+}
+function addAccountVariant(id) {
+  collectSettingsFromDom();
+  const s = accountSetting(id);
+  accountVariants().push({ id: String(id).replace('act_', ''), label: '', campaignName: s.campaignName || '', setName: s.setName || '' });
+  renderAccountRows();
+  if (typeof markSettingsDirty === 'function') markSettingsDirty();
+  showToast('복제했어요 — 구분(예: 치아교정)과 약칭을 입력하고 저장하세요', 'success');
+}
+function removeAccountVariant(i) {
+  collectSettingsFromDom();
+  accountVariants().splice(i, 1);
+  renderAccountRows();
+  if (typeof markSettingsDirty === 'function') markSettingsDirty();
+}
+/* 같은 광고계정에 복제 항목이 여러 개면, 캠페인명에 들어 있는 약칭으로 어느 쪽인지 고른다
+   (예: "울산서울탑치아교정 임플란트..." → 치아교정 복제 항목) */
+function pickAccountForCampaign(accountId, campaignName) {
+  const cands = DB.accounts.filter(a => String(a.id) === String(accountId));
+  if (cands.length <= 1) return cands[0];
+  const n = normName(campaignName);
+  const hit = cands.filter(a => a.campaignName && n.includes(normName(a.campaignName)))
+    .sort((a, b) => normName(b.campaignName).length - normName(a.campaignName).length)[0];
+  return hit || cands[0];
+}
+function renderAccountRows() {
+  const ab = document.getElementById('set_account_body');
+  if (!ab) return;
+  const bases = DB.accounts.length
+    ? DB.accounts.filter(a => !a.variant)
+    : META_ACCOUNT_IDS.map(id => ({ name: `(계정 ${id})`, rawName: `계정 ${id}`, id: String(id).replace('act_', '') }));
+  const vars = accountVariants();
+  const rows = [];
+  bases.forEach(a => {
+    const s = accountSetting(a.id);
+    rows.push(`<tr>
+      <td><input type="text" value="${esc(a.name)}" readonly title="${esc(a.id)}"></td>
+      <td><input type="text" data-set="acc-campaignName" data-id="${esc(a.id)}" value="${esc(s.campaignName)}"></td>
+      <td><input type="text" data-set="acc-setName" data-id="${esc(a.id)}" value="${esc(s.setName)}"></td>
+      <td style="text-align:right;"><button type="button" class="set-dup" onclick="addAccountVariant('${esc(a.id)}')" title="같은 광고계정을 하나 더 만들어 다른 시술 약칭을 씁니다">⧉ 복제</button></td>
+    </tr>`);
+    vars.forEach((v, i) => {
+      if (String(v.id) !== String(a.id)) return;
+      rows.push(`<tr class="acc-variant">
+        <td><div class="acc-var-cell"><span class="acc-var-mark">↳ 복제</span><input type="text" data-set="var-label" data-i="${i}" value="${esc(v.label || '')}" placeholder="구분 (예: 치아교정)"></div></td>
+        <td><input type="text" data-set="var-campaignName" data-i="${i}" value="${esc(v.campaignName || '')}" placeholder="캠페인 약칭"></td>
+        <td><input type="text" data-set="var-setName" data-i="${i}" value="${esc(v.setName || '')}" placeholder="세트 약칭"></td>
+        <td style="text-align:right;"><button type="button" class="set-del" onclick="removeAccountVariant(${i})" title="복제 삭제">✕</button></td>
+      </tr>`);
+    });
+  });
+  ab.innerHTML = rows.join('');
 }
 // 페이지명은 띄어쓰기·대소문자 차이를 무시하고 비교한다
 function normName(v) { return String(v || '').replace(/\s+/g, '').toLowerCase(); }
@@ -1456,16 +1532,7 @@ function renderSettings() {
   if (SETTINGS.staff.length === 0) sb.innerHTML = '<tr><td colspan="3" style="padding:14px 4px;color:var(--text3);font-size:12px;">아직 등록된 제작자가 없어요. 아래 버튼으로 추가하세요.</td></tr>';
 
   // 계정 네이밍 (계정 목록은 API에서 온 DB.accounts 기준)
-  const ab = document.getElementById('set_account_body');
-  const accList = DB.accounts.length ? DB.accounts : META_ACCOUNT_IDS.map(id => ({ name: `(계정 ${id})`, id }));
-  ab.innerHTML = accList.map(a => {
-    const s = accountSetting(a.id);
-    return `<tr>
-      <td><input type="text" value="${esc(a.name)}" readonly title="${esc(a.id)}"></td>
-      <td><input type="text" data-set="acc-campaignName" data-id="${esc(a.id)}" value="${esc(s.campaignName)}"></td>
-      <td><input type="text" data-set="acc-setName" data-id="${esc(a.id)}" value="${esc(s.setName)}"></td>
-    </tr>`;
-  }).join('');
+  renderAccountRows();
 
   // 지역
   renderRegionRows();
@@ -1481,13 +1548,13 @@ const META_GEO_TYPES = [
 ];
 function metaGeoTypeLabel(type) { const f = META_GEO_TYPES.find(x => x[0] === type); return f ? f[1] : (type || ''); }
 function metaAccountOptions(selectedId) {
-  return '<option value="">공통</option>' + DB.accounts.filter(a => a.ok !== false).map(a => `<option value="${esc(a.id)}"${String(a.id) === String(selectedId || '') ? ' selected' : ''}>${esc(a.name)}</option>`).join('');
+  return '<option value="">공통</option>' + DB.accounts.filter(a => a.ok !== false && !a.variant).map(a => `<option value="${esc(a.id)}"${String(a.id) === String(selectedId || '') ? ' selected' : ''}>${esc(a.name)}</option>`).join('');
 }
 function renderRegionRows() {
   const rb = document.getElementById('set_region_body');
   if (!rb) return;
   const tgt = document.getElementById('region_target_account');
-  if (tgt) { const prev = tgt.value; tgt.innerHTML = '<option value="">공통 (모든 계정)</option>' + DB.accounts.filter(a => a.ok !== false).map(a => `<option value="${esc(a.id)}">${esc(a.name)}</option>`).join(''); if (prev) tgt.value = prev; }
+  if (tgt) { const prev = tgt.value; tgt.innerHTML = '<option value="">공통 (모든 계정)</option>' + DB.accounts.filter(a => a.ok !== false && !a.variant).map(a => `<option value="${esc(a.id)}">${esc(a.name)}</option>`).join(''); if (prev) tgt.value = prev; }
   rb.innerHTML = SETTINGS.regions.map((r, i) => `
     <tr>
       <td><select data-set="reg-accountId" data-i="${i}" style="width:100%;height:34px;border:1px solid var(--border2);border-radius:6px;font-family:inherit;font-size:12px;padding:0 6px;">${metaAccountOptions(r.accountId)}</select></td>
@@ -1551,6 +1618,17 @@ function collectSettingsFromDom() {
       accountSetting(el.dataset.id)[key] = el.value.trim();
     });
   });
+  // 복제한 계정 항목 (계정 표가 화면에 있을 때만 반영 — 모달을 안 열었으면 건드리지 않는다)
+  if (document.querySelectorAll('[data-set="acc-campaignName"]').length > 0) {
+    const vars = [];
+    document.querySelectorAll('[data-set="var-label"]').forEach(el => {
+      const i = el.dataset.i;
+      const get = k => { const e = document.querySelector(`[data-set="var-${k}"][data-i="${i}"]`); return e ? e.value.trim() : ''; };
+      const prev = accountVariants()[Number(i)] || {};
+      if (prev.id) vars.push({ id: prev.id, label: el.value.trim(), campaignName: get('campaignName'), setName: get('setName') });
+    });
+    SETTINGS.accountVariants = vars;
+  }
 
   const regions = [];
   document.querySelectorAll('[data-set="reg-name"]').forEach(el => {
@@ -2047,7 +2125,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-17.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-17.2';
+const G_PAGE_BUILD = '2026-09-17.3';
 function gShowPageBuild() {
   const el = document.getElementById('g_page_build');
   if (el) { el.className = 'field-hint'; el.textContent = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요`; }
@@ -2473,12 +2551,27 @@ let DB = {
 function applySettingsToDB() {
   DB.staff = SETTINGS.staff.filter(s => s.name);
   DB.regions = SETTINGS.regions.filter(r => r.name).map(r => ({ name: r.name, id: r.key || '', type: r.type || '', country: r.country || '', accountId: r.accountId || '', refName: r.refName || '', custom: r.custom || '' }));
-  // 계정에 네이밍 약칭 얹기
-  DB.accounts.forEach(a => {
+  // 계정에 네이밍 약칭 얹기 (+ 복제한 계정 항목을 원본 바로 뒤에 끼워 넣는다)
+  const bases = DB.accounts.filter(a => !a.variant);
+  bases.forEach(a => {
     const s = accountSetting(a.id);
     a.campaignName = s.campaignName || '';
     a.setName = s.setName || '';
   });
+  const used = new Set(bases.map(a => a.name));
+  const out = [];
+  bases.forEach(a => {
+    out.push(a);
+    accountVariants().forEach((v, i) => {
+      if (String(v.id) !== String(a.id)) return;
+      out.push(Object.assign({}, a, {
+        variant: true, variantIndex: i, variantLabel: (v.label || '').trim(),
+        name: variantDisplayName(a, v, used),
+        campaignName: v.campaignName || '', setName: v.setName || '',
+      }));
+    });
+  });
+  DB.accounts = out;
 }
 
 /* ===== 계정 ===== */
@@ -2558,7 +2651,7 @@ async function loadPages() {
     if (p.access_token) DB.pageTokens[p.id] = p.access_token;
   };
   // 1순위: 광고계정에 연결된 홍보 가능 페이지 (ads_management 권한이면 됨)
-  await Promise.all(DB.accounts.filter(a => a.ok).map(async a => {
+  await Promise.all(DB.accounts.filter(a => a.ok && !a.variant).map(async a => {
     try {
       const list = await fbGetAll(`act_${a.id}/promote_pages`, { fields: 'id,name' }, 2);
       list.forEach(add);
@@ -2940,15 +3033,36 @@ function maxSetSeqFrom(list) {
   return mx;
 }
 function nextSetNumberFrom(list) { return maxSetSeqFrom(list) + 1; }
-// 광고 번호는 세트 번호와 무관하게 항상 1.N — 세트 안에서 가장 큰 N을 찾는다
-function maxAdSubSeqFrom(list) {
+/* 광고 번호 "A.BA" — A는 그 광고가 들어가는 광고세트 번호(2A 세트면 2), B는 세트 안에서 몇 번째 광고인지.
+   세트에 이미 다른 규칙(세트 번호와 무관하게 늘 1.x 같은)으로 쓴 광고가 있으면 그 규칙을 그대로 따른다 */
+function parseAdNums(name) { const m = String(name || '').match(/(\d+)\.(\d+)A(?![0-9A-Za-z가-힣])/); return m ? { a: parseInt(m[1], 10), b: parseInt(m[2], 10) } : null; }
+function adPrefixOf(list) {
+  const counts = {};
+  (list || []).forEach(x => { const p = parseAdNums(x.name); if (p) counts[p.a] = (counts[p.a] || 0) + 1; });
+  let best = null;
+  Object.keys(counts).forEach(k => { if (best === null || counts[k] > counts[best] || (counts[k] === counts[best] && Number(k) > Number(best))) best = k; });
+  return best === null ? null : Number(best);
+}
+// 세트 안에서 (같은 접두 번호의) 가장 큰 B
+function maxAdSubSeqFrom(list, prefix) {
   let mx = 0;
   (list || []).forEach(item => {
     const re = /(\d+)\.(\d+)A(?![0-9A-Za-z가-힣])/g;
     let m;
-    while ((m = re.exec(item.name || '')) !== null) { const v = parseInt(m[2], 10); if (v > mx) mx = v; }
+    while ((m = re.exec(item.name || '')) !== null) { if (prefix !== undefined && prefix !== null && parseInt(m[1], 10) !== prefix) continue; const v = parseInt(m[2], 10); if (v > mx) mx = v; }
   });
   return mx;
+}
+/* 광고세트 하나를 보고 다음 광고 번호를 정한다 (구글 광고그룹과 같은 규칙)
+   · 접두(A) : 그 세트 광고들이 쓰던 번호 → 없으면 세트 번호(2A → 2) → 그것도 없으면 1
+   · 순번(B) : 세트 안 광고 개수와 이미 쓰인 가장 큰 번호 중 큰 값 + 1 */
+function adNumbersFor(setName, ads) {
+  const list = ads || [];
+  const learned = adPrefixOf(list);
+  const setSeq = parseSetSeq(setName) || 0;
+  const prefix = learned !== null ? learned : (setSeq || 1);
+  const next = Math.max(maxAdSubSeqFrom(list, learned), list.length) + 1;
+  return { prefix, next, learned };
 }
 
 /* =========================================================
@@ -2956,10 +3070,29 @@ function maxAdSubSeqFrom(list) {
    ========================================================= */
 const selectedAdset = { t2: null };
 const adSubStart = { t1: 1, t2: 1 };   // 광고 뒷자리 시작값 (1.«1»A)
+const adPrefix = { t1: 1, t2: 1 };     // 광고 앞자리 = 세트 번호 (2A 세트면 2.1A)
+const newSetPrefix = { t2: 1 };        // 새 세트를 만들 때 쓸 접두 번호
+const prefixRule = { t2: { mode: 'own', value: 1 } };   // 'own' = 세트 번호를 접두로(기본) · 'fixed' = 세트와 상관없이 같은 번호
 function setSeqFor(t) {
   if (t !== 't2') return 1;
   if (selectedAdset.t2) return selectedAdset.t2.seq || 1;
   return nextSetNumber.t2 || 1;
+}
+/* 캠페인의 가장 최근 세트 광고 이름을 보고, 새로 만들 세트의 접두 번호를 정한다 */
+async function learnAdPrefixForNewSet(t, adsets) {
+  prefixRule.t2 = { mode: 'own', value: 1 };
+  const withSeq = (adsets || []).map(a => ({ a, seq: parseSetSeq(a.name) })).filter(x => x.seq > 0).sort((x, y) => y.seq - x.seq);
+  const latest = withSeq[0];
+  if (latest) {
+    try {
+      const ads = await fetchAdsInAdset(latest.a.id);
+      const p = adPrefixOf(ads);
+      // 세트 번호와 다른 번호를 쓰고 있으면(예: 3A 세트인데 광고가 1.x) 그 규칙을 이어간다
+      if (p !== null && p !== latest.seq) prefixRule.t2 = { mode: 'fixed', value: p };
+    } catch (e) { /* 못 읽으면 세트 번호 규칙 */ }
+  }
+  newSetPrefix.t2 = prefixRule.t2.mode === 'own' ? (nextSetNumber.t2 || 1) : prefixRule.t2.value;
+  if (!selectedAdset.t2) { adPrefix[t] = newSetPrefix.t2; autoGenNames(t); }
 }
 
 function renderAdsetList(list) {
@@ -2987,23 +3120,26 @@ async function toggleAdsetSelect(id, name) {
   const already = selectedAdset.t2 && selectedAdset.t2.id === id;
   document.querySelectorAll('#t2_adset_list .adset-row').forEach(r => r.classList.remove('selected'));
   if (already) {
-    selectedAdset.t2 = null; adSubStart.t2 = 1;
+    selectedAdset.t2 = null; adSubStart.t2 = 1; adPrefix.t2 = newSetPrefix.t2 || 1;
     clearAdSublist();
     const h = document.getElementById('t2_adset_hint');
     if (h) h.textContent = '클릭하면 그 세트에 광고만 추가돼요';
-    applyT2Mode(); updateAdNames('t2');
+    applyT2Mode(); autoGenNames('t2');
     return;
   }
   selectedAdset.t2 = { id, name, seq: parseSetSeq(name) || 1 };
   document.getElementById(`adset_${id}`)?.classList.add('selected');
   adSubStart.t2 = 1;
+  adPrefix.t2 = selectedAdset.t2.seq || 1;     // 우선 세트 번호를 따른다 (광고를 읽으면 그 규칙으로 덮어씀)
   applyT2Mode(); updateAdNames('t2');
   const hint = document.getElementById('t2_adset_hint');
   if (hint) hint.textContent = '기존 광고 확인 중...';
   renderAdSublist(null, '<div class="ad-subloading">불러오는 중...</div>');
   try {
     const ads = await fetchAdsInAdset(id);
-    adSubStart.t2 = maxAdSubSeqFrom(ads) + 1;
+    const nums = adNumbersFor(name, ads);
+    adPrefix.t2 = nums.learned !== null ? nums.learned : (prefixRule.t2.mode === 'fixed' ? prefixRule.t2.value : nums.prefix);
+    adSubStart.t2 = nums.next;
     updateAdNames('t2');
     renderAdSublist(null, ads.length
       ? ads.map(a => {
@@ -3012,7 +3148,7 @@ async function toggleAdsetSelect(id, name) {
           return `<div class="ad-subrow"><span class="dot"></span><span class="nm" title="${nm}">${nm}</span><span class="adset-status ${on ? 'on' : ''}">${on ? '게재중' : (a.effective_status || '')}</span></div>`;
         }).join('')
       : '<div class="ad-subloading">이 세트에 광고가 없어요</div>',
-      ads.length ? `${ads.length}개 · 새 광고는 1.${adSubStart.t2}A 부터` : '광고 없음 · 1.1A 부터 시작');
+      ads.length ? `${ads.length}개 · 새 광고는 ${adPrefix.t2}.${adSubStart.t2}A 부터 (기존 이름 규칙을 따름)` : `광고 없음 · ${adPrefix.t2}.1A 부터 시작`);
     if (hint) hint.textContent = `선택됨 · ${name}`;
   } catch (err) {
     adSubStart.t2 = 1; updateAdNames('t2');
@@ -3262,7 +3398,7 @@ function selectCampaignFromList(t, campaignId) {
 function clearCampaignSelection(t) {
   const campIdEl = document.getElementById(`${t}_캠페인ID`); if (campIdEl) campIdEl.value = '';
   const disp = document.getElementById(`${t}_캠페인명_display`); if (disp) disp.textContent = '';
-  selectedAdset.t2 = null; adSubStart.t2 = 1; clearAdSublist(); applyT2Mode();
+  selectedAdset.t2 = null; adSubStart.t2 = 1; adPrefix.t2 = 1; newSetPrefix.t2 = 1; prefixRule.t2 = { mode: 'own', value: 1 }; clearAdSublist(); applyT2Mode();
   const adsetBox = document.getElementById('t2_adset_list');
   if (adsetBox) adsetBox.innerHTML = '<div class="adset-empty">위에서 캠페인을 먼저 선택하세요</div>';
   const adsetHint = document.getElementById('t2_adset_hint');
@@ -3299,18 +3435,20 @@ async function onCampaignId(t) {
     const nameDisplay = document.getElementById(`${t}_캠페인명_display`);
     if (nameDisplay) nameDisplay.textContent = campaignName ? `📌 ${campaignName}` : '';
     if (t === 't2') {
-      selectedAdset.t2 = null; adSubStart.t2 = 1; clearAdSublist(); applyT2Mode();
+      selectedAdset.t2 = null; adSubStart.t2 = 1; adPrefix.t2 = 1; prefixRule.t2 = { mode: 'own', value: 1 }; clearAdSublist(); applyT2Mode();
       try {
         const adsets = await fetchAdsets(campaignId);
         nextSetNumber.t2 = nextSetNumberFrom(adsets);
+        adPrefix.t2 = newSetPrefix.t2 = nextSetNumber.t2 || 1;
         renderAdsetList(adsets);
+        learnAdPrefixForNewSet('t2', adsets);   // 최근 세트의 광고 이름 규칙(1.x / 3.x)을 새 세트에도 이어 쓴다
       } catch (e) {
-        nextSetNumber.t2 = 1;
+        nextSetNumber.t2 = 1; adPrefix.t2 = 1; newSetPrefix.t2 = 1;
         const box = document.getElementById('t2_adset_list');
         if (box) box.innerHTML = `<div class="adset-empty">광고세트 목록 조회 실패: ${e.message}</div>`;
       }
     }
-    const acc = DB.accounts.find(a => a.id === accountId);
+    const acc = pickAccountForCampaign(accountId, campaignName);
     if (acc) { setAccountName(t, acc.name); onAccount(t); }
     else {
       document.getElementById(`${t}_광고계정ID`).value = accountId || '';
@@ -3445,7 +3583,7 @@ function buildNames(t, seqToken) {
 }
 function adNameFor(t, n) {
   const sub = (adSubStart[t] || 1) + n - 1;
-  const built = buildNames(t, `1.${sub}A`);   // 광고 번호 앞자리는 세트 번호와 무관하게 항상 1
+  const built = buildNames(t, `${adPrefix[t] || 1}.${sub}A`);   // 앞자리는 세트 번호(2A 세트 → 2.1A)
   return built ? built.setName : '';
 }
 function updateAdNames(t) {
@@ -3454,7 +3592,8 @@ function updateAdNames(t) {
   const first = adNameFor(t, 1);
   const el = document.getElementById(`${t}_광고명`);
   const start = adSubStart[t] || 1;
-  if (el) el.value = !first ? '' : (n > 1 ? `${first} 외 ${n - 1}개 (1.${start + 1}A~1.${start + n - 1}A)` : first);
+  const pfx = adPrefix[t] || 1;
+  if (el) el.value = !first ? '' : (n > 1 ? `${first} 외 ${n - 1}개 (${pfx}.${start + 1}A~${pfx}.${start + n - 1}A)` : first);
   blocks.forEach((b, i) => {
     const box = b.querySelector('[data-role="광고명"]');
     if (!box) return;
@@ -4407,7 +4546,7 @@ function clearForm(t) {
     const campAccSel = document.getElementById('t2_캠페인선택계정'); if (campAccSel) campAccSel.value = '';
     const campListBox = document.getElementById('t2_캠페인목록'); if (campListBox) { campListBox.classList.remove('show'); campListBox.innerHTML = ''; }
     const manualWrap = document.getElementById('t2_manual_wrap'); if (manualWrap) manualWrap.style.display = 'none';
-    selectedAdset.t2 = null; adSubStart.t2 = 1; clearAdSublist(); applyT2Mode(); toggleCampaignClear('t2', false);
+    selectedAdset.t2 = null; adSubStart.t2 = 1; adPrefix.t2 = 1; newSetPrefix.t2 = 1; prefixRule.t2 = { mode: 'own', value: 1 }; clearAdSublist(); applyT2Mode(); toggleCampaignClear('t2', false);
     const adsetBox = document.getElementById('t2_adset_list');
     if (adsetBox) adsetBox.innerHTML = '<div class="adset-empty">위에서 캠페인을 먼저 선택하세요</div>';
     const adsetHint = document.getElementById('t2_adset_hint');
@@ -6268,7 +6407,7 @@ document.getElementById('g1_시작일').value = new Date().toISOString().split('
    ========================================================= */
 const SHARED_SETTINGS_URL = '/settings.json';
 const SHARED_API_URL = '/api/settings';
-const SHARED_META_KEYS = ['staff', 'accounts', 'pages', 'pageInstagram', 'regions'];
+const SHARED_META_KEYS = ['staff', 'accounts', 'accountVariants', 'pages', 'pageInstagram', 'regions'];
 const SHARED_GOOGLE_KEYS = ['staff', 'clinics', 'regions', 'channels', 'cta', 'accounts', 'audiences'];
 const SHARED_STAMP_KEY = 'adtool_shared_settings_stamp';   // 마지막으로 적용한 공유 설정의 updatedAt
 const SHARED_DIRTY_KEY = 'adtool_settings_local_dirty';    // 이 브라우저에서만 바꾼 게 있음
