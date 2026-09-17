@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-17T06:20:21.909Z",
+  "updatedAt": "2026-09-17T06:22:02.092Z",
   "updatedBy": "asdf778984@gmail.com",
   "meta": {
     "staff": [
@@ -194,7 +194,7 @@
         "type": "city",
         "country": "KR",
         "accountId": "316162427633460",
-        "refName": "타겟 제외",
+        "refName": "",
         "custom": ""
       },
       {
@@ -203,7 +203,7 @@
         "type": "city",
         "country": "KR",
         "accountId": "316162427633460",
-        "refName": "경상남도 고성타겟",
+        "refName": "고성타겟",
         "custom": ""
       },
       {
@@ -212,7 +212,7 @@
         "type": "city",
         "country": "KR",
         "accountId": "316162427633460",
-        "refName": "경상남도 사천타겟",
+        "refName": "사천타겟",
         "custom": ""
       },
       {
@@ -221,7 +221,7 @@
         "type": "city",
         "country": "KR",
         "accountId": "316162427633460",
-        "refName": "경상남도 하동타겟",
+        "refName": "하동타겟",
         "custom": ""
       },
       {
@@ -230,7 +230,7 @@
         "type": "city",
         "country": "KR",
         "accountId": "316162427633460",
-        "refName": "경상남도 산청타겟",
+        "refName": "산청타겟",
         "custom": ""
       },
       {
@@ -239,7 +239,7 @@
         "type": "city",
         "country": "KR",
         "accountId": "316162427633460",
-        "refName": "경상남도 함안타겟",
+        "refName": "함안타겟",
         "custom": ""
       },
       {
@@ -248,7 +248,7 @@
         "type": "city",
         "country": "KR",
         "accountId": "316162427633460",
-        "refName": "경상남도 의령타겟",
+        "refName": "의령타겟",
         "custom": ""
       },
       {
@@ -257,7 +257,25 @@
         "type": "city",
         "country": "KR",
         "accountId": "316162427633460",
-        "refName": "경상남도 통영타겟",
+        "refName": "통영타겟",
+        "custom": ""
+      },
+      {
+        "name": "울산",
+        "key": "1286309",
+        "type": "city",
+        "country": "KR",
+        "accountId": "328544192521713",
+        "refName": "",
+        "custom": ""
+      },
+      {
+        "name": "울산",
+        "key": "1286309",
+        "type": "city",
+        "country": "KR",
+        "accountId": "383834457603938",
+        "refName": "",
         "custom": ""
       }
     ]
