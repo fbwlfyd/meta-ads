@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-17T06:04:44.576Z",
-  "updatedBy": "fbwlfyd9271@gmail.com",
+  "updatedAt": "2026-09-17T06:17:10.581Z",
+  "updatedBy": "asdf778984@gmail.com",
   "meta": {
     "staff": [
       {
@@ -126,78 +126,6 @@
         "custom": ""
       },
       {
-        "name": "진주",
-        "key": "",
-        "type": "city",
-        "country": "",
-        "accountId": "316162427633460",
-        "refName": "",
-        "custom": ""
-      },
-      {
-        "name": "사천",
-        "key": "",
-        "type": "",
-        "country": "",
-        "accountId": "316162427633460",
-        "refName": "",
-        "custom": ""
-      },
-      {
-        "name": "고성",
-        "key": "",
-        "type": "",
-        "country": "",
-        "accountId": "316162427633460",
-        "refName": "",
-        "custom": "34.973278,128.322233,5"
-      },
-      {
-        "name": "하동",
-        "key": "",
-        "type": "",
-        "country": "",
-        "accountId": "316162427633460",
-        "refName": "",
-        "custom": ""
-      },
-      {
-        "name": "산청",
-        "key": "",
-        "type": "",
-        "country": "",
-        "accountId": "316162427633460",
-        "refName": "",
-        "custom": ""
-      },
-      {
-        "name": "함안",
-        "key": "",
-        "type": "",
-        "country": "",
-        "accountId": "316162427633460",
-        "refName": "",
-        "custom": ""
-      },
-      {
-        "name": "의령",
-        "key": "",
-        "type": "",
-        "country": "",
-        "accountId": "316162427633460",
-        "refName": "",
-        "custom": ""
-      },
-      {
-        "name": "통영",
-        "key": "",
-        "type": "",
-        "country": "",
-        "accountId": "316162427633460",
-        "refName": "",
-        "custom": ""
-      },
-      {
         "name": "충청북도 충주",
         "key": "1268112",
         "type": "city",
@@ -259,6 +187,78 @@
         "accountId": "812454993694009",
         "refName": "울주군타겟",
         "custom": "35.654293,129.201162,1.5; 35.569938,129.228075,1.5; 35.349765,129.326146,1.5; 35.434572,129.314320,1.5; 35.418880,129.280743,1"
+      },
+      {
+        "name": "경상남도 진주",
+        "key": "1270848",
+        "type": "city",
+        "country": "KR",
+        "accountId": "316162427633460",
+        "refName": "타겟 제외",
+        "custom": ""
+      },
+      {
+        "name": "경상남도 고성",
+        "key": "1268608",
+        "type": "city",
+        "country": "KR",
+        "accountId": "316162427633460",
+        "refName": "경상남도 고성타겟",
+        "custom": ""
+      },
+      {
+        "name": "경상남도 사천",
+        "key": "2686968",
+        "type": "city",
+        "country": "KR",
+        "accountId": "316162427633460",
+        "refName": "경상남도 사천타겟",
+        "custom": ""
+      },
+      {
+        "name": "경상남도 하동",
+        "key": "1268766",
+        "type": "city",
+        "country": "KR",
+        "accountId": "316162427633460",
+        "refName": "경상남도 하동타겟",
+        "custom": ""
+      },
+      {
+        "name": "경상남도 산청",
+        "key": "2686973",
+        "type": "city",
+        "country": "KR",
+        "accountId": "316162427633460",
+        "refName": "경상남도 산청타겟",
+        "custom": ""
+      },
+      {
+        "name": "경상남도 함안",
+        "key": "1269116",
+        "type": "city",
+        "country": "KR",
+        "accountId": "316162427633460",
+        "refName": "경상남도 함안타겟",
+        "custom": ""
+      },
+      {
+        "name": "경상남도 의령",
+        "key": "2686971",
+        "type": "city",
+        "country": "KR",
+        "accountId": "316162427633460",
+        "refName": "경상남도 의령타겟",
+        "custom": ""
+      },
+      {
+        "name": "경상남도 통영",
+        "key": "2686967",
+        "type": "city",
+        "country": "KR",
+        "accountId": "316162427633460",
+        "refName": "경상남도 통영타겟",
+        "custom": ""
       }
     ]
   },
