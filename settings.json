@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-17T06:22:02.092Z",
-  "updatedBy": "asdf778984@gmail.com",
+  "updatedAt": "2026-09-17T06:25:10.279Z",
+  "updatedBy": "fbwlfyd9271@gmail.com",
   "meta": {
     "staff": [
       {
@@ -79,6 +79,14 @@
         "setName": ""
       }
     },
+    "accountVariants": [
+      {
+        "id": "328544192521713",
+        "label": "3부서_울산서울탑(치아교정)",
+        "campaignName": "울산서울탑치과 치아교정",
+        "setName": "울산서울탑치과 치아교정"
+      }
+    ],
     "pages": [],
     "pageInstagram": [
       {
