@@ -2144,7 +2144,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-17.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-18.7';
+const G_PAGE_BUILD = '2026-09-18.8';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -5332,6 +5332,20 @@ function gRenderCampaignNameHint(t) {
     el.textContent = '위 값들로 자동으로 만들어져요 — 여기서 직접 고쳐도 됩니다';
   }
 }
+/* 광고그룹명·광고명은 같은 재료로 만든다 — 토큰(2U · 2.1U)만 다르다.
+   한 곳에서만 만들어야 «보내기 직전 번호 올리기»가 실제 이름과 어긋나지 않는다 */
+function gNamePartsFor(t) {
+  const clinicName = document.getElementById(`${t}_치과명`)?.value || '';
+  const region = gRegionsForClinic(clinicName).find(r => r.name === (document.getElementById(`${t}_지역구분자`) || {}).value);
+  let refName = refLabel(region);
+  if (t === 'g2' && gCampaignGeo.g2 && gCampaignGeo.g2.length > 0) refName = '';
+  const staffObj = GDB.staff.find(s => s.name === (document.getElementById(`${t}_제작자`) || {}).value);
+  return { clinicName, refName, staffId: staffObj ? staffObj.id : '' };
+}
+function gBuildGroupName(t, token) {
+  const p = gNamePartsFor(t);
+  return [p.clinicName, '임플란트', p.refName, token, p.staffId].filter(Boolean).join(' ');
+}
 function gAutoGenNames(t) {
   const acc = GDB.accounts.find(a => a.name === gGetAccountName(t)) || (t === 'g2' ? { name: '', campaignName: '' } : null);
   if (!acc) return;
@@ -5350,28 +5364,24 @@ function gAutoGenNames(t) {
   const memo = ((document.getElementById(`${t}_메모`) || {}).value || '').trim();   // 캠페인명 맨 뒤에만 붙는다
   const campaignName = [shortName, '디맨드젠', date ? `(${date})` : '', staffName, refName, accNameLabel, '예비용', memo].filter(Boolean).join(' ');
   if (t === 'g1') gRenderCampaignNameHint('g1');
-  const build = token => [clinicName, '임플란트', refName, token, staffId].filter(Boolean).join(' ');
+  const build = token => gBuildGroupName(t, token);
   const groupName = gSelectedGroup.g2 && t === 'g2' ? gSelectedGroup.g2.name : build(`${seq}U`);
   if (t === 'g1' && !gCampaignNameEdited.g1) document.getElementById('g1_캠페인명').value = campaignName;
   document.getElementById(`${t}_광고그룹명`).value = groupName;
   // 광고명 (소재 개수만큼 1.1U, 1.2U ...)
   const n = document.getElementById(`${t}_creative_list`)?.children.length || 1;
   const start = gAdSubStart[t] || 1;
-  const first = build(`1.${start}U`);   // 광고 번호 앞자리는 그룹 번호와 무관하게 항상 1
+  const pfx = gAdPrefix[t] || 1;        // 광고 번호 앞자리 = 그 광고가 들어갈 광고그룹 번호 (2U 그룹 → 2.1U)
+  const first = build(`${pfx}.${start}U`);
   const adEl = document.getElementById(`${t}_광고명`);
-  if (adEl) adEl.value = n > 1 ? `${first} 외 ${n - 1}개 (1.${start + 1}U~1.${start + n - 1}U)` : first;
+  if (adEl) adEl.value = n > 1 ? `${first} 외 ${n - 1}개 (${pfx}.${start + 1}U~${pfx}.${start + n - 1}U)` : first;
   if (typeof gUpdateCardAdNames === 'function') gUpdateCardAdNames(t);
 }
 function gAdNameFor(t, i) {
   const acc = GDB.accounts.find(a => a.name === gGetAccountName(t)) || (t === 'g2' ? {} : null);
   if (!acc) return '';
-  const clinicName = document.getElementById(`${t}_치과명`)?.value || '';
-  const region = gRegionsForClinic(clinicName).find(r => r.name === document.getElementById(`${t}_지역구분자`).value);
-  const staffObj = GDB.staff.find(x => x.name === document.getElementById(`${t}_제작자`).value);
   const sub = (gAdSubStart[t] || 1) + i - 1;
-  let refName = refLabel(region);
-  if (t === 'g2' && gCampaignGeo.g2 && gCampaignGeo.g2.length > 0) refName = '';
-  return [clinicName, '임플란트', refName, `${gAdPrefix[t] || 1}.${sub}U`, staffObj ? staffObj.id : ''].filter(Boolean).join(' ');
+  return gBuildGroupName(t, `${gAdPrefix[t] || 1}.${sub}U`);
 }
 /* =========================================================
    Google 광고 소재 카드 (세트 추가 탭) — 메타와 동일한 카드 UI
@@ -5931,7 +5941,7 @@ async function gLoadCampaign(t, campaignId, campaignName) {
     gNextSetNumber.g2 = 1; gAutoGenNames(t);
     return;
   }
-  gNextSetNumber.g2 = gMaxSetSeq(groups) + 1;
+  gNextSetNumber.g2 = gMaxSetSeq(groups.concat(gSentGroupsFor(campaignId))) + 1;   // 방금 보낸 그룹은 아직 목록에 안 잡힌다
   gAutoGenNames(t);
   gLearnAdPrefixForNewGroup(t, groups, cid);   // 최근 그룹의 광고 이름 규칙(1.x / 3.x)을 새 그룹에도 이어 쓴다
   if (groups.length === 0) {
@@ -6345,7 +6355,7 @@ function gErrorHint(row) {
   /* ── 이름 중복 ── */
   if (/DUPLICATE_CAMPAIGN_NAME|CampaignError\.DUPLICATE_NAME/i.test(s)) return '같은 이름의 캠페인이 이미 있어요 — 왼쪽 «메모» 칸에 구분할 말(예: [2차])을 넣으면 이름이 달라집니다. 같은 요청을 두 번 보냈다면 Google Ads에서 먼저 만들어진 캠페인을 확인하세요';
   if (/CampaignBudgetError\.DUPLICATE_NAME/i.test(s)) return '같은 이름의 캠페인 예산이 이미 있어요 — 캠페인명을 조금 바꿔서 다시 보내주세요';
-  if (/DUPLICATE_ADGROUP_NAME|AdGroupError\.DUPLICATE/i.test(s)) return '같은 이름의 광고그룹이 이미 있어요 — 광고그룹 번호(2U 등)를 확인하세요';
+  if (/DUPLICATE_ADGROUP_NAME|AdGroupError\.DUPLICATE/i.test(s)) return '같은 이름의 광고그룹이 이미 이 캠페인에 있어요 — 앞선 전송이 그룹까지만 만들고 멈춘 경우가 대부분입니다. 세트 추가에서 캠페인을 다시 불러온 뒤, 그 그룹을 골라 «광고만 추가»하거나 새 번호(3U 등)로 보내주세요';
   if (/AdError\.DUPLICATE|DUPLICATE_AD/i.test(s)) return '같은 내용의 광고가 이미 있어요 — 문구와 영상이 완전히 같으면 Google이 거절합니다';
   if (/DUPLICATE_NAME/i.test(s)) return '같은 이름이 이미 쓰이고 있어요 — 이름을 조금 바꿔서 다시 보내주세요';
 
@@ -6495,6 +6505,44 @@ function gFlagDuplicateName(t, hit) {
   if (go) { go.scrollIntoView({ block: 'center', behavior: 'smooth' }); try { go.focus({ preventScroll: true }); } catch (e) {} gKeepViewportTop(); }
   showToast(`이미 같은 이름의 캠페인이 있어요 (${hit && hit.customerName ? hit.customerName + ' · ' : ''}${(hit && hit.name) || ''}) — 캠페인명을 직접 고치거나 메모 칸에 구분할 말을 넣어주세요`, 'error', 7000);
 }
+/* ── 광고그룹 이름 중복 (DUPLICATE_ADGROUP_NAME) ──────────────────────────
+   한 캠페인 안에서 광고그룹 이름은 겹칠 수 없다.
+   자주 나는 경우: 앞선 전송이 «광고그룹 생성»까지는 성공하고 «광고 등록»에서 멈췄을 때 —
+   페이지는 그때 읽어 둔 번호(2U)를 그대로 들고 있어서, 다시 보내면 같은 이름으로 또 만들려 한다.
+   그래서 보내기 직전에 목록을 한 번 더 읽고, 이번 페이지에서 이미 보낸 이름까지 합쳐 빈 번호를 찾는다.
+   (새로 만든 그룹은 Google 검색에 몇 분 늦게 잡히므로 «보낸 이름»도 같이 본다) */
+const gSentGroupNames = new Map();              // 캠페인ID → 이번 페이지에서 보낸 광고그룹명들
+function gRememberSentGroup(campaignId, name) {
+  const key = String(campaignId || ''); const nm = String(name || '').trim();
+  if (!key || !nm) return;
+  if (!gSentGroupNames.has(key)) gSentGroupNames.set(key, []);
+  const arr = gSentGroupNames.get(key);
+  if (!arr.some(x => normName(x) === normName(nm))) arr.push(nm);
+}
+function gSentGroupsFor(campaignId) {
+  return (gSentGroupNames.get(String(campaignId || '')) || []).map(n => ({ name: n }));
+}
+/* 지금 만들려는 이름이 이미 쓰이고 있으면, 이름이 비어 있는 다음 번호를 돌려준다 */
+async function gFreeGroupSeq(t, campaignId, customerId, seq) {
+  const want = Math.max(1, Number(seq) || 1);
+  let groups = null;
+  try { groups = await gLookup('adgroups', { customerId, campaignId }); } catch (e) { groups = null; }
+  const sent = gSentGroupsFor(campaignId);
+  if (!Array.isArray(groups) && !sent.length) return { ok: false, seq: want, bumped: false, taken: null };
+  const taken = new Set((Array.isArray(groups) ? groups : []).concat(sent)
+    .map(x => normName(x && x.name)).filter(Boolean));
+  let n = want;
+  while (n < want + 200 && taken.has(normName(gBuildGroupName(t, `${n}U`)))) n++;
+  return { ok: true, seq: n, bumped: n !== want, taken };
+}
+/* 번호를 올린 뒤 이름(그룹·광고)을 다시 만든다 — 광고 앞자리는 늘 그룹 번호를 따른다 */
+function gApplyGroupSeq(t, seq) {
+  gNextSetNumber.g2 = seq;
+  gNewGroupPrefix.g2 = seq;
+  gAdPrefix[t] = seq;
+  gAutoGenNames(t);
+  return (document.getElementById(`${t}_광고그룹명`) || {}).value || '';
+}
 
 async function gSubmitAd(t) {
   const data = gGetData(t); const isT2 = t === 'g2';
@@ -6531,6 +6579,21 @@ async function gSubmitAd(t) {
     const dup = await gFindSameNameCampaign(data.캠페인명, data.광고계정ID);
     if (dup.hit) { gFlagDuplicateName(t, dup.hit); restore(); return; }
     if (!dup.ok) showToast('이름 중복을 확인하지 못했어요 — 같은 이름이 이미 있으면 Make에서 멈춥니다 (설정 → 연동에서 연결 확인)', 'error', 6000);
+  }
+  // 새 광고그룹을 만드는 경우: 같은 캠페인에 같은 이름이 남아 있으면 Google이 DUPLICATE_ADGROUP_NAME 으로 거절한다
+  // (앞선 전송이 그룹만 만들고 광고에서 멈춘 경우) → 보내기 직전에 빈 번호로 올려서 보낸다
+  if (isT2 && !gSelectedGroup.g2) {
+    showToast('광고그룹 번호 확인 중...', 'info');
+    const free = await gFreeGroupSeq(t, data.캠페인ID, data.광고계정ID, gSetSeqFor(t));
+    if (!free.ok) {
+      showToast('광고그룹 목록을 확인하지 못했어요 — 같은 번호가 이미 있으면 Make가 «광고그룹 생성»에서 멈춥니다', 'error', 6000);
+    } else if (free.bumped) {
+      const was = data.광고그룹명;
+      data.광고그룹명 = gApplyGroupSeq(t, free.seq) || was;
+      const adEl = document.getElementById(`${t}_광고명`);
+      if (adEl && Object.prototype.hasOwnProperty.call(data, '광고명')) data.광고명 = adEl.value;
+      showToast(`«${was}» 는 이미 있어서 «${data.광고그룹명}» 으로 올렸어요`, 'info', 7000);
+    }
   }
   showToast('Make로 전송 중...', 'info');
   const blocks = gAllVideoSlots(t).map(x => x.slot);   // 영상 슬롯 단위 (광고 여러 개 × 영상 여러 개)
@@ -6586,6 +6649,11 @@ async function gSubmitAd(t) {
     if (res.ok) {
       gUpdateCard(t, idx, '진행중', 'Make가 받았어요 — 진행 상황을 확인하는 중입니다');
       showToast(isT2?'세트 추가 요청 완료!':'캠페인 등록 요청 완료!', 'success');
+      // 방금 보낸 그룹 이름은 바로 다시 쓰지 않는다 (Google 검색에 잡히기까지 몇 분 걸린다)
+      if (isT2 && !gSelectedGroup.g2) {
+        gRememberSentGroup(data.캠페인ID, data.광고그룹명);
+        gApplyGroupSeq(t, (gParseSetSeq(data.광고그룹명) || gNextSetNumber.g2 || 1) + 1);
+      }
       // 직접 첨부한 임시 파일은 Make가 등록을 마치면 Drive에서 지운다.
       // 같은 카드를 한 번 더 보내면 지워진 ID를 다시 쓰게 되므로(404 File not found) ID를 비워 두고, 다음 전송 때 첨부 파일을 새로 올린다.
       blocks.forEach(block => {
