@@ -414,14 +414,14 @@
           <div class="field"><label>유형</label><input type="text" id="t1_유형" placeholder="예: 비용혜택" oninput="autoGenNames('t1')"></div>
         </div>
         <div class="field"><label>메모 <span class="auto-tag">캠페인명 맨 뒤</span></label><input type="text" id="t1_메모" placeholder="예: [광고20]" oninput="autoGenNames('t1')"><div class="field-hint">적은 그대로 캠페인명 끝에 한 칸 띄고 붙어요 (비우면 안 붙음)</div></div>
-        <div class="field"><label>캠페인명 <span class="auto-tag">자동 · 수정 가능</span></label>
-          <input type="text" id="t1_캠페인명" placeholder="자동생성" oninput="onCampaignNameEdit('t1')">
-          <div class="field-hint" id="t1_캠페인명_hint"></div>
-        </div>
       </div>
       <div class="divider"></div>
       <div class="section"><div class="sec-label">계정</div>
         <div class="field"><label>계정명 <span class="auto-tag api">API</span></label><select id="t1_계정명" onchange="onAccount('t1')"><option value="">선택</option></select></div>
+        <div class="field"><label>캠페인명 <span class="auto-tag">자동 · 수정 가능</span></label>
+          <input type="text" id="t1_캠페인명" placeholder="자동생성" oninput="onCampaignNameEdit('t1')">
+          <div class="field-hint" id="t1_캠페인명_hint"></div>
+        </div>
       </div>
       <div class="divider"></div>
       <div class="section"><div class="sec-label">페이지</div>
@@ -1136,6 +1136,7 @@
         <div style="display:flex;gap:8px;">
           <button class="btn-sm blue" onclick="testGoogleProxy()">🔌 중계 함수 연결 테스트</button>
           <button class="btn-sm" onclick="gCheckAccess()">👤 내 계정 권한 확인</button>
+          <button class="btn-sm" onclick="gCleanupMyTempFilesNow()">🧹 내가 올린 임시 영상 정리</button>
           <button class="btn-sm" onclick="testGoogleAdsApi()">브라우저 직접 호출 테스트</button>
           <button class="btn-sm" onclick="dumpProxyRaw()">🔍 원시 응답 보기</button>
         </div>
@@ -2143,7 +2144,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-17.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-18.4';
+const G_PAGE_BUILD = '2026-09-18.7';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -2261,6 +2262,36 @@ async function gCheckAccess() {
     } else {
       push('✅ 정상 — 이 계정은 MCC 하위 광고계정 전부에서 캠페인을 찾을 수 있어요.');
     }
+  } catch (e) { push('❌ ' + e.message); }
+}
+
+/* 드라이브에 남은 임시 영상 지금 비우기 — 내가 올린(=내 계정이 주인) 표식 파일만 지운다.
+   지우는 것도 올린 사람 권한이라 각자 자기 화면에서 눌러야 자기 파일이 지워진다. */
+async function gCleanupMyTempFilesNow() {
+  const out = document.getElementById('g_api_out');
+  const lines = []; const push = t => { lines.push(t); out.textContent = lines.join('\n'); };
+  push('내가 올린 임시 영상을 찾는 중...');
+  try { await gDriveSignIn(); } catch (e) { push('❌ 구글 로그인 실패: ' + e.message); return; }
+  try {
+    // 방금 올린 건 등록이 진행 중일 수 있어 건드리지 않는다
+    const cutoff = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    const q = `appProperties has { key='adtoolTemp' and value='1' } and trashed=false and 'me' in owners and modifiedTime < '${cutoff}'`;
+    const r = await gAuthFetch('core', 'https://www.googleapis.com/drive/v3/files?' + new URLSearchParams({ q, fields: 'files(id,name,modifiedTime,size)', pageSize: '200', orderBy: 'modifiedTime' }).toString());
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error((j.error && j.error.message) || `HTTP ${r.status}`);
+    const files = j.files || [];
+    lines.length = 0;
+    if (!files.length) { push('✅ 지울 임시 영상이 없어요'); push('(최근 30분 안에 올린 건 등록 중일 수 있어 건드리지 않습니다)'); return; }
+    const mb = files.reduce((a2, f) => a2 + Number(f.size || 0), 0) / 1048576;
+    push(`내가 올린 임시 영상 ${files.length}개 · 약 ${mb.toFixed(1)}MB`);
+    files.slice(0, 20).forEach(f => push(`  · ${f.name}   ${String(f.modifiedTime || '').slice(0, 10)}`));
+    if (files.length > 20) push(`  ... 외 ${files.length - 20}개`);
+    push('');
+    if (!confirm(`내가 올린 임시 영상 ${files.length}개를 드라이브에서 지울까요?\n광고 등록에 쓰고 남은 파일이라 이미 만들어진 광고에는 영향이 없습니다.`)) { push('취소했어요'); return; }
+    push('지우는 중...');
+    const res = await gDeleteTempFiles(files.map(f => f.id));
+    push(`✅ ${res.deleted}개 삭제 완료` + (res.skipped ? ` · ${res.skipped}개는 못 지웠어요 (이미 없거나 권한 없음)` : ''));
+    showToast(`임시 영상 ${res.deleted}개를 지웠어요`, 'success');
   } catch (e) { push('❌ ' + e.message); }
 }
 
@@ -5270,6 +5301,7 @@ function gPopulateYoutubeChannels(t) {
     menu.innerHTML = choices.map(ch => `<div class="chpick-item${ch.channelId === sel.value ? ' selected' : ''}" role="option" data-id="${esc(ch.channelId)}" onclick="gPickChannel('${t}', this.dataset.id)">${gLogoBadgeHtml(ch, 64)}<span class="chpick-text"><b>${esc(ch.channelName)}</b><span class="chpick-id">${esc(ch.channelId)}${ch.logoFileId ? '' : ' <span class="nologo">로고 없음</span>'}</span></span></div>`).join('');
   }
   gRenderChannelButton(t);
+  gOnYoutubeChannel(t);   // 업체명(businessName)·로고를 항상 채워 둔다 — 비어 있으면 Google이 TOO_SHORT 로 거절한다
 }
 function gToggleChannelMenu(t, force) {
   const box = document.getElementById(`${t}_chpick`); if (!box) return;
@@ -5796,6 +5828,7 @@ function gPickCampaign(t, i) {
   const accSel = document.getElementById(`${t}_계정명`);
   if (accSel && Array.from(accSel.options).some(o => o.value === c.customerName)) accSel.value = c.customerName;
   const box = document.getElementById(`${t}_캠페인목록`); if (box) box.classList.remove('show');
+  gOnYoutubeChannel(t);   // 업체명 채우기 (세트 추가 탭은 계정 선택 이벤트가 없다)
   gLoadCampaign(t, c.id, c.name);
   gLoadAudiences(t, c.customerId);
 }
@@ -6339,6 +6372,8 @@ function gErrorHint(row) {
 
   /* ── 값 · 형식 ── */
   if (/final_urls|ILLEGAL_CHARS|INVALID_URL/i.test(s)) return '최종 URL 형식을 확인하세요 (https:// 로 시작)';
+  if (/TOO_SHORT|stringLengthError/i.test(s) && /demand_gen_video_responsive_ad|business/i.test(s)) return '필수 글자 값이 비어 있어요 — 대부분 «업체명»(YouTube 채널명)이 빈 경우예요. 채널을 한 번 고른 뒤 다시 보내주세요';
+  if (/TOO_SHORT|stringLengthError/i.test(s)) return '값이 비어 있는 칸이 있어요 — 업체명·문구·URL이 다 채워졌는지 확인하세요';
   if (/TOO_LONG|STRING_LENGTH|maximum length/i.test(s)) return '글자 수 제한을 넘었어요 — 광고제목 40자 · 긴 제목 90자 · 설명 90자를 확인하세요';
   if (/TOO_FEW|collectionSizeError/i.test(s)) return '영상이나 문구가 최소 개수보다 적어요 — 영상이 제대로 업로드됐는지 위 단계 기록을 확인하세요';
   if (/TOO_MANY/i.test(s)) return '개수 제한을 넘었어요 — 한 광고에 영상은 5개까지입니다';
@@ -6477,6 +6512,12 @@ async function gSubmitAd(t) {
       return;
     }
   }
+  if (!String(data.업체명 || '').trim()) {
+    const bizEl = document.getElementById(`${t}_업체명`);
+    if (bizEl) { bizEl.classList.add('is-invalid'); bizEl.scrollIntoView({ block: 'center', behavior: 'smooth' }); gKeepViewportTop(); setTimeout(() => bizEl.classList.remove('is-invalid'), 6000); }
+    showToast('업체명이 비어 있어요 — YouTube 채널을 한 번 골라주시면 채널명이 업체명으로 들어갑니다', 'error', 6000);
+    return;
+  }
   if ((data.영상목록||[]).length + (data.업로드대기수||0) === 0) { showToast('영상을 1개 이상 추가해주세요', 'error'); return; }
   // 구글이 거절할 게 뻔한 빈칸은 보내기 전에 잡는다 (최종 URL 없이 보내면 final_urls 오류로 멈춘다)
   const problem = gValidateCreatives(t);
@@ -6583,7 +6624,7 @@ function gClearForm(t) {
     document.getElementById('g2_sec_region')?.classList.remove('dimmed');
   }
   ['최종URL','업체명'].forEach(f => { const el = document.getElementById(t + '_' + f); if (el) el.value = ''; });
-  const chSel = document.getElementById(`${t}_유튜브채널`); if (chSel) chSel.value = 'UChg_3mq-CO2kFPkbXlTR3pw';
+  const chSel = document.getElementById(`${t}_유튜브채널`); if (chSel) { chSel.value = 'UChg_3mq-CO2kFPkbXlTR3pw'; gOnYoutubeChannel(t); }
   ['광고계정ID','캠페인명','광고그룹명'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
   if (t === 'g1') { document.getElementById('g1_계정명').value = ''; document.getElementById('g1_시작일').value = new Date().toISOString().split('T')[0]; }
   else {
