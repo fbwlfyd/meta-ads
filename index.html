@@ -414,6 +414,10 @@
           <div class="field"><label>유형</label><input type="text" id="t1_유형" placeholder="예: 비용혜택" oninput="autoGenNames('t1')"></div>
         </div>
         <div class="field"><label>메모 <span class="auto-tag">캠페인명 맨 뒤</span></label><input type="text" id="t1_메모" placeholder="예: [광고20]" oninput="autoGenNames('t1')"><div class="field-hint">적은 그대로 캠페인명 끝에 한 칸 띄고 붙어요 (비우면 안 붙음)</div></div>
+        <div class="field"><label>캠페인명 <span class="auto-tag">자동 · 수정 가능</span></label>
+          <input type="text" id="t1_캠페인명" placeholder="자동생성" oninput="onCampaignNameEdit('t1')">
+          <div class="field-hint" id="t1_캠페인명_hint"></div>
+        </div>
       </div>
       <div class="divider"></div>
       <div class="section"><div class="sec-label">계정</div>
@@ -477,7 +481,6 @@
       <div class="divider"></div>
       <div class="section"><div class="sec-label">캠페인 설정</div>
         <div class="field"><label>광고계정 ID <span class="auto-tag">자동</span></label><input type="text" id="t1_광고계정ID" readonly placeholder="계정 선택 시 자동입력"></div>
-        <div class="field"><label>캠페인명 <span class="auto-tag">자동</span></label><input type="text" id="t1_캠페인명" readonly placeholder="자동생성"></div>
         <div class="row2">
           <div class="field"><label>구매유형</label><select id="t1_구매유형"></select></div>
           <div class="field"><label>캠페인목표</label><select id="t1_캠페인목표"></select></div>
@@ -746,7 +749,11 @@
           <div class="field"><label>지역구분자</label><select id="g1_지역구분자" onchange="gOnRegion('g1')"><option value="">선택</option></select></div>
           <div class="field"><label>메모 <span class="auto-tag g">캠페인명 맨 뒤</span></label><input type="text" id="g1_메모" placeholder="예: [광고20]" oninput="gAutoGenNames('g1')"></div>
         </div>
-        <div class="field-hint" style="margin-top:-4px;">메모는 적은 그대로 캠페인명 끝에 한 칸 띄고 붙어요 (비우면 안 붙음)</div>
+        <div class="field-hint" style="margin-top:-4px;margin-bottom:10px;">메모는 적은 그대로 캠페인명 끝에 한 칸 띄고 붙어요 (비우면 안 붙음)</div>
+        <div class="field"><label>캠페인명 <span class="auto-tag g">자동 · 수정 가능</span></label>
+          <input type="text" id="g1_캠페인명" placeholder="자동생성" oninput="gOnCampaignNameEdit('g1')">
+          <div class="field-hint" id="g1_캠페인명_hint"></div>
+        </div>
       </div>
       <div class="divider"></div>
       <div class="section"><div class="sec-label">캠페인 설정</div>
@@ -791,7 +798,6 @@
       <div class="divider"></div>
       <div class="section"><div class="sec-label">자동생성 / 고정 값</div>
         <div class="field"><label>광고계정 ID(customerId) <span class="auto-tag g">자동</span></label><input type="text" id="g1_광고계정ID" readonly placeholder="계정 선택 시 자동입력"></div>
-        <div class="field"><label>캠페인명 <span class="auto-tag g">자동</span></label><input type="text" id="g1_캠페인명" readonly placeholder="자동생성"></div>
         <div class="field"><label>광고그룹명 <span class="auto-tag g">자동</span></label><input type="text" id="g1_광고그룹명" readonly placeholder="자동생성"></div>
         <div class="field"><label>광고명 <span class="auto-tag g">자동</span></label><input type="text" id="g1_광고명" readonly placeholder="소재 개수만큼 1.1U, 1.2U ..."></div>
         <div class="row2">
@@ -2137,7 +2143,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-17.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-18.3';
+const G_PAGE_BUILD = '2026-09-18.4';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -3699,10 +3705,26 @@ function updateAdNames(t) {
     }
   });
 }
+/* 캠페인명은 자동으로 만들어 주되, 직접 고치면 그 값을 지킨다 (되돌리기 전까지) */
+const campaignNameEdited = { t1: false };
+function onCampaignNameEdit(t) { campaignNameEdited[t] = true; renderCampaignNameHint(t); }
+function resetCampaignName(t) { campaignNameEdited[t] = false; autoGenNames(t); showToast('자동 이름으로 되돌렸어요', 'success'); }
+function renderCampaignNameHint(t) {
+  const el = document.getElementById(`${t}_캠페인명_hint`);
+  if (!el) return;
+  if (campaignNameEdited[t]) {
+    el.className = 'field-hint ok';
+    el.innerHTML = `✏️ 직접 고친 이름으로 등록됩니다 <span class="link-toggle" style="margin-left:6px;" onclick="resetCampaignName('${t}')">자동으로 되돌리기</span>`;
+  } else {
+    el.className = 'field-hint';
+    el.textContent = '위 값들로 자동으로 만들어져요 — 여기서 직접 고쳐도 됩니다';
+  }
+}
 function autoGenNames(t) {
   const built = buildNames(t, `${setSeqFor(t)}A`);
   if (!built) return;
-  if (t === 't1') document.getElementById('t1_캠페인명').value = built.campaignName;
+  if (t === 't1' && !campaignNameEdited.t1) document.getElementById('t1_캠페인명').value = built.campaignName;
+  if (t === 't1') renderCampaignNameHint('t1');
   document.getElementById(`${t}_광고세트명`).value = built.setName;
   updateAdNames(t);
 }
@@ -4614,6 +4636,7 @@ async function submitAd(t) {
   btn.textContent = isT2 ? (selectedAdset.t2 ? '선택한 세트에 광고 추가' : '세트 추가하기') : '광고 등록하기';
 }
 function clearForm(t) {
+  campaignNameEdited[t] = false;
   ['제작자','날짜','유형','메모','계정명','페이지','인스타계정','지역구분자','세트예산','시작일','종료일','언어'].forEach(field => { const el = document.getElementById(`${t}_${field}`); if (el) el.value = ''; });
   document.getElementById(`${t}_언어`).value = 'ko';
   const cb = document.getElementById(`${t}_캠페인예산`); if (cb) cb.value = 30000;
@@ -5262,6 +5285,21 @@ function gPickChannel(t, id) {
 }
 document.addEventListener('click', (e) => { if (!e.target.closest('.chpick')) document.querySelectorAll('.chpick.open').forEach(b => b.classList.remove('open')); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.chpick.open').forEach(b => b.classList.remove('open')); });
+/* 캠페인명은 자동으로 만들어 주되, 직접 고치면 그 값을 지킨다 (되돌리기 전까지) */
+const gCampaignNameEdited = { g1: false };
+function gOnCampaignNameEdit(t) { gCampaignNameEdited[t] = true; gRenderCampaignNameHint(t); }
+function gResetCampaignName(t) { gCampaignNameEdited[t] = false; gAutoGenNames(t); showToast('자동 이름으로 되돌렸어요', 'success'); }
+function gRenderCampaignNameHint(t) {
+  const el = document.getElementById(`${t}_캠페인명_hint`);
+  if (!el) return;
+  if (gCampaignNameEdited[t]) {
+    el.className = 'field-hint ok';
+    el.innerHTML = `✏️ 직접 고친 이름으로 등록됩니다 <span class="link-toggle" style="margin-left:6px;" onclick="gResetCampaignName('${t}')">자동으로 되돌리기</span>`;
+  } else {
+    el.className = 'field-hint';
+    el.textContent = '위 값들로 자동으로 만들어져요 — 여기서 직접 고쳐도 됩니다';
+  }
+}
 function gAutoGenNames(t) {
   const acc = GDB.accounts.find(a => a.name === gGetAccountName(t)) || (t === 'g2' ? { name: '', campaignName: '' } : null);
   if (!acc) return;
@@ -5279,9 +5317,10 @@ function gAutoGenNames(t) {
   const accNameLabel = gGetAccountName(t) ? `[${gGetAccountName(t)}]` : '';
   const memo = ((document.getElementById(`${t}_메모`) || {}).value || '').trim();   // 캠페인명 맨 뒤에만 붙는다
   const campaignName = [shortName, '디맨드젠', date ? `(${date})` : '', staffName, refName, accNameLabel, '예비용', memo].filter(Boolean).join(' ');
+  if (t === 'g1') gRenderCampaignNameHint('g1');
   const build = token => [clinicName, '임플란트', refName, token, staffId].filter(Boolean).join(' ');
   const groupName = gSelectedGroup.g2 && t === 'g2' ? gSelectedGroup.g2.name : build(`${seq}U`);
-  if (t === 'g1') document.getElementById('g1_캠페인명').value = campaignName;
+  if (t === 'g1' && !gCampaignNameEdited.g1) document.getElementById('g1_캠페인명').value = campaignName;
   document.getElementById(`${t}_광고그룹명`).value = groupName;
   // 광고명 (소재 개수만큼 1.1U, 1.2U ...)
   const n = document.getElementById(`${t}_creative_list`)?.children.length || 1;
@@ -6417,8 +6456,9 @@ function gFlagDuplicateName(t, hit) {
   const memo = document.getElementById(`${t}_메모`);
   const nameEl = document.getElementById(`${t}_캠페인명`);
   [memo, nameEl].forEach(el => { if (el) { el.classList.add('is-invalid'); setTimeout(() => el.classList.remove('is-invalid'), 6000); } });
-  if (memo) { memo.scrollIntoView({ block: 'center', behavior: 'smooth' }); try { memo.focus({ preventScroll: true }); } catch (e) {} gKeepViewportTop(); }
-  showToast(`이미 같은 이름의 캠페인이 있어요 (${hit && hit.customerName ? hit.customerName + ' · ' : ''}${(hit && hit.name) || ''}) — 메모 칸에 구분할 말을 넣고 다시 보내주세요`, 'error', 7000);
+  const go = nameEl || memo;
+  if (go) { go.scrollIntoView({ block: 'center', behavior: 'smooth' }); try { go.focus({ preventScroll: true }); } catch (e) {} gKeepViewportTop(); }
+  showToast(`이미 같은 이름의 캠페인이 있어요 (${hit && hit.customerName ? hit.customerName + ' · ' : ''}${(hit && hit.name) || ''}) — 캠페인명을 직접 고치거나 메모 칸에 구분할 말을 넣어주세요`, 'error', 7000);
 }
 
 async function gSubmitAd(t) {
@@ -6525,6 +6565,7 @@ async function gSubmitAd(t) {
   restore();
 }
 function gClearForm(t) {
+  gCampaignNameEdited[t] = false;
   ['제작자','날짜','지역구분자','메모'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
   const clinicSel = document.getElementById(`${t}_치과명`); if (clinicSel) clinicSel.innerHTML = '<option value="">계정 선택 후 사용 가능</option>';
   const bizEl = document.getElementById(`${t}_업체명`); if (bizEl) bizEl.value = '';
