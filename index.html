@@ -190,7 +190,8 @@
   .chpick-item .nologo { font-size: 10px; color: #b45309; }
   .set-table .logo-prev { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); background: var(--bg); flex-shrink: 0; }
   .set-table .logo-prev.hidden { visibility: hidden; }
-  .creative-card .is-invalid, .creative-card input.is-invalid, .creative-card .creative-drop.is-invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(255,59,48,0.15) !important; }
+  .creative-card .is-invalid, .creative-card input.is-invalid, .creative-card .creative-drop.is-invalid,
+  .field input.is-invalid, .field select.is-invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(255,59,48,0.15) !important; }
   .set-table .logo-open { font-size: 11px; color: var(--blue); white-space: nowrap; text-decoration: none; flex-shrink: 0; }
   .set-table .logo-open:hover { text-decoration: underline; }
 
@@ -2136,7 +2137,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-17.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-18.2';
+const G_PAGE_BUILD = '2026-09-18.3';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -4652,10 +4653,12 @@ function clearForm(t) {
   }
   populateDropdowns();
 }
-function showToast(msg, type='info') {
+function showToast(msg, type='info', ms) {
   const t = document.getElementById('toast'); t.className = `toast ${type} show`;
   t.innerHTML = type==='info' ? `<div class="spinner"></div>${msg}` : msg;
-  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 3000);
+  t.style.whiteSpace = String(msg).length > 60 ? 'normal' : 'nowrap';
+  t.style.maxWidth = '92vw';
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), ms || 3000);
 }
 ['t1','t2'].forEach(t => {
   document.getElementById(`${t}_시작일`).value = new Date().toISOString().split('T')[0];
@@ -6392,39 +6395,30 @@ function gTrackNow(t, idx) {
   st.forceCheck = true;
   if (st.wake) st.wake();
 }
-/* 방금 보낸 캠페인 이름 기억 — Google 검색(API)은 새로 만든 캠페인을 몇 분 뒤에야 보여준다.
-   그래서 "조회했더니 없더라 → 보냈더니 중복" 이 생긴다. 보낸 이름을 36시간 동안 기억해 두고 같이 본다. */
-const G_SENT_NAMES_KEY = 'adtool_sent_campaign_names';
-function gSentNames() {
-  try {
-    const j = JSON.parse(localStorage.getItem(G_SENT_NAMES_KEY) || '{}') || {};
-    const cut = Date.now() - 36 * 3600 * 1000;
-    Object.keys(j).forEach(k => { if (!(Number(j[k]) > cut)) delete j[k]; });
-    return j;
-  } catch (e) { return {}; }
-}
-function gRememberSentName(name) {
-  const k = normName(name); if (!k) return;
-  try { const j = gSentNames(); j[k] = Date.now(); localStorage.setItem(G_SENT_NAMES_KEY, JSON.stringify(j)); } catch (e) {}
-}
-let gDupCheckOk = true;   // 마지막 중복 확인이 실제로 됐는지 (안 됐으면 사용자에게 알린다)
-
-/* 같은 이름의 캠페인이 이미 있으면 뒤에 «(2)», «(3)» 을 붙여 비어 있는 이름을 돌려준다.
-   보는 곳 두 군데 — ① Google Ads 검색 결과 ② 이 브라우저에서 최근에 보낸 이름(검색 지연 대비) */
-async function gUniqueCampaignName(name) {
+/* 같은 광고계정에 같은 이름의 캠페인이 이미 있는지 확인한다.
+   Google은 활성·일시중지 캠페인끼리 이름이 겹치면 DUPLICATE_CAMPAIGN_NAME 으로 거절하므로,
+   보내기 전에 막는다. 확인은 그 계정 안에서만 한다 (다른 계정에 같은 이름이 있는 건 상관없다). */
+async function gFindSameNameCampaign(name, customerId) {
   const base = String(name || '').trim();
-  if (!base) return base;
-  const taken = new Set(Object.keys(gSentNames()));
+  const cid = String(customerId || '').replace(/[^0-9]/g, '');
+  if (!base) return { ok: true, hit: null };
   let list = null;
   try { list = await gLookup('findcampaigns', { q: base, status: 'all' }); } catch (e) { list = null; }
-  gDupCheckOk = Array.isArray(list);
-  if (Array.isArray(list)) list.forEach(c => taken.add(normName(c.name)));
-  if (!taken.has(normName(base))) return base;
-  for (let i = 2; i <= 50; i++) {
-    const cand = `${base} (${i})`;
-    if (!taken.has(normName(cand))) return cand;
-  }
-  return base;
+  if (!Array.isArray(list)) return { ok: false, hit: null };   // 조회 자체가 안 됨 (중계 함수·권한)
+  const want = normName(base);
+  const same = list.filter(c => normName(c.name) === want);
+  const hit = cid
+    ? same.find(c => String(c.customerId || '').replace(/[^0-9]/g, '') === cid) || null
+    : (same[0] || null);
+  return { ok: true, hit };
+}
+/* 중복이라고 알려 주고, 고칠 곳(메모 칸)을 짚어 준다 */
+function gFlagDuplicateName(t, hit) {
+  const memo = document.getElementById(`${t}_메모`);
+  const nameEl = document.getElementById(`${t}_캠페인명`);
+  [memo, nameEl].forEach(el => { if (el) { el.classList.add('is-invalid'); setTimeout(() => el.classList.remove('is-invalid'), 6000); } });
+  if (memo) { memo.scrollIntoView({ block: 'center', behavior: 'smooth' }); try { memo.focus({ preventScroll: true }); } catch (e) {} gKeepViewportTop(); }
+  showToast(`이미 같은 이름의 캠페인이 있어요 (${hit && hit.customerName ? hit.customerName + ' · ' : ''}${(hit && hit.name) || ''}) — 메모 칸에 구분할 말을 넣고 다시 보내주세요`, 'error', 7000);
 }
 
 async function gSubmitAd(t) {
@@ -6450,6 +6444,13 @@ async function gSubmitAd(t) {
   const btn = document.getElementById(`${t}_submitBtn`); btn.disabled = true; btn.textContent = '전송 중...';
   const btnLabel = isT2 ? '세트 추가하기' : '캠페인 등록하기';
   const restore = () => { btn.disabled = false; btn.textContent = btnLabel; };
+  // 새 캠페인이면 같은 계정에 같은 이름이 있는지 먼저 확인하고, 있으면 아예 보내지 않는다
+  if (!isT2) {
+    showToast('캠페인명 중복 확인 중...', 'info');
+    const dup = await gFindSameNameCampaign(data.캠페인명, data.광고계정ID);
+    if (dup.hit) { gFlagDuplicateName(t, dup.hit); restore(); return; }
+    if (!dup.ok) showToast('이름 중복을 확인하지 못했어요 — 같은 이름이 이미 있으면 Make에서 멈춥니다 (설정 → 연동에서 연결 확인)', 'error', 6000);
+  }
   showToast('Make로 전송 중...', 'info');
   const blocks = gAllVideoSlots(t).map(x => x.slot);   // 영상 슬롯 단위 (광고 여러 개 × 영상 여러 개)
   // 붙이자마자 올리는 중인 파일이 있으면 끝날 때까지 기다린다
@@ -6494,17 +6495,6 @@ async function gSubmitAd(t) {
     restore();
     return;
   }
-  // 새 캠페인이면 같은 이름이 이미 있는지 먼저 본다 (Google은 이름이 겹치면 DUPLICATE_CAMPAIGN_NAME 으로 거절)
-  if (!isT2) {
-    const fixed = await gUniqueCampaignName(data.캠페인명);
-    if (fixed && fixed !== data.캠페인명) {
-      data.캠페인명 = fixed;
-      const el = document.getElementById(`${t}_캠페인명`); if (el) el.value = fixed;
-      showToast(`같은 이름의 캠페인이 있어서 «${fixed}» 로 보냅니다`, 'info');
-    } else if (!gDupCheckOk) {
-      showToast('이름 중복을 확인하지 못했어요 — 같은 이름이 이미 있으면 Make에서 멈출 수 있어요 (메모 칸으로 구분해 주세요)', 'error');
-    }
-  }
   data.요청ID = gNewRequestId();
   gEnrichForMake(data, t, uploadedIds);
   // Make가 진행 상황을 적을 시트를 미리 준비해 둔다 (실패해도 전송은 계속)
@@ -6513,7 +6503,6 @@ async function gSubmitAd(t) {
   try {
     const res = await fetch(G_WEBHOOKS[t], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     if (res.ok) {
-      if (!isT2) gRememberSentName(data.캠페인명);   // 구글 검색이 늦게 반영돼도 다음 등록에서 중복을 피한다
       gUpdateCard(t, idx, '진행중', 'Make가 받았어요 — 진행 상황을 확인하는 중입니다');
       showToast(isT2?'세트 추가 요청 완료!':'캠페인 등록 요청 완료!', 'success');
       // 직접 첨부한 임시 파일은 Make가 등록을 마치면 Drive에서 지운다.
