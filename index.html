@@ -1088,7 +1088,7 @@
       </div>
 
       <div class="modal-sec" id="msec_gregion">
-        <div class="set-note">지역은 <b>치과별로</b> 묶입니다 — 치과를 고르면 그 치과의 지역만 드롭다운에 나옵니다 (치과를 비우면 모든 치과에서 보임).<br><b>표기명</b>을 비우면 이름에 지역이 붙지 않습니다. 표기명 옆 <b>[제외]</b>를 체크하면 그 말은 <b>이름(캠페인명·광고그룹명·광고명)에 안 붙고</b>, <b>캠페인 고르기에서 그 말이 든 캠페인을 빼고</b> 찾습니다 — 예: 진주 줄에 표기명 «타겟» + [제외] 체크 → 진주 임플란트(포함) + 타겟(제외). 체크해도 <b>지역구분자 드롭다운에는 그대로 보입니다</b>.<br><b>장소</b>로 찾거나 <b>📍 지도</b> 버튼을 누르면 지도에서 핀을 찍어 반경 타겟을 만들 수 있어요 (Google 반경 단위는 km · 좌표가 있으면 criterion ID 대신 반경으로 타겟합니다).</div>
+        <div class="set-note">지역은 <b>치과별로</b> 묶입니다 — 치과를 고르면 그 치과의 지역만 드롭다운에 나옵니다 (치과를 비우면 모든 치과에서 보임).<br><b>표기명</b>을 비우면 이름에 지역이 붙지 않습니다. 표기명 옆 <b>[제외]</b>를 체크하면 그 말은 <b>이름(캠페인명·광고그룹명·광고명)에 안 붙고</b>, <b>캠페인 고르기에서 그 말이 든 캠페인을 빼고</b> 찾습니다 — 예: 진주 줄에 표기명 «타겟» + [제외] 체크 → 진주 임플란트(포함) + 타겟(제외). 체크해도 <b>지역구분자 드롭다운에는 그대로 보입니다</b>.<br><b>장소</b>로 찾거나 <b>📍 지도</b> 버튼을 누르면 지도에서 핀을 찍어 반경 타겟을 만들 수 있어요 — <b>반경 단위는 마일</b>이고, 좌표가 있으면 criterion ID 대신 반경으로 타겟합니다.<br>구글의 <b>반경 타겟은 캠페인 단위</b>에만 걸 수 있습니다 (광고그룹 단위 반경은 구글이 지원하지 않아요). 그래서 <b>세트 추가</b>로 기존 캠페인에 핀 지역을 쓰면 <b>그 캠페인 전체</b>의 지역이 바뀝니다.</div>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
           <span style="font-size:12px;color:var(--text2);white-space:nowrap;">검색 결과를 추가할 치과</span>
           <select id="g_region_target_clinic" style="flex:1;height:36px;border:1px solid var(--border2);border-radius:8px;padding:0 10px;font-family:inherit;font-size:12px;"><option value="">공통 (모든 치과)</option></select>
@@ -1194,7 +1194,7 @@
             <div class="field-hint" id="pin_search_hint">주소·건물 이름으로 찾아서 핀을 찍어요 (Enter)</div>
             <div class="region-results" id="pin_search_results" style="position:static;margin-top:6px;max-height:150px;"></div>
           </div>
-          <div class="field"><label>선택한 핀의 반경 <span id="pin_radius_unit">(km)</span></label>
+          <div class="field"><label>선택한 핀의 반경 <span id="pin_radius_unit">(마일)</span></label>
             <div style="display:flex;gap:8px;align-items:center;">
               <input type="range" id="pin_radius_range" min="1" max="50" step="1" value="10" oninput="pinSetRadius(this.value)" style="flex:1;padding:0;height:24px;">
               <input type="number" id="pin_radius_num" min="1" max="50" step="0.5" value="10" oninput="pinSetRadius(this.value)" style="width:84px;">
@@ -2185,7 +2185,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-17.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-18.10';
+const G_PAGE_BUILD = '2026-09-18.11';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -5269,13 +5269,13 @@ function gFillRegionSelects(t) {
     if (prev && Array.from(srchSel.options).some(x => x.value === prev)) srchSel.value = prev;
   }
 }
-// 구글 반경 타겟용 좌표 파싱: "위도,경도,반경km; ..." → [{latitude, longitude, radiusKm}]
+// 구글 반경 타겟용 좌표 파싱: "위도,경도,반경(마일); ..." → [{latitude, longitude, radius}]
 function gParseCoords(str) {
   if (!str) return [];
   return String(str).split(';').map(chunk => {
     const p = chunk.split(',').map(x => parseFloat(x.trim()));
     if (p.length < 2 || isNaN(p[0]) || isNaN(p[1])) return null;
-    return { latitude: p[0], longitude: p[1], radiusKm: isNaN(p[2]) ? 10 : p[2] };
+    return { latitude: p[0], longitude: p[1], radius: isNaN(p[2]) ? 10 : p[2] };
   }).filter(Boolean);
 }
 function gOnClinic(t) {
@@ -6092,7 +6092,7 @@ function gFillAdLists(d, cards) {
     광고명: c.광고명, 광고순번: c.순번, 최종URL: c.최종URL, 광고제목목록: c.광고제목목록, 긴광고제목목록: c.긴광고제목목록, 설명목록: c.설명목록, CTA버튼: c.CTA버튼,
   }))));
   d.영상수 = d.영상목록.length;
-  d.페이로드버전 = '2';
+  d.페이로드버전 = '3';   // 3 = 핀 반경(proximity)을 캠페인기준연산JSON 으로 따로 보낸다
 }
 function gGetData(t) {
   const isT2 = t === 'g2';
@@ -6205,12 +6205,16 @@ function gEnrichForMake(d, t, uploadedIds) {
   const campId = digits(d.캠페인ID), groupId = digits(d.광고그룹ID);
   d.캠페인리소스명 = (cid && campId) ? `customers/${cid}/campaigns/${campId}` : '';
   d.광고그룹리소스명 = (cid && groupId) ? `customers/${cid}/adGroups/${groupId}` : '';
-  const ops = [];
+  /* 타겟 연산은 두 갈래로 나뉜다 — 넣는 곳이 다르면 Google이 «Cannot find field» 로 거절한다
+       · 광고그룹 단위 (adGroupCriteria) : 지역(criterion ID) · 언어 · 잠재고객
+       · 캠페인 단위   (campaignCriteria) : 핀 반경(proximity) — 광고그룹에는 proximity 필드가 아예 없다
+     반경 단위는 마일(MILES). 설정의 핀 값도 마일로 저장한다. */
+  const ops = [], campOps = [];
   if (d.등록모드 !== 'EXISTING_ADGROUP') {   // 기존 그룹에 광고만 넣을 땐 타겟을 다시 걸지 않는다
     if (d.지역타겟방식 === 'PROXIMITY') {
-      (d.구글좌표목록 || []).forEach(c => ops.push({ create: { ad_group: '__AD_GROUP__', proximity: {
+      (d.구글좌표목록 || []).forEach(c => campOps.push({ create: { campaign: '__CAMPAIGN__', proximity: {
         geo_point: { latitude_in_micro_degrees: Math.round(Number(c.latitude) * 1e6), longitude_in_micro_degrees: Math.round(Number(c.longitude) * 1e6) },
-        radius: Number(c.radiusKm) || 10, radius_units: 'KILOMETERS' } } }));
+        radius: Number(c.radius) || 10, radius_units: 'MILES' } } }));
     } else if (d.지역타겟방식 === 'LOCATION' && d.구글지역ID) {
       ops.push({ create: { ad_group: '__AD_GROUP__', location: { geo_target_constant: `geoTargetConstants/${digits(d.구글지역ID)}` } } });
     }
@@ -6218,7 +6222,9 @@ function gEnrichForMake(d, t, uploadedIds) {
     if (cid && digits(d.잠재고객ID)) ops.push({ create: { ad_group: '__AD_GROUP__', audience: { audience: `customers/${cid}/audiences/${digits(d.잠재고객ID)}` } } });
   }
   d.광고그룹기준연산JSON = JSON.stringify(ops);
+  d.캠페인기준연산JSON = JSON.stringify(campOps);
   d.지역설정필요 = ops.length ? 'true' : 'false';
+  d.캠페인지역필요 = campOps.length ? 'true' : 'false';
   d.업로드파일IDs = Array.from(uploaded);
   return d;
 }
@@ -6402,6 +6408,10 @@ function gErrorHint(row) {
   if (/DUPLICATE_ADGROUP_NAME|AdGroupError\.DUPLICATE/i.test(s)) return '같은 이름의 광고그룹이 이미 이 캠페인에 있어요 — 앞선 전송이 그룹까지만 만들고 멈춘 경우가 대부분입니다. 세트 추가에서 캠페인을 다시 불러온 뒤, 그 그룹을 골라 «광고만 추가»하거나 새 번호(3U 등)로 보내주세요';
   if (/AdError\.DUPLICATE|DUPLICATE_AD/i.test(s)) return '같은 내용의 광고가 이미 있어요 — 문구와 영상이 완전히 같으면 Google이 거절합니다';
   if (/DUPLICATE_NAME/i.test(s)) return '같은 이름이 이미 쓰이고 있어요 — 이름을 조금 바꿔서 다시 보내주세요';
+
+  /* ── 반경(핀) 타겟 ── */
+  if (/Unknown name .?proximity/i.test(s)) return '반경(핀) 타겟이 광고그룹으로 잘못 갔어요 — Make 시나리오가 예전 버전입니다. 반경은 캠페인 단위에만 걸 수 있어서 «캠페인 지역 (핀 반경)» 모듈이 있는 최신 블루프린트로 바꿔주세요';
+  if (/proximity/i.test(s) && /radius/i.test(s) && /INVALID|RANGE/i.test(s)) return '반경 값이 구글 허용 범위를 벗어났어요 — 설정 → 지역의 📍 지도에서 1~500마일 사이로 맞춰주세요';
 
   /* ── 계정 한도 (RESOURCE_LIMIT) ── */
   if (/ENABLED_ADVERTISER_BASE_CAMPAIGNS_PER_CUSTOMER/i.test(s)) return '이 광고계정의 캠페인 개수가 한도(10,000개)에 찼어요 — 새 캠페인을 못 만듭니다. Google Ads에서 안 쓰는 옛 캠페인을 «삭제»해야 자리가 납니다 (일시중지는 개수에 그대로 포함돼요). 급하면 다른 계정으로 등록하세요';
@@ -6650,6 +6660,12 @@ async function gSubmitAd(t) {
       if (adEl && Object.prototype.hasOwnProperty.call(data, '광고명')) data.광고명 = adEl.value;
       showToast(`«${was}» 는 이미 있어서 «${data.광고그룹명}» 으로 올렸어요`, 'info', 7000);
     }
+  }
+  // 구글은 반경(핀) 타겟을 캠페인 단위에만 걸 수 있다 — 기존 캠페인에 걸면 그 캠페인의 다른 광고그룹까지 영향을 받는다
+  if (isT2 && data.지역타겟방식 === 'PROXIMITY') {
+    const pins = (data.구글좌표목록 || []).length;
+    const ok = confirm(`«${data.지역구분자}» 는 핀 반경 타겟이에요.\n\n구글은 반경 타겟을 캠페인 단위에만 걸 수 있어서, 이 캠페인에 이미 있는 다른 광고그룹까지 같은 지역으로 바뀝니다.\n(핀 ${pins}개 · 반경 단위 마일)\n\n그대로 진행할까요?`);
+    if (!ok) { restore(); return; }
   }
   showToast('Make로 전송 중...', 'info');
   const blocks = gAllVideoSlots(t).map(x => x.slot);   // 영상 슬롯 단위 (광고 여러 개 × 영상 여러 개)
@@ -6905,12 +6921,12 @@ async function shareSettingsNow() {
 
 /* =========================================================
    지역 핀(반경) — 메타·구글 공통 지도 편집기
-   각 매체가 쓰는 단위 그대로 저장한다 (Meta = 마일, Google = km).
+   반경 단위는 두 매체 모두 «마일» 이다 (Google Ads proximity 도 MILES 로 보낸다).
    저장 형식은 기존과 같은 "위도,경도,반경; 위도,경도,반경" 문자열.
    ========================================================= */
 const PIN_UNIT = {
   meta:   { label: '마일', m: 1609.344, min: 1, max: 50,  def: 10, api: 'Meta' },
-  google: { label: 'km',   m: 1000,     min: 1, max: 500, def: 10, api: 'Google' },
+  google: { label: '마일', m: 1609.344, min: 1, max: 500, def: 10, api: 'Google' },
 };
 let pinS = null;            // { platform, index, unit, pins:[{lat,lng,r,name}], sel, map, layers }
 let pinLeafletPromise = null;
@@ -6962,7 +6978,7 @@ function openPinMap(platform, index, opts) {
   const uEl = document.getElementById('pin_radius_unit'); if (uEl) uEl.textContent = `(${unit.label})`;
   ['pin_radius_range', 'pin_radius_num'].forEach(id => { const el = document.getElementById(id); if (el) { el.min = unit.min; el.max = unit.max; } });
   const hint = document.getElementById('pin_radius_hint');
-  if (hint) hint.textContent = platform === 'meta' ? `Meta는 ${unit.min}~${unit.max}마일까지 됩니다` : `Google은 ${unit.min}~${unit.max}km까지 됩니다`;
+  if (hint) hint.textContent = platform === 'meta' ? `Meta는 ${unit.min}~${unit.max}마일까지 됩니다` : `Google은 ${unit.min}~${unit.max}마일까지 됩니다 (반경 타겟은 캠페인 단위로 걸립니다)`;
   const sr = document.getElementById('pin_search_results'); if (sr) { sr.innerHTML = ''; sr.classList.remove('show'); }
   const si = document.getElementById('pin_search'); if (si) si.value = '';
   document.getElementById('pinModal').classList.add('show');
@@ -7090,7 +7106,7 @@ function pinRenderList() {
     ? pinS.pins.map((p, i) => `<div class="pin-row${i === pinS.sel ? ' sel' : ''}" onclick="pinSelect(${i})">
         <span class="pin-num">${i + 1}</span>
         <span class="nm">${esc(p.name || `${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`)}</span>
-        <span class="rd">${p.r}${pinS.unit.label === 'km' ? 'km' : 'mi'}</span>
+        <span class="rd">${p.r}mi</span>
         <button class="set-del" onclick="pinRemove(${i},event)" title="이 핀 빼기">✕</button>
       </div>`).join('')
     : '<div class="field-hint">아직 핀이 없어요 — 지도를 클릭하거나 위에서 장소를 검색하세요</div>';
