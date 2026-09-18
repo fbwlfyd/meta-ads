@@ -342,6 +342,11 @@
   .btn-pin { height: 34px; padding: 0 9px; border: 1px solid var(--border2); border-radius: 6px; background: var(--white); cursor: pointer; font-size: 13px; flex-shrink: 0; font-family: inherit; }
   .btn-pin:hover { border-color: var(--blue); background: var(--blue-bg); }
   .btn-pin.has { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); font-weight: 600; font-size: 11px; }
+  /* 표기명 옆 [제외] 체크 — 켜면 이름에 안 붙고 캠페인 찾기의 제외어가 된다 */
+  .ref-ex { display: inline-flex; align-items: center; gap: 4px; height: 34px; padding: 0 8px; border: 1px solid var(--border2); border-radius: 6px; background: var(--white); cursor: pointer; font-size: 11px; color: var(--text2); flex-shrink: 0; white-space: nowrap; user-select: none; }
+  .ref-ex:hover { border-color: var(--blue); }
+  .ref-ex input { width: 14px; height: 14px; margin: 0; cursor: pointer; accent-color: #d92d20; }
+  .ref-ex.on { border-color: #d92d20; color: #d92d20; background: #fef3f2; font-weight: 700; }
   /* 지역 핀(반경) 지도 */
   #pinModal { z-index: 10000; }
   .pin-modal { width: 100%; max-width: 1020px; height: 86vh; background: var(--white); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
@@ -1033,7 +1038,7 @@
           <div class="region-results" id="region_search_results"></div>
         </div>
         <table class="set-table">
-          <thead><tr><th style="width:16%">계정</th><th style="width:15%">지역명</th><th style="width:13%">지역 Key</th><th style="width:11%">종류</th><th style="width:15%">표기명</th><th style="width:26%">핀 · 반경 타겟 (선택)</th><th></th></tr></thead>
+          <thead><tr><th style="width:16%">계정</th><th style="width:15%">지역명</th><th style="width:13%">지역 Key</th><th style="width:10%">종류</th><th style="width:22%">표기명 <span style="font-weight:400;color:var(--text3);">· [제외]는 이름에 안 붙음</span></th><th style="width:22%">핀 · 반경 타겟 (선택)</th><th></th></tr></thead>
           <tbody id="set_region_body"></tbody>
         </table>
         <div class="field-hint" style="margin-top:6px;">계정을 고르면 그 계정의 세트에서만 이 지역이 보여요 (공통은 모든 계정). 종류는 검색으로 추가하면 자동으로 들어가고, Meta에 보낼 때 도시·지역·구·군에 맞는 형식으로 나갑니다.</div>
@@ -1083,7 +1088,7 @@
       </div>
 
       <div class="modal-sec" id="msec_gregion">
-        <div class="set-note">지역은 <b>치과별로</b> 묶입니다 — 치과를 고르면 그 치과의 지역만 드롭다운에 나옵니다 (치과를 비우면 모든 치과에서 보임).<br><b>표기명</b>을 비우면 이름에 지역이 붙지 않습니다. 표기명에 <b>«타겟 제외»</b> 처럼 <b>제외</b>를 붙이면 그 말은 이름(캠페인명·광고그룹명·광고명)에 안 붙고, <b>캠페인 고르기에서 그 말이 든 캠페인을 빼고</b> 찾습니다 — 예: 진주 줄의 표기명에 «타겟 제외» → 진주 임플란트(포함) + 타겟(제외).<br><b>장소</b>로 찾거나 <b>📍 지도</b> 버튼을 누르면 지도에서 핀을 찍어 반경 타겟을 만들 수 있어요 (Google 반경 단위는 km · 좌표가 있으면 criterion ID 대신 반경으로 타겟합니다).</div>
+        <div class="set-note">지역은 <b>치과별로</b> 묶입니다 — 치과를 고르면 그 치과의 지역만 드롭다운에 나옵니다 (치과를 비우면 모든 치과에서 보임).<br><b>표기명</b>을 비우면 이름에 지역이 붙지 않습니다. 표기명 옆 <b>[제외]</b>를 체크하면 그 말은 <b>이름(캠페인명·광고그룹명·광고명)에 안 붙고</b>, <b>캠페인 고르기에서 그 말이 든 캠페인을 빼고</b> 찾습니다 — 예: 진주 줄에 표기명 «타겟» + [제외] 체크 → 진주 임플란트(포함) + 타겟(제외). 체크해도 <b>지역구분자 드롭다운에는 그대로 보입니다</b>.<br><b>장소</b>로 찾거나 <b>📍 지도</b> 버튼을 누르면 지도에서 핀을 찍어 반경 타겟을 만들 수 있어요 (Google 반경 단위는 km · 좌표가 있으면 criterion ID 대신 반경으로 타겟합니다).</div>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
           <span style="font-size:12px;color:var(--text2);white-space:nowrap;">검색 결과를 추가할 치과</span>
           <select id="g_region_target_clinic" style="flex:1;height:36px;border:1px solid var(--border2);border-radius:8px;padding:0 10px;font-family:inherit;font-size:12px;"><option value="">공통 (모든 치과)</option></select>
@@ -1098,7 +1103,7 @@
           <div class="region-results" id="g_region_results"></div>
         </div>
         <table class="set-table">
-          <thead><tr><th style="width:20%">치과</th><th style="width:15%">지역명</th><th style="width:15%">criterion ID</th><th style="width:16%">표기명</th><th style="width:30%">핀 · 반경 타겟 (선택)</th><th></th></tr></thead>
+          <thead><tr><th style="width:18%">치과</th><th style="width:13%">지역명</th><th style="width:13%">criterion ID</th><th style="width:24%">표기명 <span style="font-weight:400;color:var(--text3);">· [제외]는 이름에 안 붙음</span></th><th style="width:26%">핀 · 반경 타겟 (선택)</th><th></th></tr></thead>
           <tbody id="gset_region_body"></tbody>
         </table>
         <button class="btn-sm" style="margin-top:10px;" onclick="gAddRow('regions')">+ 지역 추가</button>
@@ -1249,6 +1254,7 @@ function loadGoogleSettings() {
     }
   } catch (e) { /* 무시 */ }
   if (GSET.sheetId) SHEET_ID = GSET.sheetId;
+  if (migrateRefExcludes(GSET.regions)) persistGoogleSettings();   // 예전 «타겟 제외» 글자 → [제외] 체크
 }
 function persistGoogleSettings() {
   try { localStorage.setItem(GOOGLE_SETTINGS_KEY, JSON.stringify(GSET)); }
@@ -1382,6 +1388,7 @@ function loadSettings() {
       };
     }
   } catch (e) { console.warn('설정 불러오기 실패', e); }
+  if (migrateRefExcludes(SETTINGS.regions)) persistSettings();   // 예전 «타겟 제외» 글자 → [제외] 체크
 }
 function persistSettings() {
   try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(SETTINGS)); }
@@ -1465,9 +1472,10 @@ function normName(v) { return String(v || '').replace(/\s+/g, '').toLowerCase();
 /* ── 표기명 파싱 ────────────────────────────────────────────────
    표기명은 두 가지 일을 한다
      ① 이름에 붙는 꼬리말        예) 사천타겟  → "진주리더플란트치과 임플란트 사천타겟 2U"
-     ② 캠페인 찾기의 제외 키워드   예) 타겟 제외 → 이름에는 안 붙고, 캠페인 검색에서 "타겟"이 든 건 뺀다
-   제외로 쓰는 법 : "타겟 제외" · "제외 타겟" · "타겟(제외)" · "-타겟"  (쉼표로 여러 개)
-   제외로 표시한 말은 캠페인명·광고그룹명·광고명·지역구분자 어디에도 나오지 않는다        */
+     ② 캠페인 찾기의 제외 키워드   예) 표기명 «타겟» + [제외] 체크
+                                    → 이름에는 안 붙고, 캠페인 검색에서 "타겟"이 든 건 뺀다
+   [제외]를 켜면 캠페인명·광고그룹명·광고명에는 안 나오지만 지역구분자 드롭다운에는 그대로 보인다.
+   («타겟 제외» · "-타겟" 처럼 글자로 적어 두던 예전 방식도 그대로 읽는다)        */
 function parseRefName(raw) {
   const label = [], exclude = [];
   String(raw == null ? '' : raw).split(/[,;、·]+/).forEach(tk => {
@@ -1483,8 +1491,33 @@ function parseRefName(raw) {
   });
   return { label: label.join(' ').trim(), exclude };
 }
-function refLabel(r) { return parseRefName(r && r.refName).label; }          // 이름에 붙일 표기명
-function refExcludes(r) { return parseRefName(r && r.refName).exclude; }     // 캠페인 검색 제외어
+/* 표기명 한 줄을 세 가지 쓰임으로 갈라 준다
+     display : 지역구분자 드롭다운에 보여줄 말 — [제외]를 켜도 그대로 보인다 (어느 줄인지 구분해야 하니까)
+     label   : 이름(캠페인명·광고그룹명·광고명)에 붙일 말 — [제외]를 켜면 빈 값
+     exclude : 캠페인 찾기에서 뺄 말 — [제외]를 켜면 표기명이 그대로 제외어가 된다 */
+function refParts(r) {
+  const p = parseRefName(r && r.refName);
+  const checked = !!(r && r.noName);
+  const display = p.label || p.exclude.join(' ');
+  const hidden = checked || (!p.label && p.exclude.length > 0);
+  const exclude = p.exclude.slice();
+  if (checked && display && !exclude.some(x => normName(x) === normName(display))) exclude.push(display);
+  return { display, label: hidden ? '' : p.label, exclude, hidden };
+}
+function refLabel(r) { return refParts(r).label; }          // 이름에 붙일 표기명
+function refDisplay(r) { return refParts(r).display; }      // 지역구분자에 보여줄 표기명
+function refExcludes(r) { return refParts(r).exclude; }     // 캠페인 검색 제외어
+function refHidden(r) { return refParts(r).hidden; }        // 이름에 안 붙는 줄인가
+/* 예전 방식(«타겟 제외» 처럼 글자로 적어 둔 것)을 새 [제외] 체크로 한 번만 옮긴다 — 표에도 체크로 보인다 */
+function migrateRefExcludes(list) {
+  let changed = false;
+  (list || []).forEach(r => {
+    if (!r || r.noName) return;
+    const p = parseRefName(r.refName);
+    if (!p.label && p.exclude.length) { r.refName = p.exclude.join(' '); r.noName = true; changed = true; }
+  });
+  return changed;
+}
 function igMappingForPage(page) {
   if (!page) return null;
   const list = SETTINGS.pageInstagram || [];
@@ -1577,7 +1610,7 @@ function renderRegionRows() {
       <td><input type="text" data-set="reg-name" data-i="${i}" value="${esc(r.name)}"></td>
       <td><input type="text" data-set="reg-key" data-i="${i}" value="${esc(r.key)}"></td>
       <td><select data-set="reg-type" data-i="${i}" style="width:100%;height:34px;border:1px solid var(--border2);border-radius:6px;font-family:inherit;font-size:12px;padding:0 4px;"><option value="">자동</option>${META_GEO_TYPES.map(x => `<option value="${x[0]}"${r.type === x[0] ? ' selected' : ''}>${x[1]}</option>`).join('')}</select></td>
-      <td><input type="text" data-set="reg-refName" data-i="${i}" value="${esc(r.refName)}" placeholder="비우면 안 붙음 · 제외는 «타겟 제외»"></td>
+      <td><div style="display:flex;gap:6px;align-items:center;"><input type="text" data-set="reg-refName" data-i="${i}" value="${esc(r.refName)}" placeholder="비우면 안 붙음"><label class="ref-ex${r.noName ? ' on' : ''}" title="체크하면 이 표기명은 캠페인명·세트명·광고명에 안 붙습니다 (지역구분자에는 그대로 보여요)"><input type="checkbox" data-set="reg-noName" data-i="${i}"${r.noName ? ' checked' : ''} onchange="this.parentNode.classList.toggle('on', this.checked)">제외</label></div></td>
       <td><div style="display:flex;gap:4px;align-items:center;"><input type="text" data-set="reg-custom" data-i="${i}" value="${esc(r.custom)}" placeholder="비우면 지역 Key로 타겟"><button type="button" class="btn-pin${pinCount(r.custom) ? ' has' : ''}" onclick="openPinMap('meta',${i})" title="지도에서 핀 찍기 (반경 타겟)">${pinCount(r.custom) ? '📍 ' + pinCount(r.custom) : '📍 지도'}</button></div></td>
       <td><button class="set-del" onclick="removeRegionRow(${i})">✕</button></td>
     </tr>`).join('');
@@ -1652,10 +1685,10 @@ function collectSettingsFromDom() {
   const regions = [];
   document.querySelectorAll('[data-set="reg-name"]').forEach(el => {
     const i = el.dataset.i;
-    const get = k => { const e = document.querySelector(`[data-set="reg-${k}"][data-i="${i}"]`); return e ? e.value.trim() : ''; };
+    const get = k => { const e = document.querySelector(`[data-set="reg-${k}"][data-i="${i}"]`); return e ? (e.type === 'checkbox' ? e.checked : e.value.trim()) : ''; };
     const name = el.value.trim();
     const prev = (SETTINGS.regions || [])[Number(i)] || {};
-    if (name) regions.push({ name, key: get('key'), type: get('type') || (get('key') === (prev.key || '') ? (prev.type || '') : ''), country: prev.country || '', accountId: get('accountId'), refName: get('refName'), custom: get('custom') });
+    if (name) regions.push({ name, key: get('key'), type: get('type') || (get('key') === (prev.key || '') ? (prev.type || '') : ''), country: prev.country || '', accountId: get('accountId'), refName: get('refName'), noName: !!get('noName'), custom: get('custom') });
   });
   if (document.querySelectorAll('[data-set="reg-name"]').length > 0) SETTINGS.regions = regions;
 
@@ -1890,7 +1923,7 @@ function resetSettings() {
 const G_TABLES = {
   staff:     { body: 'gset_staff_body',     cols: [['name','홍길동'], ['id','KCS']] },
   clinics:   { body: 'gset_clinic_body',    cols: [['clinic','오늘의치과'], ['short','오늘']] },
-  regions:   { body: 'gset_region_body',    cols: [['clinic','공통'], ['name','부산'], ['criterionId','검색으로 자동 입력'], ['refName','비우면 안 붙음 · 제외는 «타겟 제외»'], ['custom','35.18,128.11,10; 35.20,128.05,8']] },
+  regions:   { body: 'gset_region_body',    cols: [['clinic','공통'], ['name','부산'], ['criterionId','검색으로 자동 입력'], ['refName','비우면 안 붙음'], ['custom','35.18,128.11,10; 35.20,128.05,8']] },
   channels:  { body: 'gset_channel_body',   cols: [['channelName','오늘의병원'], ['channelId','UC...'], ['logoFileId','Drive 링크를 붙여넣으면 파일ID만 남아요']] },
 };
 /* Drive 공유 링크 어떤 형태든 파일ID만 뽑는다 (이미 ID면 그대로)
@@ -1934,6 +1967,13 @@ function gRenderTable(key) {
             .map(n => `<option value="${esc(n)}"${normName(n) === normName(cur) ? ' selected' : ''}>${esc(n)}</option>`));
         return `<td><select data-g="${key}" data-f="${f}" data-i="${i}" style="width:100%;height:34px;border:1px solid var(--border2);border-radius:6px;padding:0 8px;font-family:inherit;font-size:12px;">${opts.join('')}</select></td>`;
       }
+      if (key === 'regions' && f === 'refName') {
+        // 표기명 옆 [제외] 체크 — 켜면 이름에는 안 붙고 캠페인 찾기의 제외어로만 쓰인다 (지역구분자에는 그대로 보임)
+        return `<td><div style="display:flex;gap:6px;align-items:center;">
+          <input type="text" data-g="${key}" data-f="${f}" data-i="${i}" value="${esc(r[f] || '')}" placeholder="${esc(ph)}">
+          <label class="ref-ex${r.noName ? ' on' : ''}" title="체크하면 이 표기명은 캠페인명·광고그룹명·광고명에 안 붙습니다. 대신 캠페인 찾기에서 이 말이 든 캠페인을 뺍니다 (지역구분자에는 그대로 보여요)"><input type="checkbox" data-g="${key}" data-f="noName" data-i="${i}"${r.noName ? ' checked' : ''} onchange="this.parentNode.classList.toggle('on', this.checked)">제외</label>
+        </div></td>`;
+      }
       if (key === 'regions' && f === 'custom') {
         const n = pinCount(r.custom);
         return `<td><div style="display:flex;gap:4px;align-items:center;"><input type="text" data-g="${key}" data-f="${f}" data-i="${i}" value="${esc(r[f] || '')}" placeholder="비우면 criterion ID로 타겟"><button type="button" class="btn-pin${n ? ' has' : ''}" onclick="openPinMap('google',${i})" title="지도에서 핀 찍기 (반경 타겟)">${n ? '📍 ' + n : '📍 지도'}</button></div></td>`;
@@ -1969,11 +2009,12 @@ function gCollectSettings() {
     inputs.forEach(el => {
       const i = Number(el.dataset.i);
       rows[i] = rows[i] || {};
-      let v = el.value.trim();
+      let v = el.type === 'checkbox' ? el.checked : el.value.trim();
       if (key === 'channels' && el.dataset.f === 'logoFileId') v = gExtractDriveId(v);
       rows[i][el.dataset.f] = v;
     });
-    GSET[key] = rows.filter(r => r && Object.values(r).some(v => v));
+    // 체크박스만 켜진 빈 줄은 버린다 (글자가 하나라도 있어야 살린다)
+    GSET[key] = rows.filter(r => r && Object.keys(r).some(k => k !== 'noName' && r[k]));
   });
   const val = id => (document.getElementById(id) || {}).value || '';
   if (document.getElementById('g_dev_token')) {
@@ -2144,7 +2185,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-17.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-18.8';
+const G_PAGE_BUILD = '2026-09-18.10';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -2623,8 +2664,9 @@ let DB = {
 };
 
 function applySettingsToDB() {
+  if (migrateRefExcludes(SETTINGS.regions)) persistSettings();
   DB.staff = SETTINGS.staff.filter(s => s.name);
-  DB.regions = SETTINGS.regions.filter(r => r.name).map(r => ({ name: r.name, id: r.key || '', type: r.type || '', country: r.country || '', accountId: r.accountId || '', refName: r.refName || '', custom: r.custom || '' }));
+  DB.regions = SETTINGS.regions.filter(r => r.name).map(r => ({ name: r.name, id: r.key || '', type: r.type || '', country: r.country || '', accountId: r.accountId || '', refName: r.refName || '', noName: !!r.noName, custom: r.custom || '' }));
   // 계정에 네이밍 약칭 얹기 (+ 복제한 계정 항목을 원본 바로 뒤에 끼워 넣는다)
   const bases = DB.accounts.filter(a => !a.variant);
   bases.forEach(a => {
@@ -2929,9 +2971,10 @@ async function loadAll(force) {
 
 /* 설정값을 GDB(화면이 참조하는 구조)로 펼친다 */
 function applyGoogleSettings() {
+  if (migrateRefExcludes(GSET.regions)) persistGoogleSettings();
   GDB.staff = (GSET.staff || []).filter(x => x.name);
   GDB.googleRegions = (GSET.regions || []).filter(x => x.name)
-    .map(r => ({ name: r.name, criterionId: r.criterionId || '', refName: r.refName || '', clinic: r.clinic || '', custom: r.custom || '' }));
+    .map(r => ({ name: r.name, criterionId: r.criterionId || '', refName: r.refName || '', noName: !!r.noName, clinic: r.clinic || '', custom: r.custom || '' }));
   GDB.ctaTypes = GOOGLE_CTA;   // 고정 목록 (시트·설정 불필요)
   GDB.clinicNames = [...new Set((GSET.clinics || []).map(c => c.clinic).filter(Boolean))];
   GDB.clinicToShortName = {};
@@ -3625,7 +3668,7 @@ function fillMetaRegionSelect(t) {
   const prevReg = regSel.value;
   const list = metaRegionsForAccount(metaCurrentAccountId(t));
   regSel.innerHTML = '<option value="">선택</option>';
-  list.forEach(r => { const o = document.createElement('option'); o.value = r.name; const lb = refLabel(r); o.textContent = (lb ? `${r.name} — ${lb}` : r.name) + (r.accountId ? ' (계정 전용)' : ''); regSel.appendChild(o); });
+  list.forEach(r => { const o = document.createElement('option'); o.value = r.name; const lb = refDisplay(r); o.textContent = (lb ? `${r.name} — ${lb}${refHidden(r) ? ' (이름 제외)' : ''}` : r.name) + (r.accountId ? ' (계정 전용)' : ''); regSel.appendChild(o); });
   if (prevReg && Array.from(regSel.options).some(o => o.value === prevReg)) regSel.value = prevReg;
   else if (prevReg) { regSel.value = ''; if (typeof onRegion === 'function') onRegion(t); }
 }
@@ -5210,7 +5253,7 @@ function gRegionsForClinic(clinic) {
 function gFillRegionSelects(t) {
   const clinic = (document.getElementById(`${t}_치과명`) || {}).value || '';
   const list = gRegionsForClinic(clinic);
-  const label = r => { const lb = refLabel(r); return (lb ? `${r.name} — ${lb}` : r.name) + (r.custom ? ' 📍' : ''); };
+  const label = r => { const lb = refDisplay(r); return (lb ? `${r.name} — ${lb}${refHidden(r) ? ' (이름 제외)' : ''}` : r.name) + (r.custom ? ' 📍' : ''); };
   const regSel = document.getElementById(`${t}_지역구분자`);
   if (regSel) {
     const prev = regSel.value;
@@ -5787,8 +5830,9 @@ async function gFindCampaigns(t) {
   if (!clinic) { showToast('치과를 먼저 선택하세요', 'error'); return; }
   const short = GDB.clinicToShortName[clinic] || clinic;
   const regionObj = gRegionsForClinic(clinic).find(r => r.name === region);
-  const regionLabel = regionObj ? (refLabel(regionObj) || regionObj.name) : region;
-  const excl = regionObj ? refExcludes(regionObj) : [];          // 표기명에 "○○ 제외" 라고 쓴 말
+  // [제외]로 표시한 지역은 찾을 말로 쓰지 않는다 — 뺄 말로만 쓴다 (진주임플란트 포함 + 타겟 제외)
+  const regionLabel = (regionObj && refHidden(regionObj)) ? '' : (regionObj ? (refLabel(regionObj) || regionObj.name) : region);
+  const excl = regionObj ? refExcludes(regionObj) : [];          // 표기명 옆 [제외]를 켠 말
   const terms = [short, regionLabel].filter(Boolean);
   const exTxt = excl.length ? ` · 제외: ${excl.join(', ')}` : '';
   box.innerHTML = `<div class="copy-suggest-loading">캠페인 찾는 중... (검색어: ${esc(terms.join(' + ') + exTxt)})</div>`;
@@ -6358,6 +6402,18 @@ function gErrorHint(row) {
   if (/DUPLICATE_ADGROUP_NAME|AdGroupError\.DUPLICATE/i.test(s)) return '같은 이름의 광고그룹이 이미 이 캠페인에 있어요 — 앞선 전송이 그룹까지만 만들고 멈춘 경우가 대부분입니다. 세트 추가에서 캠페인을 다시 불러온 뒤, 그 그룹을 골라 «광고만 추가»하거나 새 번호(3U 등)로 보내주세요';
   if (/AdError\.DUPLICATE|DUPLICATE_AD/i.test(s)) return '같은 내용의 광고가 이미 있어요 — 문구와 영상이 완전히 같으면 Google이 거절합니다';
   if (/DUPLICATE_NAME/i.test(s)) return '같은 이름이 이미 쓰이고 있어요 — 이름을 조금 바꿔서 다시 보내주세요';
+
+  /* ── 계정 한도 (RESOURCE_LIMIT) ── */
+  if (/ENABLED_ADVERTISER_BASE_CAMPAIGNS_PER_CUSTOMER/i.test(s)) return '이 광고계정의 캠페인 개수가 한도(10,000개)에 찼어요 — 새 캠페인을 못 만듭니다. Google Ads에서 안 쓰는 옛 캠페인을 «삭제»해야 자리가 납니다 (일시중지는 개수에 그대로 포함돼요). 급하면 다른 계정으로 등록하세요';
+  if (/CAMPAIGN_BUDGETS_PER_CUSTOMER|BUDGETS_PER_CUSTOMER/i.test(s)) return '이 계정의 캠페인 예산 개수가 한도에 찼어요 — Google Ads «도구 → 공유 예산»에서 안 쓰는 예산을 지워주세요';
+  if (/AD_GROUPS_PER_CAMPAIGN/i.test(s)) return '한 캠페인에 넣을 수 있는 광고그룹 수를 넘었어요 — 새 캠페인으로 등록하세요';
+  if (/ADS_PER_AD_GROUP|AD_GROUP_ADS_PER/i.test(s)) return '한 광고그룹에 넣을 수 있는 광고 수를 넘었어요 — 새 광고그룹(세트)으로 등록하세요';
+  if (/TARGETS_PER_AD_GROUP|CRITERIA_PER/i.test(s)) return '타겟(지역·잠재고객) 개수가 한도를 넘었어요 — 지역 핀이나 잠재고객을 줄여주세요';
+  if (/resourceCountLimitExceeded|RESOURCE_LIMIT/i.test(s)) {
+    const t = (s.match(/"stringValue"\s*:\s*"([A-Z_]+)"/) || [])[1] || '';
+    const n = (s.match(/"limit"\s*:\s*(\d+)/) || [])[1] || '';
+    return `Google Ads 한도에 걸렸어요${t ? ` (${t})` : ''}${n ? ` · 한도 ${Number(n).toLocaleString()}개` : ''} — 안 쓰는 항목을 삭제해야 새로 만들 수 있어요`;
+  }
 
   /* ── YouTube ── */
   if (/uploadLimitExceeded/i.test(s)) return '이 채널의 하루 업로드 한도를 넘었어요 — 24시간 뒤에 풀립니다. 오늘은 다른 채널로 등록하세요';
