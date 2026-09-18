@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-18T07:19:14.253Z",
-  "updatedBy": "kwon0914kjh@gmail.com",
+  "updatedAt": "2026-09-18T07:49:19.453Z",
+  "updatedBy": "fbwlfyd9271@gmail.com",
   "meta": {
     "staff": [
       {
@@ -357,6 +357,7 @@
         "name": "양산",
         "criterionId": "1009890",
         "refName": "",
+        "noName": false,
         "custom": ""
       },
       {
@@ -364,6 +365,7 @@
         "name": "부산",
         "criterionId": "1009866",
         "refName": "부산타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -371,6 +373,7 @@
         "name": "밀양",
         "criterionId": "1030753",
         "refName": "",
+        "noName": false,
         "custom": ""
       },
       {
@@ -378,6 +381,7 @@
         "name": "울주군",
         "criterionId": "",
         "refName": "울주군타겟",
+        "noName": false,
         "custom": "35.569508,129.125164,11; 35.522236,129.242369,2"
       },
       {
@@ -385,6 +389,7 @@
         "name": "부산광역시",
         "criterionId": "1009866",
         "refName": "",
+        "noName": false,
         "custom": ""
       },
       {
@@ -392,6 +397,7 @@
         "name": "충주시",
         "criterionId": "1009844",
         "refName": "",
+        "noName": false,
         "custom": ""
       },
       {
@@ -399,6 +405,7 @@
         "name": "음성군",
         "criterionId": "1030703",
         "refName": "음성타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -406,6 +413,7 @@
         "name": "제천시",
         "criterionId": "1030746",
         "refName": "제천타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -413,27 +421,31 @@
         "name": "원주시",
         "criterionId": "1009889",
         "refName": "원주타겟",
+        "noName": false,
         "custom": ""
       },
       {
         "clinic": "울산더조은플란트치과",
         "name": "울산광역시",
         "criterionId": "1009887",
-        "refName": "타겟 제외",
+        "refName": "",
+        "noName": true,
         "custom": ""
       },
       {
         "clinic": "울산서울탑치과",
         "name": "울산광역시",
         "criterionId": "1009887",
-        "refName": "타겟 제외",
+        "refName": "",
+        "noName": true,
         "custom": ""
       },
       {
         "clinic": "진주리더플란트치과",
         "name": "진주시",
         "criterionId": "1009841",
-        "refName": "타겟 제외",
+        "refName": "",
+        "noName": true,
         "custom": ""
       },
       {
@@ -441,6 +453,7 @@
         "name": "고성군",
         "criterionId": "1030716",
         "refName": "고성타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -448,6 +461,7 @@
         "name": "사천시",
         "criterionId": "1030766",
         "refName": "사천타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -455,6 +469,7 @@
         "name": "하동군",
         "criterionId": "1030727",
         "refName": "하동타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -462,6 +477,7 @@
         "name": "산청군",
         "criterionId": "1030767",
         "refName": "산청타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -469,6 +485,7 @@
         "name": "함안군",
         "criterionId": "1030729",
         "refName": "함안타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -476,6 +493,7 @@
         "name": "의령군",
         "criterionId": "1030774",
         "refName": "의령타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -483,6 +501,7 @@
         "name": "통영시",
         "criterionId": "1009884",
         "refName": "통영타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -490,6 +509,7 @@
         "name": "물금",
         "criterionId": "",
         "refName": "치과주변",
+        "noName": false,
         "custom": "35.321289,129.026184,4.5"
       }
     ],
