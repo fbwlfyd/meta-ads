@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-18T07:51:17.137Z",
-  "updatedBy": "fbwlfyd9271@gmail.com",
+  "updatedAt": "2026-09-18T08:47:51.511Z",
+  "updatedBy": "kwon0914kjh@gmail.com",
   "meta": {
     "staff": [
       {
@@ -110,7 +110,8 @@
         "country": "",
         "accountId": "",
         "refName": "울주타겟",
-        "custom": "35.4491,129.1587,6; 35.5184,129.0763,5; 35.5519,129.0228,5"
+        "noName": false,
+        "custom": "35.449100,129.158700,2; 35.518400,129.076300,2; 35.551900,129.022800,2"
       },
       {
         "name": "울산",
@@ -119,6 +120,7 @@
         "country": "KR",
         "accountId": "",
         "refName": "",
+        "noName": false,
         "custom": "35.524692,129.309425,13; 35.536690,129.230804,13"
       },
       {
@@ -128,6 +130,7 @@
         "country": "KR",
         "accountId": "",
         "refName": "",
+        "noName": false,
         "custom": ""
       },
       {
@@ -137,6 +140,7 @@
         "country": "KR",
         "accountId": "1611866049351970",
         "refName": "",
+        "noName": false,
         "custom": ""
       },
       {
@@ -146,6 +150,7 @@
         "country": "KR",
         "accountId": "700018491959752",
         "refName": "충주타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -155,6 +160,7 @@
         "country": "KR",
         "accountId": "700018491959752",
         "refName": "음성타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -164,6 +170,7 @@
         "country": "KR",
         "accountId": "700018491959752",
         "refName": "제천타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -173,6 +180,7 @@
         "country": "KR",
         "accountId": "700018491959752",
         "refName": "원주타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -182,6 +190,7 @@
         "country": "KR",
         "accountId": "",
         "refName": "부산타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -191,6 +200,7 @@
         "country": "KR",
         "accountId": "812454993694009",
         "refName": "밀양타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -200,7 +210,8 @@
         "country": "KR",
         "accountId": "812454993694009",
         "refName": "울주군타겟",
-        "custom": "35.654293,129.201162,1.5; 35.569938,129.228075,1.5; 35.349765,129.326146,1.5; 35.434572,129.314320,1.5; 35.418880,129.280743,1"
+        "noName": false,
+        "custom": "35.654293,129.201162,2; 35.569938,129.228075,2; 35.349765,129.326146,2.5; 35.434572,129.314320,2.5; 35.418880,129.280743,1.5"
       },
       {
         "name": "경상남도 진주",
@@ -209,6 +220,7 @@
         "country": "KR",
         "accountId": "316162427633460",
         "refName": "",
+        "noName": false,
         "custom": ""
       },
       {
@@ -218,6 +230,7 @@
         "country": "KR",
         "accountId": "316162427633460",
         "refName": "고성타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -227,6 +240,7 @@
         "country": "KR",
         "accountId": "316162427633460",
         "refName": "사천타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -236,6 +250,7 @@
         "country": "KR",
         "accountId": "316162427633460",
         "refName": "하동타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -245,6 +260,7 @@
         "country": "KR",
         "accountId": "316162427633460",
         "refName": "산청타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -254,6 +270,7 @@
         "country": "KR",
         "accountId": "316162427633460",
         "refName": "함안타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -263,6 +280,7 @@
         "country": "KR",
         "accountId": "316162427633460",
         "refName": "의령타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -272,6 +290,7 @@
         "country": "KR",
         "accountId": "316162427633460",
         "refName": "통영타겟",
+        "noName": false,
         "custom": ""
       },
       {
@@ -281,6 +300,7 @@
         "country": "KR",
         "accountId": "328544192521713",
         "refName": "",
+        "noName": false,
         "custom": ""
       },
       {
@@ -290,6 +310,7 @@
         "country": "KR",
         "accountId": "383834457603938",
         "refName": "",
+        "noName": false,
         "custom": ""
       }
     ]
