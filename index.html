@@ -412,6 +412,7 @@
           <div class="field"><label>날짜</label><input type="text" id="t1_날짜" placeholder="예: 260605" oninput="autoGenNames('t1')"></div>
           <div class="field"><label>유형</label><input type="text" id="t1_유형" placeholder="예: 비용혜택" oninput="autoGenNames('t1')"></div>
         </div>
+        <div class="field"><label>메모 <span class="auto-tag">캠페인명 맨 뒤</span></label><input type="text" id="t1_메모" placeholder="예: [광고20]" oninput="autoGenNames('t1')"><div class="field-hint">적은 그대로 캠페인명 끝에 한 칸 띄고 붙어요 (비우면 안 붙음)</div></div>
       </div>
       <div class="divider"></div>
       <div class="section"><div class="sec-label">계정</div>
@@ -740,7 +741,11 @@
           <div class="field"><label>계정명</label><select id="g1_계정명" onchange="gOnAccount('g1')"><option value="">선택</option></select></div>
           <div class="field"><label>치과명</label><select id="g1_치과명" onchange="gOnClinic('g1')"><option value="">계정 선택 후 사용 가능</option></select></div>
         </div>
-        <div class="field"><label>지역구분자</label><select id="g1_지역구분자" onchange="gOnRegion('g1')"><option value="">선택</option></select></div>
+        <div class="row2">
+          <div class="field"><label>지역구분자</label><select id="g1_지역구분자" onchange="gOnRegion('g1')"><option value="">선택</option></select></div>
+          <div class="field"><label>메모 <span class="auto-tag g">캠페인명 맨 뒤</span></label><input type="text" id="g1_메모" placeholder="예: [광고20]" oninput="gAutoGenNames('g1')"></div>
+        </div>
+        <div class="field-hint" style="margin-top:-4px;">메모는 적은 그대로 캠페인명 끝에 한 칸 띄고 붙어요 (비우면 안 붙음)</div>
       </div>
       <div class="divider"></div>
       <div class="section"><div class="sec-label">캠페인 설정</div>
@@ -2131,7 +2136,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-17.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-17.8';
+const G_PAGE_BUILD = '2026-09-18.2';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -3659,8 +3664,9 @@ function buildNames(t, seqToken) {
   const type = document.getElementById(`${t}_유형`).value;
   const refName = refLabel(region);
   const staffId = staffObj ? staffObj.id : '';
+  const memo = ((document.getElementById(`${t}_메모`) || {}).value || '').trim();   // 캠페인명 맨 뒤에만 붙는다
   return {
-    campaignName: [acc.campaignName, type, date ? `(${date})` : '', staffName, refName, '예비용'].filter(Boolean).join(' '),
+    campaignName: [acc.campaignName, type, date ? `(${date})` : '', staffName, refName, '예비용', memo].filter(Boolean).join(' '),
     setName: [acc.setName, type, refName, seqToken, staffId].filter(Boolean).join(' '),
   };
 }
@@ -4257,7 +4263,7 @@ function getEventRawName(t) {
 }
 function getData(t) {
   const d = {
-    제작자: g(`${t}_제작자`), 날짜: g(`${t}_날짜`), 유형: g(`${t}_유형`), 상태: '대기중',
+    제작자: g(`${t}_제작자`), 날짜: g(`${t}_날짜`), 유형: g(`${t}_유형`), 메모: (g(`${t}_메모`) || '').trim(), 상태: '대기중',
     계정명: getAccountName(t), 광고계정ID: g(`${t}_광고계정ID`),
     광고세트명: g(`${t}_광고세트명`), 전환위치: g(`${t}_전환위치`), 성과목표: g(`${t}_성과목표`), 세트예산: g(`${t}_세트예산`),
     페이지: g(`${t}_페이지`), 페이지ID: g(`${t}_페이지ID`), 인스타계정: g(`${t}_인스타계정`),
@@ -4607,7 +4613,7 @@ async function submitAd(t) {
   btn.textContent = isT2 ? (selectedAdset.t2 ? '선택한 세트에 광고 추가' : '세트 추가하기') : '광고 등록하기';
 }
 function clearForm(t) {
-  ['제작자','날짜','유형','계정명','페이지','인스타계정','지역구분자','세트예산','시작일','종료일','언어'].forEach(field => { const el = document.getElementById(`${t}_${field}`); if (el) el.value = ''; });
+  ['제작자','날짜','유형','메모','계정명','페이지','인스타계정','지역구분자','세트예산','시작일','종료일','언어'].forEach(field => { const el = document.getElementById(`${t}_${field}`); if (el) el.value = ''; });
   document.getElementById(`${t}_언어`).value = 'ko';
   const cb = document.getElementById(`${t}_캠페인예산`); if (cb) cb.value = 30000;
   onAdvantage(t, 0);
@@ -5268,7 +5274,8 @@ function gAutoGenNames(t) {
   const clinicName = document.getElementById(`${t}_치과명`)?.value || '';
   const shortName = GDB.clinicToShortName[clinicName] || acc.campaignName || '';
   const accNameLabel = gGetAccountName(t) ? `[${gGetAccountName(t)}]` : '';
-  const campaignName = [shortName, '디맨드젠', date ? `(${date})` : '', staffName, refName, accNameLabel, '예비용'].filter(Boolean).join(' ');
+  const memo = ((document.getElementById(`${t}_메모`) || {}).value || '').trim();   // 캠페인명 맨 뒤에만 붙는다
+  const campaignName = [shortName, '디맨드젠', date ? `(${date})` : '', staffName, refName, accNameLabel, '예비용', memo].filter(Boolean).join(' ');
   const build = token => [clinicName, '임플란트', refName, token, staffId].filter(Boolean).join(' ');
   const groupName = gSelectedGroup.g2 && t === 'g2' ? gSelectedGroup.g2.name : build(`${seq}U`);
   if (t === 'g1') document.getElementById('g1_캠페인명').value = campaignName;
@@ -5967,7 +5974,7 @@ function gGetData(t) {
   const gCoords = gParseCoords(gRegion ? gRegion.custom : '');
   const d = {
     플랫폼: 'google',
-    제작자: g(`${t}_제작자`), 날짜: g(`${t}_날짜`), 유형: '디맨드젠', 상태: '대기중',
+    제작자: g(`${t}_제작자`), 날짜: g(`${t}_날짜`), 유형: '디맨드젠', 메모: (g(`${t}_메모`) || '').trim(), 상태: '대기중',
     계정명: gGetAccountName(t), 광고계정ID: g(`${t}_광고계정ID`),
     치과명: g(`${t}_치과명`), 광고그룹명: g(`${t}_광고그룹명`),
     지역구분자: regionName,
@@ -6261,7 +6268,7 @@ function gErrorHint(row) {
   const s = `${row.msg || ''} ${row.detail || ''}`;
 
   /* ── 이름 중복 ── */
-  if (/DUPLICATE_CAMPAIGN_NAME|CampaignError\.DUPLICATE_NAME/i.test(s)) return '같은 이름의 캠페인이 이미 있어요 — 날짜·유형·제작자 중 하나를 바꾸면 이름이 달라집니다 (지운 캠페인 이름도 한동안 못 씁니다)';
+  if (/DUPLICATE_CAMPAIGN_NAME|CampaignError\.DUPLICATE_NAME/i.test(s)) return '같은 이름의 캠페인이 이미 있어요 — 왼쪽 «메모» 칸에 구분할 말(예: [2차])을 넣으면 이름이 달라집니다. 같은 요청을 두 번 보냈다면 Google Ads에서 먼저 만들어진 캠페인을 확인하세요';
   if (/CampaignBudgetError\.DUPLICATE_NAME/i.test(s)) return '같은 이름의 캠페인 예산이 이미 있어요 — 캠페인명을 조금 바꿔서 다시 보내주세요';
   if (/DUPLICATE_ADGROUP_NAME|AdGroupError\.DUPLICATE/i.test(s)) return '같은 이름의 광고그룹이 이미 있어요 — 광고그룹 번호(2U 등)를 확인하세요';
   if (/AdError\.DUPLICATE|DUPLICATE_AD/i.test(s)) return '같은 내용의 광고가 이미 있어요 — 문구와 영상이 완전히 같으면 Google이 거절합니다';
@@ -6385,15 +6392,33 @@ function gTrackNow(t, idx) {
   st.forceCheck = true;
   if (st.wake) st.wake();
 }
+/* 방금 보낸 캠페인 이름 기억 — Google 검색(API)은 새로 만든 캠페인을 몇 분 뒤에야 보여준다.
+   그래서 "조회했더니 없더라 → 보냈더니 중복" 이 생긴다. 보낸 이름을 36시간 동안 기억해 두고 같이 본다. */
+const G_SENT_NAMES_KEY = 'adtool_sent_campaign_names';
+function gSentNames() {
+  try {
+    const j = JSON.parse(localStorage.getItem(G_SENT_NAMES_KEY) || '{}') || {};
+    const cut = Date.now() - 36 * 3600 * 1000;
+    Object.keys(j).forEach(k => { if (!(Number(j[k]) > cut)) delete j[k]; });
+    return j;
+  } catch (e) { return {}; }
+}
+function gRememberSentName(name) {
+  const k = normName(name); if (!k) return;
+  try { const j = gSentNames(); j[k] = Date.now(); localStorage.setItem(G_SENT_NAMES_KEY, JSON.stringify(j)); } catch (e) {}
+}
+let gDupCheckOk = true;   // 마지막 중복 확인이 실제로 됐는지 (안 됐으면 사용자에게 알린다)
+
 /* 같은 이름의 캠페인이 이미 있으면 뒤에 «(2)», «(3)» 을 붙여 비어 있는 이름을 돌려준다.
-   조회를 못 하면(중계 함수 미배포 등) 원래 이름 그대로 보낸다 — 그 경우 Make 로그에 중복 오류가 우리말로 뜬다. */
+   보는 곳 두 군데 — ① Google Ads 검색 결과 ② 이 브라우저에서 최근에 보낸 이름(검색 지연 대비) */
 async function gUniqueCampaignName(name) {
   const base = String(name || '').trim();
   if (!base) return base;
+  const taken = new Set(Object.keys(gSentNames()));
   let list = null;
   try { list = await gLookup('findcampaigns', { q: base, status: 'all' }); } catch (e) { list = null; }
-  if (!Array.isArray(list)) return base;
-  const taken = new Set(list.map(c => normName(c.name)));
+  gDupCheckOk = Array.isArray(list);
+  if (Array.isArray(list)) list.forEach(c => taken.add(normName(c.name)));
   if (!taken.has(normName(base))) return base;
   for (let i = 2; i <= 50; i++) {
     const cand = `${base} (${i})`;
@@ -6476,6 +6501,8 @@ async function gSubmitAd(t) {
       data.캠페인명 = fixed;
       const el = document.getElementById(`${t}_캠페인명`); if (el) el.value = fixed;
       showToast(`같은 이름의 캠페인이 있어서 «${fixed}» 로 보냅니다`, 'info');
+    } else if (!gDupCheckOk) {
+      showToast('이름 중복을 확인하지 못했어요 — 같은 이름이 이미 있으면 Make에서 멈출 수 있어요 (메모 칸으로 구분해 주세요)', 'error');
     }
   }
   data.요청ID = gNewRequestId();
@@ -6486,6 +6513,7 @@ async function gSubmitAd(t) {
   try {
     const res = await fetch(G_WEBHOOKS[t], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     if (res.ok) {
+      if (!isT2) gRememberSentName(data.캠페인명);   // 구글 검색이 늦게 반영돼도 다음 등록에서 중복을 피한다
       gUpdateCard(t, idx, '진행중', 'Make가 받았어요 — 진행 상황을 확인하는 중입니다');
       showToast(isT2?'세트 추가 요청 완료!':'캠페인 등록 요청 완료!', 'success');
       // 직접 첨부한 임시 파일은 Make가 등록을 마치면 Drive에서 지운다.
@@ -6508,7 +6536,7 @@ async function gSubmitAd(t) {
   restore();
 }
 function gClearForm(t) {
-  ['제작자','날짜','지역구분자'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
+  ['제작자','날짜','지역구분자','메모'].forEach(f => { const el = document.getElementById(`${t}_${f}`); if (el) el.value = ''; });
   const clinicSel = document.getElementById(`${t}_치과명`); if (clinicSel) clinicSel.innerHTML = '<option value="">계정 선택 후 사용 가능</option>';
   const bizEl = document.getElementById(`${t}_업체명`); if (bizEl) bizEl.value = '';
   const deviceEl = document.getElementById(`${t}_기기`); if (deviceEl) deviceEl.value = 'ALL';
