@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-17T06:29:17.320Z",
-  "updatedBy": "fbwlfyd9271@gmail.com",
+  "updatedAt": "2026-09-18T07:19:14.253Z",
+  "updatedBy": "kwon0914kjh@gmail.com",
   "meta": {
     "staff": [
       {
@@ -484,6 +484,13 @@
         "criterionId": "1009884",
         "refName": "통영타겟",
         "custom": ""
+      },
+      {
+        "clinic": "양산서울에스원치과",
+        "name": "물금",
+        "criterionId": "",
+        "refName": "치과주변",
+        "custom": "35.321289,129.026184,4.5"
       }
     ],
     "channels": [
