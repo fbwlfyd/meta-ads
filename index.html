@@ -53,6 +53,16 @@
   .field input, .field select, .field textarea { width: 100%; height: 40px; background: var(--white); border: 1px solid var(--border2); border-radius: var(--radius-sm); color: var(--text1); font-family: inherit; font-size: 13px; padding: 0 12px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; appearance: none; -webkit-appearance: none; }
   .field textarea { height: 72px; padding: 10px 12px; resize: none; line-height: 1.5; }
   .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
+  /* 날짜 «_뒤 차수» 를 올리고 내리는 버튼 */
+  .date-seq { display: flex; align-items: stretch; }
+  .date-seq input { flex: 1; min-width: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+  .seq-btns { display: flex; flex-direction: column; width: 28px; flex-shrink: 0; border: 1px solid var(--border2); border-left: none;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0; overflow: hidden; background: var(--white); }
+  .seq-btns button { flex: 1; border: none; background: none; color: var(--text2); cursor: pointer; font-size: 9px; line-height: 1; padding: 0; font-family: inherit; }
+  .seq-btns button:hover { background: var(--blue-bg); color: var(--blue); }
+  .seq-btns button:first-child { border-bottom: 1px solid var(--border); }
+  /* 캠페인명은 길어서 여러 줄로 다 보여 준다 (엔터는 막고, 길면 알아서 늘어난다) */
+  .field textarea.name-box { height: auto; min-height: 40px; max-height: 132px; padding: 9px 12px; line-height: 1.45; resize: vertical; overflow-y: auto; word-break: break-all; }
   .field input[readonly] { background: var(--bg); color: var(--text2); cursor: default; }
   .field input[readonly]:focus { border-color: var(--border2); box-shadow: none; }
   .field select { background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23aeaeb2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 32px; cursor: pointer; }
@@ -431,7 +441,7 @@
           <span class="link-toggle" onclick="openSettings('staff')">제작자 관리</span>
         </div>
         <div class="row2">
-          <div class="field"><label>날짜</label><input type="text" id="t1_날짜" placeholder="예: 260605" oninput="autoGenNames('t1')"></div>
+          <div class="field"><label>날짜 <span class="auto-tag">▲▼ 로 차수</span></label><div class="date-seq"><input type="text" id="t1_날짜" placeholder="예: 260605" oninput="autoGenNames('t1')"><span class="seq-btns"><button type="button" onclick="bumpDateSeq('t1',1)" title="차수 +1 (예: _2 → _3)">▲</button><button type="button" onclick="bumpDateSeq('t1',-1)" title="차수 -1">▼</button></span></div></div>
           <div class="field"><label>유형</label><input type="text" id="t1_유형" placeholder="예: 비용혜택" oninput="autoGenNames('t1')"></div>
         </div>
         <div class="field"><label>메모 <span class="auto-tag">캠페인명 맨 뒤</span></label><input type="text" id="t1_메모" placeholder="예: [광고20]" oninput="autoGenNames('t1')"><div class="field-hint">적은 그대로 캠페인명 끝에 한 칸 띄고 붙어요 (비우면 안 붙음)</div></div>
@@ -443,7 +453,7 @@
           <span class="link-toggle" onclick="openSettings('region')">+ 지역 검색해서 추가</span>
         </div>
         <div class="field"><label>캠페인명 <span class="auto-tag">자동 · 수정 가능</span></label>
-          <input type="text" id="t1_캠페인명" placeholder="자동생성" oninput="onCampaignNameEdit('t1')">
+          <textarea id="t1_캠페인명" class="name-box" rows="1" placeholder="자동생성" oninput="onCampaignNameEdit('t1')" onkeydown="if(event.key==='Enter')event.preventDefault();"></textarea>
           <div class="field-hint" id="t1_캠페인명_hint"></div>
         </div>
       </div>
@@ -760,7 +770,7 @@
       <div class="section"><div class="sec-label">기본 정보</div>
         <div class="row2">
           <div class="field"><label>제작자</label><input type="text" id="g1_제작자" placeholder="이름 입력" oninput="gAutoGenNames('g1')"></div>
-          <div class="field"><label>날짜</label><input type="text" id="g1_날짜" placeholder="예: 260605" oninput="gAutoGenNames('g1')"></div>
+          <div class="field"><label>날짜 <span class="auto-tag">▲▼ 로 차수</span></label><div class="date-seq"><input type="text" id="g1_날짜" placeholder="예: 260605" oninput="gAutoGenNames('g1')"><span class="seq-btns"><button type="button" onclick="bumpDateSeq('g1',1)" title="차수 +1 (예: _2 → _3)">▲</button><button type="button" onclick="bumpDateSeq('g1',-1)" title="차수 -1">▼</button></span></div></div>
         </div>
         <div class="row2">
           <div class="field"><label>계정명</label><select id="g1_계정명" onchange="gOnAccount('g1')"><option value="">선택</option></select></div>
@@ -772,7 +782,7 @@
         </div>
         <div class="field-hint" style="margin-top:-4px;margin-bottom:10px;">메모는 적은 그대로 캠페인명 끝에 한 칸 띄고 붙어요 (비우면 안 붙음)</div>
         <div class="field"><label>캠페인명 <span class="auto-tag g">자동 · 수정 가능</span></label>
-          <input type="text" id="g1_캠페인명" placeholder="자동생성" oninput="gOnCampaignNameEdit('g1')">
+          <textarea id="g1_캠페인명" class="name-box" rows="1" placeholder="자동생성" oninput="gOnCampaignNameEdit('g1')" onkeydown="if(event.key==='Enter')event.preventDefault();"></textarea>
           <div class="field-hint" id="g1_캠페인명_hint"></div>
         </div>
       </div>
@@ -1540,6 +1550,25 @@ function refExcludes(r) {                                       // 캠페인 검
   return out;
 }
 function refHidden(r) { return refParts(r).hidden; }        // 이름에 안 붙는 줄인가
+/* 날짜 «260921_2» 에서 _ 뒤 차수만 올리고 내린다 (_ 가 없으면 1로 보고 시작) */
+function bumpDateSeq(t, delta) {
+  const el = document.getElementById(`${t}_날짜`);
+  if (!el) return;
+  const raw = String(el.value || '').trim();
+  if (!raw) return;                                   // 비어 있으면 아무것도 안 한다
+  const m = raw.match(/^(.*?)_(\d+)\s*$/);
+  const base = m ? m[1] : raw.replace(/_+$/, '');
+  const next = Math.max(1, (m ? parseInt(m[2], 10) : 1) + delta);
+  el.value = `${base}_${next}`;
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+  el.dispatchEvent(new Event('change', { bubbles: true }));
+}
+/* 캠페인명 칸 높이를 글자 수에 맞춘다 (길면 줄바꿈해서 끝까지 보이게) */
+function growNameBox(el) {
+  if (!el || el.tagName !== 'TEXTAREA') return;
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight + 2, 132) + 'px';
+}
 /* 그룹·광고 표기명을 보고 캠페인 표기명을 추측한다 — «부산타겟» → «타지역_부산» */
 function guessCampRef(refName) {
   const s = String(refName == null ? '' : refName).trim();
@@ -2330,7 +2359,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-18.1';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-21.5';
+const G_PAGE_BUILD = '2026-09-21.6';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -3943,7 +3972,7 @@ function updateAdNames(t) {
 }
 /* 캠페인명은 자동으로 만들어 주되, 직접 고치면 그 값을 지킨다 (되돌리기 전까지) */
 const campaignNameEdited = { t1: false };
-function onCampaignNameEdit(t) { campaignNameEdited[t] = true; renderCampaignNameHint(t); }
+function onCampaignNameEdit(t) { campaignNameEdited[t] = true; growNameBox(document.getElementById(`${t}_캠페인명`)); renderCampaignNameHint(t); }
 function resetCampaignName(t) { campaignNameEdited[t] = false; autoGenNames(t); showToast('자동 이름으로 되돌렸어요', 'success'); }
 function renderCampaignNameHint(t) {
   const el = document.getElementById(`${t}_캠페인명_hint`);
@@ -3960,6 +3989,7 @@ function autoGenNames(t) {
   const built = buildNames(t, `${setSeqFor(t)}A`);
   if (!built) return;
   if (t === 't1' && !campaignNameEdited.t1) document.getElementById('t1_캠페인명').value = built.campaignName;
+  if (t === 't1') growNameBox(document.getElementById('t1_캠페인명'));
   if (t === 't1') renderCampaignNameHint('t1');
   document.getElementById(`${t}_광고세트명`).value = built.setName;
   updateAdNames(t);
@@ -5528,7 +5558,7 @@ document.addEventListener('click', (e) => { if (!e.target.closest('.chpick')) do
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.chpick.open').forEach(b => b.classList.remove('open')); });
 /* 캠페인명은 자동으로 만들어 주되, 직접 고치면 그 값을 지킨다 (되돌리기 전까지) */
 const gCampaignNameEdited = { g1: false };
-function gOnCampaignNameEdit(t) { gCampaignNameEdited[t] = true; gRenderCampaignNameHint(t); }
+function gOnCampaignNameEdit(t) { gCampaignNameEdited[t] = true; growNameBox(document.getElementById(`${t}_캠페인명`)); gRenderCampaignNameHint(t); }
 function gResetCampaignName(t) { gCampaignNameEdited[t] = false; gAutoGenNames(t); showToast('자동 이름으로 되돌렸어요', 'success'); }
 function gRenderCampaignNameHint(t) {
   const el = document.getElementById(`${t}_캠페인명_hint`);
@@ -5579,6 +5609,7 @@ function gAutoGenNames(t) {
   const build = token => gBuildGroupName(t, token);
   const groupName = gSelectedGroup.g2 && t === 'g2' ? gSelectedGroup.g2.name : build(`${seq}U`);
   if (t === 'g1' && !gCampaignNameEdited.g1) document.getElementById('g1_캠페인명').value = campaignName;
+  if (t === 'g1') growNameBox(document.getElementById('g1_캠페인명'));
   document.getElementById(`${t}_광고그룹명`).value = groupName;
   // 광고명 (소재 개수만큼 1.1U, 1.2U ...)
   const n = document.getElementById(`${t}_creative_list`)?.children.length || 1;
