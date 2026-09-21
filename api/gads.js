@@ -21,7 +21,7 @@
 
 const HOST = 'https://googleads.googleapis.com';
 // 이 파일의 빌드 표식 — HTML(연동 탭)이 /api/gads?type=ping 으로 읽어 구버전 배포를 잡아낸다
-const BUILD = '2026-09-17.2';
+const BUILD = '2026-09-18.1';
 const FEATURES = ['audience', 'geo', 'findcampaigns', 'campaigngeo', 'campaign', 'mcc', 'exclude', 'access'];
 
 // 최신 버전부터 훑는다. 지원 종료된 버전은 HTML 404를 돌려주므로 건너뛴다.
@@ -44,10 +44,13 @@ const QUERIES = {
     "SELECT audience.id, audience.name, audience.status, audience.scope FROM audience " +
     "WHERE audience.status = 'ENABLED' AND audience.scope = 'CUSTOMER' ORDER BY audience.name LIMIT 300",
   // 캠페인 단위에 걸린 지역 타겟 (있으면 광고그룹에서 지역을 다시 설정하지 않는다)
+  // 캠페인 단위 지역 — 행정구역(LOCATION) 과 반경(PROXIMITY) 을 같이 본다.
+  // 디맨드젠을 upgraded_targeting=false 로 만들면 지역이 캠페인에 걸리는데, 반경만 걸린 캠페인도 있다.
   campaigngeo: (p) =>
     "SELECT campaign_criterion.criterion_id, campaign_criterion.location.geo_target_constant, " +
+    "campaign_criterion.proximity.radius, campaign_criterion.proximity.radius_units, " +
     "campaign_criterion.negative, campaign_criterion.type FROM campaign_criterion " +
-    `WHERE campaign.id = ${Number(p.campaignId)} AND campaign_criterion.type = 'LOCATION' LIMIT 100`,
+    `WHERE campaign.id = ${Number(p.campaignId)} AND campaign_criterion.type IN ('LOCATION','PROXIMITY') LIMIT 100`,
 };
 
 // 응답이 JSON이 아니면(=지원 종료된 버전 등) 내용을 그대로 담아 돌려준다
@@ -89,7 +92,13 @@ function normalize(type, rows) {
     if (type === 'campaigngeo') {
       const cc = r.campaignCriterion || {};
       const gt = (cc.location && cc.location.geoTargetConstant) || '';
-      return { id: String(gt.split('/').pop() || cc.criterionId || ''), name: gt || String(cc.criterionId || ''), status: cc.negative ? 'NEGATIVE' : 'POSITIVE' };
+      const px = cc.proximity || null;
+      return {
+        id: String(gt.split('/').pop() || cc.criterionId || ''),
+        name: gt || (px ? `반경 ${px.radius || ''}${px.radiusUnits === 'MILES' ? '마일' : ''}` : String(cc.criterionId || '')),
+        kind: String(cc.type || (px ? 'PROXIMITY' : 'LOCATION')),
+        status: cc.negative ? 'NEGATIVE' : 'POSITIVE',
+      };
     }
     return null;
   }).filter(Boolean);
