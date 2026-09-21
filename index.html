@@ -298,6 +298,8 @@
   .modal-back { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 10000; display: none; align-items: center; justify-content: center; padding: 24px; }
   .modal-back.show { display: flex; }
   .modal { width: 100%; max-width: 880px; max-height: 88vh; background: var(--white); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+  /* 설정 창은 표 칸이 많아 더 넓게 — 지역 표(치과·지역명·ID·표기명·제외·핀)가 겹치지 않게 */
+  #settingsModal .modal { max-width: 1120px; }
   .modal-head { padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
   .modal-head h3 { font-size: 16px; font-weight: 600; }
   .modal-head p { font-size: 12px; color: var(--text2); margin-top: 2px; }
@@ -314,9 +316,11 @@
   .modal-foot { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .modal-sec { display: none; }
   .modal-sec.active { display: block; }
-  .set-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  .set-table th { text-align: left; font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; padding: 0 8px 8px; }
+  /* table-layout:fixed — 칸 너비를 머리글에 적힌 %로 고정한다. 안 그러면 좌표처럼 긴 값이 든 줄만 칸이 밀려 틀어진다 */
+  .set-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+  .set-table th { text-align: left; font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; padding: 0 8px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .set-table td { padding: 3px 4px; vertical-align: middle; }
+  .set-table input, .set-table select { min-width: 0; }   /* flex/표 안에서 줄어들 수 있게 */
   .set-table input { width: 100%; height: 34px; border: 1px solid var(--border2); border-radius: 6px; padding: 0 9px; font-family: inherit; font-size: 12px; outline: none; }
   .set-table input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
   .set-table input[readonly] { background: var(--bg); color: var(--text2); }
@@ -1038,7 +1042,7 @@
           <div class="region-results" id="region_search_results"></div>
         </div>
         <table class="set-table">
-          <thead><tr><th style="width:16%">계정</th><th style="width:15%">지역명</th><th style="width:13%">지역 Key</th><th style="width:10%">종류</th><th style="width:22%">표기명 <span style="font-weight:400;color:var(--text3);">· [제외]는 이름에 안 붙음</span></th><th style="width:22%">핀 · 반경 타겟 (선택)</th><th></th></tr></thead>
+          <thead><tr><th style="width:15%">계정</th><th style="width:14%">지역명</th><th style="width:12%">지역 Key</th><th style="width:10%">종류</th><th style="width:24%">표기명 · 제외</th><th style="width:20%">핀 · 반경 타겟 (선택)</th><th style="width:5%"></th></tr></thead>
           <tbody id="set_region_body"></tbody>
         </table>
         <div class="field-hint" style="margin-top:6px;">계정을 고르면 그 계정의 세트에서만 이 지역이 보여요 (공통은 모든 계정). 종류는 검색으로 추가하면 자동으로 들어가고, Meta에 보낼 때 도시·지역·구·군에 맞는 형식으로 나갑니다.</div>
@@ -1103,7 +1107,7 @@
           <div class="region-results" id="g_region_results"></div>
         </div>
         <table class="set-table">
-          <thead><tr><th style="width:18%">치과</th><th style="width:13%">지역명</th><th style="width:13%">criterion ID</th><th style="width:24%">표기명 <span style="font-weight:400;color:var(--text3);">· [제외]는 이름에 안 붙음</span></th><th style="width:26%">핀 · 반경 타겟 (선택)</th><th></th></tr></thead>
+          <thead><tr><th style="width:19%">치과</th><th style="width:12%">지역명</th><th style="width:13%">criterion ID</th><th style="width:26%">표기명 · 제외</th><th style="width:25%">핀 · 반경 타겟 (선택)</th><th style="width:5%"></th></tr></thead>
           <tbody id="gset_region_body"></tbody>
         </table>
         <button class="btn-sm" style="margin-top:10px;" onclick="gAddRow('regions')">+ 지역 추가</button>
@@ -1976,10 +1980,10 @@ function gRenderTable(key) {
       }
       if (key === 'regions' && f === 'custom') {
         const n = pinCount(r.custom);
-        // 핀이 있으면 반경으로 타겟한다 — 단 반경은 «새 캠페인»에서만 걸 수 있다
-        const warn = (n && !String(r.criterionId || '').trim())
-          ? `<div style="font-size:10px;color:#b54708;margin-top:3px;line-height:1.4;">📍 반경 ${n}곳으로 타겟합니다 — 반경은 <b>새 캠페인</b>에서만 걸려요. 세트 추가에도 쓰려면 왼쪽 criterion ID를 채워주세요</div>` : '';
-        return `<td><div style="display:flex;gap:4px;align-items:center;"><input type="text" data-g="${key}" data-f="${f}" data-i="${i}" value="${esc(r[f] || '')}" placeholder="비우면 criterion ID로 타겟"><button type="button" class="btn-pin${n ? ' has' : ''}" onclick="openPinMap('google',${i})" title="지도에서 핀 찍기 (반경 타겟 · 마일)">${n ? '📍 ' + n : '📍 지도'}</button></div>${warn}</td>`;
+        // 핀이 있으면 반경으로 타겟한다 — 설명은 위 안내문에 있으니 칸에는 넣지 않는다 (줄 높이가 틀어짐)
+        const tip = (n && !String(r.criterionId || '').trim())
+          ? `반경 ${n}곳으로 타겟합니다 — 반경은 새 캠페인에서만 걸려요. 세트 추가에도 쓰려면 왼쪽 criterion ID를 채워주세요` : '지도에서 핀 찍기 (반경 타겟 · 마일)';
+        return `<td><div style="display:flex;gap:4px;align-items:center;"><input type="text" data-g="${key}" data-f="${f}" data-i="${i}" value="${esc(r[f] || '')}" placeholder="비우면 criterion ID로 타겟"><button type="button" class="btn-pin${n ? ' has' : ''}" onclick="openPinMap('google',${i})" title="${esc(tip)}">${n ? '📍 ' + n : '📍 지도'}</button></div></td>`;
       }
       const isLogo = key === 'channels' && f === 'logoFileId';
       const extra = isLogo ? ' onchange="gOnLogoInput(this)" onpaste="setTimeout(() => gOnLogoInput(this), 0)"' : '';
@@ -2188,7 +2192,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-18.1';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-18.13';
+const G_PAGE_BUILD = '2026-09-21.1';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -3671,7 +3675,7 @@ function fillMetaRegionSelect(t) {
   const prevReg = regSel.value;
   const list = metaRegionsForAccount(metaCurrentAccountId(t));
   regSel.innerHTML = '<option value="">선택</option>';
-  list.forEach(r => { const o = document.createElement('option'); o.value = r.name; const lb = refDisplay(r); o.textContent = (lb ? `${r.name} — ${lb}${refHidden(r) ? ' (이름 제외)' : ''}` : r.name) + (r.accountId ? ' (계정 전용)' : ''); regSel.appendChild(o); });
+  list.forEach(r => { const o = document.createElement('option'); o.value = r.name; const lb = refDisplay(r); o.textContent = (lb ? `${r.name} — ${lb}` : r.name) + (r.accountId ? ' (계정 전용)' : ''); regSel.appendChild(o); });
   if (prevReg && Array.from(regSel.options).some(o => o.value === prevReg)) regSel.value = prevReg;
   else if (prevReg) { regSel.value = ''; if (typeof onRegion === 'function') onRegion(t); }
 }
@@ -3750,7 +3754,8 @@ function buildNames(t, seqToken) {
   const staffId = staffObj ? staffObj.id : '';
   const memo = ((document.getElementById(`${t}_메모`) || {}).value || '').trim();   // 캠페인명 맨 뒤에만 붙는다
   return {
-    campaignName: [acc.campaignName, type, date ? `(${date})` : '', staffName, refName, '예비용', memo].filter(Boolean).join(' '),
+    // 표기명(지역)은 유형 바로 뒤 — 구글과 같은 규칙
+    campaignName: [acc.campaignName, type, refName, date ? `(${date})` : '', staffName, '예비용', memo].filter(Boolean).join(' '),
     setName: [acc.setName, type, refName, seqToken, staffId].filter(Boolean).join(' '),
   };
 }
@@ -5256,12 +5261,10 @@ function gRegionsForClinic(clinic) {
 function gFillRegionSelects(t) {
   const clinic = (document.getElementById(`${t}_치과명`) || {}).value || '';
   const list = gRegionsForClinic(clinic);
-  // 핀만 있는 줄은 «반경» 타겟 — 새 캠페인에서만 쓸 수 있으니 목록에서 구분해 준다
+  // 핀이 있으면 📍 만 붙여 둔다 (설명은 설정 화면에 있으니 목록은 짧게)
   const label = r => {
     const lb = refDisplay(r);
-    const base = (lb ? `${r.name} — ${lb}${refHidden(r) ? ' (이름 제외)' : ''}` : r.name);
-    if (!r.custom) return base;
-    return base + (String(r.criterionId || '').trim() ? ' 📍' : ' 📍 반경 (새 캠페인만)');
+    return (lb ? `${r.name} — ${lb}` : r.name) + (r.custom ? ' 📍' : '');
   };
   const regSel = document.getElementById(`${t}_지역구분자`);
   if (regSel) {
@@ -5414,7 +5417,8 @@ function gAutoGenNames(t) {
   const shortName = GDB.clinicToShortName[clinicName] || acc.campaignName || '';
   const accNameLabel = gGetAccountName(t) ? `[${gGetAccountName(t)}]` : '';
   const memo = ((document.getElementById(`${t}_메모`) || {}).value || '').trim();   // 캠페인명 맨 뒤에만 붙는다
-  const campaignName = [shortName, '디맨드젠', date ? `(${date})` : '', staffName, refName, accNameLabel, '예비용', memo].filter(Boolean).join(' ');
+  // 표기명(지역)은 유형 바로 뒤 — 예) 양산서울에스원 임플란트 디맨드젠 타지역_부산 (260918_1) 류지룡 [2부서_2] 예비용
+  const campaignName = [shortName, '디맨드젠', refName, date ? `(${date})` : '', staffName, accNameLabel, '예비용', memo].filter(Boolean).join(' ');
   if (t === 'g1') gRenderCampaignNameHint('g1');
   const build = token => gBuildGroupName(t, token);
   const groupName = gSelectedGroup.g2 && t === 'g2' ? gSelectedGroup.g2.name : build(`${seq}U`);
