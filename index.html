@@ -324,9 +324,16 @@
   .set-table input { width: 100%; height: 34px; border: 1px solid var(--border2); border-radius: 6px; padding: 0 9px; font-family: inherit; font-size: 12px; outline: none; }
   .set-table input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
   .set-table input[readonly] { background: var(--bg); color: var(--text2); }
-  .set-mv { width: 22px; height: 30px; border: none; background: none; color: var(--text3); font-size: 10px; cursor: pointer; border-radius: 5px; font-family: inherit; padding: 0; }
-  .set-mv:hover:not(:disabled) { background: var(--blue-bg); color: var(--blue); }
-  .set-mv:disabled { opacity: 0.25; cursor: default; }
+  /* 줄 왼쪽 손잡이 — 점 4개(2×2). 여기를 잡아야만 줄이 끌린다 (칸 안 글자는 그대로 선택된다) */
+  .grip-cell { text-align: center; }
+  .row-grip { display: inline-block; width: 16px; height: 16px; vertical-align: middle; cursor: grab;
+    background-image: radial-gradient(circle, var(--text3) 1.7px, transparent 1.9px);
+    background-size: 8px 8px; background-position: 0 0; opacity: 0.5; border-radius: 4px; }
+  .row-grip:hover { opacity: 1; background-color: var(--blue-bg); }
+  .row-grip:active { cursor: grabbing; }
+  .set-table tr.row-dragging td { opacity: 0.4; }
+  .set-table tr.drop-above td { box-shadow: inset 0 2px 0 var(--blue); }
+  .set-table tr.drop-below td { box-shadow: inset 0 -2px 0 var(--blue); }
   @keyframes rowMoved { from { background: rgba(0,122,255,0.18); } to { background: transparent; } }
   .set-table tr.row-moved td { animation: rowMoved 0.9s ease-out; }
   .set-del { width: 30px; height: 30px; border: none; background: none; color: var(--text3); font-size: 15px; cursor: pointer; border-radius: 6px; font-family: inherit; }
@@ -1047,11 +1054,12 @@
           <div class="region-results" id="region_search_results"></div>
         </div>
         <table class="set-table">
-          <thead><tr><th style="width:12%">계정</th><th style="width:10%">지역명</th><th style="width:9%">지역 Key</th><th style="width:8%">종류</th><th style="width:16%">표기명 (캠페인명)</th><th style="width:16%">표기명 (세트·광고명)</th><th style="width:7%">제외</th><th style="width:13%">핀 · 반경</th><th style="width:9%">순서</th></tr></thead>
+          <thead><tr><th style="width:4%"></th><th style="width:11%">계정</th><th style="width:10%">지역명</th><th style="width:9%">지역 Key</th><th style="width:8%">종류</th><th style="width:15%">표기명 (캠페인명)</th><th style="width:15%">표기명 (세트·광고명)</th><th style="width:7%">제외</th><th style="width:16%">핀 · 반경</th><th style="width:5%"></th></tr></thead>
           <tbody id="set_region_body"></tbody>
         </table>
         <div class="field-hint" style="margin-top:6px;">계정을 고르면 그 계정의 세트에서만 이 지역이 보여요 (공통은 모든 계정). 종류는 검색으로 추가하면 자동으로 들어가고, Meta에 보낼 때 도시·지역·구·군에 맞는 형식으로 나갑니다.</div>
         <button class="btn-sm" style="margin-top:10px;" onclick="addRegionRow()">+ 빈 줄 추가</button>
+        <button class="btn-sm" style="margin-top:10px;margin-left:6px;" onclick="fillCampRefs('meta')" title="세트·광고 표기명을 보고 «타지역_○○» 을 만들어 넣습니다">캠페인 표기명 자동 채우기</button>
       </div>
       <!-- 페이지 직접 입력 -->
       <div class="modal-sec" id="msec_page">
@@ -1112,10 +1120,11 @@
           <div class="region-results" id="g_region_results"></div>
         </div>
         <table class="set-table">
-          <thead><tr><th style="width:15%">치과</th><th style="width:10%">지역명</th><th style="width:11%">criterion ID</th><th style="width:17%">표기명 (캠페인명)</th><th style="width:17%">표기명 (그룹·광고명)</th><th style="width:7%">제외</th><th style="width:14%">핀 · 반경</th><th style="width:9%">순서</th></tr></thead>
+          <thead><tr><th style="width:4%"></th><th style="width:14%">치과</th><th style="width:10%">지역명</th><th style="width:11%">criterion ID</th><th style="width:16%">표기명 (캠페인명)</th><th style="width:16%">표기명 (그룹·광고명)</th><th style="width:7%">제외</th><th style="width:17%">핀 · 반경</th><th style="width:5%"></th></tr></thead>
           <tbody id="gset_region_body"></tbody>
         </table>
         <button class="btn-sm" style="margin-top:10px;" onclick="gAddRow('regions')">+ 지역 추가</button>
+        <button class="btn-sm" style="margin-top:10px;margin-left:6px;" onclick="fillCampRefs('google')" title="그룹·광고 표기명을 보고 «타지역_○○» 을 만들어 넣습니다">캠페인 표기명 자동 채우기</button>
       </div>
 
       <div class="modal-sec" id="msec_gchannel">
@@ -1531,6 +1540,32 @@ function refExcludes(r) {                                       // 캠페인 검
   return out;
 }
 function refHidden(r) { return refParts(r).hidden; }        // 이름에 안 붙는 줄인가
+/* 그룹·광고 표기명을 보고 캠페인 표기명을 추측한다 — «부산타겟» → «타지역_부산» */
+function guessCampRef(refName) {
+  const s = String(refName == null ? '' : refName).trim();
+  if (!s) return '';
+  if (/^타지역[_\s]/.test(s)) return s;                 // 이미 규칙대로면 그대로
+  const base = s.replace(/\s*타겟\s*$/, '').trim();      // 끝의 «타겟» 은 떼고
+  return base ? `타지역_${base}` : '';
+}
+/* 표에서 그룹 표기명을 고치고 빠져나올 때, 캠페인 칸이 비어 있으면 대신 채워 준다 */
+function onRefNameChanged(el) {
+  const tr = el.closest('tr');
+  const camp = tr && tr.querySelector('[data-f="campRef"], [data-set="reg-campRef"]');
+  if (camp && !String(camp.value || '').trim()) camp.value = guessCampRef(el.value);
+}
+/* 비어 있는 캠페인 표기명을 한 번에 채운다 */
+function fillCampRefs(platform) {
+  let n = 0;
+  const fill = list => (list || []).forEach(r => {
+    if (String(r.campRef || '').trim()) return;
+    const v = guessCampRef(r.refName);
+    if (v) { r.campRef = v; n++; }
+  });
+  if (platform === 'google') { gCollectSettings(); fill(GSET.regions); gRenderTable('regions'); }
+  else { collectSettingsFromDom(); fill(SETTINGS.regions); renderRegionRows(); }
+  showToast(n ? `캠페인 표기명 ${n}줄을 채웠어요 — 틀린 건 직접 고쳐주세요` : '비어 있는 캠페인 표기명이 없어요', n ? 'success' : 'info', 5000);
+}
 /* 예전 방식(«타겟 제외» 처럼 글자로 적어 둔 것)을 새 [제외] 체크로 한 번만 옮긴다 — 표에도 체크로 보인다 */
 function migrateRefExcludes(list) {
   let changed = false;
@@ -1629,17 +1664,19 @@ function renderRegionRows() {
   if (tgt) { const prev = tgt.value; tgt.innerHTML = '<option value="">공통 (모든 계정)</option>' + DB.accounts.filter(a => a.ok !== false && !a.variant).map(a => `<option value="${esc(a.id)}">${esc(a.name)}</option>`).join(''); if (prev) tgt.value = prev; }
   rb.innerHTML = SETTINGS.regions.map((r, i) => `
     <tr>
+      <td class="grip-cell"><span class="row-grip" title="여기를 잡고 끌면 순서가 바뀝니다"></span></td>
       <td><select data-set="reg-accountId" data-i="${i}" style="width:100%;height:34px;border:1px solid var(--border2);border-radius:6px;font-family:inherit;font-size:12px;padding:0 6px;">${metaAccountOptions(r.accountId)}</select></td>
       <td><input type="text" data-set="reg-name" data-i="${i}" value="${esc(r.name)}"></td>
       <td><input type="text" data-set="reg-key" data-i="${i}" value="${esc(r.key)}"></td>
       <td><select data-set="reg-type" data-i="${i}" style="width:100%;height:34px;border:1px solid var(--border2);border-radius:6px;font-family:inherit;font-size:12px;padding:0 4px;"><option value="">자동</option>${META_GEO_TYPES.map(x => `<option value="${x[0]}"${r.type === x[0] ? ' selected' : ''}>${x[1]}</option>`).join('')}</select></td>
-      <td><input type="text" data-set="reg-campRef" data-i="${i}" value="${esc(r.campRef || '')}" placeholder="비우면 오른쪽 값"></td>
-      <td><input type="text" data-set="reg-refName" data-i="${i}" value="${esc(r.refName)}" placeholder="비우면 안 붙음"></td>
+      <td><input type="text" data-set="reg-campRef" data-i="${i}" value="${esc(r.campRef || '')}" placeholder="${esc(guessCampRef(r.refName) || '비우면 오른쪽 값')}"></td>
+      <td><input type="text" data-set="reg-refName" data-i="${i}" value="${esc(r.refName)}" placeholder="비우면 안 붙음" onchange="onRefNameChanged(this)"></td>
       <td style="text-align:center;"><label class="ref-ex${r.noName ? ' on' : ''}" title="체크하면 두 표기명 모두 캠페인명·세트명·광고명에 안 붙습니다"><input type="checkbox" data-set="reg-noName" data-i="${i}"${r.noName ? ' checked' : ''} onchange="this.parentNode.classList.toggle('on', this.checked)">제외</label></td>
       <td><div style="display:flex;gap:4px;align-items:center;"><input type="text" data-set="reg-custom" data-i="${i}" value="${esc(r.custom)}" placeholder="비우면 지역 Key로 타겟"><button type="button" class="btn-pin${pinCount(r.custom) ? ' has' : ''}" onclick="openPinMap('meta',${i})" title="지도에서 핀 찍기 (반경 타겟)">${pinCount(r.custom) ? '📍 ' + pinCount(r.custom) : '📍 지도'}</button></div></td>
-      <td style="white-space:nowrap;"><button class="set-mv" onclick="moveRegionRow(${i},-1)"${i === 0 ? ' disabled' : ''} title="위로">▲</button><button class="set-mv" onclick="moveRegionRow(${i},1)"${i === SETTINGS.regions.length - 1 ? ' disabled' : ''} title="아래로">▼</button><button class="set-del" onclick="removeRegionRow(${i})">✕</button></td>
+      <td><button class="set-del" onclick="removeRegionRow(${i})">✕</button></td>
     </tr>`).join('');
-  if (SETTINGS.regions.length === 0) rb.innerHTML = '<tr><td colspan="9" style="padding:14px 4px;color:var(--text3);font-size:12px;">위 검색창에서 도시를 찾아 추가하세요.</td></tr>';
+  dragRowsInit('set_region_body', reorderRegionRow);
+  if (SETTINGS.regions.length === 0) rb.innerHTML = '<tr><td colspan="10" style="padding:14px 4px;color:var(--text3);font-size:12px;">위 검색창에서 도시를 찾아 추가하세요.</td></tr>';
   // 종류가 비어 있는 옛 지역은 Meta에 물어봐서 채워 둔다 (한 번만)
   resolveMetaRegionTypes().then(changed => { if (changed) renderRegionRows(); }).catch(() => {});
 }
@@ -1938,15 +1975,16 @@ function removeStaffRow(i) { collectSettingsFromDom(); SETTINGS.staff.splice(i, 
 function addRegionRow() { collectSettingsFromDom(); SETTINGS.regions.push({ name: '', key: '', type: '', country: '', accountId: (document.getElementById('region_target_account') || {}).value || '', refName: '', custom: '' }); renderRegionRows(); }
 function removeRegionRow(i) { collectSettingsFromDom(); SETTINGS.regions.splice(i, 1); renderRegionRows(); }
 /* 줄 순서 바꾸기 — 드롭다운에 나오는 차례가 표의 차례 그대로다 */
-function moveRegionRow(i, dir) {
+function moveRegionRow(i, dir) { reorderRegionRow(i, i + dir); }
+function reorderRegionRow(from, to) {
   collectSettingsFromDom();
-  const j = i + dir;
-  if (j < 0 || j >= SETTINGS.regions.length) return;
-  const [row] = SETTINGS.regions.splice(i, 1);
-  SETTINGS.regions.splice(j, 0, row);
+  const list = SETTINGS.regions || [];
+  if (from < 0 || from >= list.length || to < 0 || to >= list.length) return;
+  const [row] = list.splice(from, 1);
+  list.splice(to, 0, row);
   renderRegionRows();
   const box = document.getElementById('set_region_body');
-  const tr = box && box.children[j];
+  const tr = box && box.children[to];
   if (tr) tr.classList.add('row-moved');
 }
 function resetSettings() {
@@ -2004,9 +2042,13 @@ function gRenderTable(key) {
             .map(n => `<option value="${esc(n)}"${normName(n) === normName(cur) ? ' selected' : ''}>${esc(n)}</option>`));
         return `<td><select data-g="${key}" data-f="${f}" data-i="${i}" style="width:100%;height:34px;border:1px solid var(--border2);border-radius:6px;padding:0 8px;font-family:inherit;font-size:12px;">${opts.join('')}</select></td>`;
       }
+      if (key === 'regions' && f === 'campRef') {
+        // 비어 있으면 오른쪽(그룹·광고) 값에서 추측한 말을 흐리게 보여 준다
+        return `<td><input type="text" data-g="${key}" data-f="${f}" data-i="${i}" value="${esc(r[f] || '')}" placeholder="${esc(guessCampRef(r.refName) || ph)}"></td>`;
+      }
       if (key === 'regions' && f === 'refName') {
         // 그룹·광고 표기명 + 그 옆에 [제외] 체크 칸 (체크하면 두 표기명 모두 이름에 안 붙는다)
-        return `<td><input type="text" data-g="${key}" data-f="${f}" data-i="${i}" value="${esc(r[f] || '')}" placeholder="${esc(ph)}"></td>`
+        return `<td><input type="text" data-g="${key}" data-f="${f}" data-i="${i}" value="${esc(r[f] || '')}" placeholder="${esc(ph)}" onchange="onRefNameChanged(this)"></td>`
           + `<td style="text-align:center;"><label class="ref-ex${r.noName ? ' on' : ''}" title="체크하면 두 표기명 모두 캠페인명·광고그룹명·광고명에 안 붙습니다. 대신 캠페인 찾기에서 그 말이 든 캠페인을 뺍니다"><input type="checkbox" data-g="${key}" data-f="noName" data-i="${i}"${r.noName ? ' checked' : ''} onchange="this.parentNode.classList.toggle('on', this.checked)">제외</label></td>`;
       }
       if (key === 'regions' && f === 'custom') {
@@ -2028,12 +2070,12 @@ function gRenderTable(key) {
       }
       return `<td>${input}</td>`;
     }).join('');
-    const mv = key === 'regions'
-      ? `<button class="set-mv" onclick="gMoveRow('${key}',${i},-1)"${i === 0 ? ' disabled' : ''} title="위로">▲</button>`
-        + `<button class="set-mv" onclick="gMoveRow('${key}',${i},1)"${i === rows.length - 1 ? ' disabled' : ''} title="아래로">▼</button>` : '';
-    return `<tr>${tds}<td style="white-space:nowrap;">${mv}<button class="set-del" onclick="gRemoveRow('${key}',${i})">✕</button></td></tr>`;
+    const grip = key === 'regions'
+      ? `<td class="grip-cell"><span class="row-grip" title="여기를 잡고 끌면 순서가 바뀝니다"></span></td>` : '';
+    return `<tr>${grip}${tds}<td><button class="set-del" onclick="gRemoveRow('${key}',${i})">✕</button></td></tr>`;
   }).join('');
-  const extraCols = key === 'regions' ? 2 : 1;   // 지역 표는 [제외] 칸이 하나 더 있다
+  if (key === 'regions') dragRowsInit(cfg.body, (from, to) => gReorderRow(key, from, to));
+  const extraCols = key === 'regions' ? 3 : 1;   // 지역 표는 손잡이 · [제외] 칸이 더 있다
   if (rows.length === 0) body.innerHTML = `<tr><td colspan="${cfg.cols.length + extraCols}" style="padding:14px 4px;color:var(--text3);font-size:12px;">비어 있습니다. 아래 버튼으로 추가하세요.</td></tr>`;
 }
 function gAddRow(key) {
@@ -2042,20 +2084,68 @@ function gAddRow(key) {
   (GSET[key] = GSET[key] || []).push(blank);
   gRenderTable(key);
 }
+/* 표 줄 끌어서 옮기기 — 왼쪽 손잡이를 잡았을 때만 끌린다.
+   듣는 자리는 tbody 라서 줄을 다시 그려도 그대로 살아 있다. */
+function dragRowsInit(bodyId, onDrop) {
+  const body = document.getElementById(bodyId);
+  if (!body || body.dataset.dragReady === '1') return;
+  body.dataset.dragReady = '1';
+  let from = -1;
+  const idx = tr => Array.prototype.indexOf.call(body.children, tr);
+  const clear = () => {
+    Array.prototype.forEach.call(body.children, x => { x.draggable = false; x.classList.remove('row-dragging', 'drop-above', 'drop-below'); });
+    from = -1;
+  };
+  body.addEventListener('mousedown', e => {
+    const h = e.target.closest('.row-grip');
+    const tr = h && h.closest('tr');
+    if (tr && tr.parentNode === body) tr.draggable = true;
+  });
+  body.addEventListener('dragstart', e => {
+    const tr = e.target.closest('tr');
+    if (!tr || !tr.draggable) { e.preventDefault(); return; }
+    from = idx(tr);
+    tr.classList.add('row-dragging');
+    try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(from)); } catch (err) {}
+  });
+  body.addEventListener('dragover', e => {
+    if (from < 0) return;
+    e.preventDefault();
+    const tr = e.target.closest('tr');
+    if (!tr || tr.parentNode !== body) return;
+    Array.prototype.forEach.call(body.children, x => x.classList.remove('drop-above', 'drop-below'));
+    const box = tr.getBoundingClientRect();
+    tr.classList.add(e.clientY < box.top + box.height / 2 ? 'drop-above' : 'drop-below');
+  });
+  body.addEventListener('drop', e => {
+    e.preventDefault();
+    const tr = e.target.closest('tr');
+    const start = from;
+    if (start < 0 || !tr || tr.parentNode !== body) { clear(); return; }
+    let to = idx(tr);
+    const box = tr.getBoundingClientRect();
+    if (e.clientY >= box.top + box.height / 2) to++;
+    if (to > start) to--;
+    clear();
+    if (to !== start && to >= 0) onDrop(start, to);
+  });
+  body.addEventListener('dragend', clear);
+}
 function gRemoveRow(key, i) { gCollectSettings(); GSET[key].splice(i, 1); gRenderTable(key); }
-/* 줄 순서 바꾸기 — 드롭다운에 나오는 차례가 표의 차례 그대로다 */
-function gMoveRow(key, i, dir) {
+/* from 번째 줄을 to 자리로 옮긴다 */
+function gReorderRow(key, from, to) {
   gCollectSettings();
   const list = GSET[key] || [];
-  const j = i + dir;
-  if (j < 0 || j >= list.length) return;
-  const [row] = list.splice(i, 1);
-  list.splice(j, 0, row);
+  if (from < 0 || from >= list.length || to < 0 || to >= list.length) return;
+  const [row] = list.splice(from, 1);
+  list.splice(to, 0, row);
   gRenderTable(key);
   const box = document.getElementById(G_TABLES[key].body);
-  const tr = box && box.children[j];
+  const tr = box && box.children[to];
   if (tr) tr.classList.add('row-moved');
 }
+/* 줄 순서 바꾸기 — 드롭다운에 나오는 차례가 표의 차례 그대로다 */
+function gMoveRow(key, i, dir) { gReorderRow(key, i, i + dir); }
 function gCollectSettings() {
   Object.keys(G_TABLES).forEach(key => {
     const inputs = document.querySelectorAll(`[data-g="${key}"]`);
@@ -2240,7 +2330,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-18.1';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-21.3';
+const G_PAGE_BUILD = '2026-09-21.4';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
