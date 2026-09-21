@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-21T06:01:45.237Z",
+  "updatedAt": "2026-09-21T06:11:23.261Z",
   "updatedBy": "fbwlfyd9271@gmail.com",
   "meta": {
     "staff": [
@@ -108,27 +108,17 @@
         "key": "",
         "type": "",
         "country": "",
-        "accountId": "",
+        "accountId": "812454993694009",
         "refName": "울주타겟",
         "noName": false,
         "custom": "35.449100,129.158700,2; 35.518400,129.076300,2; 35.551900,129.022800,2"
-      },
-      {
-        "name": "울산",
-        "key": "2014",
-        "type": "region",
-        "country": "KR",
-        "accountId": "",
-        "refName": "",
-        "noName": false,
-        "custom": "35.524692,129.309425,13; 35.536690,129.230804,13"
       },
       {
         "name": "양산",
         "key": "1287651",
         "type": "city",
         "country": "KR",
-        "accountId": "",
+        "accountId": "812454993694009",
         "refName": "",
         "noName": false,
         "custom": ""
@@ -188,7 +178,7 @@
         "key": "2003",
         "type": "region",
         "country": "KR",
-        "accountId": "",
+        "accountId": "812454993694009",
         "refName": "부산타겟",
         "noName": false,
         "custom": ""
