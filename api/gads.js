@@ -21,8 +21,8 @@
 
 const HOST = 'https://googleads.googleapis.com';
 // 이 파일의 빌드 표식 — HTML(연동 탭)이 /api/gads?type=ping 으로 읽어 구버전 배포를 잡아낸다
-const BUILD = '2026-09-18.1';
-const FEATURES = ['audience', 'geo', 'findcampaigns', 'campaigngeo', 'campaign', 'mcc', 'exclude', 'access'];
+const BUILD = '2026-09-21.1';
+const FEATURES = ['audience', 'geo', 'findcampaigns', 'campaigngeo', 'campaign', 'campaignbyname', 'mcc', 'exclude', 'access'];
 
 // 최신 버전부터 훑는다. 지원 종료된 버전은 HTML 404를 돌려주므로 건너뛴다.
 const CANDIDATE_VERSIONS = ['v23', 'v22', 'v21', 'v20', 'v19', 'v18'];
@@ -295,6 +295,36 @@ module.exports = async function handler(req, res) {
         `FROM campaign WHERE campaign.id = ${Number(id)} AND campaign.status != 'REMOVED' LIMIT 1`;
       try { return res.status(200).json((await searchCampaignsEverywhere(query, true)).slice(0, 1)); }
       catch (e) { return res.status(e.http || 500).json({ error: e.message, apiVersion: V }); }
+    }
+
+    // 한 광고계정 안에서 이름이 «정확히» 같은 캠페인을 찾는다 (삭제된 것 제외).
+    //   페이지가 새 캠페인을 보내기 전에 부른다 — Google 은 같은 계정에서 활성·일시중지 캠페인끼리
+    //   이름이 겹치면 DUPLICATE_CAMPAIGN_NAME 으로 거절하므로, 보내기 전에 그 계정만 딱 집어서 본다.
+    //   (findcampaigns 는 LIKE 로 여러 계정을 훑는 «찾기» 용도라 _ 가 와일드카드로 먹고, 계정이 목록에 없으면 조용히 빈 결과가 된다)
+    if (type === 'campaignbyname') {
+      const cid = String(customerId).replace(/[^0-9]/g, '');
+      const name = String(req.query.name || '').trim();
+      if (!cid) return res.status(400).json({ error: 'customerId가 필요합니다' });
+      if (!name) return res.status(400).json({ error: 'name이 필요합니다' });
+      const lit = name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      const query =
+        'SELECT campaign.id, campaign.name, campaign.status, customer.id, customer.descriptive_name ' +
+        `FROM campaign WHERE campaign.name = '${lit}' AND campaign.status != 'REMOVED' LIMIT 10`;
+      const r = await fetch(`${API}/customers/${cid}/googleAds:searchStream`, {
+        method: 'POST', headers, body: JSON.stringify({ query }),
+      });
+      const body = await readBody(r);
+      if (!r.ok || !body.ok) return res.status(r.status || 500).json({ error: gadsError(body, r), apiVersion: V });
+      const out = [];
+      (Array.isArray(body.json) ? body.json : [body.json]).forEach((chunk) =>
+        (chunk.results || []).forEach((x) => out.push({
+          id: String(x.campaign.id),
+          name: x.campaign.name,
+          status: x.campaign.status,
+          customerId: String((x.customer && x.customer.id) || cid),
+          customerName: (x.customer && x.customer.descriptiveName) || `계정 ${cid}`,
+        })));
+      return res.status(200).json(out);
     }
 
     if (type === 'accounts') {
