@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-21T06:15:27.534Z",
+  "updatedAt": "2026-09-21T06:34:53.241Z",
   "updatedBy": "fbwlfyd9271@gmail.com",
   "meta": {
     "staff": [
@@ -367,6 +367,7 @@
         "clinic": "양산서울에스원치과",
         "name": "양산",
         "criterionId": "1009890",
+        "campRef": "",
         "refName": "",
         "noName": false,
         "custom": ""
@@ -375,6 +376,7 @@
         "clinic": "양산서울에스원치과",
         "name": "부산",
         "criterionId": "1009866",
+        "campRef": "타지역_부산",
         "refName": "부산타겟",
         "noName": false,
         "custom": ""
@@ -383,7 +385,8 @@
         "clinic": "양산서울에스원치과",
         "name": "밀양",
         "criterionId": "1030753",
-        "refName": "",
+        "campRef": "타지역_밀양",
+        "refName": "밀양타겟",
         "noName": false,
         "custom": ""
       },
@@ -391,14 +394,25 @@
         "clinic": "양산서울에스원치과",
         "name": "울주군",
         "criterionId": "",
+        "campRef": "타지역_울주군",
         "refName": "울주군타겟",
         "noName": false,
         "custom": "35.569508,129.125164,4; 35.522236,129.242369,2.5"
       },
       {
+        "clinic": "양산서울에스원치과",
+        "name": "물금",
+        "criterionId": "",
+        "campRef": "타지역_치과주변",
+        "refName": "치과주변",
+        "noName": true,
+        "custom": "35.321289,129.026184,4.5"
+      },
+      {
         "clinic": "서면오늘플란트치과",
-        "name": "부산광역시",
+        "name": "부산",
         "criterionId": "1009866",
+        "campRef": "",
         "refName": "",
         "noName": false,
         "custom": ""
@@ -407,6 +421,7 @@
         "clinic": "충주인플란트치과",
         "name": "충주시",
         "criterionId": "1009844",
+        "campRef": "",
         "refName": "",
         "noName": false,
         "custom": ""
@@ -415,6 +430,7 @@
         "clinic": "충주인플란트치과",
         "name": "음성군",
         "criterionId": "1030703",
+        "campRef": "타지역_음성",
         "refName": "음성타겟",
         "noName": false,
         "custom": ""
@@ -423,6 +439,7 @@
         "clinic": "충주인플란트치과",
         "name": "제천시",
         "criterionId": "1030746",
+        "campRef": "타지역_제천",
         "refName": "제천타겟",
         "noName": false,
         "custom": ""
@@ -431,6 +448,7 @@
         "clinic": "충주인플란트치과",
         "name": "원주시",
         "criterionId": "1009889",
+        "campRef": "타지역_원주",
         "refName": "원주타겟",
         "noName": false,
         "custom": ""
@@ -439,6 +457,7 @@
         "clinic": "울산더조은플란트치과",
         "name": "울산광역시",
         "criterionId": "1009887",
+        "campRef": "",
         "refName": "",
         "noName": false,
         "custom": ""
@@ -447,6 +466,7 @@
         "clinic": "울산서울탑치과",
         "name": "울산광역시",
         "criterionId": "1009887",
+        "campRef": "",
         "refName": "",
         "noName": false,
         "custom": ""
@@ -455,6 +475,7 @@
         "clinic": "진주리더플란트치과",
         "name": "진주시",
         "criterionId": "1009841",
+        "campRef": "",
         "refName": "",
         "noName": false,
         "custom": ""
@@ -463,6 +484,7 @@
         "clinic": "진주리더플란트치과",
         "name": "고성군",
         "criterionId": "1030716",
+        "campRef": "타지역_고성",
         "refName": "고성타겟",
         "noName": false,
         "custom": ""
@@ -471,6 +493,7 @@
         "clinic": "진주리더플란트치과",
         "name": "사천시",
         "criterionId": "1030766",
+        "campRef": "타지역_사천",
         "refName": "사천타겟",
         "noName": false,
         "custom": ""
@@ -479,6 +502,7 @@
         "clinic": "진주리더플란트치과",
         "name": "하동군",
         "criterionId": "1030727",
+        "campRef": "타지역_하동",
         "refName": "하동타겟",
         "noName": false,
         "custom": ""
@@ -487,6 +511,7 @@
         "clinic": "진주리더플란트치과",
         "name": "산청군",
         "criterionId": "1030767",
+        "campRef": "타지역_산청",
         "refName": "산청타겟",
         "noName": false,
         "custom": ""
@@ -495,6 +520,7 @@
         "clinic": "진주리더플란트치과",
         "name": "함안군",
         "criterionId": "1030729",
+        "campRef": "타지역_함안",
         "refName": "함안타겟",
         "noName": false,
         "custom": ""
@@ -503,6 +529,7 @@
         "clinic": "진주리더플란트치과",
         "name": "의령군",
         "criterionId": "1030774",
+        "campRef": "타지역_의령",
         "refName": "의령타겟",
         "noName": false,
         "custom": ""
@@ -511,17 +538,10 @@
         "clinic": "진주리더플란트치과",
         "name": "통영시",
         "criterionId": "1009884",
+        "campRef": "타지역_통영",
         "refName": "통영타겟",
         "noName": false,
         "custom": ""
-      },
-      {
-        "clinic": "양산서울에스원치과",
-        "name": "물금",
-        "criterionId": "",
-        "refName": "치과주변",
-        "noName": true,
-        "custom": "35.321289,129.026184,4.5"
       }
     ],
     "channels": [
