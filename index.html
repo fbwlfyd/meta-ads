@@ -2359,7 +2359,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-21.1';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-21.8';
+const G_PAGE_BUILD = '2026-09-21.9';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -4217,6 +4217,40 @@ function prefetchUpload(input) {
   );
 }
 // 업로드 결과를 카드에 캐시 (미리보기 · 등록 공용)
+/* ── Make 로 보내기 전 두 가지 방어 ─────────────────────────────────────
+   ① 문구 감싸기: Make 의 «소재 만들기» 모듈은 기본문구·제목·설명을 JSON 틀에 그대로 끼워 넣는다 (escape 없음).
+      줄바꿈·큰따옴표·역슬래시가 있으면 JSON 이 깨져 메타가 «개체 스토리 사양이 잘못됨 (1815166)» 으로 거절한다.
+      그래서 JSON 문자열 규칙대로 감싸서 보낸다 — 메타가 받을 땐 원래 문구(줄바꿈 포함)로 풀린다.
+      (등록로그 시트엔 줄바꿈이 \n 으로 찍힌다)
+   ② 영상 처리 대기: Make 는 영상 썸네일 주소(image_url)를 넣어 소재를 만드는데, 메타가 아직 인코딩 중이면
+      썸네일이 없어서 거절당한다. 올린 영상이 «ready» 가 되고 썸네일이 생길 때까지 기다린 뒤에 보낸다. */
+function jsonInner(s) { return JSON.stringify(String(s == null ? '' : s)).slice(1, -1); }
+const META_TEXT_FIELDS = ['기본문구', '제목', '설명'];
+function metaEscapeTexts(data) {
+  META_TEXT_FIELDS.forEach(k => { if (Object.prototype.hasOwnProperty.call(data, k)) data[k] = jsonInner(data[k]); });
+  (data.소재목록 || []).forEach(c => META_TEXT_FIELDS.forEach(k => { if (Object.prototype.hasOwnProperty.call(c, k)) c[k] = jsonInner(c[k]); }));
+  return data;
+}
+let META_VIDEO_WAIT_MS = 240000;       // 최대 4분
+let META_VIDEO_POLL_MS = 3000;
+async function waitVideoReady(videoId, onTick, maxMs) {
+  const started = Date.now(); const limit = maxMs || META_VIDEO_WAIT_MS;
+  let last = null;
+  for (;;) {
+    let j = null;
+    try { j = await fbGet(videoId, { fields: 'status,thumbnails' }); } catch (e) { j = null; }
+    if (j) {
+      last = j;
+      const st = (j.status && j.status.video_status) || '';
+      const thumbs = (j.thumbnails && j.thumbnails.data) || [];
+      if (st === 'error') return { ok: false, reason: 'error', status: j.status };
+      if (st === 'ready' && thumbs.length) return { ok: true, waited: Date.now() - started };
+      if (onTick) onTick({ status: st, progress: j.status && j.status.processing_progress, waited: Date.now() - started });
+    }
+    if (Date.now() - started >= limit) return { ok: false, reason: 'timeout', status: last && last.status };
+    await new Promise(r => setTimeout(r, META_VIDEO_POLL_MS));
+  }
+}
 async function ensureUploaded(t, block) {
   const accId = String(document.getElementById(`${t}_광고계정ID`).value || '').replace('act_', '');
   if (!accId) throw new Error('계정을 먼저 선택하세요');
@@ -4877,12 +4911,24 @@ async function submitAd(t) {
       showToast(`소재 ${n + 1} ${isImage ? '이미지' : '영상'} 준비 중...`, 'info');
       const up = await ensureUploaded(t, c.block);
       if (up.imageHash) data.소재목록[n].이미지해시 = up.imageHash;
-      if (up.videoId) data.소재목록[n].videoId = up.videoId;
+      if (up.videoId) {
+        data.소재목록[n].videoId = up.videoId;
+        // 메타가 인코딩을 끝내고 썸네일을 만들 때까지 기다린다 — 안 끝났으면 Make 가 소재 만들기에서 거절당한다
+        const ready = await waitVideoReady(up.videoId, s =>
+          showToast(`소재 ${n + 1} 영상을 메타가 처리하는 중... ${Math.round(s.waited / 1000)}초${s.progress != null ? ` · ${s.progress}%` : ''}`, 'info', META_VIDEO_POLL_MS + 2000));
+        if (!ready.ok) {
+          throw new Error(ready.reason === 'error'
+            ? `소재 ${n + 1} 영상을 메타가 처리하지 못했어요 — 파일을 확인하거나 다른 파일로 올려주세요`
+            : `소재 ${n + 1} 영상 처리가 ${Math.round(META_VIDEO_WAIT_MS / 60000)}분이 지나도 안 끝났어요 — 잠시 뒤 «등록» 을 다시 눌러주세요 (파일은 다시 올리지 않습니다)`);
+        }
+      }
       data.소재목록[n].파일ID = '';
     }
     const f = data.소재목록[0] || {};
     if (f.이미지해시) { data.이미지해시 = f.이미지해시; data.파일ID = ''; }
     if (f.videoId) { data.videoId = f.videoId; data.파일ID = ''; }
+    metaEscapeTexts(data);   // 줄바꿈·따옴표가 Make 의 JSON 틀을 깨지 않게 (보내는 데이터에만 적용)
+    showToast('Make로 전송 중...', 'info');
     const res = await fetch(WEBHOOKS[t], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     if (res.ok) {
       // Make가 생성된 ID를 응답으로 돌려주면 그걸 그대로 쓴다 (이름 검색보다 정확)
