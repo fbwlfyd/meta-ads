@@ -1088,7 +1088,7 @@
       </div>
 
       <div class="modal-sec" id="msec_gregion">
-        <div class="set-note">지역은 <b>치과별로</b> 묶입니다 — 치과를 고르면 그 치과의 지역만 드롭다운에 나옵니다 (치과를 비우면 모든 치과에서 보임).<br><b>표기명</b>을 비우면 이름에 지역이 붙지 않습니다. 표기명 옆 <b>[제외]</b>를 체크하면 그 말은 <b>이름(캠페인명·광고그룹명·광고명)에 안 붙고</b>, <b>캠페인 고르기에서 그 말이 든 캠페인을 빼고</b> 찾습니다 — 예: 진주 줄에 표기명 «타겟» + [제외] 체크 → 진주 임플란트(포함) + 타겟(제외). 체크해도 <b>지역구분자 드롭다운에는 그대로 보입니다</b>.<br><b>장소</b>로 찾거나 <b>📍 지도</b> 버튼을 누르면 지도에서 핀을 찍어 반경 타겟을 만들 수 있어요 — <b>반경 단위는 마일</b>이고, 좌표가 있으면 criterion ID 대신 반경으로 타겟합니다.<br>구글의 <b>반경 타겟은 캠페인 단위</b>에만 걸 수 있습니다 (광고그룹 단위 반경은 구글이 지원하지 않아요). 그래서 <b>세트 추가</b>로 기존 캠페인에 핀 지역을 쓰면 <b>그 캠페인 전체</b>의 지역이 바뀝니다.</div>
+        <div class="set-note">지역은 <b>치과별로</b> 묶입니다 — 치과를 고르면 그 치과의 지역만 드롭다운에 나옵니다 (치과를 비우면 모든 치과에서 보임).<br><b>표기명</b>을 비우면 이름에 지역이 붙지 않습니다. 표기명 옆 <b>[제외]</b>를 체크하면 그 말은 <b>이름(캠페인명·광고그룹명·광고명)에 안 붙고</b>, <b>캠페인 고르기에서 그 말이 든 캠페인을 빼고</b> 찾습니다 — 예: 진주 줄에 표기명 «타겟» + [제외] 체크 → 진주 임플란트(포함) + 타겟(제외). 체크해도 <b>지역구분자 드롭다운에는 그대로 보입니다</b>.<br><b>📍 지도</b>로 핀을 찍으면 <b>반경 타겟</b>(단위 마일)이 되고, 비우면 <b>criterion ID</b>(행정구역)로 타겟합니다. 위 검색창에서 <b>지역 (Google 타겟 ID)</b> 로 찾으면 ID가 자동으로 들어갑니다.<br><b style="color:#b54708;">반경은 «새 캠페인»에서만 걸립니다.</b> 구글은 반경을 캠페인 단위로만 받는데, 그 방식은 <b>캠페인을 만들 때 정해지고 나중에 바꿀 수 없어요</b>. 그래서 <b>광고 등록</b> 탭에서 만드는 새 캠페인은 반경을 쓸 수 있고, <b>세트 추가</b>로 기존 캠페인에 넣을 때는 그 캠페인이 원래 어떻게 만들어졌는지를 따라갑니다.</div>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
           <span style="font-size:12px;color:var(--text2);white-space:nowrap;">검색 결과를 추가할 치과</span>
           <select id="g_region_target_clinic" style="flex:1;height:36px;border:1px solid var(--border2);border-radius:8px;padding:0 10px;font-family:inherit;font-size:12px;"><option value="">공통 (모든 치과)</option></select>
@@ -1976,7 +1976,10 @@ function gRenderTable(key) {
       }
       if (key === 'regions' && f === 'custom') {
         const n = pinCount(r.custom);
-        return `<td><div style="display:flex;gap:4px;align-items:center;"><input type="text" data-g="${key}" data-f="${f}" data-i="${i}" value="${esc(r[f] || '')}" placeholder="비우면 criterion ID로 타겟"><button type="button" class="btn-pin${n ? ' has' : ''}" onclick="openPinMap('google',${i})" title="지도에서 핀 찍기 (반경 타겟)">${n ? '📍 ' + n : '📍 지도'}</button></div></td>`;
+        // 핀이 있으면 반경으로 타겟한다 — 단 반경은 «새 캠페인»에서만 걸 수 있다
+        const warn = (n && !String(r.criterionId || '').trim())
+          ? `<div style="font-size:10px;color:#b54708;margin-top:3px;line-height:1.4;">📍 반경 ${n}곳으로 타겟합니다 — 반경은 <b>새 캠페인</b>에서만 걸려요. 세트 추가에도 쓰려면 왼쪽 criterion ID를 채워주세요</div>` : '';
+        return `<td><div style="display:flex;gap:4px;align-items:center;"><input type="text" data-g="${key}" data-f="${f}" data-i="${i}" value="${esc(r[f] || '')}" placeholder="비우면 criterion ID로 타겟"><button type="button" class="btn-pin${n ? ' has' : ''}" onclick="openPinMap('google',${i})" title="지도에서 핀 찍기 (반경 타겟 · 마일)">${n ? '📍 ' + n : '📍 지도'}</button></div>${warn}</td>`;
       }
       const isLogo = key === 'channels' && f === 'logoFileId';
       const extra = isLogo ? ' onchange="gOnLogoInput(this)" onpaste="setTimeout(() => gOnLogoInput(this), 0)"' : '';
@@ -2182,10 +2185,10 @@ async function gAdsSearch(customerId, query) {
 
 /* 배포된 api/gads.js 가 최신인지 — 로그인 없이 ping 으로 확인한다.
    잠재고객이 세그먼트로 나오는 문제는 대부분 이 파일이 구버전인 경우였다. */
-const G_PROXY_REQUIRED_BUILD = '2026-09-17.2';
+const G_PROXY_REQUIRED_BUILD = '2026-09-18.1';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-18.11';
+const G_PAGE_BUILD = '2026-09-18.13';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -5253,7 +5256,13 @@ function gRegionsForClinic(clinic) {
 function gFillRegionSelects(t) {
   const clinic = (document.getElementById(`${t}_치과명`) || {}).value || '';
   const list = gRegionsForClinic(clinic);
-  const label = r => { const lb = refDisplay(r); return (lb ? `${r.name} — ${lb}${refHidden(r) ? ' (이름 제외)' : ''}` : r.name) + (r.custom ? ' 📍' : ''); };
+  // 핀만 있는 줄은 «반경» 타겟 — 새 캠페인에서만 쓸 수 있으니 목록에서 구분해 준다
+  const label = r => {
+    const lb = refDisplay(r);
+    const base = (lb ? `${r.name} — ${lb}${refHidden(r) ? ' (이름 제외)' : ''}` : r.name);
+    if (!r.custom) return base;
+    return base + (String(r.criterionId || '').trim() ? ' 📍' : ' 📍 반경 (새 캠페인만)');
+  };
   const regSel = document.getElementById(`${t}_지역구분자`);
   if (regSel) {
     const prev = regSel.value;
@@ -5725,6 +5734,12 @@ function gUpdateCardAdNames(t) {
 
 /* 캠페인에 지역이 이미 걸려 있으면 광고그룹에서는 지역을 건드리지 않는다 */
 const gCampaignGeo = { g2: null };
+/* 고른 캠페인이 «캠페인 단위 타겟»(upgraded_targeting=false) 인가.
+   캠페인에 지역(행정구역 또는 반경)이 걸려 있으면 그렇다고 본다 —
+   그런 캠페인은 광고그룹에 지역·언어를 넣으면 구글이 거절한다. */
+function gCampaignLevelTargeting() {
+  return Array.isArray(gCampaignGeo.g2) && gCampaignGeo.g2.length > 0;
+}
 async function gCheckCampaignGeo(t, customerId, campaignId) {
   const sel = document.getElementById(`${t}_지역구분자`);
   const hint = document.getElementById(`${t}_region_hint`);
@@ -6205,20 +6220,31 @@ function gEnrichForMake(d, t, uploadedIds) {
   const campId = digits(d.캠페인ID), groupId = digits(d.광고그룹ID);
   d.캠페인리소스명 = (cid && campId) ? `customers/${cid}/campaigns/${campId}` : '';
   d.광고그룹리소스명 = (cid && groupId) ? `customers/${cid}/adGroups/${groupId}` : '';
-  /* 타겟 연산은 두 갈래로 나뉜다 — 넣는 곳이 다르면 Google이 «Cannot find field» 로 거절한다
-       · 광고그룹 단위 (adGroupCriteria) : 지역(criterion ID) · 언어 · 잠재고객
-       · 캠페인 단위   (campaignCriteria) : 핀 반경(proximity) — 광고그룹에는 proximity 필드가 아예 없다
-     반경 단위는 마일(MILES). 설정의 핀 값도 마일로 저장한다. */
+  /* 디맨드젠은 캠페인의 «upgraded_targeting» 값에 따라 지역·언어를 거는 자리가 다르다.
+       · false → 지역·언어가 «캠페인» 단위. 반경(proximity)을 쓸 수 있다.
+                 구글 광고 화면에서 직접 만든 캠페인들이 이 방식이고, 우리도 새 캠페인은 이렇게 만든다.
+       · true  → 지역·언어가 «광고그룹» 단위. 광고그룹에는 proximity 필드가 없어 반경을 못 쓴다.
+                 (캠페인에 걸려고 하면 OWNED_AND_OPERATED 로 거절당한다)
+     잠재고객은 두 경우 모두 광고그룹 단위.
+     세트 추가는 기존 캠페인 설정을 그대로 따라가고, 캠페인 타겟은 절대 건드리지 않는다. */
   const ops = [], campOps = [];
   if (d.등록모드 !== 'EXISTING_ADGROUP') {   // 기존 그룹에 광고만 넣을 땐 타겟을 다시 걸지 않는다
+    const geo = [];
     if (d.지역타겟방식 === 'PROXIMITY') {
-      (d.구글좌표목록 || []).forEach(c => campOps.push({ create: { campaign: '__CAMPAIGN__', proximity: {
+      (d.구글좌표목록 || []).forEach(c => geo.push({ proximity: {
         geo_point: { latitude_in_micro_degrees: Math.round(Number(c.latitude) * 1e6), longitude_in_micro_degrees: Math.round(Number(c.longitude) * 1e6) },
-        radius: Number(c.radius) || 10, radius_units: 'MILES' } } }));
+        radius: Number(c.radius) || 10, radius_units: 'MILES' } }));
     } else if (d.지역타겟방식 === 'LOCATION' && d.구글지역ID) {
-      ops.push({ create: { ad_group: '__AD_GROUP__', location: { geo_target_constant: `geoTargetConstants/${digits(d.구글지역ID)}` } } });
+      geo.push({ location: { geo_target_constant: `geoTargetConstants/${digits(d.구글지역ID)}` } });
     }
-    ops.push({ create: { ad_group: '__AD_GROUP__', language: { language_constant: 'languageConstants/1012' } } });
+    const lang = { language: { language_constant: 'languageConstants/1012' } };
+    if (t === 'g1') {
+      geo.forEach(c => campOps.push({ create: Object.assign({ campaign: '__CAMPAIGN__' }, c) }));
+      campOps.push({ create: Object.assign({ campaign: '__CAMPAIGN__' }, lang) });
+    } else if (!gCampaignLevelTargeting()) {
+      geo.forEach(c => ops.push({ create: Object.assign({ ad_group: '__AD_GROUP__' }, c) }));
+      ops.push({ create: Object.assign({ ad_group: '__AD_GROUP__' }, lang) });
+    }
     if (cid && digits(d.잠재고객ID)) ops.push({ create: { ad_group: '__AD_GROUP__', audience: { audience: `customers/${cid}/audiences/${digits(d.잠재고객ID)}` } } });
   }
   d.광고그룹기준연산JSON = JSON.stringify(ops);
@@ -6409,8 +6435,9 @@ function gErrorHint(row) {
   if (/AdError\.DUPLICATE|DUPLICATE_AD/i.test(s)) return '같은 내용의 광고가 이미 있어요 — 문구와 영상이 완전히 같으면 Google이 거절합니다';
   if (/DUPLICATE_NAME/i.test(s)) return '같은 이름이 이미 쓰이고 있어요 — 이름을 조금 바꿔서 다시 보내주세요';
 
-  /* ── 반경(핀) 타겟 ── */
-  if (/Unknown name .?proximity/i.test(s)) return '반경(핀) 타겟이 광고그룹으로 잘못 갔어요 — Make 시나리오가 예전 버전입니다. 반경은 캠페인 단위에만 걸 수 있어서 «캠페인 지역 (핀 반경)» 모듈이 있는 최신 블루프린트로 바꿔주세요';
+  /* ── 반경(핀) 타겟 · 타겟을 거는 자리 ── */
+  if (/OWNED_AND_OPERATED/i.test(s)) return '이 캠페인은 «광고그룹 단위 타겟» 으로 만들어져 있어서 캠페인에 지역을 걸 수 없어요 (만든 뒤에는 못 바꿉니다) — 반경이 필요하면 광고 등록 탭에서 새 캠페인으로 만들어주세요. 세트 추가라면 지역 ID가 있는 지역을 고르세요';
+  if (/Unknown name .?proximity/i.test(s)) return '반경(핀)을 광고그룹에 걸려고 했어요 — 광고그룹에는 반경을 넣을 수 없습니다. Make 시나리오와 페이지 버전이 서로 안 맞는 경우예요 (설정 → 연동에서 빌드 확인)';
   if (/proximity/i.test(s) && /radius/i.test(s) && /INVALID|RANGE/i.test(s)) return '반경 값이 구글 허용 범위를 벗어났어요 — 설정 → 지역의 📍 지도에서 1~500마일 사이로 맞춰주세요';
 
   /* ── 계정 한도 (RESOURCE_LIMIT) ── */
@@ -6661,11 +6688,12 @@ async function gSubmitAd(t) {
       showToast(`«${was}» 는 이미 있어서 «${data.광고그룹명}» 으로 올렸어요`, 'info', 7000);
     }
   }
-  // 구글은 반경(핀) 타겟을 캠페인 단위에만 걸 수 있다 — 기존 캠페인에 걸면 그 캠페인의 다른 광고그룹까지 영향을 받는다
-  if (isT2 && data.지역타겟방식 === 'PROXIMITY') {
-    const pins = (data.구글좌표목록 || []).length;
-    const ok = confirm(`«${data.지역구분자}» 는 핀 반경 타겟이에요.\n\n구글은 반경 타겟을 캠페인 단위에만 걸 수 있어서, 이 캠페인에 이미 있는 다른 광고그룹까지 같은 지역으로 바뀝니다.\n(핀 ${pins}개 · 반경 단위 마일)\n\n그대로 진행할까요?`);
-    if (!ok) { restore(); return; }
+  // 반경(핀)은 «새 캠페인» 에서만 걸 수 있다 — 기존 캠페인은 만들 때 정해진 타겟 방식을 못 바꾼다
+  if (isT2 && data.지역타겟방식 === 'PROXIMITY' && !gCampaignLevelTargeting()) {
+    const rs = document.getElementById(`${t}_지역구분자`);
+    if (rs) { rs.classList.add('is-invalid'); rs.scrollIntoView({ block: 'center', behavior: 'smooth' }); gKeepViewportTop(); setTimeout(() => rs.classList.remove('is-invalid'), 8000); }
+    showToast(`«${data.지역구분자}» 는 반경(핀) 지역이에요 — 반경은 새 캠페인에서만 걸 수 있습니다. 세트 추가에는 지역 ID가 있는 지역을 고르거나, 광고 등록 탭에서 새 캠페인으로 만들어주세요`, 'error', 9000);
+    restore(); return;
   }
   showToast('Make로 전송 중...', 'info');
   const blocks = gAllVideoSlots(t).map(x => x.slot);   // 영상 슬롯 단위 (광고 여러 개 × 영상 여러 개)
@@ -6978,7 +7006,12 @@ function openPinMap(platform, index, opts) {
   const uEl = document.getElementById('pin_radius_unit'); if (uEl) uEl.textContent = `(${unit.label})`;
   ['pin_radius_range', 'pin_radius_num'].forEach(id => { const el = document.getElementById(id); if (el) { el.min = unit.min; el.max = unit.max; } });
   const hint = document.getElementById('pin_radius_hint');
-  if (hint) hint.textContent = platform === 'meta' ? `Meta는 ${unit.min}~${unit.max}마일까지 됩니다` : `Google은 ${unit.min}~${unit.max}마일까지 됩니다 (반경 타겟은 캠페인 단위로 걸립니다)`;
+  if (hint) {
+    hint.textContent = platform === 'meta'
+      ? `Meta는 ${unit.min}~${unit.max}마일까지 됩니다`
+      : `Google은 ${unit.min}~${unit.max}마일까지 됩니다 — 반경은 캠페인 단위로 걸리므로 «새 캠페인»에서만 쓸 수 있어요`;
+    hint.style.color = '';
+  }
   const sr = document.getElementById('pin_search_results'); if (sr) { sr.innerHTML = ''; sr.classList.remove('show'); }
   const si = document.getElementById('pin_search'); if (si) si.value = '';
   document.getElementById('pinModal').classList.add('show');
