@@ -76,6 +76,8 @@
   .field-hint { font-size: 11px; color: var(--text3); margin-top: 5px; line-height: 1.4; }
   .field-hint.err { color: var(--red); }
   .field-hint.ok { color: #047857; }
+  .len-tag { font-size: 11px; color: var(--text3); align-self: center; white-space: nowrap; min-width: 46px; text-align: right; font-variant-numeric: tabular-nums; }
+  .len-tag.over { color: var(--red); font-weight: 700; }
   .campaign-id-box { background: var(--yellow-bg); border: 1px solid #ffe0a0; border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px; }
   .campaign-id-box label { display: block; font-size: 12px; font-weight: 600; color: var(--yellow); margin-bottom: 6px; }
   .campaign-id-box input { width: 100%; height: 40px; background: var(--white); border: 1px solid #ffe0a0; border-radius: var(--radius-sm); color: var(--text1); font-family: inherit; font-size: 13px; padding: 0 12px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
@@ -198,6 +200,11 @@
   .chpick-item .chpick-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
   .chpick-item .chpick-text b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .chpick-item .nologo { font-size: 10px; color: #b45309; }
+  .chpick-item .chpick-text .chpick-id { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+  .chpick-usage { flex: 0 0 auto; margin-left: auto; font-size: 11px; color: var(--text3); white-space: nowrap; padding: 2px 7px; border-radius: 999px; background: var(--bg2, #f3f4f6); }
+  .chpick-usage:empty { display: none; }
+  .chpick-usage.warn { color: var(--red); background: #fef2f2; font-weight: 700; }
+  .chpick-usage.near { color: #b45309; background: #fffbeb; font-weight: 700; }
   .set-table .logo-prev { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); background: var(--bg); flex-shrink: 0; }
   .set-table .logo-prev.hidden { visibility: hidden; }
   .creative-card .is-invalid, .creative-card input.is-invalid, .creative-card .creative-drop.is-invalid,
@@ -819,6 +826,7 @@
             <button type="button" class="chpick-btn" id="g1_chpick_btn" onclick="gToggleChannelMenu('g1')" aria-haspopup="listbox"><span class="chpick-logo noimg"><img alt=""></span><span class="chpick-name">오늘의병원</span><span class="chpick-id"></span><span class="chpick-caret">▾</span></button>
             <div class="chpick-menu" id="g1_chpick_menu" role="listbox"></div>
           </div>
+          <div class="field-hint" id="g1_chpick_hint"></div>
           <select id="g1_유튜브채널" onchange="gOnYoutubeChannel('g1')" hidden>
             <option value="UChg_3mq-CO2kFPkbXlTR3pw">오늘의병원</option>
           </select>
@@ -936,6 +944,7 @@
             <button type="button" class="chpick-btn" id="g2_chpick_btn" onclick="gToggleChannelMenu('g2')" aria-haspopup="listbox"><span class="chpick-logo noimg"><img alt=""></span><span class="chpick-name">오늘의병원</span><span class="chpick-id"></span><span class="chpick-caret">▾</span></button>
             <div class="chpick-menu" id="g2_chpick_menu" role="listbox"></div>
           </div>
+          <div class="field-hint" id="g2_chpick_hint"></div>
           <select id="g2_유튜브채널" onchange="gOnYoutubeChannel('g2')" hidden>
             <option value="UChg_3mq-CO2kFPkbXlTR3pw">오늘의병원</option>
           </select>
@@ -1165,7 +1174,10 @@
           <div class="field"><label>developer token</label><input type="text" id="g_dev_token" placeholder="Google Ads API developer token"></div>
           <div class="field"><label>MCC(login customer) ID</label><input type="text" id="g_login_cid" placeholder="하이픈 없이 숫자만"></div>
         </div>
-        <div class="field"><label>중계 함수 주소 (같은 도메인에 올린 파일)</label><input type="text" id="g_proxy_url" placeholder="/api/gads"></div>
+        <div class="row2">
+          <div class="field"><label>중계 함수 주소 (같은 도메인에 올린 파일)</label><input type="text" id="g_proxy_url" placeholder="/api/gads"></div>
+          <div class="field"><label>YouTube 업로드 가능 확인 웹훅 (메이크 «유튜브 업로드 가능 확인» 시나리오)</label><input type="text" id="g_yt_probe_url" placeholder="https://hook.eu1.make.com/…"><div class="field-hint">등록 버튼을 누르면 고른 채널로 파일 없이 «업로드 자리 열기»만 해 봐서, YouTube 가 하루 한도로 거절하면 보내지 않습니다. 비워 두면 확인하지 않아요. <label style="display:inline-flex;align-items:center;gap:4px;margin-left:8px;"><input type="checkbox" id="g_yt_probe_all"> 채널 목록을 열 때 모든 채널 자동 확인</label> <button type="button" class="sync-btn" onclick="gTestYtProbe()">🔌 확인 테스트</button><span id="g_yt_probe_status"></span></div></div>
+        </div>
         <div style="display:flex;gap:8px;">
           <button class="btn-sm blue" onclick="testGoogleProxy()">🔌 중계 함수 연결 테스트</button>
           <button class="btn-sm" onclick="gCheckAccess()">👤 내 계정 권한 확인</button>
@@ -1269,6 +1281,8 @@ const G_DEFAULTS = {
   developerToken: '',     // Google Ads API
   loginCustomerId: '',    // MCC ID (하이픈 없이)
   proxyUrl: '/api/gads',  // 같은 도메인에 둔 중계 함수 (1순위)
+  ytProbeUrl: '',         // YouTube 업로드 가능 확인 웹훅 (메이크 «유튜브 업로드 가능 확인» 시나리오)
+  ytProbeAll: false,      // 채널 목록을 열 때 모든 채널을 자동으로 확인할지
 };
 let GSET = JSON.parse(JSON.stringify(G_DEFAULTS));
 function loadGoogleSettings() {
@@ -2195,6 +2209,8 @@ function gCollectSettings() {
     GSET.developerToken = val('g_dev_token').trim();
     GSET.loginCustomerId = val('g_login_cid').replace(/[^0-9]/g, '');
     GSET.proxyUrl = val('g_proxy_url').trim() || '/api/gads';
+    GSET.ytProbeUrl = val('g_yt_probe_url').trim();
+    GSET.ytProbeAll = !!(document.getElementById('g_yt_probe_all') || {}).checked;
   }
 }
 function renderGoogleSettings() {
@@ -2209,6 +2225,8 @@ function renderGoogleSettings() {
   set('g_dev_token', GSET.developerToken);
   set('g_login_cid', GSET.loginCustomerId);
   set('g_proxy_url', GSET.proxyUrl);
+  set('g_yt_probe_url', GSET.ytProbeUrl);
+  { const cb = document.getElementById('g_yt_probe_all'); if (cb) cb.checked = !!GSET.ytProbeAll; }
   if (typeof gRenderLoginStatus === 'function') gRenderLoginStatus();
   gCheckProxyBuild();
 }
@@ -2356,10 +2374,10 @@ async function gAdsSearch(customerId, query) {
 
 /* 배포된 api/gads.js 가 최신인지 — 로그인 없이 ping 으로 확인한다.
    잠재고객이 세그먼트로 나오는 문제는 대부분 이 파일이 구버전인 경우였다. */
-const G_PROXY_REQUIRED_BUILD = '2026-09-21.1';
+const G_PROXY_REQUIRED_BUILD = '2026-09-21.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-21.9';
+const G_PAGE_BUILD = '2026-09-22.3';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -5583,46 +5601,224 @@ function gPopulateYoutubeChannels(t) {
   sel.value = (prev && choices.some(c => c.channelId === prev)) ? prev : G_DEFAULT_CHANNEL.channelId;
   const menu = document.getElementById(`${t}_chpick_menu`);
   if (menu) {
-    menu.innerHTML = choices.map(ch => `<div class="chpick-item${ch.channelId === sel.value ? ' selected' : ''}" role="option" data-id="${esc(ch.channelId)}" onclick="gPickChannel('${t}', this.dataset.id)">${gLogoBadgeHtml(ch, 64)}<span class="chpick-text"><b>${esc(ch.channelName)}</b><span class="chpick-id">${esc(ch.channelId)}${ch.logoFileId ? '' : ' <span class="nologo">로고 없음</span>'}</span></span></div>`).join('');
+    menu.innerHTML = choices.map(ch => `<div class="chpick-item${ch.channelId === sel.value ? ' selected' : ''}" role="option" data-id="${esc(ch.channelId)}" onclick="gPickChannel('${t}', this.dataset.id)">${gLogoBadgeHtml(ch, 64)}<span class="chpick-text"><b>${esc(ch.channelName)}</b><span class="chpick-id">${esc(ch.channelId)}${ch.logoFileId ? '' : ' <span class="nologo">로고 없음</span>'}</span></span><span class="chpick-usage" data-role="usage"></span></div>`).join('');
   }
   gRenderChannelButton(t);
   gOnYoutubeChannel(t);   // 업체명(businessName)·로고를 항상 채워 둔다 — 비어 있으면 Google이 TOO_SHORT 로 거절한다
+  gRenderChannelUsage(t);
+  gRefreshChannelUsage(t).catch(() => {});   // 로그인돼 있으면 배경에서 최근 24시간 업로드 수를 센다
+}
+/* ── YouTube 채널 하루 업로드 한도 (uploadLimitExceeded) ────────────────────
+   YouTube 는 채널마다 하루에 올릴 수 있는 영상 수를 제한하고, 넘으면 «업로드 시작»(파일을 보내기 전, 제목만 보내 자리를 여는 단계)에서
+   «The user has exceeded the number of videos they may upload» 로 거절한다. 한도는 채널마다 다르고 공개되지 않으며, 남은 개수를 알려주는 API 도 없다.
+   그래서 «자리 열기» 자체를 확인용으로 쓴다 — 메이크의 «유튜브 업로드 가능 확인» 시나리오(채널별 YouTube 연결 그대로)에 채널 ID 를 보내면
+   파일 없이 자리 열기만 해 보고 결과를 바로 돌려준다. 등록 직전에 고른 채널을 확인해서 거절이면 보내지 않는다.
+   덤으로 등록로그의 «유튜브 업로드 · 완료» 를 채널별로 세서(최근 24시간) 참고용으로 회색으로 보여준다 (도구로 올린 것만). */
+const gYtUsage = { at: 0, byChannel: new Map(), reqIds: new Set(), error: '', loading: null };
+const gYtPending = [];                 // 방금 보낸 등록 — 로그에 아직 안 올라온 업로드 {reqId, channelId, n, at}
+const gYtProbe = { byChannel: new Map() };   // channelId → { state: off|ok|blocked|error|unknown, reason, message, error, at, pending }
+const gYtForce = { g1: '', g2: '' };   // 확인 오류인데도 「그래도 등록」 을 누른 채널
+const G_YT_USAGE_TTL = 60000, G_YT_PROBE_TTL = 120000;
+function gYtWindowStart() { return Date.now() - 24 * 3600 * 1000; }
+function gParseKst(t) { const m = String(t || '').match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/); return m ? Date.parse(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}+09:00`) : NaN; }
+async function gYoutubeUploadCounts(force, interactive) {
+  if (!force && Date.now() - gYtUsage.at < G_YT_USAGE_TTL) return gYtUsage;
+  if (gYtUsage.loading) return gYtUsage.loading;
+  // 배경에서 셀 때는 로그인 팝업을 띄우지 않는다 (토큰이 있을 때만)
+  if (!interactive && !(typeof gTokenValid === 'function' && gTokenValid('core'))) { gYtUsage.error = '로그인 필요'; gYtUsage.at = Date.now(); return gYtUsage; }
+  gYtUsage.loading = (async () => {
+    try {
+      const res = await gAuthFetch('core', `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(G_LOG_SHEET + '!A2:G')}`);
+      const j = await res.json();
+      if (!res.ok) throw new Error((j.error && j.error.message) || `HTTP ${res.status}`);
+      const since = gYtWindowStart();
+      const by = new Map(); const reqIds = new Set();
+      (j.values || []).forEach(r => {
+        if ((r[2] || '') !== '유튜브 업로드' || (r[3] || '') !== '완료') return;
+        const ts = gParseKst(r[1]); if (!(ts >= since)) return;
+        const m = String(r[4] || '').match(/채널\s+(UC[\w-]{10,})/); if (!m) return;
+        const cur = by.get(m[1]) || { count: 0, last: 0 };
+        cur.count++; cur.last = Math.max(cur.last, ts); by.set(m[1], cur);
+        if (r[0]) reqIds.add(r[0]);
+      });
+      gYtUsage.byChannel = by; gYtUsage.reqIds = reqIds; gYtUsage.error = ''; gYtUsage.at = Date.now();
+    } catch (e) { gYtUsage.error = e.message || '읽기 실패'; gYtUsage.at = Date.now(); }
+    finally { gYtUsage.loading = null; }
+    return gYtUsage;
+  })();
+  return gYtUsage.loading;
+}
+function gYtCountFor(channelId) {
+  const since = gYtWindowStart();
+  const base = (gYtUsage.byChannel.get(channelId) || { count: 0 }).count;
+  const pending = gYtPending.filter(p => p.channelId === channelId && p.at >= since && !gYtUsage.reqIds.has(p.reqId)).reduce((a, p) => a + p.n, 0);
+  return base + pending;
+}
+function gYtProbeUrl() { return String(GSET.ytProbeUrl || '').trim(); }
+/* 채널 하나를 YouTube 에 물어본다 — 파일 없이 «업로드 자리 열기» (메이크 시나리오가 대신 한다) */
+async function gYtProbeChannel(channelId, force) {
+  const url = gYtProbeUrl();
+  if (!url || !channelId) return { state: 'off', at: Date.now() };
+  const cur = gYtProbe.byChannel.get(channelId);
+  if (cur && cur.pending) return cur.pending;
+  if (!force && cur && cur.at && Date.now() - cur.at < G_YT_PROBE_TTL) return cur;
+  const p = (async () => {
+    let r;
+    try {
+      const u = url + (url.includes('?') ? '&' : '?') + 'channelId=' + encodeURIComponent(channelId);
+      const res = await fetch(u, { method: 'GET' });
+      const text = await res.text();
+      let j = null; try { j = JSON.parse(text); } catch (e) { j = null; }
+      if (!j || typeof j !== 'object' || !('ok' in j)) r = { state: 'unknown', error: (text || `HTTP ${res.status}`).slice(0, 80) };
+      else if (j.ok === true) r = { state: 'ok' };
+      else if (j.reason === 'uploadLimitExceeded') r = { state: 'blocked', reason: j.reason, message: j.message || '' };
+      else if (j.reason === 'unknownChannel') r = { state: 'unknown', error: '확인 시나리오에 없는 채널이에요 — 블루프린트에 채널을 추가해야 합니다' };
+      else r = { state: 'error', reason: j.reason || '', message: j.message || '', status: j.status || 0 };
+    } catch (e) { r = { state: 'unknown', error: e.message }; }
+    r.at = Date.now();
+    gYtProbe.byChannel.set(channelId, r);
+    return r;
+  })();
+  gYtProbe.byChannel.set(channelId, Object.assign({}, cur || {}, { pending: p }));
+  return p;
+}
+async function gYtProbeAll(force) {
+  const ids = gChannelChoices().map(c => c.channelId).filter(Boolean);
+  await Promise.all(ids.map(id => gYtProbeChannel(id, force).catch(() => null)));
+  ['g1', 'g2'].forEach(x => gRenderChannelUsage(x));
+}
+function gYtProbeLabel(r) {
+  if (!r) return { text: '', cls: '' };
+  if (r.pending && !r.state) return { text: '확인 중…', cls: '' };
+  if (r.state === 'ok') return { text: '✅ 올릴 수 있음', cls: 'ok' };
+  if (r.state === 'blocked') return { text: '⛔ 하루 한도 도달', cls: 'warn' };
+  if (r.state === 'error') return { text: `⚠ 연결 오류${r.status ? ' ' + r.status : ''}`, cls: 'near' };
+  if (r.state === 'unknown') return { text: '확인 못 함', cls: '' };
+  return { text: '', cls: '' };
+}
+function gRenderChannelUsage(t) {
+  const sel = document.getElementById(`${t}_유튜브채널`); if (!sel) return;
+  const menu = document.getElementById(`${t}_chpick_menu`);
+  const probeOn = !!gYtProbeUrl();
+  if (menu) menu.querySelectorAll('.chpick-item').forEach(el => {
+    const tag = el.querySelector('[data-role="usage"]'); if (!tag) return;
+    // 확인이 켜져 있으면 YouTube 답(✅/⛔)만, 꺼져 있으면 참고용 24시간 업로드 수만 — 둘 다 넣으면 채널명이 밀린다
+    let text = '', cls = 'chpick-usage';
+    if (probeOn) { const lb = gYtProbeLabel(gYtProbe.byChannel.get(el.dataset.id)); text = lb.text; if (lb.cls) cls += ' ' + lb.cls; }
+    else if (gYtUsage.at && !gYtUsage.error) text = `24시간 ${gYtCountFor(el.dataset.id)}개`;
+    tag.textContent = text;
+    tag.className = cls;
+  });
+  const hint = document.getElementById(`${t}_chpick_hint`); if (!hint) return;
+  const id = sel.value;
+  const ch = gChannelChoices().find(c => c.channelId === id) || { channelName: id };
+  const bits = [];
+  let cls = 'field-hint';
+  if (probeOn) {
+    const r = gYtProbe.byChannel.get(id);
+    if (r && r.state === 'blocked') { cls += ' err'; bits.push(`⛔ YouTube 가 «${esc(ch.channelName)}» 채널의 업로드를 지금 거절합니다 (하루 한도 도달) — 다른 채널을 고르거나 24시간쯤 뒤에 등록하세요`); }
+    else if (r && r.state === 'error') { cls += ' err'; bits.push(`⚠ «${esc(ch.channelName)}» 채널 확인에서 오류 (${esc(r.reason || r.status || '')}${r.message ? ' · ' + esc(r.message) : ''}) — 메이크의 YouTube 연결을 확인하세요`); }
+    else if (r && r.state === 'ok') { cls += ' ok'; bits.push('✅ YouTube 확인: 지금 올릴 수 있어요'); }
+    else if (r && r.state === 'unknown') bits.push(`업로드 가능 여부를 확인하지 못했어요 (${esc(r.error || '')})`);
+    else if (r && r.pending) bits.push('YouTube 에 확인 중…');
+    else bits.push('등록 버튼을 누르면 이 채널로 올릴 수 있는지 YouTube 에 먼저 확인합니다');
+    bits.push(`<button type="button" class="sync-btn" onclick="gYtProbeAll(true)">모든 채널 확인</button>`);
+  } else {
+    bits.push('등록 전 확인이 꺼져 있어요 — 설정 → 연동에 «YouTube 업로드 가능 확인 웹훅» 을 넣으면 하루 한도에 걸린 채널을 미리 잡습니다');
+  }
+  if (gYtUsage.at && !gYtUsage.error) bits.push(`<span style="color:var(--text3)">최근 24시간 이 채널로 ${gYtCountFor(id)}개 (도구 기준)</span>`);
+  hint.className = cls;
+  hint.innerHTML = bits.join(' ');
+}
+async function gRefreshChannelUsage(t, force) {
+  await gYoutubeUploadCounts(force);
+  ['g1', 'g2'].forEach(x => gRenderChannelUsage(x));
+}
+/* 설정 화면의 «확인 테스트» — 지금 고른 채널(없으면 기본 채널)로 한 번 물어본다 */
+async function gTestYtProbe() {
+  const out = document.getElementById('g_yt_probe_status'); if (!out) return;
+  gCollectSettings();
+  if (!gYtProbeUrl()) { out.textContent = ' 웹훅 주소를 먼저 넣어주세요'; return; }
+  const sel = document.getElementById('g1_유튜브채널');
+  const id = (sel && sel.value) || G_DEFAULT_CHANNEL.channelId;
+  out.textContent = ' 확인 중…';
+  const r = await gYtProbeChannel(id, true);
+  const ch = gChannelChoices().find(c => c.channelId === id) || { channelName: id };
+  const lb = gYtProbeLabel(r);
+  out.textContent = ` ${ch.channelName}: ${lb.text}${r.error ? ' — ' + r.error : ''}${r.message ? ' — ' + r.message : ''}`;
+  ['g1', 'g2'].forEach(x => gRenderChannelUsage(x));
+}
+/* 보내기 전 확인 — { ok:true } 또는 { ok:false, msg } */
+async function gYtLimitGate(t, channelId) {
+  if (!gYtProbeUrl() || !channelId) return { ok: true, off: true };
+  if (gYtForce[t] === channelId) { gYtForce[t] = ''; return { ok: true, forced: true }; }
+  const r = await gYtProbeChannel(channelId, true);
+  gRenderChannelUsage(t);
+  const ch = gChannelChoices().find(c => c.channelId === channelId) || { channelName: channelId };
+  if (r.state === 'blocked') {
+    const box = document.getElementById(`${t}_chpick`); if (box) { box.scrollIntoView({ block: 'center', behavior: 'smooth' }); gKeepViewportTop(); }
+    return { ok: false, state: r.state, msg: `YouTube 가 «${ch.channelName}» 채널의 업로드를 지금 거절해서 보내지 않았어요 (하루 한도 도달) — 다른 채널을 고르거나 24시간쯤 뒤에 등록하세요` };
+  }
+  if (r.state === 'error') {
+    const hint = document.getElementById(`${t}_chpick_hint`);
+    if (hint) hint.innerHTML += ` <button type="button" class="sync-btn" onclick="gYtForce['${t}']='${esc(channelId)}';gSubmitAd('${t}')">그래도 등록</button>`;
+    const box = document.getElementById(`${t}_chpick`); if (box) { box.scrollIntoView({ block: 'center', behavior: 'smooth' }); gKeepViewportTop(); }
+    return { ok: false, state: r.state, msg: `«${ch.channelName}» 채널 확인에서 오류가 나서 보내지 않았어요 (${r.reason || r.status || ''}${r.message ? ' · ' + r.message : ''}) — 메이크의 YouTube 연결을 확인하거나, 확실하면 «그래도 등록»` };
+  }
+  if (r.state === 'unknown') showToast(`채널 업로드 가능 여부를 확인하지 못했어요 (${r.error || ''}) — 그대로 보냅니다`, 'info', 5000);
+  return { ok: true, state: r.state };
 }
 function gToggleChannelMenu(t, force) {
   const box = document.getElementById(`${t}_chpick`); if (!box) return;
   const open = force === undefined ? !box.classList.contains('open') : !!force;
   document.querySelectorAll('.chpick.open').forEach(b => { if (b !== box) b.classList.remove('open'); });
   box.classList.toggle('open', open);
+  if (open) { gRenderChannelUsage(t); gRefreshChannelUsage(t).catch(() => {}); if (GSET.ytProbeAll && gYtProbeUrl()) gYtProbeAll(false).catch(() => {}); }   // 열 때 업로드 수·(설정 시) 채널 상태를 다시 본다
 }
 function gPickChannel(t, id) {
   const sel = document.getElementById(`${t}_유튜브채널`); if (!sel) return;
   sel.value = id;
   gOnYoutubeChannel(t);
   gToggleChannelMenu(t, false);
+  gRenderChannelUsage(t);
 }
 document.addEventListener('click', (e) => { if (!e.target.closest('.chpick')) document.querySelectorAll('.chpick.open').forEach(b => b.classList.remove('open')); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.chpick.open').forEach(b => b.classList.remove('open')); });
 /* 캠페인명은 자동으로 만들어 주되, 직접 고치면 그 값을 지킨다 (되돌리기 전까지) */
 const gCampaignNameEdited = { g1: false };
-function gOnCampaignNameEdit(t) { gCampaignNameEdited[t] = true; growNameBox(document.getElementById(`${t}_캠페인명`)); gRenderCampaignNameHint(t); }
+function gOnCampaignNameEdit(t) { gCampaignNameEdited[t] = true; growNameBox(document.getElementById(`${t}_캠페인명`)); gScheduleNameCheck(t); }
 function gResetCampaignName(t) { gCampaignNameEdited[t] = false; gAutoGenNames(t); showToast('자동 이름으로 되돌렸어요', 'success'); }
 function gRenderCampaignNameHint(t) {
   const el = document.getElementById(`${t}_캠페인명_hint`);
   if (!el) return;
-  // 보내기 직전에 같은 이름의 캠페인이 발견됐으면, 이름이 바뀔 때까지 그 안내를 유지한다
-  const dup = (typeof gDupCampaign !== 'undefined') && gDupCampaign[t];
   const cur = ((document.getElementById(`${t}_캠페인명`) || {}).value || '').trim();
-  if (dup && cur && normName(cur) === normName(dup.name)) {
+  const edited = gCampaignNameEdited[t];
+  const editTail = edited
+    ? ` <span class="link-toggle" style="margin-left:6px;" onclick="gResetCampaignName('${t}')">자동으로 되돌리기</span>`
+    : '';
+  const who = c => c.fromPage ? '방금 이 페이지에서 보낸 이름' : `${c.customerName ? c.customerName + ' · ' : ''}ID ${c.id}${c.status ? ' · ' + gStatusKo(c.status) : ''}`;
+  const howTo = `— 만들다 멈춘 캠페인이면 <button type="button" class="sync-btn" onclick="gContinueInSetTab('${t}')">세트 추가 탭에서 이어서 등록</button> 하거나, Google Ads 에서 그 캠페인을 지운 뒤 다시 보내세요. 이름은 바꾸지 않습니다`;
+  // ① 같은 이름이 발견돼 있으면(입력 즉시 확인 또는 등록 직전 확인) 이름이 바뀔 때까지 유지
+  const dup = (typeof gDupCampaign !== 'undefined') && gDupCampaign[t];
+  if (dup && cur && looseName(cur) === looseName(dup.name)) {
     el.className = 'field-hint err';
-    const who = dup.fromPage ? '방금 이 페이지에서 보낸 이름' : `${dup.customerName ? dup.customerName + ' · ' : ''}ID ${dup.id}${dup.status ? ' · ' + gStatusKo(dup.status) : ''}`;
-    el.innerHTML = `⚠ 같은 이름의 캠페인이 이미 있어요 (${who}) — 만들다 멈춘 캠페인이면 `
-      + `<button type="button" class="sync-btn" onclick="gContinueInSetTab('${t}')">세트 추가 탭에서 이어서 등록</button>`
-      + ` 하거나, Google Ads 에서 그 캠페인을 지운 뒤 다시 보내세요. 이름은 바꾸지 않습니다`;
+    const exact = normName(cur) === normName(dup.name) && String(dup.name || '').trim() === cur;
+    el.innerHTML = (exact || dup.fromPage
+      ? `⚠ 같은 이름의 캠페인이 이미 있어요 (${who(dup)}) ${howTo}`
+      : `⚠ 공백·문자만 다른 <b>거의 같은 이름</b>의 캠페인이 이미 있어요 (${who(dup)}) — 구글은 다른 이름으로 보고 받아주지만, 같은 캠페인이 두 개 생깁니다 ${howTo}`) + editTail;
     return;
   }
-  if (gCampaignNameEdited[t]) {
+  // ② 입력 즉시 확인 상태
+  const st = (typeof gNameCheck !== 'undefined') && gNameCheck[t];
+  const cid = String((document.getElementById(`${t}_광고계정ID`) || {}).value || '').replace(/[^0-9]/g, '');
+  const live = st && cur && cid && st.key === `${cid}|${cur}` ? st.state : '';
+  if (live === 'checking') { el.className = 'field-hint'; el.innerHTML = `🔎 이 계정에 같은 이름이 있는지 확인 중...${editTail}`; return; }
+  if (live === 'ok') { el.className = 'field-hint ok'; el.innerHTML = `✅ 이 계정에 같은 이름 없음 — 등록할 때 한 번 더 확인합니다${editTail}`; return; }
+  if (live === 'fail') { el.className = 'field-hint err'; el.innerHTML = `⚠ 중복을 확인하지 못했어요 (${esc(st.error || '연결 확인')}) — 등록 버튼을 누르면 다시 확인합니다${editTail}`; return; }
+  // ③ 기본 안내
+  if (edited) {
     el.className = 'field-hint ok';
-    el.innerHTML = `✏️ 직접 고친 이름으로 등록됩니다 <span class="link-toggle" style="margin-left:6px;" onclick="gResetCampaignName('${t}')">자동으로 되돌리기</span>`;
+    el.innerHTML = `✏️ 직접 고친 이름으로 등록됩니다${editTail}`;
   } else {
     el.className = 'field-hint';
     el.textContent = '위 값들로 자동으로 만들어져요 — 여기서 직접 고쳐도 됩니다';
@@ -5669,7 +5865,7 @@ function gAutoGenNames(t) {
   const build = token => gBuildGroupName(t, token);
   const groupName = gSelectedGroup.g2 && t === 'g2' ? gSelectedGroup.g2.name : build(`${seq}U`);
   if (t === 'g1' && !gCampaignNameEdited.g1) document.getElementById('g1_캠페인명').value = campaignName;
-  if (t === 'g1') { growNameBox(document.getElementById('g1_캠페인명')); gRenderCampaignNameHint('g1'); }   // 값을 넣은 뒤에 안내를 그린다 (중복 안내는 현재 이름 기준)
+  if (t === 'g1') { growNameBox(document.getElementById('g1_캠페인명')); gScheduleNameCheck('g1'); }   // 값을 넣은 뒤 즉시 중복 확인을 예약하고 안내를 그린다
   document.getElementById(`${t}_광고그룹명`).value = groupName;
   // 광고명 (소재 개수만큼 1.1U, 1.2U ...)
   const n = document.getElementById(`${t}_creative_list`)?.children.length || 1;
@@ -5785,6 +5981,39 @@ function gFillCta(block) {
   });
   sel.value = (prev && Array.from(sel.options).some(x => x.value === prev)) ? prev : 'CONTACT_US';
 }
+/* Google 광고 문구 길이 — Google 은 한글·한자·가나·전각 문자를 한 글자당 2로 센다.
+   그래서 «광고제목 40자» 는 한글로는 20자다. 화면의 글자 수도 이 규칙으로 세고, 넘으면 보내기 전에 막는다. */
+function gTextWidth(s) {
+  let w = 0;
+  for (const ch of String(s || '')) {
+    const cp = ch.codePointAt(0);
+    w += (cp > 0xFFFF                          // 이모지 등 (보수적으로 2)
+      || (cp >= 0x1100 && cp <= 0x11FF)        // 한글 자모
+      || (cp >= 0x2E80 && cp <= 0x9FFF)        // CJK 부수 · 한자 · 가나 · CJK 기호
+      || (cp >= 0xA960 && cp <= 0xA97F)        // 한글 자모 확장 A
+      || (cp >= 0xAC00 && cp <= 0xD7FF)        // 한글 음절 · 자모 확장 B
+      || (cp >= 0xF900 && cp <= 0xFAFF)        // CJK 호환 한자
+      || (cp >= 0xFE30 && cp <= 0xFE4F)        // CJK 호환 형태
+      || (cp >= 0xFF00 && cp <= 0xFF60)        // 전각 영숫자 · 기호
+      || (cp >= 0xFFE0 && cp <= 0xFFE6)) ? 2 : 1;
+  }
+  return w;
+}
+const G_TEXT_LIMITS = { 광고제목: 40, 긴광고제목: 90, 설명: 90, 업체명: 25 };
+const G_TEXT_LABELS = { 광고제목: '광고제목', 긴광고제목: '긴 광고제목', 설명: '설명', 업체명: '업체명' };
+function gLenTagText(role, value) {
+  const max = G_TEXT_LIMITS[role] || 0;
+  return `${gTextWidth(value)}/${max}`;
+}
+function gUpdateLenTag(input, role) {
+  const tag = input.parentElement && input.parentElement.querySelector('[data-role="len"]');
+  if (!tag) return;
+  const max = G_TEXT_LIMITS[role] || 0;
+  const w = gTextWidth(input.value);
+  tag.textContent = `${w}/${max}`;
+  tag.classList.toggle('over', max > 0 && w > max);
+  tag.title = `Google 은 한글 한 글자를 2로 셉니다 (한글만 쓰면 ${Math.floor(max / 2)}자)`;
+}
 // 카드 안의 작은 반복 입력 (광고제목 / 긴 광고제목 / 설명)
 function gMiniList(role, label, maxLen, t) {
   return `<div class="field">
@@ -5798,10 +6027,13 @@ function gAddMini(btn, role, maxLen, t, value) {
   if (list.children.length >= 5) { showToast('최대 5개까지 추가할 수 있어요', 'error'); return; }
   const row = document.createElement('div');
   row.style.cssText = 'display:flex;gap:4px;margin-bottom:4px;';
-  row.innerHTML = `<input type="text" data-role="${role}" maxlength="${maxLen}" placeholder="최대 ${maxLen}자" style="flex:1;" oninput="gSyncCreativeCommon('${t}')">
+  row.innerHTML = `<input type="text" data-role="${role}" placeholder="최대 ${maxLen} (한글 ${Math.floor(maxLen / 2)}자)" style="flex:1;" oninput="gUpdateLenTag(this,'${role}');gSyncCreativeCommon('${t}')">
+    <span data-role="len" class="len-tag" title="Google 은 한글 한 글자를 2로 셉니다">0/${maxLen}</span>
     <button type="button" class="creative-remove" style="padding:0 4px;" onclick="this.parentElement.remove();gSyncCreativeCommon('${t}')">✕</button>`;
   list.appendChild(row);
-  if (value) row.querySelector('input').value = value;
+  const input = row.querySelector('input');
+  if (value) input.value = value;
+  gUpdateLenTag(input, role);
   return row;
 }
 function gToggleCreativeCommon(t) { gApplyCreativeCommon(t); gSyncCreativeCommon(t); }
@@ -5831,7 +6063,7 @@ function gSyncCreativeCommon(t) {
       if (!list) return;
       list.innerHTML = '';
       const btn = b.querySelector(`[onclick*="'${role}'"]`);
-      vals.forEach(v => { const row = gAddMini(btn, role, role === '광고제목' ? 40 : 90, t); if (row) row.querySelector('input').value = v; });
+      vals.forEach(v => gAddMini(btn, role, G_TEXT_LIMITS[role] || 90, t, v));   // 값을 같이 넘겨야 글자 수 표시도 맞는다
     });
   });
 }
@@ -6532,8 +6764,26 @@ function gValidateCreatives(t) {
     if (!(heads || []).length) { focus(target, '광고제목'); return `광고 ${i + 1}: 광고제목을 1개 이상 넣어주세요`; }
     if (!(longs || []).length) { focus(target, '긴광고제목'); return `광고 ${i + 1}: 긴 광고제목을 1개 이상 넣어주세요`; }
     if (!(descs || []).length) { focus(target, '설명'); return `광고 ${i + 1}: 설명을 1개 이상 넣어주세요`; }
+    // 글자 수 — Google 규칙(한글 한 글자 = 2)으로 센다. 넘으면 Google 이 TOO_LONG 으로 거절한다
+    for (const role of ['광고제목', '긴광고제목', '설명']) {
+      const inputs = Array.from(target.querySelectorAll(`[data-role="${role}"]`));
+      for (let k = 0; k < inputs.length; k++) {
+        const w = gTextWidth(inputs[k].value), max = G_TEXT_LIMITS[role];
+        if (w > max) {
+          inputs[k].classList.add('is-invalid'); inputs[k].scrollIntoView({ block: 'center', behavior: 'smooth' }); try { inputs[k].focus({ preventScroll: true }); } catch (e) {} gKeepViewportTop(); setTimeout(() => inputs[k].classList.remove('is-invalid'), 5000);
+          return `광고 ${i + 1} ${G_TEXT_LABELS[role]} ${k + 1}: 글자 수 초과 (${w}/${max}) — Google 은 한글 한 글자를 2로 세요. 한글만 쓰면 ${Math.floor(max / 2)}자 안으로 줄여주세요`;
+        }
+      }
+    }
     const cta = (common && i > 0) ? first.CTA버튼 : c.CTA버튼;
     if (!cta) { focus(target, 'CTA버튼'); return `광고 ${i + 1}: CTA 버튼을 골라주세요`; }
+  }
+  const biz = (document.getElementById(`${t}_업체명`) || {}).value || '';
+  const bw = gTextWidth(biz);
+  if (bw > G_TEXT_LIMITS.업체명) {
+    const el = document.getElementById(`${t}_업체명`);
+    if (el) { el.classList.add('is-invalid'); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); gKeepViewportTop(); setTimeout(() => el.classList.remove('is-invalid'), 5000); }
+    return `업체명 «${biz}» 이 너무 길어요 (${bw}/${G_TEXT_LIMITS.업체명}) — Google 은 한글 한 글자를 2로 세요. 설정 → 채널에서 채널명을 한글 ${Math.floor(G_TEXT_LIMITS.업체명 / 2)}자 안으로 줄여주세요`;
   }
   return '';
 }
@@ -6679,6 +6929,8 @@ async function gCheckAdsCreated(data, state) {
 function gErrorHint(row) {
   const s = `${row.msg || ''} ${row.detail || ''}`;
 
+  /* ── YouTube 채널 하루 업로드 한도 ── */
+  if (/uploadLimitExceeded|exceeded the number of videos they may upload/i.test(s)) return 'YouTube 채널의 하루 업로드 한도를 넘었어요 — 이 채널은 24시간쯤 지나야 다시 올릴 수 있습니다. 다른 채널로 등록하거나 내일 하세요. 채널 고르기에 최근 24시간 업로드 수가 보이니 그걸 보고 고르면 됩니다 (한도는 채널마다 달라요 — YouTube 스튜디오 → 설정 → 채널 → 기능 사용 자격에서 «고급 기능»을 켜면 한도가 올라갑니다)';
   /* ── 이름 중복 ── */
   if (/DUPLICATE_CAMPAIGN_NAME|CampaignError\.DUPLICATE_NAME/i.test(s)) return '같은 이름의 캠페인이 이미 있어요 — 앞선 전송이 캠페인까지 만들고 멈춘 경우예요. 이름은 그대로 두고, 세트 추가 탭에서 그 캠페인을 골라 이어서 등록하거나 Google Ads 에서 지운 뒤 다시 보내세요. Make 의 Incomplete Executions 에 남은 건은 지우세요 (같은 이름으로 재시도해서 계속 실패합니다)';
   if (/CampaignBudgetError\.DUPLICATE_NAME/i.test(s)) return '같은 이름의 캠페인 예산이 이미 있어요 — 캠페인명을 조금 바꿔서 다시 보내주세요';
@@ -6726,9 +6978,14 @@ function gErrorHint(row) {
 
   /* ── 값 · 형식 ── */
   if (/final_urls|ILLEGAL_CHARS|INVALID_URL/i.test(s)) return '최종 URL 형식을 확인하세요 (https:// 로 시작)';
+  // 글자 수 — TOO_LONG 이 TOO_SHORT 규칙에 먼저 걸리지 않도록 순서 주의 (둘 다 stringLengthError 로 온다)
+  if (/TOO_LONG|maximum length/i.test(s)) {
+    const where = /headlines/.test(s) ? (/long_headlines/.test(s) ? '긴 광고제목' : '광고제목') : /descriptions/.test(s) ? '설명' : /business_name|businessName/.test(s) ? '업체명' : '';
+    const val = (s.match(/"stringValue":\s*"([^"]{1,80})"/) || [])[1] || '';
+    return `글자 수 제한을 넘었어요${where ? ` — ${where}` : ''}${val ? ` «${val}»` : ''}. Google 은 한글 한 글자를 2로 세요 (광고제목 40=한글 20자 · 긴 제목 90=45자 · 설명 90=45자 · 업체명 25=12자). 각 칸 옆 숫자가 빨간 곳을 줄여주세요`;
+  }
   if (/TOO_SHORT|stringLengthError/i.test(s) && /demand_gen_video_responsive_ad|business/i.test(s)) return '필수 글자 값이 비어 있어요 — 대부분 «업체명»(YouTube 채널명)이 빈 경우예요. 채널을 한 번 고른 뒤 다시 보내주세요';
-  if (/TOO_SHORT|stringLengthError/i.test(s)) return '값이 비어 있는 칸이 있어요 — 업체명·문구·URL이 다 채워졌는지 확인하세요';
-  if (/TOO_LONG|STRING_LENGTH|maximum length/i.test(s)) return '글자 수 제한을 넘었어요 — 광고제목 40자 · 긴 제목 90자 · 설명 90자를 확인하세요';
+  if (/TOO_SHORT|stringLengthError|STRING_LENGTH/i.test(s)) return '값이 비어 있는 칸이 있어요 — 업체명·문구·URL이 다 채워졌는지 확인하세요';
   if (/TOO_FEW|collectionSizeError/i.test(s)) return '영상이나 문구가 최소 개수보다 적어요 — 영상이 제대로 업로드됐는지 위 단계 기록을 확인하세요';
   if (/TOO_MANY/i.test(s)) return '개수 제한을 넘었어요 — 한 광고에 영상은 5개까지입니다';
   if (/\bREQUIRED\b|MISSING/i.test(s)) return '필수 값이 빠졌어요 — 문구·최종 URL·로고가 다 들어갔는지 확인하세요';
@@ -6844,43 +7101,87 @@ function gRememberSentCampaign(customerId, name) {
 function gSentCampaignsFor(customerId) {
   return gSentCampaignNames.get(String(customerId || '').replace(/[^0-9]/g, '')) || [];
 }
-/* 그 계정에 이 이름의 캠페인이 있는지 — { ok, hit, error }
-   ok=false 는 «확인 못 함» (중계 함수·권한·네트워크). 호출부는 이때 보내지 않는다. */
+/* «거의 같은 이름» 판정용 — 공백(전각 공백·NBSP 포함)을 다 빼고, 전각 문자를 반각으로, 한글 자모를 합치고, 소문자로.
+   Google 은 글자 하나만 달라도 다른 이름으로 보지만, 사람 눈엔 같은 이름이라 실수로 두 개가 생긴다. */
+function looseName(v) {
+  let s = String(v || '');
+  try { s = s.normalize('NFKC'); } catch (e) {}
+  return s.replace(/[\s 　]+/g, '').toLowerCase();
+}
+/* 그 계정에 이 이름의 캠페인이 있는지 — { ok, hit, near, error }
+     hit  : 완전히 같은 이름 (Google 도 거절할 이름)
+     near : 공백·문자 차이만 있는 거의 같은 이름 (Google 은 받아주지만, 실수일 가능성이 높다)
+   ok=false 는 «확인 못 함» (중계 함수·권한·네트워크). 호출부는 이때 보내지 않는다.
+   조회는 이름의 첫 단어(치과 약칭)로 그 계정의 캠페인을 받아서 페이지에서 가려낸다 —
+   구글에 이름 그대로 물어보면 공백 두 칸 같은 숨은 차이를 못 잡기 때문. */
 async function gCampaignNameTaken(name, customerId) {
   const full = String(name || '').trim();
   const cid = String(customerId || '').replace(/[^0-9]/g, '');
-  if (!full) return { ok: true, hit: null };
-  const want = normName(full);
+  if (!full) return { ok: true, hit: null, near: null };
+  const want = normName(full), loose = looseName(full);
   const sentHit = gSentCampaignsFor(cid).find(n => normName(n) === want);
-  if (sentHit) return { ok: true, hit: { id: '', name: sentHit, status: '방금 보냄', customerId: cid, customerName: '', fromPage: true } };
-  if (!cid) return { ok: false, hit: null, error: '광고계정 ID 가 비어 있어요' };
+  if (sentHit) return { ok: true, hit: { id: '', name: sentHit, status: '방금 보냄', customerId: cid, customerName: '', fromPage: true }, near: null };
+  if (!cid) return { ok: false, hit: null, near: null, error: '광고계정 ID 가 비어 있어요' };
+  const classify = (list) => {
+    const mine = list.filter(c => !cid || String(c.customerId || '').replace(/[^0-9]/g, '') === cid);
+    const hit = mine.find(c => String(c.name || '').trim() === full) || mine.find(c => normName(c.name) === want) || null;
+    const near = hit ? null : (mine.find(c => looseName(c.name) === loose) || null);
+    return { ok: true, hit, near };
+  };
+  const word = (full.split(/\s+/)[0] || full).replace(/['%\\]/g, '');
   gLastLookupError = '';
-  let list = await gLookup('campaignbyname', { customerId: cid, name: full });
-  if (!Array.isArray(list)) {
-    const err = gLastLookupError || '';
-    // 배포된 중계 함수가 구버전(campaignbyname 없음)이면 예전 방식으로라도 확인한다
-    if (/알 수 없는 type/.test(err)) {
-      gLastLookupError = '';
-      const all = await gLookup('findcampaigns', { q: full, status: 'all' });
-      if (!Array.isArray(all)) return { ok: false, hit: null, error: gLastLookupError || '중계 함수 조회 실패' };
-      const hit = all.find(c => normName(c.name) === want && String(c.customerId || '').replace(/[^0-9]/g, '') === cid) || null;
-      return { ok: true, hit, legacy: true };
-    }
-    return { ok: false, hit: null, error: err || '중계 함수 조회 실패' };
-  }
-  const hit = list.find(c => normName(c.name) === want) || list[0] || null;
-  return { ok: true, hit };
+  let list = await gLookup('campaignsbyword', { customerId: cid, q: word });
+  if (Array.isArray(list)) return classify(list);
+  let err = gLastLookupError || '';
+  if (!/알 수 없는 type/.test(err)) return { ok: false, hit: null, near: null, error: err || '중계 함수 조회 실패' };
+  // 배포된 중계 함수가 구버전 → 이름 그대로 묻기(campaignbyname) → 더 옛날이면 LIKE 검색(findcampaigns)
+  gLastLookupError = '';
+  list = await gLookup('campaignbyname', { customerId: cid, name: full });
+  if (Array.isArray(list)) return Object.assign(classify(list), { legacy: true });
+  err = gLastLookupError || '';
+  if (!/알 수 없는 type/.test(err)) return { ok: false, hit: null, near: null, error: err || '중계 함수 조회 실패' };
+  gLastLookupError = '';
+  list = await gLookup('findcampaigns', { q: full, status: 'all' });
+  if (!Array.isArray(list)) return { ok: false, hit: null, near: null, error: gLastLookupError || '중계 함수 조회 실패' };
+  return Object.assign(classify(list), { legacy: true });
+}
+/* ── 입력하는 즉시 확인 ──────────────────────────────────────────
+   캠페인명이 바뀔 때마다(자동 생성·직접 수정·계정 변경) 잠깐 기다렸다가 한 번 물어보고,
+   결과를 이름 칸 아래에 바로 보여준다. 등록 버튼을 누를 때도 한 번 더 확인한다 (그쪽이 최종). */
+const gNameCheck = { g1: { key: '', state: '', hit: null, near: null, error: '', timer: null, seq: 0 } };
+let G_NAME_CHECK_DELAY = 700;
+function gScheduleNameCheck(t) {
+  const st = gNameCheck[t]; if (!st) return;
+  const name = ((document.getElementById(`${t}_캠페인명`) || {}).value || '').trim();
+  const cid = String((document.getElementById(`${t}_광고계정ID`) || {}).value || '').replace(/[^0-9]/g, '');
+  const key = `${cid}|${name}`;
+  if (key === st.key && st.state && st.state !== 'fail') { gRenderCampaignNameHint(t); return; }   // 같은 이름·계정이면 다시 안 묻는다
+  clearTimeout(st.timer);
+  if (!name || !cid) { st.key = key; st.state = ''; st.hit = null; st.near = null; st.error = ''; gRenderCampaignNameHint(t); return; }
+  st.key = key; st.state = 'checking'; st.hit = null; st.near = null; st.error = '';
+  gRenderCampaignNameHint(t);
+  const seq = ++st.seq;
+  st.timer = setTimeout(async () => {
+    let r;
+    try { r = await gCampaignNameTaken(name, cid); } catch (e) { r = { ok: false, hit: null, near: null, error: e.message }; }
+    if (seq !== st.seq) return;                   // 그 사이 이름이 또 바뀜
+    st.state = !r.ok ? 'fail' : (r.hit ? 'dup' : (r.near ? 'near' : 'ok'));
+    st.hit = r.hit || null; st.near = r.near || null; st.error = r.error || '';
+    if (st.state === 'dup' || st.state === 'near') gDupCampaign[t] = st.hit || st.near;
+    else if (gDupCampaign[t] && normName(gDupCampaign[t].name) === normName(name)) gDupCampaign[t] = null;
+    gRenderCampaignNameHint(t);
+  }, G_NAME_CHECK_DELAY);
 }
 /* 중복을 알려 주고, 이름 칸 아래에 «이어서 등록» 안내를 남긴다 (토스트는 사라지므로) */
 const gDupCampaign = { g1: null };
-function gFlagDuplicateName(t, hit) {
+function gFlagDuplicateName(t, hit, isNear) {
   gDupCampaign[t] = hit || null;
   const nameEl = document.getElementById(`${t}_캠페인명`);
   if (nameEl) { nameEl.classList.add('is-invalid'); setTimeout(() => nameEl.classList.remove('is-invalid'), 6000); }
   gRenderCampaignNameHint(t);
   if (nameEl) { nameEl.scrollIntoView({ block: 'center', behavior: 'smooth' }); try { nameEl.focus({ preventScroll: true }); } catch (e) {} gKeepViewportTop(); }
   const where = hit && hit.fromPage ? '방금 이 페이지에서 보낸 이름이에요' : `${hit && hit.customerName ? hit.customerName + ' · ' : ''}${(hit && hit.name) || ''}`;
-  showToast(`이미 같은 이름의 캠페인이 있어서 보내지 않았어요 — ${where}. 이름은 그대로 두고, 아래 안내대로 이어서 등록하거나 Google Ads 에서 그 캠페인을 지운 뒤 다시 보내주세요`, 'error', 9000);
+  showToast(`${isNear ? '공백·문자만 다른 거의 같은 이름의' : '이미 같은 이름의'} 캠페인이 있어서 보내지 않았어요 — ${where}. 이름은 그대로 두고, 아래 안내대로 이어서 등록하거나 Google Ads 에서 그 캠페인을 지운 뒤 다시 보내주세요`, 'error', 9000);
 }
 function gStatusKo(s) { return { ENABLED: '활성', PAUSED: '일시중지', REMOVED: '삭제됨' }[String(s || '').toUpperCase()] || String(s || ''); }
 /* 같은 이름의 캠페인을 «세트 추가» 탭에서 열어 준다 — 만들다 멈춘 캠페인에 광고그룹·광고를 이어서 넣는 흐름 */
@@ -6979,8 +7280,9 @@ async function gSubmitAd(t) {
       showToast(`캠페인명 중복을 확인하지 못해서 보내지 않았어요 (${chk.error || '중계 함수 연결'}) — 잠시 뒤 다시 눌러주세요. 계속 안 되면 설정 → 연동에서 중계 함수 상태를 확인하세요`, 'error', 9000);
       restore(); return;
     }
-    if (chk.hit) { gFlagDuplicateName(t, chk.hit); restore(); return; }
+    if (chk.hit || chk.near) { gFlagDuplicateName(t, chk.hit || chk.near, !chk.hit); restore(); return; }
     gDupCampaign[t] = null;
+    const nc = gNameCheck[t]; if (nc) { nc.key = `${String(data.광고계정ID || '').replace(/[^0-9]/g, '')}|${String(data.캠페인명 || '').trim()}`; nc.state = 'ok'; nc.hit = null; nc.near = null; }
   }
   // 새 광고그룹을 만드는 경우: 같은 캠페인에 같은 이름이 남아 있으면 Google이 DUPLICATE_ADGROUP_NAME 으로 거절한다
   // (앞선 전송이 그룹만 만들고 광고에서 멈춘 경우) → 보내기 직전에 빈 번호로 올려서 보낸다
@@ -7003,6 +7305,12 @@ async function gSubmitAd(t) {
     if (rs) { rs.classList.add('is-invalid'); rs.scrollIntoView({ block: 'center', behavior: 'smooth' }); gKeepViewportTop(); setTimeout(() => rs.classList.remove('is-invalid'), 8000); }
     showToast(`«${data.지역구분자}» 는 반경(핀) 지역이에요 — 반경은 새 캠페인에서만 걸 수 있습니다. 세트 추가에는 지역 ID가 있는 지역을 고르거나, 광고 등록 탭에서 새 캠페인으로 만들어주세요`, 'error', 9000);
     restore(); return;
+  }
+  // YouTube 채널 하루 업로드 한도 — 고른 채널로 파일 없이 «업로드 자리 열기»를 해 봐서 YouTube 가 거절하면 보내지 않는다
+  {
+    showToast('YouTube 채널 업로드 가능 확인 중...', 'info');
+    const gate = await gYtLimitGate(t, data.유튜브채널ID);
+    if (!gate.ok) { showToast(gate.msg, 'error', 9000); restore(); return; }
   }
   showToast('Make로 전송 중...', 'info');
   const blocks = gAllVideoSlots(t).map(x => x.slot);   // 영상 슬롯 단위 (광고 여러 개 × 영상 여러 개)
@@ -7064,7 +7372,9 @@ async function gSubmitAd(t) {
         gApplyGroupSeq(t, (gParseSetSeq(data.광고그룹명) || gNextSetNumber.g2 || 1) + 1);
       }
       // 새 캠페인: 보낸 이름을 기억한다 (같은 이름을 한 번 더 보내면 막는다 · 이름은 절대 바꾸지 않는다 — UTM 과 맞물려 있다)
-      if (!isT2) gRememberSentCampaign(data.광고계정ID, data.캠페인명);
+      if (!isT2) { gRememberSentCampaign(data.광고계정ID, data.캠페인명); const nc = gNameCheck[t]; if (nc) nc.key = ''; gScheduleNameCheck(t); }
+      // 이번 업로드를 채널 사용량에 미리 더해 둔다 (Make 가 로그에 적기 전까지)
+      if (data.유튜브채널ID) { gYtPending.push({ reqId: data.요청ID, channelId: data.유튜브채널ID, n: blocks.length, at: Date.now() }); ['g1', 'g2'].forEach(x => gRenderChannelUsage(x)); }
       // 직접 첨부한 임시 파일은 Make가 등록을 마치면 Drive에서 지운다.
       // 같은 카드를 한 번 더 보내면 지워진 ID를 다시 쓰게 되므로(404 File not found) ID를 비워 두고, 다음 전송 때 첨부 파일을 새로 올린다.
       blocks.forEach(block => {
