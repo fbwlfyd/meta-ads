@@ -1178,10 +1178,15 @@
         <div class="row2">
           <div class="field"><label>중계 함수 주소 (같은 도메인에 올린 파일)</label><input type="text" id="g_proxy_url" placeholder="/api/gads"></div>
           <div class="field"><label>YouTube 업로드 가능 확인 웹훅 (메이크 «유튜브 업로드 가능 확인» 시나리오)</label><input type="text" id="g_yt_probe_url" placeholder="https://hook.eu1.make.com/…">
-            <div class="field-hint">등록 버튼을 누르면 고른 채널로 파일 없이 «업로드 자리 열기»만 해 봐서, YouTube 가 하루 한도로 거절하면 보내지 않습니다. 비워 두면 확인하지 않아요.</div>
-            <div class="field-hint" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="g_yt_probe_all">채널 목록을 열 때 모든 채널 자동 확인</label><button type="button" class="sync-btn" onclick="gTestYtProbe()">🔌 확인 테스트</button><span id="g_yt_probe_status"></span></div>
+            <div class="field-hint">등록 직전에 고른 채널로 파일 없이 «업로드 자리 열기»만 해 봐서, YouTube 가 하루 한도로 거절하면 보내지 않습니다. 아래 «예약 확인» 결과가 최근(90분 안) 것이면 그걸로 판단하고 이 웹훅은 부르지 않아요. 비워 두면 예약 확인 결과만 봅니다.</div>
+            <div class="field-hint" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="g_yt_probe_all">채널 목록을 열 때 모든 채널 자동 확인 (열 때마다 11개 소모 · 예약 확인을 쓰면 끄세요)</label><button type="button" class="sync-btn" onclick="gTestYtProbe()">🔌 확인 테스트</button><span id="g_yt_probe_status"></span></div>
+            <div class="field-hint" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><b>예약 확인</b> — 메이크 «유튜브 업로드 가능 확인 (예약)» 시나리오가 정해진 시간(예: 10~17시 매시간)에 모든 채널을 확인해 참조 시트 «채널상태» 탭에 남기고, 이 페이지는 그걸 읽어서 보여줍니다<button type="button" class="sync-btn" onclick="gRenderYtSheetStatus(true)">📄 결과 읽기</button><span id="g_yt_sheet_status"></span></div>
+            <div class="field-hint" style="color:#b45309;">⚠ 확인 한 번 = 아래 «프로젝트 하루 한도» 1개 소모 (자리 열기 자체가 업로드 요청으로 집계됩니다). 예약 확인 10~17시 매시간이면 8회 × 11채널 = 하루 88개 → 나머지 12개만 수동 확인에 쓸 수 있어요</div>
           </div>
+          <div class="field"><label>YouTube API 프로젝트 하루 업로드 한도 (개)</label><input type="number" id="g_yt_project_limit" min="0" step="1" placeholder="100"><div class="field-hint">구글이 API 프로젝트마다 정한 값 (기본 100 · «Video Uploads per day»). <b>모든 채널이 같이 씁니다.</b> 오늘(미국 태평양 자정 기준, 한국 16:00 리셋) 쓴 개수를 세서 채널 목록에 보여줍니다. 구글에서 상향받으면 여기 숫자를 바꾸세요. 0 이면 끄기</div>
+            <div class="field-hint"><label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="g_yt_uploads_count">영상 업로드도 이 한도에 셈</label> — 메이크가 HTTP 로 직접 올리던 옛 시나리오(v13 이전)일 때만 켜세요. 지금처럼 Make YouTube 앱으로 올리면(v14) 업로드는 메이크 쪽 할당량을 쓰므로 여기서 세지 않습니다</div></div>
         </div>
+        <div class="field"><label>광고 등록 탭에서 고를 수 없는 계정 <span class="auto-tag g">쉼표로 구분</span></label><input type="text" id="g_blocked_accounts" placeholder="예: 4부서_1"><div class="field-hint">캠페인 개수 한도(10,000개)가 찬 계정처럼 <b>새 캠페인을 만들면 안 되는 계정</b>을 적어 두세요 — 광고 등록 탭의 계정 목록에 회색으로 보이고 선택되지 않아요. 세트 추가(기존 캠페인에 광고그룹·광고 넣기)는 그대로 됩니다. 계정을 정리한 뒤 여기서 지우면 다시 고를 수 있어요</div></div>
         <div style="display:flex;gap:8px;">
           <button class="btn-sm blue" onclick="testGoogleProxy()">🔌 중계 함수 연결 테스트</button>
           <button class="btn-sm" onclick="gCheckAccess()">👤 내 계정 권한 확인</button>
@@ -1287,8 +1292,16 @@ const G_DEFAULTS = {
   proxyUrl: '/api/gads',  // 같은 도메인에 둔 중계 함수 (1순위)
   ytProbeUrl: '',         // YouTube 업로드 가능 확인 웹훅 (메이크 «유튜브 업로드 가능 확인» 시나리오)
   ytProbeAll: false,      // 채널 목록을 열 때 모든 채널을 자동으로 확인할지
+  ytProjectDailyLimit: 100, // YouTube API 프로젝트 하루 영상 업로드 한도 (구글 기본값 100 · 상향받으면 여기 수정)
+  ytUploadsCountQuota: false, // 영상 업로드도 위 한도에서 세는지 — 메이크가 HTTP 로 직접 올릴 때만 true (Make YouTube 앱(v14)은 메이크 할당량)
+  blockedAccounts: ['4부서_1'],   // 광고 등록 탭(새 캠페인)에서 고를 수 없는 계정명 — 캠페인 한도(10,000개)가 찬 계정
 };
 let GSET = JSON.parse(JSON.stringify(G_DEFAULTS));
+/* 새 캠페인을 만들면 안 되는 계정인가 — 이름은 띄어쓰기·대소문자 차이를 무시하고 비교한다 */
+function gIsBlockedAccount(name) {
+  const n = normName(name);
+  return !!n && (GSET.blockedAccounts || []).some(x => normName(x) === n);
+}
 function loadGoogleSettings() {
   try {
     const raw = localStorage.getItem(GOOGLE_SETTINGS_KEY);
@@ -2215,6 +2228,9 @@ function gCollectSettings() {
     GSET.proxyUrl = val('g_proxy_url').trim() || '/api/gads';
     GSET.ytProbeUrl = val('g_yt_probe_url').trim();
     GSET.ytProbeAll = !!(document.getElementById('g_yt_probe_all') || {}).checked;
+    GSET.ytProjectDailyLimit = Math.max(0, parseInt(val('g_yt_project_limit'), 10) || 0);
+    GSET.ytUploadsCountQuota = !!(document.getElementById('g_yt_uploads_count') || {}).checked;
+    GSET.blockedAccounts =val('g_blocked_accounts').split(/[,;\n]+/).map(s => s.trim()).filter(Boolean);
   }
 }
 function renderGoogleSettings() {
@@ -2231,8 +2247,12 @@ function renderGoogleSettings() {
   set('g_proxy_url', GSET.proxyUrl);
   set('g_yt_probe_url', GSET.ytProbeUrl);
   { const cb = document.getElementById('g_yt_probe_all'); if (cb) cb.checked = !!GSET.ytProbeAll; }
+  set('g_yt_project_limit', GSET.ytProjectDailyLimit == null ? 100 : GSET.ytProjectDailyLimit);
+  { const cb = document.getElementById('g_yt_uploads_count'); if (cb) cb.checked = !!GSET.ytUploadsCountQuota; }
+  set('g_blocked_accounts', (GSET.blockedAccounts || []).join(', '));
   if (typeof gRenderLoginStatus === 'function') gRenderLoginStatus();
   gCheckProxyBuild();
+  if (typeof gRenderYtSheetStatus === 'function') gRenderYtSheetStatus(false).catch(() => {});   // 로그인돼 있을 때만 조용히 읽는다
 }
 function saveGoogleSettingsNow() {
   gCollectSettings();
@@ -2381,7 +2401,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-21.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-22.4';
+const G_PAGE_BUILD = '2026-09-23.2';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -5449,8 +5469,19 @@ function gPopulateDropdowns() {
     if (accSel) {
       const prev = accSel.value;
       accSel.innerHTML = '<option value="">선택</option>';
-      GDB.accounts.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; accSel.appendChild(o); });
+      // 광고 등록 탭(새 캠페인)에서는 «고를 수 없는 계정»(설정 → 연동)을 회색으로 두고 선택을 막는다 — 세트 추가 탭은 그대로
+      GDB.accounts.forEach(a => {
+        const o = document.createElement('option'); o.value = a.name;
+        const blocked = t === 'g1' && gIsBlockedAccount(a.name);
+        o.textContent = blocked ? `${a.name} — 선택 불가 (캠페인 한도)` : a.name;
+        if (blocked) o.disabled = true;
+        accSel.appendChild(o);
+      });
       if (prev) accSel.value = prev;
+      if (t === 'g1' && prev && gIsBlockedAccount(prev)) {   // 막힌 계정이 골라져 있었으면 풀어 준다
+        accSel.value = '';
+        const idEl = document.getElementById('g1_광고계정ID'); if (idEl) idEl.value = '';
+      }
     }
     gFillRegionSelects(t);
     // 카드 안 CTA 도 목록이 준비된 뒤 다시 채운다 (두 탭 모두)
@@ -5620,6 +5651,21 @@ function gPopulateYoutubeChannels(t) {
    덤으로 등록로그의 «유튜브 업로드 · 완료» 를 채널별로 세서(최근 24시간) 참고용으로 회색으로 보여준다 (도구로 올린 것만). */
 const gYtUsage = { at: 0, byChannel: new Map(), reqIds: new Set(), error: '', loading: null };
 const gYtPending = [];                 // 방금 보낸 등록 — 로그에 아직 안 올라온 업로드 {reqId, channelId, n, at}
+const gYtProbeSpent = [];              // 이 페이지에서 한 «자리 열기» 확인 — 프로젝트 하루 한도를 1개씩 쓴다 {at}
+/* 구글 API 하루 할당량은 미국 태평양 시간 자정에 리셋된다 (한국 16:00 · 겨울 17:00) */
+function gPtDayStartMs(now) {
+  const d = new Date(now || Date.now());
+  try {
+    const fmt = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
+    const parts = {}; fmt.formatToParts(d).forEach(p => { if (p.type !== 'literal') parts[p.type] = p.value; });
+    const secs = (Number(parts.hour) % 24) * 3600 + Number(parts.minute) * 60 + Number(parts.second);
+    return d.getTime() - secs * 1000 - d.getMilliseconds();
+  } catch (e) { return d.getTime() - (d.getTime() % (24 * 3600 * 1000)); }
+}
+function gPtResetLabel() {
+  const next = new Date(gPtDayStartMs() + 24 * 3600 * 1000);
+  try { return new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(next); } catch (e) { return ''; }
+}
 const gYtProbe = { byChannel: new Map() };   // channelId → { state: off|ok|blocked|error|unknown, reason, message, error, at, pending }
 const gYtForce = { g1: '', g2: '' };   // 확인 오류인데도 「그래도 등록」 을 누른 채널
 const G_YT_USAGE_TTL = 60000, G_YT_PROBE_TTL = 120000;
@@ -5635,17 +5681,20 @@ async function gYoutubeUploadCounts(force, interactive) {
       const res = await gAuthFetch('core', `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(G_LOG_SHEET + '!A2:G')}`);
       const j = await res.json();
       if (!res.ok) throw new Error((j.error && j.error.message) || `HTTP ${res.status}`);
-      const since = gYtWindowStart();
-      const by = new Map(); const reqIds = new Set();
+      const since = gYtWindowStart(), dayStart = gPtDayStartMs();
+      const by = new Map(); const reqIds = new Set(); let today = 0; const todayReqIds = new Set();
       (j.values || []).forEach(r => {
         if ((r[2] || '') !== '유튜브 업로드' || (r[3] || '') !== '완료') return;
-        const ts = gParseKst(r[1]); if (!(ts >= since)) return;
+        const ts = gParseKst(r[1]); if (!(ts >= Math.min(since, dayStart))) return;
         const m = String(r[4] || '').match(/채널\s+(UC[\w-]{10,})/); if (!m) return;
-        const cur = by.get(m[1]) || { count: 0, last: 0 };
-        cur.count++; cur.last = Math.max(cur.last, ts); by.set(m[1], cur);
-        if (r[0]) reqIds.add(r[0]);
+        if (ts >= since) {
+          const cur = by.get(m[1]) || { count: 0, last: 0 };
+          cur.count++; cur.last = Math.max(cur.last, ts); by.set(m[1], cur);
+          if (r[0]) reqIds.add(r[0]);
+        }
+        if (ts >= dayStart) { today++; if (r[0]) todayReqIds.add(r[0]); }
       });
-      gYtUsage.byChannel = by; gYtUsage.reqIds = reqIds; gYtUsage.error = ''; gYtUsage.at = Date.now();
+      gYtUsage.byChannel = by; gYtUsage.reqIds = reqIds; gYtUsage.today = today; gYtUsage.todayReqIds = todayReqIds; gYtUsage.dayStart = dayStart; gYtUsage.error = ''; gYtUsage.at = Date.now();
     } catch (e) { gYtUsage.error = e.message || '읽기 실패'; gYtUsage.at = Date.now(); }
     finally { gYtUsage.loading = null; }
     return gYtUsage;
@@ -5658,7 +5707,145 @@ function gYtCountFor(channelId) {
   const pending = gYtPending.filter(p => p.channelId === channelId && p.at >= since && !gYtUsage.reqIds.has(p.reqId)).reduce((a, p) => a + p.n, 0);
   return base + pending;
 }
+/* 프로젝트(모든 채널 합산) 오늘 쓴 개수 = 예약 확인(시트) + 이 페이지에서 한 확인 + (설정에서 켰을 때만) 업로드(로그 + 방금 보낸 것) */
+function gYtProjectLimit() { const n = Number(GSET.ytProjectDailyLimit); return Number.isFinite(n) && n > 0 ? n : 0; }
+function gYtProjectUsage() {
+  const dayStart = gPtDayStartMs();
+  let uploads = 0;
+  if (GSET.ytUploadsCountQuota) {
+    const logged = (gYtUsage.dayStart === dayStart) ? (gYtUsage.today || 0) : 0;   // 리셋이 지났으면 로그 집계는 0 부터
+    const known = gYtUsage.todayReqIds || new Set();
+    uploads = logged + gYtPending.filter(p => p.at >= dayStart && !known.has(p.reqId)).reduce((a, p) => a + p.n, 0);
+  }
+  const probes = gYtProbeSpent.filter(p => p.at >= dayStart).length;
+  const sheet = (gYtSheet.dayStart === dayStart) ? (gYtSheet.todayProbes || 0) : 0;
+  return { uploads, probes, sheet, total: uploads + probes + sheet };
+}
+function gYtProjectUsed() { return gYtProjectUsage().total; }
 function gYtProbeUrl() { return String(GSET.ytProbeUrl || '').trim(); }
+
+/* ── 예약 확인 — 메이크 «유튜브 업로드 가능 확인 (예약)» 시나리오가 정해진 시간에 모든 채널을 «자리 열기»로 확인하고
+   참조 시트 «채널상태» 탭에 한 줄씩 남긴다 (확인시각 · 채널명 · 채널ID · 상태 OK/한도/오류 · 사유 · 메시지 · HTTP).
+   이 페이지는 그 탭을 읽어 채널마다 가장 최근 줄을 보여주고, 최근 것이면 등록 직전 실시간 확인(한도 1개)을 건너뛴다.
+   탭은 이 페이지가 없으면 만든다 — 줄 수 2로 시작해서 메이크가 붙이는 만큼만 늘어나게 하고, 읽을 땐 꼬리 800줄만 읽는다. */
+const G_YT_STATUS_SHEET = '채널상태';
+const G_YT_STATUS_HEADERS = ['확인시각', '채널명', '채널ID', '상태', '사유', '메시지', 'HTTP'];
+const G_YT_SHEET_TTL = 60000;                  // 같은 페이지에서 다시 읽는 간격
+const G_YT_SHEET_FRESH_MS = 90 * 60000;        // 이 안의 결과면 등록 직전 실시간 확인을 건너뛴다
+const G_YT_SHEET_STALE_MS = 3 * 3600000;       // 이보다 오래되면 «오래됨» 표시
+const G_YT_SHEET_TAIL = 800;                   // 탭 끝에서 읽는 줄 수 (하루 88줄 → 열흘치)
+const gYtSheet = { at: 0, byChannel: new Map(), todayProbes: 0, lastRunAt: 0, rows: 0, dayStart: 0, error: '', loading: null, created: false };
+async function gYtSheetProps() {
+  const res = await gAuthFetch('core', `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties`);
+  const j = await res.json();
+  if (!res.ok) throw new Error((j.error && j.error.message) || `HTTP ${res.status}`);
+  const s = (j.sheets || []).map(x => x.properties || {}).find(p => p.title === G_YT_STATUS_SHEET);
+  if (s) return { sheetId: s.sheetId, rowCount: (s.gridProperties && s.gridProperties.rowCount) || 0 };
+  const add = await gAuthFetch('core', `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}:batchUpdate`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests: [{ addSheet: { properties: { title: G_YT_STATUS_SHEET, gridProperties: { rowCount: 2, columnCount: 8 } } } }] }),
+  });
+  const aj = await add.json().catch(() => ({}));
+  if (!add.ok) throw new Error(`«${G_YT_STATUS_SHEET}» 탭 추가 실패 HTTP ${add.status}`);
+  await gAuthFetch('core', `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(G_YT_STATUS_SHEET + '!A1:G1')}?valueInputOption=RAW`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ values: [G_YT_STATUS_HEADERS] }),
+  });
+  gYtSheet.created = true;
+  const props = aj.replies && aj.replies[0] && aj.replies[0].addSheet && aj.replies[0].addSheet.properties;
+  return { sheetId: props ? props.sheetId : 0, rowCount: 2 };
+}
+/* 손으로 만든 탭(빈 줄 1,000개)이면 데이터 아래 빈 줄을 잘라 둔다 — 다음부터 꼬리만 읽어도 최신 줄이 보이게 */
+async function gYtSheetTrimBlank(props, dataRows) {
+  if (!props || !props.rowCount || props.rowCount - (dataRows + 1) < 50) return;
+  await gAuthFetch('core', `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}:batchUpdate`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests: [{ deleteDimension: { range: { sheetId: props.sheetId, dimension: 'ROWS', startIndex: dataRows + 1, endIndex: props.rowCount } } }] }),
+  });
+}
+function gYtSheetRowState(r, ts) {
+  const st = String(r[3] || '').trim(), reason = String(r[4] || '').trim(), message = String(r[5] || '').trim(), status = Number(r[6]) || 0;
+  let state;
+  if (st === 'OK') state = 'ok';
+  else if (st === '한도' || reason === 'uploadLimitExceeded') state = 'blocked';
+  else if (reason === 'quotaExceeded' || reason === 'dailyLimitExceeded') state = 'quota';
+  else state = 'error';
+  return { state, reason, message, status, at: ts, source: 'sheet', channelName: String(r[1] || '').trim(), channelId: String(r[2] || '').trim() };
+}
+async function gYtSheetLoad(force, interactive) {
+  if (!force && Date.now() - gYtSheet.at < G_YT_SHEET_TTL) return gYtSheet;
+  if (gYtSheet.loading) return gYtSheet.loading;
+  if (!interactive && !(typeof gTokenValid === 'function' && gTokenValid('core'))) { gYtSheet.error = '로그인 필요'; gYtSheet.at = Date.now(); return gYtSheet; }
+  gYtSheet.loading = (async () => {
+    try {
+      const props = await gYtSheetProps();
+      const read = async range => {
+        const res = await gAuthFetch('core', `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(G_YT_STATUS_SHEET + '!' + range)}`);
+        const j = await res.json();
+        if (!res.ok) throw new Error((j.error && j.error.message) || `HTTP ${res.status}`);
+        return j.values || [];
+      };
+      const n = props.rowCount || 0;
+      let rows;
+      if (n > G_YT_SHEET_TAIL + 1) {
+        rows = await read(`A${n - G_YT_SHEET_TAIL + 1}:G${n}`);
+        if (!rows.some(r => r && r[0])) { rows = await read('A2:G'); gYtSheetTrimBlank(props, rows.length).catch(() => {}); }
+      } else rows = await read('A2:G');
+      const dayStart = gPtDayStartMs();
+      const by = new Map(); let today = 0, last = 0;
+      rows.forEach(r => {
+        if (!r) return;
+        const ts = gParseKst(r[0]); const id = String(r[2] || '').trim();
+        if (!Number.isFinite(ts) || !id) return;
+        const s = gYtSheetRowState(r, ts);
+        if (ts >= dayStart && (s.state === 'ok' || s.state === 'blocked')) today++;   // 구글까지 닿은 확인만 한도에서 빠진다
+        if (ts > last) last = ts;
+        const cur = by.get(id);
+        if (!cur || ts >= cur.at) by.set(id, s);
+      });
+      Object.assign(gYtSheet, { byChannel: by, todayProbes: today, lastRunAt: last, rows: rows.length, dayStart, error: '', at: Date.now() });
+    } catch (e) { gYtSheet.error = e.message || '읽기 실패'; gYtSheet.at = Date.now(); }
+    finally { gYtSheet.loading = null; }
+    return gYtSheet;
+  })();
+  return gYtSheet.loading;
+}
+/* 채널 하나의 «지금 상태» — 이 페이지에서 직접 확인한 결과와 예약 확인(시트) 중 더 최근 것 */
+function gYtChannelState(channelId) {
+  const live = gYtProbe.byChannel.get(channelId);
+  const liveDone = (live && live.state && live.at) ? Object.assign({ source: 'live' }, live) : null;
+  const sheet = gYtSheet.byChannel.get(channelId) || null;
+  if (liveDone && sheet) return liveDone.at >= sheet.at ? liveDone : sheet;
+  return liveDone || sheet || (live && live.pending ? { pending: live.pending } : null);
+}
+function gYtIsFresh(s, ms) { return !!(s && s.at && Date.now() - s.at <= ms); }
+function gYtTimeLabel(ts) {
+  if (!ts) return '';
+  const d = new Date(ts), now = new Date();
+  const hm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  if (d.toDateString() === now.toDateString()) return hm;
+  const y = new Date(now); y.setDate(now.getDate() - 1);
+  if (d.toDateString() === y.toDateString()) return `어제 ${hm}`;
+  return `${d.getMonth() + 1}/${d.getDate()} ${hm}`;
+}
+/* 설정 → 연동의 «예약 확인» 줄 */
+async function gRenderYtSheetStatus(interactive) {
+  const el = document.getElementById('g_yt_sheet_status'); if (!el) return;
+  if (!ENV.isHttp) { el.textContent = ' 배포된 주소에서만 읽을 수 있어요'; return; }
+  el.textContent = ' 읽는 중…';
+  await gYtSheetLoad(true, interactive).catch(() => null);
+  if (gYtSheet.error) { el.textContent = gYtSheet.error === '로그인 필요' ? ' Google 로그인 후 볼 수 있어요' : ` ⚠ ${gYtSheet.error}`; return; }
+  if (!gYtSheet.byChannel.size) {
+    el.textContent = gYtSheet.created
+      ? ` 시트에 «${G_YT_STATUS_SHEET}» 탭을 만들었어요 — 메이크 «유튜브 업로드 가능 확인 (예약)» 시나리오가 돌면 여기 결과가 쌓입니다`
+      : ' 아직 결과가 없어요 — 메이크 «유튜브 업로드 가능 확인 (예약)» 시나리오가 켜져 있는지 확인하세요';
+    return;
+  }
+  const blocked = [...gYtSheet.byChannel.values()].filter(s => s.state === 'blocked').map(s => s.channelName || s.channelId);
+  const bad = [...gYtSheet.byChannel.values()].filter(s => s.state === 'error').map(s => s.channelName || s.channelId);
+  el.textContent = ` 마지막 확인 ${gYtTimeLabel(gYtSheet.lastRunAt)} · 채널 ${gYtSheet.byChannel.size}개 · 오늘 확인 ${gYtSheet.todayProbes}개 (프로젝트 한도에서 차감)`
+    + (blocked.length ? ` · ⛔ 한도: ${blocked.join(', ')}` : '') + (bad.length ? ` · ⚠ 오류: ${bad.join(', ')}` : '');
+  ['g1', 'g2'].forEach(x => gRenderChannelUsage(x));
+}
 /* 채널 하나를 YouTube 에 물어본다 — 파일 없이 «업로드 자리 열기» (메이크 시나리오가 대신 한다) */
 async function gYtProbeChannel(channelId, force) {
   const url = gYtProbeUrl();
@@ -5676,10 +5863,12 @@ async function gYtProbeChannel(channelId, force) {
       if (!j || typeof j !== 'object' || !('ok' in j)) r = { state: 'unknown', error: (text || `HTTP ${res.status}`).slice(0, 80) };
       else if (j.ok === true) r = { state: 'ok' };
       else if (j.reason === 'uploadLimitExceeded') r = { state: 'blocked', reason: j.reason, message: j.message || '' };
+      else if (j.reason === 'quotaExceeded' || j.reason === 'dailyLimitExceeded') r = { state: 'quota', reason: j.reason, message: j.message || '', status: j.status || 403 };   // 우리 프로젝트의 하루 확인 한도가 다 찼다 — 채널 문제가 아니다
       else if (j.reason === 'unknownChannel') r = { state: 'unknown', error: '확인 시나리오에 없는 채널이에요 — 블루프린트에 채널을 추가해야 합니다' };
       else r = { state: 'error', reason: j.reason || '', message: j.message || '', status: j.status || 0 };
     } catch (e) { r = { state: 'unknown', error: e.message }; }
     r.at = Date.now();
+    if (r.state === 'ok' || r.state === 'blocked') gYtProbeSpent.push({ at: r.at, channelId });   // 구글까지 닿은 확인은 업로드 요청 1개로 집계된다
     gYtProbe.byChannel.set(channelId, r);
     return r;
   })();
@@ -5694,21 +5883,26 @@ async function gYtProbeAll(force) {
 function gYtProbeLabel(r) {
   if (!r) return { text: '', cls: '' };
   if (r.pending && !r.state) return { text: '확인 중…', cls: '' };
-  if (r.state === 'ok') return { text: '✅ 올릴 수 있음', cls: 'ok' };
-  if (r.state === 'blocked') return { text: '⛔ 하루 한도 도달', cls: 'warn' };
-  if (r.state === 'error') return { text: `⚠ 연결 오류${r.status ? ' ' + r.status : ''}`, cls: 'near' };
+  // 예약 확인(시트) 결과면 언제 본 것인지 붙인다 — 시간이 지난 결과는 «오래됨»
+  const when = r.source === 'sheet' ? ` · ${gYtTimeLabel(r.at)}${gYtIsFresh(r, G_YT_SHEET_STALE_MS) ? '' : ' (오래됨)'}` : '';
+  if (r.state === 'ok') return { text: '✅ 올릴 수 있음' + when, cls: 'ok' };
+  if (r.state === 'blocked') return { text: '⛔ 하루 한도 도달' + when, cls: 'warn' };
+  if (r.state === 'quota') return { text: '확인 못 함 (프로젝트 한도)' + when, cls: '' };
+  if (r.state === 'error') return { text: `⚠ 연결 오류${r.status ? ' ' + r.status : ''}` + when, cls: 'near' };
   if (r.state === 'unknown') return { text: '확인 못 함', cls: '' };
   return { text: '', cls: '' };
 }
 function gRenderChannelUsage(t) {
   const sel = document.getElementById(`${t}_유튜브채널`); if (!sel) return;
   const menu = document.getElementById(`${t}_chpick_menu`);
-  const probeOn = !!gYtProbeUrl();
+  const probeOn = !!gYtProbeUrl();                 // 등록 직전 실시간 확인 웹훅
+  const sheetOn = gYtSheet.byChannel.size > 0;     // 예약 확인 결과가 있음
+  const statusOn = probeOn || sheetOn;
   if (menu) menu.querySelectorAll('.chpick-item').forEach(el => {
     const tag = el.querySelector('[data-role="usage"]'); if (!tag) return;
     // 확인이 켜져 있으면 YouTube 답(✅/⛔)만, 꺼져 있으면 참고용 24시간 업로드 수만 — 둘 다 넣으면 채널명이 밀린다
     let text = '', cls = 'chpick-usage';
-    if (probeOn) { const lb = gYtProbeLabel(gYtProbe.byChannel.get(el.dataset.id)); text = lb.text; if (lb.cls) cls += ' ' + lb.cls; }
+    if (statusOn) { const lb = gYtProbeLabel(gYtChannelState(el.dataset.id)); text = lb.text; if (lb.cls) cls += ' ' + lb.cls; }
     else if (gYtUsage.at && !gYtUsage.error) text = `24시간 ${gYtCountFor(el.dataset.id)}개`;
     tag.textContent = text;
     tag.className = cls;
@@ -5718,24 +5912,45 @@ function gRenderChannelUsage(t) {
   const ch = gChannelChoices().find(c => c.channelId === id) || { channelName: id };
   const bits = [];
   let cls = 'field-hint';
-  if (probeOn) {
-    const r = gYtProbe.byChannel.get(id);
-    if (r && r.state === 'blocked') { cls += ' err'; bits.push(`⛔ YouTube 가 «${esc(ch.channelName)}» 채널의 업로드를 지금 거절합니다 (하루 한도 도달) — 다른 채널을 고르거나 24시간쯤 뒤에 등록하세요`); }
-    else if (r && r.state === 'error') { cls += ' err'; bits.push(`⚠ «${esc(ch.channelName)}» 채널 확인에서 오류 (${esc(r.reason || r.status || '')}${r.message ? ' · ' + esc(r.message) : ''}) — 메이크의 YouTube 연결을 확인하세요`); }
-    else if (r && r.state === 'ok') { cls += ' ok'; bits.push('✅ YouTube 확인: 지금 올릴 수 있어요'); }
+  if (statusOn) {
+    const r = gYtChannelState(id);
+    const fromSheet = !!(r && r.source === 'sheet');
+    const when = fromSheet ? `${gYtTimeLabel(r.at)} 예약 확인` : 'YouTube 확인';
+    const stale = fromSheet && !gYtIsFresh(r, G_YT_SHEET_STALE_MS);
+    if (r && r.state === 'blocked') { cls += ' err'; bits.push(`⛔ ${when}: YouTube 가 «${esc(ch.channelName)}» 채널의 업로드를 거절했어요 (하루 한도 도달) — 다른 채널을 고르거나, 다음 확인에서 ✅ 로 바뀐 뒤 등록하세요`); }
+    else if (r && r.state === 'error') { cls += ' err'; bits.push(`⚠ ${when}: «${esc(ch.channelName)}» 채널 확인에서 오류 (${esc(r.reason || r.status || '')}${r.message ? ' · ' + esc(r.message) : ''}) — 메이크의 YouTube 연결을 확인하세요`); }
+    else if (r && r.state === 'ok') { cls += ' ok'; bits.push(`✅ ${when}: 지금 올릴 수 있어요${stale ? ' (오래된 결과예요)' : ''}`); }
+    else if (r && r.state === 'quota') bits.push(`업로드 가능 여부를 확인하지 못했어요 — YouTube API 프로젝트의 하루 확인 한도가 다 찼어요 (한국 ${gPtResetLabel()} 리셋)`);
     else if (r && r.state === 'unknown') bits.push(`업로드 가능 여부를 확인하지 못했어요 (${esc(r.error || '')})`);
     else if (r && r.pending) bits.push('YouTube 에 확인 중…');
+    else if (sheetOn) bits.push(`이 채널은 예약 확인 결과가 아직 없어요${probeOn ? ' — 등록 버튼을 누르면 YouTube 에 직접 확인합니다' : ''}`);
     else bits.push('등록 버튼을 누르면 이 채널로 올릴 수 있는지 YouTube 에 먼저 확인합니다');
-    bits.push(`<button type="button" class="sync-btn" onclick="gYtProbeAll(true)">모든 채널 확인</button>`);
+    if (stale && r.state !== 'blocked') bits.push(`<span style="color:var(--text3)">마지막 예약 확인이 ${gYtTimeLabel(r.at)} 이라 오래됐어요${probeOn ? ' — 등록 버튼을 누르면 다시 확인합니다' : ' — 메이크 «유튜브 업로드 가능 확인 (예약)» 시나리오가 켜져 있는지 보세요'}</span>`);
+    if (sheetOn) bits.push(`<button type="button" class="sync-btn" onclick="gRefreshChannelUsage('${t}', true)">예약 결과 다시 읽기</button>`);
+    if (probeOn) bits.push(`<button type="button" class="sync-btn" onclick="gYtProbeAll(true)">모든 채널 지금 확인 (한도 ${gChannelChoices().length}개)</button>`);
+  } else if (gYtSheet.error === '로그인 필요') {
+    bits.push('Google 로그인하면 예약 확인 결과(채널별 업로드 가능 여부)가 여기 보여요');
   } else {
-    bits.push('등록 전 확인이 꺼져 있어요 — 설정 → 연동에 «YouTube 업로드 가능 확인 웹훅» 을 넣으면 하루 한도에 걸린 채널을 미리 잡습니다');
+    bits.push('등록 전 확인이 꺼져 있어요 — 메이크 «유튜브 업로드 가능 확인 (예약)» 시나리오를 켜면 채널별 상태가 여기 보이고, 설정 → 연동에 확인 웹훅을 넣으면 등록 직전에 직접 확인합니다');
   }
   if (gYtUsage.at && !gYtUsage.error) bits.push(`<span style="color:var(--text3)">최근 24시간 이 채널로 ${gYtCountFor(id)}개 (도구 기준)</span>`);
+  const lim = gYtProjectLimit();
+  if (lim && ((gYtUsage.at && !gYtUsage.error) || (gYtSheet.at && !gYtSheet.error) || gYtProbeSpent.length)) {
+    const u = gYtProjectUsage();
+    const need = (GSET.ytUploadsCountQuota && typeof gAllVideoSlots === 'function') ? gAllVideoSlots(t).length : 0;
+    const over = u.total + need > lim;
+    if (over) cls = 'field-hint err';
+    const parts = [];
+    if (GSET.ytUploadsCountQuota) parts.push(`업로드 ${u.uploads}`);
+    if (gYtSheet.at && !gYtSheet.error) parts.push(`예약 확인 ${u.sheet}`);
+    parts.push(`이 페이지 확인 ${u.probes}`);
+    bits.push(`<br><span style="${over ? 'color:var(--red);font-weight:700' : 'color:var(--text3)'}">${over ? '⛔ ' : ''}YouTube API 프로젝트 오늘 ${u.total}/${lim}개 (${parts.join(' + ')} · 모든 채널 합산 · 한국 ${gPtResetLabel()} 리셋)${need ? ` · 이번 등록 ${need}개` : ''}${over ? ' → 한도를 넘겨요' : ''}</span>`);
+  }
   hint.className = cls;
   hint.innerHTML = bits.join(' ');
 }
 async function gRefreshChannelUsage(t, force) {
-  await gYoutubeUploadCounts(force);
+  await Promise.all([gYoutubeUploadCounts(force), gYtSheetLoad(force)]);
   ['g1', 'g2'].forEach(x => gRenderChannelUsage(x));
 }
 /* 설정 화면의 «확인 테스트» — 지금 고른 채널(없으면 기본 채널)로 한 번 물어본다 */
@@ -5753,23 +5968,51 @@ async function gTestYtProbe() {
   ['g1', 'g2'].forEach(x => gRenderChannelUsage(x));
 }
 /* 보내기 전 확인 — { ok:true } 또는 { ok:false, msg } */
-async function gYtLimitGate(t, channelId) {
-  if (!gYtProbeUrl() || !channelId) return { ok: true, off: true };
+async function gYtLimitGate(t, channelId, need) {
   if (gYtForce[t] === channelId) { gYtForce[t] = ''; return { ok: true, forced: true }; }
+  const ch = gChannelChoices().find(c => c.channelId === channelId) || { channelName: channelId };
+  const focus = () => { const box = document.getElementById(`${t}_chpick`); if (box) { box.scrollIntoView({ block: 'center', behavior: 'smooth' }); gKeepViewportTop(); } };
+  const offerForce = () => { const hint = document.getElementById(`${t}_chpick_hint`); if (hint) hint.innerHTML += ` <button type="button" class="sync-btn" onclick="gYtForce['${t}']='${esc(channelId)}';gSubmitAd('${t}')">그래도 등록</button>`; };
+  // ① 프로젝트 하루 한도 (구글이 정한 100 · 모든 채널 합산) — 업로드가 이 한도를 쓰는 옛 방식(설정에서 켰을 때)에만 세서 막는다
+  const lim = gYtProjectLimit();
+  if (lim && need && GSET.ytUploadsCountQuota) {
+    await gYoutubeUploadCounts(true, true);
+    if (!gYtUsage.error) {
+      const used = gYtProjectUsed();
+      if (used + need > lim) {
+        gRenderChannelUsage(t); offerForce(); focus();
+        return { ok: false, state: 'project', msg: `YouTube API 프로젝트 하루 업로드 한도에 닿아서 보내지 않았어요 — 오늘 ${used}개 + 이번 ${need}개 > ${lim}개. 모든 채널이 같이 쓰는 한도라 채널을 바꿔도 소용없고, 한국 시간 ${gPtResetLabel()} 에 리셋됩니다` };
+      }
+    }
+  }
+  if (!channelId) return { ok: true, off: true };
+  // ② 예약 확인 결과(시트) — 최근 것이면 그걸로 판단하고 한도를 쓰지 않는다
+  await gYtSheetLoad(false, true).catch(() => null);
+  const s = gYtChannelState(channelId);   // 이 페이지에서 직접 확인한 것과 예약 확인 중 더 최근 것 (직접 확인한 결과면 아래 ③에서 다시 물어본다)
+  const fromSheet = !!(s && s.source === 'sheet');
+  // 하루 안의 «한도» 는 풀렸다는 확인이 있기 전까지 막는다 — 다만 3시간 넘게 지난 결과이고 웹훅이 있으면 아래 ③에서 다시 물어본다
+  if (fromSheet && s.state === 'blocked' && gYtIsFresh(s, 24 * 3600000) && (gYtIsFresh(s, G_YT_SHEET_STALE_MS) || !gYtProbeUrl())) {
+    gRenderChannelUsage(t); offerForce(); focus();
+    return { ok: false, state: 'blocked', msg: `${gYtTimeLabel(s.at)} 예약 확인에서 YouTube 가 «${ch.channelName}» 채널의 업로드를 거절해서 보내지 않았어요 (하루 한도 도달) — 다른 채널을 고르거나 다음 확인에서 ✅ 로 바뀐 뒤 등록하세요. 그 사이 풀린 게 확실하면 «그래도 등록»` };
+  }
+  if (fromSheet && s.state === 'ok' && gYtIsFresh(s, G_YT_SHEET_FRESH_MS)) { gRenderChannelUsage(t); return { ok: true, state: 'ok', via: 'sheet' }; }
+  if (!gYtProbeUrl()) {
+    if (fromSheet && s.state === 'ok') showToast(`«${ch.channelName}» 채널의 마지막 예약 확인(${gYtTimeLabel(s.at)})이 좀 지났어요 — 그대로 보냅니다`, 'info', 5000);
+    return { ok: true, off: true };
+  }
+  // ③ 채널 하루 한도 — YouTube 에 «자리 열기» 로 직접 물어본다 (한도 1개 소모)
   const r = await gYtProbeChannel(channelId, true);
   gRenderChannelUsage(t);
-  const ch = gChannelChoices().find(c => c.channelId === channelId) || { channelName: channelId };
   if (r.state === 'blocked') {
-    const box = document.getElementById(`${t}_chpick`); if (box) { box.scrollIntoView({ block: 'center', behavior: 'smooth' }); gKeepViewportTop(); }
+    focus();
     return { ok: false, state: r.state, msg: `YouTube 가 «${ch.channelName}» 채널의 업로드를 지금 거절해서 보내지 않았어요 (하루 한도 도달) — 다른 채널을 고르거나 24시간쯤 뒤에 등록하세요` };
   }
   if (r.state === 'error') {
-    const hint = document.getElementById(`${t}_chpick_hint`);
-    if (hint) hint.innerHTML += ` <button type="button" class="sync-btn" onclick="gYtForce['${t}']='${esc(channelId)}';gSubmitAd('${t}')">그래도 등록</button>`;
-    const box = document.getElementById(`${t}_chpick`); if (box) { box.scrollIntoView({ block: 'center', behavior: 'smooth' }); gKeepViewportTop(); }
+    offerForce(); focus();
     return { ok: false, state: r.state, msg: `«${ch.channelName}» 채널 확인에서 오류가 나서 보내지 않았어요 (${r.reason || r.status || ''}${r.message ? ' · ' + r.message : ''}) — 메이크의 YouTube 연결을 확인하거나, 확실하면 «그래도 등록»` };
   }
-  if (r.state === 'unknown') showToast(`채널 업로드 가능 여부를 확인하지 못했어요 (${r.error || ''}) — 그대로 보냅니다`, 'info', 5000);
+  if (r.state === 'quota') showToast(`YouTube API 프로젝트의 하루 확인 한도가 다 차서 실시간 확인은 못 했어요${fromSheet && s.state === 'ok' ? ` — ${gYtTimeLabel(s.at)} 예약 확인(올릴 수 있음)대로 보냅니다` : ' — 그대로 보냅니다'}`, 'info', 6000);
+  else if (r.state === 'unknown') showToast(`채널 업로드 가능 여부를 확인하지 못했어요 (${r.error || ''}) — 그대로 보냅니다`, 'info', 5000);
   return { ok: true, state: r.state };
 }
 function gToggleChannelMenu(t, force) {
@@ -6933,6 +7176,13 @@ async function gCheckAdsCreated(data, state) {
 function gErrorHint(row) {
   const s = `${row.msg || ''} ${row.detail || ''}`;
 
+  /* ── 방금 올린 YouTube 영상을 Google Ads 가 아직 못 찾음 (영상 애셋 단계) ── */
+  if (/VIDEO_NOT_FOUND|youtubeVideoRegistrationError/i.test(s)) {
+    const vid = (s.match(/"stringValue":\s*"([A-Za-z0-9_-]{11})"/) || [])[1] || '';
+    return `방금 올린 YouTube 영상${vid ? ` (${vid})` : ''}을 Google Ads 가 아직 찾지 못했어요 — 보통 YouTube 처리가 덜 끝난 상태예요. Make 가 1분 뒤 자동으로 다시 시도합니다 (최대 3번). 그래도 실패하면 youtu.be/${vid || '영상ID'} 를 열어 보세요: 재생되면 시간 문제라 다시 보내면 되고, «삭제됨»이면 YouTube 가 같은 영상 반복 업로드를 스팸으로 보고 지운 것이라 영상을 바꿔야 합니다`;
+  }
+  /* ── YouTube API 프로젝트 하루 업로드 한도 (모든 채널 합산) ── */
+  if (/defaultVideoInsertPerDayPerProject|Video Uploads per day|video_insert/i.test(s) || (/rateLimitExceeded|RATE_LIMIT_EXCEEDED/i.test(s) && /youtube/i.test(s))) return 'YouTube API 프로젝트의 하루 영상 업로드 한도(기본 100개)를 다 썼어요 — 채널이 아니라 API 프로젝트 기준이라 모든 채널이 같이 씁니다. 채널을 바꿔도 소용없고, 미국 태평양 자정(한국 16:00 · 겨울 17:00)에 리셋됩니다. 같은 영상을 다시 올리는 등록을 줄이거나, Google Cloud 콘솔 → YouTube Data API → 할당량에서 «Video Uploads per day» 상향을 신청하세요';
   /* ── YouTube 채널 하루 업로드 한도 ── */
   if (/uploadLimitExceeded|exceeded the number of videos they may upload/i.test(s)) return 'YouTube 채널의 하루 업로드 한도를 넘었어요 — 이 채널은 24시간쯤 지나야 다시 올릴 수 있습니다. 다른 채널로 등록하거나 내일 하세요. 채널 고르기에 최근 24시간 업로드 수가 보이니 그걸 보고 고르면 됩니다 (한도는 채널마다 달라요 — YouTube 스튜디오 → 설정 → 채널 → 기능 사용 자격에서 «고급 기능»을 켜면 한도가 올라갑니다)';
   /* ── 이름 중복 ── */
@@ -7249,6 +7499,11 @@ function gApplyGroupSeq(t, seq) {
 async function gSubmitAd(t) {
   const data = gGetData(t); const isT2 = t === 'g2';
   if (!data.계정명) { showToast('계정명은 필수입니다', 'error'); return; }
+  // 새 캠페인을 만들면 안 되는 계정(캠페인 한도 등)은 광고 등록 탭에서 막는다 — 세트 추가(g2)는 기존 캠페인에 넣는 것이라 그대로
+  if (!isT2 && gIsBlockedAccount(data.계정명)) {
+    showToast(`«${data.계정명}» 계정은 지금 광고 등록에서 제외돼 있어요 (캠페인 한도) — 설정 → 연동 → 「광고 등록 탭에서 고를 수 없는 계정」에서 바꿀 수 있어요`, 'error', 7000);
+    return;
+  }
   if (!data.광고그룹명) { showToast('광고그룹명은 필수입니다 — 설정에서 치과명·약칭을 확인하세요', 'error'); return; }
   if (isT2 && !data.캠페인ID) { showToast('캠페인 ID를 입력해주세요', 'error'); return; }
   if (!isT2 && !data.캠페인명) { showToast('캠페인명을 입력해주세요', 'error'); return; }
@@ -7313,8 +7568,8 @@ async function gSubmitAd(t) {
   // YouTube 채널 하루 업로드 한도 — 고른 채널로 파일 없이 «업로드 자리 열기»를 해 봐서 YouTube 가 거절하면 보내지 않는다
   {
     showToast('YouTube 채널 업로드 가능 확인 중...', 'info');
-    const gate = await gYtLimitGate(t, data.유튜브채널ID);
-    if (!gate.ok) { showToast(gate.msg, 'error', 9000); restore(); return; }
+    const gate = await gYtLimitGate(t, data.유튜브채널ID, gAllVideoSlots(t).length);
+    if (!gate.ok) { showToast(gate.msg, 'error', 10000); restore(); return; }
   }
   showToast('Make로 전송 중...', 'info');
   const blocks = gAllVideoSlots(t).map(x => x.slot);   // 영상 슬롯 단위 (광고 여러 개 × 영상 여러 개)
@@ -7452,7 +7707,7 @@ document.getElementById('g1_시작일').value = new Date().toISOString().split('
 const SHARED_SETTINGS_URL = '/settings.json';
 const SHARED_API_URL = '/api/settings';
 const SHARED_META_KEYS = ['staff', 'accounts', 'accountVariants', 'pages', 'pageInstagram', 'regions'];
-const SHARED_GOOGLE_KEYS = ['staff', 'clinics', 'regions', 'channels', 'cta', 'accounts', 'audiences'];
+const SHARED_GOOGLE_KEYS = ['staff', 'clinics', 'regions', 'channels', 'cta', 'accounts', 'audiences', 'blockedAccounts'];
 const SHARED_STAMP_KEY = 'adtool_shared_settings_stamp';   // 마지막으로 적용한 공유 설정의 updatedAt
 const SHARED_DIRTY_KEY = 'adtool_settings_local_dirty';    // 이 브라우저에서만 바꾼 게 있음
 const ADMIN_KEY_STORE = 'adtool_admin_key';
@@ -7856,5 +8111,3 @@ loadSharedSettings();   // 관리자가 올린 공유 설정이 있으면 그걸
 </script>
 </body>
 </html>
-
-  
