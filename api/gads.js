@@ -21,8 +21,8 @@
 
 const HOST = 'https://googleads.googleapis.com';
 // 이 파일의 빌드 표식 — HTML(연동 탭)이 /api/gads?type=ping 으로 읽어 구버전 배포를 잡아낸다
-const BUILD = '2026-09-21.1';
-const FEATURES = ['audience', 'geo', 'findcampaigns', 'campaigngeo', 'campaign', 'campaignbyname', 'mcc', 'exclude', 'access'];
+const BUILD = '2026-09-21.2';
+const FEATURES = ['audience', 'geo', 'findcampaigns', 'campaigngeo', 'campaign', 'campaignbyname', 'campaignsbyword', 'mcc', 'exclude', 'access'];
 
 // 최신 버전부터 훑는다. 지원 종료된 버전은 HTML 404를 돌려주므로 건너뛴다.
 const CANDIDATE_VERSIONS = ['v23', 'v22', 'v21', 'v20', 'v19', 'v18'];
@@ -295,6 +295,35 @@ module.exports = async function handler(req, res) {
         `FROM campaign WHERE campaign.id = ${Number(id)} AND campaign.status != 'REMOVED' LIMIT 1`;
       try { return res.status(200).json((await searchCampaignsEverywhere(query, true)).slice(0, 1)); }
       catch (e) { return res.status(e.http || 500).json({ error: e.message, apiVersion: V }); }
+    }
+
+    // 한 광고계정 안에서 이름에 어떤 말이 들어간 캠페인을 모두 돌려준다 (삭제된 것 제외).
+    //   페이지가 캠페인명을 입력하는 즉시 부른다 — 첫 단어(치과 약칭)로 그 계정의 캠페인을 받아서
+    //   «완전히 같은 이름»과 «공백·문자 차이만 있는 거의 같은 이름»을 페이지에서 가려낸다.
+    //   (구글에 이름 그대로 물어보면 공백 두 칸 같은 숨은 차이는 못 잡는다)
+    if (type === 'campaignsbyword') {
+      const cid = String(customerId).replace(/[^0-9]/g, '');
+      const q = String(req.query.q || '').replace(/['%\\]/g, '').trim();
+      if (!cid) return res.status(400).json({ error: 'customerId가 필요합니다' });
+      if (!q) return res.status(400).json({ error: 'q가 필요합니다' });
+      const query =
+        'SELECT campaign.id, campaign.name, campaign.status, customer.id, customer.descriptive_name ' +
+        `FROM campaign WHERE campaign.status != 'REMOVED' AND campaign.name LIKE '%${q}%' ORDER BY campaign.id DESC LIMIT 500`;
+      const r = await fetch(`${API}/customers/${cid}/googleAds:searchStream`, {
+        method: 'POST', headers, body: JSON.stringify({ query }),
+      });
+      const body = await readBody(r);
+      if (!r.ok || !body.ok) return res.status(r.status || 500).json({ error: gadsError(body, r), apiVersion: V });
+      const out = [];
+      (Array.isArray(body.json) ? body.json : [body.json]).forEach((chunk) =>
+        (chunk.results || []).forEach((x) => out.push({
+          id: String(x.campaign.id),
+          name: x.campaign.name,
+          status: x.campaign.status,
+          customerId: String((x.customer && x.customer.id) || cid),
+          customerName: (x.customer && x.customer.descriptiveName) || `계정 ${cid}`,
+        })));
+      return res.status(200).json(out);
     }
 
     // 한 광고계정 안에서 이름이 «정확히» 같은 캠페인을 찾는다 (삭제된 것 제외).
