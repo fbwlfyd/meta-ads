@@ -367,6 +367,15 @@
   .btn-sm.blue { background: var(--blue); border-color: var(--blue); color: white; }
   .btn-sm.blue:hover { background: #0066dd; color: white; }
   .set-note { font-size: 12px; color: var(--text2); background: var(--bg); border-radius: var(--radius-sm); padding: 10px 12px; line-height: 1.55; margin-bottom: 14px; }
+  /* 설정 안의 묶음 상자 (예: YouTube 업로드 가능 확인) */
+  .set-box { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px 4px; margin: 2px 0 14px; }
+  .set-box-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; font-size: 13px; color: var(--text1); }
+  .set-box-head .field-hint { margin-top: 0; }
+  .set-status { min-height: 40px; display: flex; align-items: center; gap: 10px; padding: 7px 12px; background: var(--bg); border-radius: var(--radius-sm); font-size: 12px; color: var(--text2); line-height: 1.45; }
+  .set-status .sync-btn { flex-shrink: 0; margin-left: auto; }
+  .field label.chk { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; font-weight: 400; color: var(--text1); cursor: pointer; margin: 8px 0 0; }
+  .field label.chk input { width: auto; height: auto; margin: 0; appearance: auto; -webkit-appearance: auto; }
+  .field label.chk small { font-size: 11px; color: var(--text3); }
   .geo-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; align-items: center; }
   .geo-chip { padding: 5px 11px; border: 1px solid var(--border2); border-radius: 20px; font-size: 11px; cursor: pointer; background: var(--white); color: var(--text2); user-select: none; white-space: nowrap; }
   .geo-chip.on { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); font-weight: 600; }
@@ -1177,16 +1186,30 @@
         </div>
         <div class="row2">
           <div class="field"><label>중계 함수 주소 (같은 도메인에 올린 파일)</label><input type="text" id="g_proxy_url" placeholder="/api/gads"></div>
-          <div class="field"><label>YouTube 업로드 가능 확인 웹훅 (메이크 «유튜브 업로드 가능 확인» 시나리오)</label><input type="text" id="g_yt_probe_url" placeholder="https://hook.eu1.make.com/…">
-            <div class="field-hint">등록 직전에 고른 채널로 파일 없이 «업로드 자리 열기»만 해 봐서, YouTube 가 하루 한도로 거절하면 보내지 않습니다. 아래 «예약 확인» 결과가 최근(90분 안) 것이면 그걸로 판단하고 이 웹훅은 부르지 않아요. 비워 두면 예약 확인 결과만 봅니다.</div>
-            <div class="field-hint" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="g_yt_probe_all">채널 목록을 열 때 모든 채널 자동 확인 (열 때마다 11개 소모 · 예약 확인을 쓰면 끄세요)</label><button type="button" class="sync-btn" onclick="gTestYtProbe()">🔌 확인 테스트</button><span id="g_yt_probe_status"></span></div>
-            <div class="field-hint" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><b>예약 확인</b> — 메이크 «유튜브 업로드 가능 확인 (예약)» 시나리오가 정해진 시간(예: 10~17시 매시간)에 모든 채널을 확인해 참조 시트 «채널상태» 탭에 남기고, 이 페이지는 그걸 읽어서 보여줍니다<button type="button" class="sync-btn" onclick="gRenderYtSheetStatus(true)">📄 결과 읽기</button><span id="g_yt_sheet_status"></span></div>
-            <div class="field-hint" style="color:#b45309;">⚠ 확인 한 번 = 아래 «프로젝트 하루 한도» 1개 소모 (자리 열기 자체가 업로드 요청으로 집계됩니다). 예약 확인 10~17시 매시간이면 8회 × 11채널 = 하루 88개 → 나머지 12개만 수동 확인에 쓸 수 있어요</div>
-          </div>
-          <div class="field"><label>YouTube API 프로젝트 하루 업로드 한도 (개)</label><input type="number" id="g_yt_project_limit" min="0" step="1" placeholder="100"><div class="field-hint">구글이 API 프로젝트마다 정한 값 (기본 100 · «Video Uploads per day»). <b>모든 채널이 같이 씁니다.</b> 오늘(미국 태평양 자정 기준, 한국 16:00 리셋) 쓴 개수를 세서 채널 목록에 보여줍니다. 구글에서 상향받으면 여기 숫자를 바꾸세요. 0 이면 끄기</div>
-            <div class="field-hint"><label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="g_yt_uploads_count">영상 업로드도 이 한도에 셈</label> — 메이크가 HTTP 로 직접 올리던 옛 시나리오(v13 이전)일 때만 켜세요. 지금처럼 Make YouTube 앱으로 올리면(v14) 업로드는 메이크 쪽 할당량을 쓰므로 여기서 세지 않습니다</div></div>
+          <div class="field"><label>광고 등록 탭에서 고를 수 없는 계정 <span class="auto-tag g">쉼표로 구분</span></label><input type="text" id="g_blocked_accounts" placeholder="예: 4부서_1"><div class="field-hint">캠페인 한도(10,000개)가 찬 계정처럼 새 캠페인을 만들면 안 되는 계정 — 광고 등록 탭에서 회색으로 잠기고, 세트 추가는 그대로 됩니다</div></div>
         </div>
-        <div class="field"><label>광고 등록 탭에서 고를 수 없는 계정 <span class="auto-tag g">쉼표로 구분</span></label><input type="text" id="g_blocked_accounts" placeholder="예: 4부서_1"><div class="field-hint">캠페인 개수 한도(10,000개)가 찬 계정처럼 <b>새 캠페인을 만들면 안 되는 계정</b>을 적어 두세요 — 광고 등록 탭의 계정 목록에 회색으로 보이고 선택되지 않아요. 세트 추가(기존 캠페인에 광고그룹·광고 넣기)는 그대로 됩니다. 계정을 정리한 뒤 여기서 지우면 다시 고를 수 있어요</div></div>
+        <div class="set-box">
+          <div class="set-box-head"><b>YouTube 업로드 가능 확인</b><span class="field-hint">채널마다 하루 업로드 한도가 있어 넘으면 등록이 실패해요 — 걸린 채널을 미리 잡아 채널 목록에 ✅/⛔ 로 보여줍니다</span></div>
+          <div class="row2">
+            <div class="field"><label>예약 확인 결과 <span class="auto-tag">시트 «채널상태» 탭</span></label>
+              <div class="set-status"><span id="g_yt_sheet_status">«결과 읽기»를 누르면 마지막 확인 시각과 채널 상태를 보여줘요</span><button type="button" class="sync-btn" onclick="gRenderYtSheetStatus(true)">📄 결과 읽기</button></div>
+              <div class="field-hint">메이크 «유튜브 업로드 가능 확인 (예약)» 시나리오가 정한 시간마다(예: 10~17시 매시간) 모든 채널을 확인해 남깁니다. 페이지는 읽기만 하니 한도를 안 써요</div>
+            </div>
+            <div class="field"><label>실시간 확인 웹훅 <span class="auto-tag">메이크 «유튜브 업로드 가능 확인» 시나리오</span></label><input type="text" id="g_yt_probe_url" placeholder="https://hook.eu1.make.com/…">
+              <div class="field-hint">등록 직전, 예약 결과가 없거나 90분 넘게 지났을 때만 고른 채널을 YouTube 에 직접 물어봅니다 (1개 소모). 비워 두면 예약 결과만 봅니다</div>
+            </div>
+          </div>
+          <div class="row2">
+            <div class="field"><label>YouTube API 프로젝트 하루 한도 (개)</label><input type="number" id="g_yt_project_limit" min="0" step="1" placeholder="100">
+              <div class="field-hint">구글 기본 100 (Video Uploads per day) · 모든 채널 합산 · 한국 16:00 리셋. <b>확인 한 번 = 1개</b> — 예약 10~17시 매시간이면 88개, 남는 12개가 실시간 확인 몫. 0 이면 끄기</div>
+            </div>
+            <div class="field"><label>옵션</label>
+              <label class="chk"><input type="checkbox" id="g_yt_probe_all">채널 목록을 열 때 모든 채널 실시간 확인 <small>열 때마다 11개 소모 · 예약 확인을 쓰면 끄기</small></label>
+              <label class="chk"><input type="checkbox" id="g_yt_uploads_count">영상 업로드도 한도에 셈 <small>메이크가 HTTP 로 직접 올리던 v13 이전 방식일 때만</small></label>
+              <div class="field-hint" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><button type="button" class="sync-btn" onclick="gTestYtProbe()">🔌 웹훅 확인 테스트</button><span id="g_yt_probe_status"></span></div>
+            </div>
+          </div>
+        </div>
         <div style="display:flex;gap:8px;">
           <button class="btn-sm blue" onclick="testGoogleProxy()">🔌 중계 함수 연결 테스트</button>
           <button class="btn-sm" onclick="gCheckAccess()">👤 내 계정 권한 확인</button>
@@ -2401,7 +2424,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-21.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-23.2';
+const G_PAGE_BUILD = '2026-09-23.3';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -5830,19 +5853,19 @@ function gYtTimeLabel(ts) {
 /* 설정 → 연동의 «예약 확인» 줄 */
 async function gRenderYtSheetStatus(interactive) {
   const el = document.getElementById('g_yt_sheet_status'); if (!el) return;
-  if (!ENV.isHttp) { el.textContent = ' 배포된 주소에서만 읽을 수 있어요'; return; }
-  el.textContent = ' 읽는 중…';
+  if (!ENV.isHttp) { el.textContent = '배포된 주소에서만 읽을 수 있어요'; return; }
+  el.textContent = '읽는 중…';
   await gYtSheetLoad(true, interactive).catch(() => null);
-  if (gYtSheet.error) { el.textContent = gYtSheet.error === '로그인 필요' ? ' Google 로그인 후 볼 수 있어요' : ` ⚠ ${gYtSheet.error}`; return; }
+  if (gYtSheet.error) { el.textContent = gYtSheet.error === '로그인 필요' ? 'Google 로그인 후 볼 수 있어요' : `⚠ ${gYtSheet.error}`; return; }
   if (!gYtSheet.byChannel.size) {
     el.textContent = gYtSheet.created
-      ? ` 시트에 «${G_YT_STATUS_SHEET}» 탭을 만들었어요 — 메이크 «유튜브 업로드 가능 확인 (예약)» 시나리오가 돌면 여기 결과가 쌓입니다`
-      : ' 아직 결과가 없어요 — 메이크 «유튜브 업로드 가능 확인 (예약)» 시나리오가 켜져 있는지 확인하세요';
+      ? `시트에 «${G_YT_STATUS_SHEET}» 탭을 만들었어요 — 메이크 «유튜브 업로드 가능 확인 (예약)» 시나리오가 돌면 여기 결과가 쌓입니다`
+      : '아직 결과가 없어요 — 메이크 «유튜브 업로드 가능 확인 (예약)» 시나리오가 켜져 있는지 확인하세요';
     return;
   }
   const blocked = [...gYtSheet.byChannel.values()].filter(s => s.state === 'blocked').map(s => s.channelName || s.channelId);
   const bad = [...gYtSheet.byChannel.values()].filter(s => s.state === 'error').map(s => s.channelName || s.channelId);
-  el.textContent = ` 마지막 확인 ${gYtTimeLabel(gYtSheet.lastRunAt)} · 채널 ${gYtSheet.byChannel.size}개 · 오늘 확인 ${gYtSheet.todayProbes}개 (프로젝트 한도에서 차감)`
+  el.textContent = `마지막 확인 ${gYtTimeLabel(gYtSheet.lastRunAt)} · 채널 ${gYtSheet.byChannel.size}개 · 오늘 확인 ${gYtSheet.todayProbes}개 (한도에서 차감)`
     + (blocked.length ? ` · ⛔ 한도: ${blocked.join(', ')}` : '') + (bad.length ? ` · ⚠ 오류: ${bad.join(', ')}` : '');
   ['g1', 'g2'].forEach(x => gRenderChannelUsage(x));
 }
