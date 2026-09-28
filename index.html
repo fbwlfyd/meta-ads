@@ -2424,7 +2424,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-21.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-23.3';
+const G_PAGE_BUILD = '2026-09-28.1';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -7202,7 +7202,7 @@ function gErrorHint(row) {
   /* ── 방금 올린 YouTube 영상을 Google Ads 가 아직 못 찾음 (영상 애셋 단계) ── */
   if (/VIDEO_NOT_FOUND|youtubeVideoRegistrationError/i.test(s)) {
     const vid = (s.match(/"stringValue":\s*"([A-Za-z0-9_-]{11})"/) || [])[1] || '';
-    return `방금 올린 YouTube 영상${vid ? ` (${vid})` : ''}을 Google Ads 가 아직 찾지 못했어요 — 보통 YouTube 처리가 덜 끝난 상태예요. Make 가 1분 뒤 자동으로 다시 시도합니다 (최대 3번). 그래도 실패하면 youtu.be/${vid || '영상ID'} 를 열어 보세요: 재생되면 시간 문제라 다시 보내면 되고, «삭제됨»이면 YouTube 가 같은 영상 반복 업로드를 스팸으로 보고 지운 것이라 영상을 바꿔야 합니다`;
+    return `방금 올린 YouTube 영상${vid ? ` (${vid})` : ''}을 Google Ads 가 아직 찾지 못했어요 — 보통 YouTube 처리가 덜 끝난 상태예요. Make 가 2분 간격으로 최대 5번 다시 시도합니다 (v15 · 옛 버전은 1분×3). 바로 위 «유튜브 처리 확인» 기록에 YouTube 가 뭐라고 했는지 적혀 있어요 — «거부»면 재시도해도 소용없고(같은 파일 재업로드 = duplicate 가 대부분) 그 영상만 빼고 진행되니 다른 파일로 다시 올리세요. 그래도 애매하면 youtu.be/${vid || '영상ID'} 를 열어 보세요`;
   }
   /* ── YouTube API 프로젝트 하루 업로드 한도 (모든 채널 합산) ── */
   if (/defaultVideoInsertPerDayPerProject|Video Uploads per day|video_insert/i.test(s) || (/rateLimitExceeded|RATE_LIMIT_EXCEEDED/i.test(s) && /youtube/i.test(s))) return 'YouTube API 프로젝트의 하루 영상 업로드 한도(기본 100개)를 다 썼어요 — 채널이 아니라 API 프로젝트 기준이라 모든 채널이 같이 씁니다. 채널을 바꿔도 소용없고, 미국 태평양 자정(한국 16:00 · 겨울 17:00)에 리셋됩니다. 같은 영상을 다시 올리는 등록을 줄이거나, Google Cloud 콘솔 → YouTube Data API → 할당량에서 «Video Uploads per day» 상향을 신청하세요';
