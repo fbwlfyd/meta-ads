@@ -2424,7 +2424,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-21.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-28.1';
+const G_PAGE_BUILD = '2026-09-28.2';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -4938,6 +4938,17 @@ function retryVerify(t, idx) {
   updateCard(t, idx, '확인중', '다시 확인하는 중...');
   verifyRegistration(t, idx, st.data);
 }
+/* 한 번에 보내는 소재는 모두 같은 종류여야 한다 (전부 영상 / 전부 이미지 / 전부 Drive 파일ID).
+   Make 는 첫 소재의 파일유형으로 라우트를 고르고 그 라우트가 소재 전부를 같은 방식으로 처리한다 —
+   예) 1번이 영상, 2번이 이미지면 2번에서 영상 ID 가 없어 Graph API «Unsupported get request» 로 멈춘다 */
+function metaCreativeKind(c) { return c.파일 ? (c.파일.type.startsWith('image/') ? '이미지' : '영상') : 'Drive 파일ID'; }
+function metaMixedCreativeError(creatives) {
+  if (!creatives || creatives.length < 2) return '';
+  const first = metaCreativeKind(creatives[0]);
+  const i = creatives.findIndex(c => metaCreativeKind(c) !== first);
+  if (i < 0) return '';
+  return `소재 ${i + 1}은(는) ${metaCreativeKind(creatives[i])}인데 소재 1은 ${first}예요 — 한 번에 등록하는 소재는 모두 같은 종류여야 합니다 (Make 가 첫 소재 기준으로 처리해요). ${first}만 먼저 등록하고, 나머지는 «세트 추가 → 광고 추가»로 그 광고세트에 넣어주세요`;
+}
 async function submitAd(t) {
   try { await resolveMetaRegionTypes(); } catch (e) { /* 종류를 못 알아내면 도시로 보낸다 */ }   // 옛 지역(종류 없음)은 보내기 전에 Meta에 물어본다
   const data = getData(t); const isT2 = t === 't2';
@@ -4963,6 +4974,9 @@ async function submitAd(t) {
   const creatives = collectCreatives(t);
   const empty = creatives.findIndex(c => !c.파일 && !c.파일ID);
   if (empty >= 0) { showToast(`소재 ${empty + 1}에 파일이 없어요`, 'error'); return; }
+  // 메이크 시나리오는 첫 소재의 종류(영상·이미지·Drive)로 길을 고르고 나머지도 같은 종류로 처리한다 — 섞이면 두 번째 소재부터 깨진다
+  const mixed = metaMixedCreativeError(creatives);
+  if (mixed) { showToast(mixed, 'error', 9000); return; }
   const btn = document.getElementById(`${t}_submitBtn`); btn.disabled = true; btn.textContent = '전송 중...';
   showToast('Make로 전송 중...', 'info');
   data.요청ID = gNewRequestId();   // 구글과 같은 등록로그 시트에 Make가 단계를 적을 수 있도록
