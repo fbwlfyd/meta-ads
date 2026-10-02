@@ -1109,7 +1109,8 @@
       <!-- 진단 -->
       <div class="modal-sec" id="msec_diag">
         <div class="set-note">토큰이 어떤 권한을 가졌고 어떤 호출이 왜 실패했는지 그대로 보여줍니다. 목록이 비어 있을 때 여기부터 확인하세요.</div>
-        <div class="field-hint" id="m_page_build" style="margin:0 0 12px;"></div>
+        <div class="field-hint" id="m_page_build" style="margin:0 0 4px;"></div>
+        <div class="field-hint" id="m_proxy_status" style="margin:0 0 12px;"></div>
         <button class="btn-sm blue" onclick="runDiagnostics()">진단 실행</button>
         <button class="btn-sm" onclick="copyDiagnostics()">결과 복사</button>
         <div id="diag_out" style="margin-top:14px;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);border-radius:8px;padding:12px;min-height:60px;color:var(--text2);">진단 실행을 눌러주세요.</div>
@@ -1179,7 +1180,8 @@
         </div>
         <div class="set-note"><b>Google Ads API</b> — 계정·잠재고객·캠페인·광고그룹을 직접 불러오려면 developer token이 필요합니다. 브라우저에서 막힐 수 있으니 아래 버튼으로 먼저 확인하세요.</div>
         <div class="field-hint" id="g_page_build" style="margin:-6px 0 4px;"></div>
-        <div class="field-hint" id="g_proxy_status" style="margin:0 0 12px;">중계 함수 확인 중...</div>
+        <div class="field-hint" id="g_proxy_status" style="margin:0 0 4px;">중계 함수 확인 중...</div>
+        <div class="field-hint" id="g_secure_status" style="margin:0 0 12px;">보안 중계 함수(meta · submit) 확인 중...</div>
         <div class="row2">
           <div class="field"><label>developer token</label><input type="text" id="g_dev_token" placeholder="Google Ads API developer token"></div>
           <div class="field"><label>MCC(login customer) ID</label><input type="text" id="g_login_cid" placeholder="하이픈 없이 숫자만"></div>
@@ -1343,12 +1345,13 @@ function persistGoogleSettings() {
   catch (e) { showToast('구글 설정 저장 실패', 'error'); }
 }
 loadGoogleSettings();
-const WEBHOOKS = {
-  t1: 'https://hook.eu1.make.com/wgou4ekrp482asnvqh7i17wnhs7shwgm',
-  t2: 'https://hook.eu1.make.com/wgou4ekrp482asnvqh7i17wnhs7shwgm',
-};
-const META_ACCESS_TOKEN = 'EAAQT68743nIBRlU3QvgOZAERtM4PXN6gnMzY773HpcCZA2lFs0xyw2fUI4tWeV9SBEthgEx18o3O3ZBREIdGZCx6rPCttbnty3SsRJQE1CTtkl6ULl8EAFw5fZCfhQQaCgRWyuuMu0Xkw5TBircZCW2qkOySKRgCKq5os8ceXZAlHRhhy1oGpZCtSfbM0ZAUqnQZDZD';
-const META_API = 'https://graph.facebook.com/v25.0';
+/* Meta 호출과 Make 전송은 모두 같은 도메인의 중계 함수를 거친다.
+   · api/meta.js   : Meta 액세스 토큰은 Vercel 환경변수에만 있다 (HTML 에 없음)
+   · api/submit.js : Make 웹훅 주소도 환경변수에만 있다
+   둘 다 구글 로그인 토큰으로 «허용된 계정»(ALLOWED_EMAILS) 인지 확인한 뒤에만 동작한다 */
+const META_PROXY_URL = '/api/meta';
+const SUBMIT_URL = '/api/submit';
+const META_PROXY_REQUIRED_BUILD = '2026-10-02.1';
 
 // 광고계정은 /me/adaccounts 로 자동 수집합니다.
 // 아래 목록은 그 호출이 실패했을 때만 쓰는 폴백입니다.
@@ -1696,6 +1699,7 @@ function openSettings(tab) {
   const want = tab && valid.includes(tab) ? tab : (valid.includes(settingsTab) ? settingsTab : valid[0]);
   switchSettingsTab(want);
   if (typeof gShowPageBuild === 'function') gShowPageBuild();   // 진단·연동 탭에 페이지 빌드 표시
+  if (typeof gCheckSecureProxies === 'function') gCheckSecureProxies().catch(() => {});
   document.getElementById('settingsModal').classList.add('show');
 }
 function closeSettings() { document.getElementById('settingsModal').classList.remove('show'); }
@@ -1870,8 +1874,14 @@ async function runDiagnostics() {
   out.textContent = '진단 중...';
   const lines = [];
   const push = (s) => { lines.push(s); out.textContent = lines.join('\n'); };
-  const tokenTail = META_ACCESS_TOKEN.slice(-8);
-  push(`■ 토큰 …${tokenTail} / API ${META_API.split('/').pop()}`);
+  push('■ Meta 중계 함수 (api/meta.js) — 토큰은 서버에만 있어요');
+  try {
+    const r = await fetch(META_PROXY_URL + '?ping=1', { cache: 'no-store' });
+    const j = await r.json();
+    if (!j.ok) throw new Error('응답 이상');
+    push(`  ✅ 배포됨 (${j.build}) · Meta 토큰 ${j.hasToken ? '있음' : '⚠ 없음 (META_ACCESS_TOKEN)'} · 허용 계정 ${j.allowlistSet ? '설정됨' : '⚠ 미설정 (ALLOWED_EMAILS)'} · Drive API 키 ${j.hasGoogleApiKey ? '있음' : '없음 (영상은 대체 주소로 전달)'}`);
+  } catch (e) { push('  ❌ api/meta.js 가 배포에 없어요 — GitHub 의 api 폴더에 meta.js · _auth.js · submit.js 를 올리고 재배포하세요'); }
+  push(`■ 구글 로그인: ${gTokenValid('core') ? '✅ ' + (gTokens.core.hint || '됨') : '❌ 안 됨 — Meta 조회는 구글 로그인(허용 계정)이 필요해요'}`);
   push(`■ 실행 위치: ${ENV.label}  (protocol ${ENV.proto}, iframe ${ENV.inIframe ? 'YES' : 'NO'})`);
   if (!ENV.isHttp || ENV.inIframe) {
     push('');
@@ -2001,8 +2011,8 @@ async function runDiagnostics() {
   if (targets.length === 0) push('  ⏭ 페이지가 없어 건너뜁니다');
   push(`  페이지 토큰 보유: ${withToken.length} / ${DB.pages.length}개`);
   for (const pg of targets) {
-    const tok = DB.pageTokens[pg.pageId];
-    push(`  ─ ${pg.name} (${pg.pageId}) · 토큰 ${tok ? '있음' : '없음'}`);
+    const tok = DB.pageTokens[pg.pageId] ? pg.pageId : null;
+    push(`  ─ ${pg.name} (${pg.pageId}) · 페이지 토큰 ${tok ? '있음 (서버)' : '없음'}`);
     try {
       const r = await fbGetAs(`${pg.pageId}/leadgen_forms`, { fields: 'id,name,status', limit: 50 }, tok);
       const all = r.data || [];
@@ -2424,13 +2434,40 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-21.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-09-28.2';
+const G_PAGE_BUILD = '2026-10-02.1';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.className = 'field-hint'; el.textContent = txt; }
   });
+}
+/* api/meta.js · api/submit.js 가 배포돼 있고 환경변수가 찼는지 — 로그인 없이 ping 으로 본다 (연동 탭 · 진단 탭) */
+async function gCheckSecureProxies() {
+  const els = ['g_secure_status', 'm_proxy_status'].map(id => document.getElementById(id)).filter(Boolean);
+  if (!els.length) return;
+  const set = (cls, html) => els.forEach(el => { el.className = 'field-hint' + (cls ? ' ' + cls : ''); el.innerHTML = html; });
+  if (!ENV.isHttp) { set('', '보안 중계 함수는 배포된 주소에서만 확인할 수 있어요'); return; }
+  set('', '보안 중계 함수(meta · submit) 확인 중...');
+  const ping = async url => {
+    try {
+      const r = await fetch(url + '?ping=1', { cache: 'no-store' });
+      const j = await r.json().catch(() => null);
+      return (j && j.ok) ? j : { missing: true, status: r.status };
+    } catch (e) { return { missing: true, status: 0 }; }
+  };
+  const [m, sb] = await Promise.all([ping(META_PROXY_URL), ping(SUBMIT_URL)]);
+  const bad = [];
+  if (m.missing) bad.push('api/meta.js 없음');
+  else {
+    if (!m.hasToken) bad.push('META_ACCESS_TOKEN 비어 있음');
+    if (!m.allowlistSet) bad.push('ALLOWED_EMAILS 비어 있음');
+    if (String(m.build || '') < META_PROXY_REQUIRED_BUILD) bad.push(`api/meta.js 구버전 (${m.build})`);
+  }
+  if (sb.missing) bad.push('api/submit.js 없음');
+  else { if (!sb.hasMeta) bad.push('MAKE_WEBHOOK_META 비어 있음'); if (!sb.hasGoogle) bad.push('MAKE_WEBHOOK_GOOGLE 비어 있음'); }
+  if (bad.length) set('err', `⚠ 보안 중계 함수: ${esc(bad.join(' · '))} — GitHub 의 api 폴더에 meta.js · submit.js · _auth.js 를 올리고 Vercel 환경변수를 채운 뒤 재배포하세요 (그 전엔 Meta 조회·등록이 안 돼요)`);
+  else set('ok', `✅ 보안 중계 함수 최신 (meta ${esc(m.build)} · submit ${esc(sb.build)}) — Meta 토큰·Make 웹훅은 서버에만 있어요${m.hasGoogleApiKey ? '' : ' · GOOGLE_API_KEY 없음: 영상은 대체 주소로 Meta 에 전달돼요 (큰 파일은 실패할 수 있으니 넣는 걸 권해요)'}`);
 }
 async function gCheckProxyBuild() {
   gShowPageBuild();
@@ -2848,39 +2885,67 @@ function noteMetaThrottle(e, ms) {
   if (bar) bar.innerHTML = `⏳ Meta가 호출 한도로 잠시 막았어요 — ${Math.ceil(metaThrottleLeft() / 1000)}초 뒤에 자동으로 다시 시도합니다 (같은 계정으로 한꺼번에 여러 건 등록하면 자주 생겨요)`;
 }
 
-async function fbGetAs(path, params, token) {
+/* Meta Graph 호출 — 전부 api/meta.js 를 거친다. asPage 를 주면 그 페이지의 페이지 토큰으로 부른다 (서버가 갖고 있다) */
+async function fbGetAs(path, params, asPage) {
   const left = metaThrottleLeft();
   if (left > 0) throw new Error(`Meta 호출 한도로 잠시 쉬는 중이에요 (${Math.ceil(left / 1000)}초 남음) — 등록 자체는 Make에서 계속됩니다`);
-  const q = new URLSearchParams(Object.assign({}, params, { access_token: token || META_ACCESS_TOKEN }));
+  const q = new URLSearchParams();
+  q.set('path', String(path || '').replace(/^\/+/, ''));
+  Object.entries(params || {}).forEach(([k, v]) => { if (v !== undefined && v !== null && k !== 'access_token') q.set(k, String(v)); });
+  if (asPage) q.set('asPage', String(asPage));
   let res;
   try {
-    res = await fetch(`${META_API}/${path}?${q.toString()}`);
+    res = await gAuthFetch('core', `${META_PROXY_URL}?${q.toString()}`);
   } catch (e) {
-    // TypeError: Failed to fetch — Meta가 거절한 게 아니라 요청이 나가지 못한 경우
-    throw new Error(netErrorHint());
+    // 로그인 실패(창 닫힘·차단)는 그대로, 그 밖(요청이 나가지 못함)은 환경 안내
+    throw new Error(/로그인|차단|닫혔|초과/.test(String(e.message)) ? e.message : netErrorHint());
   }
+  return fbParse(res);
+}
+async function fbParse(res) {
   const json = await res.json().catch(() => ({}));
   if (json.error) {
     const e = json.error;
     const parts = [e.error_user_title, e.error_user_msg, e.message].filter(Boolean);
     const err = new Error(parts.join(' — ') || 'Graph API 오류');
     err.fb = e;
+    if (res.status === 401 || res.status === 403) err.auth = true;
     if (isMetaThrottleError(err)) noteMetaThrottle(err);
     throw err;
   }
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) {
+    if (res.status === 404) throw new Error('api/meta.js 가 배포에 없어요 — GitHub 의 api 폴더에 meta.js · _auth.js 를 올리고 재배포하세요');
+    if (res.status === 413) throw new Error('보낸 내용이 너무 커요 (중계 함수 한도 4.5MB)');
+    throw new Error(`HTTP ${res.status}`);
+  }
   return json;
 }
+/* 쓰기 — 업로드(adimages · advideos)만 중계 함수가 허용한다. 캠페인·광고는 Make 가 만든다 */
+async function fbPost(path, body) {
+  const q = new URLSearchParams({ path: String(path || '').replace(/^\/+/, '') });
+  let res;
+  try {
+    res = await gAuthFetch('core', `${META_PROXY_URL}?${q.toString()}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+  } catch (e) { throw new Error(/로그인|차단|닫혔|초과/.test(String(e.message)) ? e.message : netErrorHint()); }
+  return fbParse(res);
+}
 async function fbGet(path, params) { return fbGetAs(path, params, null); }
-async function fbGetAll(path, params, maxPages) {
+/* 다음 페이지 주소(paging.next)는 Meta 도메인 주소라 그대로 못 부른다 — 경로·조건만 떼어 중계 함수로 다시 부른다 */
+async function fbNext(nextUrl, asPage) {
+  const u = new URL(nextUrl, 'https://graph.facebook.com');
+  const path = u.pathname.replace(/^\/v\d+\.\d+\//, '').replace(/^\//, '');
+  const params = {};
+  u.searchParams.forEach((v, k) => { if (k !== 'access_token') params[k] = v; });
+  return fbGetAs(path, params, asPage);
+}
+async function fbGetAll(path, params, maxPages, asPage) {
   const out = [];
-  let json = await fbGet(path, Object.assign({ limit: 100 }, params));
+  let json = await fbGetAs(path, Object.assign({ limit: 100 }, params), asPage);
   out.push(...(json.data || []));
   let pages = 1;
   const cap = maxPages || 10;
   while (json.paging && json.paging.next && pages < cap) {
-    const res = await fetch(json.paging.next);
-    json = await res.json().catch(() => ({}));
+    try { json = await fbNext(json.paging.next, asPage); } catch (e) { break; }
     if (json.error) break;
     out.push(...(json.data || []));
     pages++;
@@ -3003,7 +3068,6 @@ async function loadPages() {
   const add = p => {
     if (!p || !p.id) return;
     if (!map.has(p.id)) map.set(p.id, { name: p.name || p.id, pageId: p.id });
-    if (p.access_token) DB.pageTokens[p.id] = p.access_token;
   };
   // 1순위: 광고계정에 연결된 홍보 가능 페이지 (ads_management 권한이면 됨)
   await Promise.all(DB.accounts.filter(a => a.ok && !a.variant).map(async a => {
@@ -3013,10 +3077,10 @@ async function loadPages() {
       logStep('pages', `act_${a.id}/promote_pages`, true, `${list.length}개`);
     } catch (e) { logStep('pages', `act_${a.id}/promote_pages`, false, e.message); }
   }));
-  // 2순위: 내가 관리하는 페이지 (pages_show_list 필요 · 페이지 토큰까지 받아옴)
+  // 2순위: 내가 관리하는 페이지 (pages_show_list 필요) — 이 페이지들은 서버(api/meta.js)가 페이지 토큰을 갖고 있어 asPage 로 부를 수 있다
   try {
-    const list = await fbGetAll('me/accounts', { fields: 'id,name,access_token' });
-    list.forEach(add);
+    const list = await fbGetAll('me/accounts', { fields: 'id,name' });
+    list.forEach(p => { add(p); if (p.id) DB.pageTokens[p.id] = true; });
     logStep('pages', 'me/accounts', true, `${list.length}개`);
   } catch (e) { logStep('pages', 'me/accounts', false, e.message); }
   // 3순위: 비즈니스 관리자 소유/연결 페이지 (business_management 필요)
@@ -3076,12 +3140,8 @@ async function loadLeadForms(t) {
   const page = DB.pages.find(p => p.name === pageName);
   if (!page) return;
   if (DB.formsByPage[pageName]) { refreshCreativeForms(t); return; }
-  const token = DB.pageTokens[page.pageId] || META_ACCESS_TOKEN;
   try {
-    const q = new URLSearchParams({ fields: 'id,name,status', limit: 200, access_token: token });
-    const res = await fetch(`${META_API}/${page.pageId}/leadgen_forms?${q}`);
-    const json = await res.json();
-    if (json.error) throw new Error(json.error.message);
+    const json = await fbGetAs(`${page.pageId}/leadgen_forms`, { fields: 'id,name,status', limit: 200 }, DB.pageTokens[page.pageId] ? page.pageId : null);
     DB.formsByPage[pageName] = (json.data || [])
       .filter(f => f.status === 'ACTIVE')
       .map(f => ({ pageName, formName: f.name, formId: f.id, status: f.status }));
@@ -3120,7 +3180,7 @@ async function collectInstagramAccounts(accountId, page) {
   const list = [];
   const add = (id, name) => { if (id && !list.some(x => x.id === id)) list.push({ id, name: name ? '@' + name : id }); };
   if (page) {
-    const tok = DB.pageTokens[page.pageId];
+    const tok = DB.pageTokens[page.pageId] ? page.pageId : null;   // 페이지 토큰은 서버에 있다 — 페이지 ID 만 넘긴다
     // 필드를 묶어 요청하면 권한 없는 필드 하나가 요청 전체를 죽이므로 반드시 따로 호출
     for (const [field, label] of [['instagram_business_account', '비즈니스 인스타'], ['connected_instagram_account', '연결된 인스타']]) {
       try {
@@ -3173,16 +3233,24 @@ async function loadAll(force) {
     return;
   }
   bar.className = 'sync-bar';
-  document.getElementById('syncMsg').innerHTML = '<span>Meta API에서 계정 · 페이지 불러오는 중...</span>';
+  document.getElementById('syncMsg').innerHTML = '<span>구글 로그인 확인 중...</span>';
   loadSettings();
+  // 구글(디맨드젠)은 설정값으로 동작한다 — 로그인 전에도 채운다
+  try { await loadGoogleData(); } catch (e) { console.warn('구글 참조시트 실패', e.message); }
+  // Meta 는 중계 함수(api/meta.js)를 거치고, 중계 함수는 구글 로그인한 허용 계정만 받는다 — 로그인 전엔 Meta 조회를 하지 않는다
+  if (!(await metaAuthReady())) {
+    applySettingsToDB(); populateDropdowns(); gLoadLearnedCopies();
+    bar.className = 'sync-bar';
+    document.getElementById('syncMsg').innerHTML = `🔐 Meta 계정·페이지를 불러오려면 구글 로그인이 필요해요 (Meta 토큰은 서버에만 있고, 허용된 계정만 쓸 수 있어요) &nbsp; <button class="sync-btn" onclick="metaLoginAndLoad()">구글 로그인</button>`;
+    return;
+  }
+  document.getElementById('syncMsg').innerHTML = '<span>Meta API에서 계정 · 페이지 불러오는 중...</span>';
   let accOk = 0, pageOk = 0, errMsg = '';
   try {
     accOk = await loadAccounts();
     applySettingsToDB();
     pageOk = await loadPages();
   } catch (err) { errMsg = err.message; }
-  // 구글(디맨드젠)은 기존 참조시트를 계속 사용
-  try { await loadGoogleData(); } catch (e) { console.warn('구글 참조시트 실패', e.message); }
   applySettingsToDB();
   populateDropdowns();
   gLoadLearnedCopies();
@@ -3208,6 +3276,17 @@ async function loadAll(force) {
   if (!needSetup && !accFail) setTimeout(() => { bar.className = 'sync-bar hidden'; }, 4000);
 }
 
+/* Meta 조회 전 구글 로그인 상태 — 예전에 로그인한 적이 있으면 조용히 갱신해 본다 (팝업 없음) */
+async function metaAuthReady() {
+  if (!ENV.isHttp) return false;
+  if (gTokenValid('core')) return true;
+  if (gTokens.core && gTokens.core.hint) { try { await gSilentRefresh('core', 8000); } catch (e) { /* 아래에서 버튼으로 */ } }
+  return gTokenValid('core');
+}
+async function metaLoginAndLoad() {
+  try { await gSignIn('core'); } catch (e) { showToast('로그인 실패: ' + e.message, 'error', 6000); return; }
+  loadAll();
+}
 /* 설정값을 GDB(화면이 참조하는 구조)로 펼친다 */
 function applyGoogleSettings() {
   if (migrateRefExcludes(GSET.regions)) persistGoogleSettings();
@@ -3286,7 +3365,16 @@ async function loadGoogleData() {
    ========================================================= */
 async function fetchSheet(range, sheetIdOverride) {
   const sid = sheetIdOverride || SHEET_ID;
-  const csvUrl = `https://docs.google.com/spreadsheets/d/${sid}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(range.split('!')[0])}`;
+  const tab = range.split('!')[0];
+  // 구글 로그인돼 있으면 Sheets API 로 읽는다 — 시트를 «링크 있는 모두» 로 열어 둘 필요가 없다
+  if (typeof gTokenValid === 'function' && gTokenValid('core')) {
+    try {
+      const res = await gAuthFetch('core', `https://sheets.googleapis.com/v4/spreadsheets/${sid}/values/${encodeURIComponent(tab)}`);
+      const j = await res.json().catch(() => ({}));
+      if (res.ok) return (j.values || []).map(r => r.map(c => normalizeCell(String(c == null ? '' : c).trim())));
+    } catch (e) { /* 아래 CSV 로 */ }
+  }
+  const csvUrl = `https://docs.google.com/spreadsheets/d/${sid}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`;
   const res = await fetch(csvUrl);
   if (!res.ok) throw new Error(`시트 불러오기 실패: ${res.status}`);
   return parseCSV(await res.text());
@@ -3346,27 +3434,40 @@ function switchGTab(n) {
 /* =========================================================
    Meta 업로드 / 조회
    ========================================================= */
+/* 파일 업로드 — 토큰이 브라우저에 없으므로 직접 못 올린다. 중계 함수(api/meta.js)를 거친다.
+   · 이미지 3MB 이하 : base64 로 중계 함수에 보내 adimages(bytes) 로 올린다 (중계 함수 본문 한도 4.5MB)
+   · 큰 이미지·영상  : 구글 탭과 같은 방식으로 Drive 에 올리고(링크 공유 임시 파일), Meta 가 그 주소에서 받아 간다 (file_url).
+                       Meta 가 받아 가면(ready) 페이지가 임시 파일을 지운다 — 못 지운 건 7일 뒤 정리 */
+const META_IMAGE_INLINE_MAX = 3 * 1024 * 1024;
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result || '').split(',')[1] || '');
+    r.onerror = () => reject(new Error('파일을 읽지 못했어요'));
+    r.readAsDataURL(file);
+  });
+}
 async function uploadImageToMeta(file, adAccountId) {
   const cleanId = String(adAccountId).replace('act_', '');
-  const formData = new FormData();
-  formData.append('filename', file);
-  formData.append('access_token', META_ACCESS_TOKEN);
-  const res = await fetch(`https://graph.facebook.com/v19.0/act_${cleanId}/adimages`, { method: 'POST', body: formData });
-  if (!res.ok) throw new Error(`Meta 이미지 업로드 실패: ${res.status}`);
-  const json = await res.json();
-  const key = Object.keys(json.images)[0];
-  return json.images[key].hash;
+  let json;
+  if (file.size <= META_IMAGE_INLINE_MAX) {
+    json = await fbPost(`act_${cleanId}/adimages`, { bytes: await fileToBase64(file) });
+  } else {
+    const driveId = await uploadFileToDrive(file);
+    try { json = await fbPost(`act_${cleanId}/adimages`, { drive_file_id: driveId }); }
+    finally { gDeleteTempFiles([driveId]).catch(() => {}); }
+  }
+  const images = json.images || {};
+  const key = Object.keys(images)[0];
+  if (!key || !images[key] || !images[key].hash) throw new Error('Meta 이미지 업로드 응답에 hash 가 없어요');
+  return images[key].hash;
 }
 async function uploadVideoToMeta(file, adAccountId) {
   const cleanId = String(adAccountId).replace('act_', '');
-  const formData = new FormData();
-  formData.append('source', file);
-  formData.append('name', file.name);
-  formData.append('access_token', META_ACCESS_TOKEN);
-  const res = await fetch(`${META_API}/act_${cleanId}/advideos`, { method: 'POST', body: formData });
-  if (!res.ok) throw new Error(`Meta 영상 업로드 실패: ${res.status}`);
-  const json = await res.json();
-  return json.id;
+  const driveId = await uploadFileToDrive(file);   // 구글 로그인 필요 (허용 계정) — 링크 공유 임시 파일
+  const json = await fbPost(`act_${cleanId}/advideos`, { drive_file_id: driveId, name: file.name });
+  if (!json.id) throw new Error('Meta 영상 업로드 응답에 id 가 없어요');
+  return { videoId: String(json.id), driveId };
 }
 async function fetchCampaignInfo(campaignId) { return fbGet(campaignId, { fields: 'name,account_id' }); }
 async function fetchActiveCampaigns(accountId) {
@@ -3454,8 +3555,8 @@ function renderAdsetList(list) {
   }
   box.innerHTML = list.map(a => {
     const on = a.effective_status === 'ACTIVE';
-    const nm = (a.name || '(이름 없음)').replace(/</g, '&lt;').replace(/'/g, '&#39;');
-    return `<div class="adset-row" id="adset_${a.id}" onclick="toggleAdsetSelect('${a.id}','${nm}')">
+    const nm = esc(a.name || '(이름 없음)');
+    return `<div class="adset-row" id="adset_${esc(a.id)}" data-id="${esc(a.id)}" data-name="${nm}" onclick="toggleAdsetSelect(this.dataset.id, this.dataset.name)">
       <div class="adset-radio"></div>
       <span class="adset-name">${nm}</span>
       <span class="adset-status ${on ? 'on' : ''}">${on ? '게재중' : (a.effective_status || '')}</span>
@@ -3492,8 +3593,8 @@ async function toggleAdsetSelect(id, name) {
     renderAdSublist(null, ads.length
       ? ads.map(a => {
           const on = a.effective_status === 'ACTIVE';
-          const nm = (a.name || '(이름 없음)').replace(/</g, '&lt;');
-          return `<div class="ad-subrow"><span class="dot"></span><span class="nm" title="${nm}">${nm}</span><span class="adset-status ${on ? 'on' : ''}">${on ? '게재중' : (a.effective_status || '')}</span></div>`;
+          const nm = esc(a.name || '(이름 없음)');
+          return `<div class="ad-subrow"><span class="dot"></span><span class="nm" title="${nm}">${nm}</span><span class="adset-status ${on ? 'on' : ''}">${on ? '게재중' : esc(a.effective_status || '')}</span></div>`;
         }).join('')
       : '<div class="ad-subloading">이 세트에 광고가 없어요</div>',
       ads.length ? `${ads.length}개 · 새 광고는 ${adPrefix.t2}.${adSubStart.t2}A 부터 (기존 이름 규칙을 따름)` : `광고 없음 · ${adPrefix.t2}.1A 부터 시작`);
@@ -3752,7 +3853,7 @@ function renderCampaignChoices(t, showAll) {
   const acc = DB.accounts.find(a => a.name === cache.accName) || {};
   const all = cache.list || [];
   const f = showAll ? { list: all, mode: 'all' } : filterCampaignsForAccount(all, acc);
-  const item = c => `<div class="copy-suggest-item" onclick="selectCampaignFromList('${t}','${c.id}')">${(c.name || '(이름 없음)').replace(/</g, '&lt;')}</div>`;
+  const item = c => `<div class="copy-suggest-item" onclick="selectCampaignFromList('${t}','${esc(String(c.id || '').replace(/[^0-9]/g, ''))}')">${esc(c.name || '(이름 없음)')}</div>`;
   const bar = (txt, link) =>
     `<div style="padding:7px 12px;font-size:11px;color:var(--text3);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:8px;align-items:center;">
        <span>${txt}</span>${link ? `<span class="manual-toggle" style="white-space:nowrap;" onclick="event.stopPropagation();renderCampaignChoices('${t}',${link === 'all' ? 'true' : 'false'})">${link === 'all' ? '전체 보기' : '약칭으로 거르기'}</span>` : ''}
@@ -3934,7 +4035,7 @@ async function resolveMetaRegionTypes() {
   metaRegionTypeResolving = (async () => {
     let changed = false;
     const todo = (SETTINGS.regions || []).filter(r => r.key && !r.type && !r.custom);
-    if (!todo.length || typeof fbGet !== 'function' || !META_ACCESS_TOKEN) return false;
+    if (!todo.length || typeof fbGet !== 'function' || !ENV.isHttp || !gTokenValid('core')) return false;
     for (const r of todo) {
       try {
         const json = await fbGet('search', { type: 'adgeolocation', location_types: JSON.stringify(['city', 'region', 'subcity', 'zip', 'country', 'neighborhood', 'metro_area']), q: r.name, locale: 'ko_KR', limit: 25 });
@@ -4071,7 +4172,8 @@ function onExclude(t) {
 function removeExclude(t, name) { selectedExcludes[t] = selectedExcludes[t].filter(e => e.name !== name); renderExcludeTags(t); updateExcludeIds(t); }
 function renderExcludeTags(t) {
   const container = document.getElementById(`${t}_제외타겟_tags`);
-  container.innerHTML = selectedExcludes[t].map(e => `<span style="display:inline-flex;align-items:center;gap:4px;background:var(--blue-bg);color:var(--blue);border:1px solid #c8dffe;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:500;">${e.name}<span onclick="removeExclude('${t}', '${e.name}')" style="cursor:pointer;font-size:14px;line-height:1;color:var(--text3);">×</span></span>`).join('');
+  // 이름은 Meta 에서 온 값 — 그대로 HTML 에 넣지 않고 esc + data 속성으로
+  container.innerHTML = selectedExcludes[t].map(e => `<span data-name="${esc(e.name)}" style="display:inline-flex;align-items:center;gap:4px;background:var(--blue-bg);color:var(--blue);border:1px solid #c8dffe;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:500;">${esc(e.name)}<span onclick="removeExclude('${t}', this.parentNode.dataset.name)" style="cursor:pointer;font-size:14px;line-height:1;color:var(--text3);">×</span></span>`).join('');
 }
 function updateExcludeIds(t) { document.getElementById(`${t}_제외타겟ID`).value = selectedExcludes[t].map(e => e.id).join(','); }
 function onPage(t) {
@@ -4333,7 +4435,7 @@ async function ensureUploaded(t, block) {
   block._uploading = (async () => {
     const up = isImage
       ? { imageHash: await uploadImageToMeta(file, accId) }
-      : { videoId: await uploadVideoToMeta(file, accId) };
+      : await uploadVideoToMeta(file, accId);   // { videoId, driveId }
     block.dataset.uploaded = JSON.stringify(up);
     block.dataset.uploadKey = key;
     block._uploading = null;
@@ -4995,6 +5097,7 @@ async function submitAd(t) {
         // 메타가 인코딩을 끝내고 썸네일을 만들 때까지 기다린다 — 안 끝났으면 Make 가 소재 만들기에서 거절당한다
         const ready = await waitVideoReady(up.videoId, s =>
           showToast(`소재 ${n + 1} 영상을 메타가 처리하는 중... ${Math.round(s.waited / 1000)}초${s.progress != null ? ` · ${s.progress}%` : ''}`, 'info', META_VIDEO_POLL_MS + 2000));
+        if (ready.ok && up.driveId) gDeleteTempFiles([up.driveId]).catch(() => {});   // Meta 가 받아 갔으니 임시 파일은 지운다
         if (!ready.ok) {
           throw new Error(ready.reason === 'error'
             ? `소재 ${n + 1} 영상을 메타가 처리하지 못했어요 — 파일을 확인하거나 다른 파일로 올려주세요`
@@ -5008,7 +5111,7 @@ async function submitAd(t) {
     if (f.videoId) { data.videoId = f.videoId; data.파일ID = ''; }
     metaEscapeTexts(data);   // 줄바꿈·따옴표가 Make 의 JSON 틀을 깨지 않게 (보내는 데이터에만 적용)
     showToast('Make로 전송 중...', 'info');
-    const res = await fetch(WEBHOOKS[t], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const res = await submitToMake('meta', data);
     if (res.ok) {
       // Make가 생성된 ID를 응답으로 돌려주면 그걸 그대로 쓴다 (이름 검색보다 정확)
       const ids = await readWebhookIds(res);
@@ -5087,10 +5190,16 @@ function showToast(msg, type='info', ms) {
 /* =========================================================
    GOOGLE 로직 (기존 참조시트 유지)
    ========================================================= */
-const G_WEBHOOKS = {
-  g1: 'https://hook.eu1.make.com/feqfvpytm8fr92wgp1yha705vfnz944c',
-  g2: 'https://hook.eu1.make.com/feqfvpytm8fr92wgp1yha705vfnz944c',
-};
+/* Make 로 보내기 — 웹훅 주소는 서버(api/submit.js)에만 있다. 구글 로그인한 허용 계정만 보낼 수 있다 */
+async function submitToMake(platform, payload) {
+  const res = await gAuthFetch('core', SUBMIT_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ platform, payload }) });
+  if (res.status === 404) throw new Error('api/submit.js 가 배포에 없어요 — GitHub 의 api 폴더에 submit.js · _auth.js 를 올리고 재배포하세요');
+  if (!res.ok && res.status !== 400) {
+    const j = await res.clone().json().catch(() => ({}));
+    if (j && j.error) throw new Error(j.error);
+  }
+  return res;
+}
 const GDRIVE_CLIENT_ID = '907431503239-ijcprs8pppon0r7eh0q4nj5pvimpes9m.apps.googleusercontent.com';
 let gDriveAccessToken = null;
 
@@ -6649,8 +6758,8 @@ async function gFindCampaigns(t) {
        </div>`;
   box.innerHTML = head + list.map((c, i) =>
     `<div class="copy-suggest-item" onclick="gPickCampaign('${t}',${i})">
-       ${(c.name || '(이름 없음)').replace(/</g, '&lt;')}
-       <div style="font-size:10px;color:var(--text3);margin-top:2px;">${(c.customerName || '').replace(/</g, '&lt;')}</div>
+       ${esc(c.name || '(이름 없음)')}
+       <div style="font-size:10px;color:var(--text3);margin-top:2px;">${esc(c.customerName || '')}</div>
      </div>`).join('');
 }
 function gPickCampaign(t, i) {
@@ -6777,10 +6886,10 @@ async function gLoadCampaign(t, campaignId, campaignName) {
   }
   if (box) box.innerHTML = groups.map(g => {
     const on = String(g.status || '').toUpperCase() === 'ENABLED';
-    const nm = (g.name || '(이름 없음)').replace(/</g, '&lt;').replace(/'/g, '&#39;');
-    return `<div class="adset-row" id="ggroup_${g.id}" onclick="gToggleGroupSelect('${g.id}','${nm}')">
+    const nm = esc(g.name || '(이름 없음)');
+    return `<div class="adset-row" id="ggroup_${esc(g.id)}" data-id="${esc(g.id)}" data-name="${nm}" onclick="gToggleGroupSelect(this.dataset.id, this.dataset.name)">
       <div class="adset-radio"></div><span class="adset-name">${nm}</span>
-      <span class="adset-status ${on ? 'on' : ''}">${on ? '게재중' : (g.status || '')}</span></div>`;
+      <span class="adset-status ${on ? 'on' : ''}">${on ? '게재중' : esc(g.status || '')}</span></div>`;
   }).join('');
   if (hint) hint.textContent = `${groups.length}개 · 클릭하면 그 그룹에 광고만 추가돼요`;
 }
@@ -6811,8 +6920,8 @@ async function gToggleGroupSelect(id, name) {
   gAutoGenNames('g2');
   gRenderAdSublist(ads.length ? ads.map(a => {
       const on = String(a.status || '').toUpperCase() === 'ENABLED';
-      const nm = (a.name || '(이름 없음)').replace(/</g, '&lt;');
-      return `<div class="ad-subrow"><span class="dot"></span><span class="nm" title="${nm}">${nm}</span><span class="adset-status ${on ? 'on' : ''}">${on ? '게재중' : (a.status || '')}</span></div>`;
+      const nm = esc(a.name || '(이름 없음)');
+      return `<div class="ad-subrow"><span class="dot"></span><span class="nm" title="${nm}">${nm}</span><span class="adset-status ${on ? 'on' : ''}">${on ? '게재중' : esc(a.status || '')}</span></div>`;
     }).join('') : '<div class="ad-subloading">이 그룹에 광고가 없어요</div>',
     ads.length ? `${ads.length}개 · 새 광고는 ${gAdPrefix.g2}.${gAdSubStart.g2}U 부터 (기존 이름 규칙을 따름)` : `광고 없음 · ${gAdPrefix.g2}.1U 부터 시작`);
   if (hint) hint.textContent = `선택됨 · ${name}`;
@@ -7263,7 +7372,7 @@ function gErrorHint(row) {
 
   /* ── 권한 · 인증 ── */
   if (/invalid_grant|AUTHENTICATION_ERROR/i.test(s)) return 'Make의 Google 연결이 풀렸어요 — Make에서 해당 모듈의 연결을 다시 인증하세요';
-  if (/Session has expired|#190/i.test(s)) return 'Meta 액세스 토큰이 만료됐어요 — 토큰을 새로 발급해 설정에 넣어주세요';
+  if (/Session has expired|#190/i.test(s)) return 'Meta 액세스 토큰이 만료됐어요 — 새 토큰을 발급해 Vercel 환경변수 META_ACCESS_TOKEN 과 Make 의 Meta 모듈에 넣어주세요';
   if (/USER_PERMISSION_DENIED|CUSTOMER_NOT_ENABLED|NOT_ADS_USER/i.test(s)) return '이 구글 계정에 그 광고계정 권한이 없어요 — 설정 → 연동 → 「내 계정 권한 확인」을 눌러보세요';
   if (/Unauthorized|\b401\b/i.test(s)) return '인증이 풀렸어요 — Make 연결 또는 Meta 토큰을 다시 확인하세요';
 
@@ -7658,7 +7767,7 @@ async function gSubmitAd(t) {
   await gEnsureLogSheet();
   const idx = gAddCard(t, data);
   try {
-    const res = await fetch(G_WEBHOOKS[t], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const res = await submitToMake('google', data);
     if (res.ok) {
       gUpdateCard(t, idx, '진행중', 'Make가 받았어요 — 진행 상황을 확인하는 중입니다');
       showToast(isT2?'세트 추가 요청 완료!':'캠페인 등록 요청 완료!', 'success');
