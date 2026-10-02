@@ -19,7 +19,7 @@
  */
 const { verifyGoogleUser, noStore } = require('./_auth');
 
-const BUILD = '2026-10-02.1';
+const BUILD = '2026-10-02.2';
 
 module.exports = async function handler(req, res) {
   noStore(res);
@@ -41,7 +41,7 @@ module.exports = async function handler(req, res) {
   const payload = body.payload;
   if (!platform) return res.status(400).json({ error: 'platform 은 meta 또는 google 이어야 해요' });
   if (!payload || typeof payload !== 'object') return res.status(400).json({ error: 'payload 가 없어요' });
-  const url = String((platform === 'google' ? process.env.MAKE_WEBHOOK_GOOGLE : process.env.MAKE_WEBHOOK_META) || '').trim();
+  const url = String((platform === 'google' ? process.env.MAKE_WEBHOOK_GOOGLE : process.env.MAKE_WEBHOOK_META) || '').trim().split(/\s+/)[0] || '';   // 줄바꿈이 섞여 들어가도 첫 토막만
   if (!/^https:\/\/hook\.[a-z0-9.-]*make\.com\//i.test(url)) {
     return res.status(500).json({ error: `Vercel 환경변수 ${platform === 'google' ? 'MAKE_WEBHOOK_GOOGLE' : 'MAKE_WEBHOOK_META'} 가 비어 있거나 Make 웹훅 주소가 아니에요 — 넣고 재배포하세요` });
   }
