@@ -21,7 +21,7 @@
  */
 const { verifyGoogleUser, noStore } = require('./_auth');
 
-const BUILD = '2026-10-02.1';
+const BUILD = '2026-10-02.2';
 const GRAPH = 'https://graph.facebook.com';
 const VERSION = process.env.META_API_VERSION || 'v25.0';
 const ALLOW_POST = [/^act_\d+\/adimages$/, /^act_\d+\/advideos$/];
@@ -31,7 +31,7 @@ let pageTokens = { at: 0, map: {} };
 function driveDownloadUrl(fileId) {
   const id = String(fileId || '').replace(/[^A-Za-z0-9_-]/g, '');
   if (!id) return '';
-  const key = String(process.env.GOOGLE_API_KEY || '').trim();
+  const key = String(process.env.GOOGLE_API_KEY || '').trim().split(/\s+/)[0] || '';
   return key
     ? `https://www.googleapis.com/drive/v3/files/${id}?alt=media&key=${encodeURIComponent(key)}`
     : `https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t`;
@@ -79,8 +79,10 @@ module.exports = async function handler(req, res) {
       hasGoogleApiKey: !!process.env.GOOGLE_API_KEY,
     });
   }
-  const token = String(process.env.META_ACCESS_TOKEN || '').trim();
+  // 환경변수에 줄바꿈·공백이 섞여 들어가도(두 번 붙여넣기 등) 첫 토막만 쓴다 — 아니면 «invalid header value» 로 전부 실패한다
+  const token = String(process.env.META_ACCESS_TOKEN || '').trim().split(/\s+/)[0] || '';
   if (!token) return res.status(500).json({ error: { message: 'Vercel 환경변수 META_ACCESS_TOKEN 이 비어 있어요 — 넣고 재배포하세요', code: 0 } });
+  const redact = m => String(m || '').replace(/EAA[A-Za-z0-9]+/g, '[토큰]').split(token).join('[토큰]');   // 오류 문구에 토큰이 섞여 나가지 않게
   const who = await verifyGoogleUser(req);
   if (!who.ok) return res.status(who.status).json({ error: { message: who.error, code: who.status, type: 'AuthError' } });
 
@@ -111,7 +113,7 @@ module.exports = async function handler(req, res) {
   try {
     r = await fetch(url, { method, headers: Object.assign({ Authorization: `Bearer ${useToken}` }, body ? { 'Content-Type': 'application/json' } : {}), body });
     text = await r.text();
-  } catch (e) { return res.status(502).json({ error: { message: 'Meta 호출 실패: ' + e.message, code: 0 } }); }
+  } catch (e) { return res.status(502).json({ error: { message: 'Meta 호출 실패: ' + redact(e.message), code: 0 } }); }
   let j;
   try { j = JSON.parse(text); } catch (e) { j = { error: { message: 'Meta 가 JSON 이 아닌 응답을 보냈어요: ' + String(text || '').slice(0, 200), code: 0 } }; }
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
