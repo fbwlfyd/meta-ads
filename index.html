@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>광고 자동등록</title>
+<script>
+/* 보안 헤더(CSP) 위반을 맨 먼저 받아 둔다 — 아래 본문 스크립트보다 먼저 일어나는 위반(글꼴·스타일)도 놓치지 않게 */
+window.__cspLog = [];
+document.addEventListener('securitypolicyviolation', function (e) {
+  if (window.__cspLog.length < 80) window.__cspLog.push({ at: Date.now(), directive: e.effectiveDirective || e.violatedDirective || '', blocked: e.blockedURI || '', disposition: e.disposition || '', src: e.sourceFile || '', line: e.lineNumber || 0 });
+  if (typeof window.gOnCspViolation === 'function') window.gOnCspViolation();
+});
+</script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -312,6 +320,24 @@
   .btn-preview { height: 28px; padding: 0 10px; border: 1px solid var(--border2); border-radius: 6px; background: var(--white); font-family: inherit; font-size: 11px; font-weight: 500; color: var(--text2); cursor: pointer; }
   .btn-preview:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); }
 
+  /* ===== 로그인 창 (제작자 이름 + 코드) — 로그인 전엔 화면 전체를 덮는다 ===== */
+  .login-back { position: fixed; inset: 0; background: var(--bg); z-index: 10500; display: none; align-items: center; justify-content: center; padding: 24px; }
+  .login-back.show { display: flex; }
+  .login-card { width: 100%; max-width: 380px; background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 28px 28px 22px; box-shadow: 0 20px 60px rgba(0,0,0,0.08); }
+  .login-card h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 4px; }
+  .login-card .login-sub { font-size: 12px; color: var(--text2); margin-bottom: 20px; line-height: 1.5; }
+  .login-card .field { margin-bottom: 12px; }
+  .login-card .btn-primary { height: 44px; font-size: 14px; margin-top: 4px; }
+  .login-err { min-height: 18px; font-size: 12px; color: var(--red); margin: 8px 0 2px; line-height: 1.45; white-space: pre-wrap; }
+  .login-err.info { color: var(--text2); }
+  .login-or { display: flex; align-items: center; gap: 10px; margin: 14px 0 10px; font-size: 11px; color: var(--text3); }
+  .login-or::before, .login-or::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .login-foot { font-size: 11px; color: var(--text3); margin-top: 14px; line-height: 1.5; }
+  .topbar-user { font-size: 12px; color: var(--text2); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .topbar-user b { color: var(--text1); font-weight: 600; }
+  .topbar-user .link-out { color: var(--text3); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .topbar-user .link-out:hover { color: var(--text1); }
+
   /* ===== 설정 모달 ===== */
   .modal-back { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 10000; display: none; align-items: center; justify-content: center; padding: 24px; }
   .modal-back.show { display: flex; }
@@ -435,6 +461,7 @@
     <button class="tab-btn" id="gtab2-btn" onclick="switchGTab(2)"><div class="tab-dot"></div> 세트 추가</button>
   </div>
   <div class="topbar-right">
+    <span class="topbar-user" id="topbarUser" style="display:none;"></span>
     <button class="icon-btn" onclick="loadAll()">↻ 새로고침</button>
     <button class="icon-btn" id="settingsBtn" onclick="openSettings()">⚙ Meta 설정</button>
   </div>
@@ -1048,7 +1075,7 @@
     <div class="modal-body">
       <!-- 제작자 -->
       <div class="modal-sec active" id="msec_staff">
-        <div class="set-note">광고세트명·광고명 끝에 붙는 제작자 이니셜입니다. Meta API에는 없는 값이라 여기서 관리합니다.</div>
+        <div class="set-note">광고세트명·광고명 끝에 붙는 제작자 이니셜입니다. Meta API에는 없는 값이라 여기서 관리합니다.<br><b>🔐 이 표가 로그인 명단이에요</b> — 이름이 아이디, 코드가 비밀번호. 고친 뒤 «모두에게 적용»을 눌러야 로그인에 반영되고, 표에서 빼면 그 사람은 바로 못 들어와요 (코드는 남이 못 맞히게 4자 이상 섞어 쓰는 게 좋아요).</div>
         <table class="set-table">
           <thead><tr><th style="width:45%">제작자 이름</th><th style="width:45%">이니셜 / 코드</th><th></th></tr></thead>
           <tbody id="set_staff_body"></tbody>
@@ -1110,7 +1137,8 @@
       <div class="modal-sec" id="msec_diag">
         <div class="set-note">토큰이 어떤 권한을 가졌고 어떤 호출이 왜 실패했는지 그대로 보여줍니다. 목록이 비어 있을 때 여기부터 확인하세요.</div>
         <div class="field-hint" id="m_page_build" style="margin:0 0 4px;"></div>
-        <div class="field-hint" id="m_proxy_status" style="margin:0 0 12px;"></div>
+        <div class="field-hint" id="m_proxy_status" style="margin:0 0 4px;"></div>
+        <div class="field-hint" id="m_csp_status" style="margin:0 0 12px;"></div>
         <button class="btn-sm blue" onclick="runDiagnostics()">진단 실행</button>
         <button class="btn-sm" onclick="copyDiagnostics()">결과 복사</button>
         <div id="diag_out" style="margin-top:14px;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);border-radius:8px;padding:12px;min-height:60px;color:var(--text2);">진단 실행을 눌러주세요.</div>
@@ -1181,7 +1209,8 @@
         <div class="set-note"><b>Google Ads API</b> — 계정·잠재고객·캠페인·광고그룹을 직접 불러오려면 developer token이 필요합니다. 브라우저에서 막힐 수 있으니 아래 버튼으로 먼저 확인하세요.</div>
         <div class="field-hint" id="g_page_build" style="margin:-6px 0 4px;"></div>
         <div class="field-hint" id="g_proxy_status" style="margin:0 0 4px;">중계 함수 확인 중...</div>
-        <div class="field-hint" id="g_secure_status" style="margin:0 0 12px;">보안 중계 함수(meta · submit) 확인 중...</div>
+        <div class="field-hint" id="g_secure_status" style="margin:0 0 4px;">보안 중계 함수(meta · submit) 확인 중...</div>
+        <div class="field-hint" id="g_csp_status" style="margin:0 0 12px;"></div>
         <div class="row2">
           <div class="field"><label>developer token</label><input type="text" id="g_dev_token" placeholder="Google Ads API developer token"></div>
           <div class="field"><label>MCC(login customer) ID</label><input type="text" id="g_login_cid" placeholder="하이픈 없이 숫자만"></div>
@@ -1292,6 +1321,21 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- 로그인 창 — 아이디 = 설정 → 제작자(Meta)의 이름, 비밀번호 = 같은 줄의 코드. 서버(api/login.js)가 공유 설정과 맞춰 본다 -->
+<div class="login-back" id="loginBack">
+  <form class="login-card" id="loginForm" onsubmit="return loginSubmit(event)" autocomplete="on">
+    <h2>광고 자동등록</h2>
+    <div class="login-sub">제작자 <b>이름</b>과 <b>코드</b>로 로그인하세요 — 설정 → 제작자에 적힌 그대로</div>
+    <div class="field"><label>이름</label><input type="text" id="login_name" name="username" placeholder="홍길동" autocomplete="username" autocapitalize="off" spellcheck="false"></div>
+    <div class="field"><label>코드</label><input type="password" id="login_code" name="password" placeholder="HGD" autocomplete="current-password"></div>
+    <div class="login-err" id="login_err"></div>
+    <button type="submit" class="btn-primary" id="login_btn">로그인</button>
+    <div class="login-or">또는</div>
+    <button type="button" class="btn-ghost" id="login_google_btn" onclick="loginWithGoogle()">구글 계정으로 로그인 (관리자 · 허용된 계정)</button>
+    <div class="login-foot" id="login_foot">로그인하면 이 브라우저에서 30일 동안 유지돼요 · 로그인한 이름이 제작자 칸에 자동으로 들어가요</div>
+  </form>
+</div>
+
 <script>
 /* =========================================================
    기본 설정
@@ -1351,7 +1395,7 @@ loadGoogleSettings();
    둘 다 구글 로그인 토큰으로 «허용된 계정»(ALLOWED_EMAILS) 인지 확인한 뒤에만 동작한다 */
 const META_PROXY_URL = '/api/meta';
 const SUBMIT_URL = '/api/submit';
-const META_PROXY_REQUIRED_BUILD = '2026-10-02.1';
+const META_PROXY_REQUIRED_BUILD = '2026-10-06.1';
 
 // 광고계정은 /me/adaccounts 로 자동 수집합니다.
 // 아래 목록은 그 호출이 실패했을 때만 쓰는 폴백입니다.
@@ -1700,6 +1744,7 @@ function openSettings(tab) {
   switchSettingsTab(want);
   if (typeof gShowPageBuild === 'function') gShowPageBuild();   // 진단·연동 탭에 페이지 빌드 표시
   if (typeof gCheckSecureProxies === 'function') gCheckSecureProxies().catch(() => {});
+  if (typeof gCheckCspHeader === 'function') { gRenderCspStatus(); gCheckCspHeader().then(gRenderCspStatus).catch(() => {}); }
   document.getElementById('settingsModal').classList.add('show');
 }
 function closeSettings() { document.getElementById('settingsModal').classList.remove('show'); }
@@ -1880,8 +1925,16 @@ async function runDiagnostics() {
     const j = await r.json();
     if (!j.ok) throw new Error('응답 이상');
     push(`  ✅ 배포됨 (${j.build}) · Meta 토큰 ${j.hasToken ? '있음' : '⚠ 없음 (META_ACCESS_TOKEN)'} · 허용 계정 ${j.allowlistSet ? '설정됨' : '⚠ 미설정 (ALLOWED_EMAILS)'} · Drive API 키 ${j.hasGoogleApiKey ? '있음' : '없음 (영상은 대체 주소로 전달)'}`);
-  } catch (e) { push('  ❌ api/meta.js 가 배포에 없어요 — GitHub 의 api 폴더에 meta.js · _auth.js · submit.js 를 올리고 재배포하세요'); }
-  push(`■ 구글 로그인: ${gTokenValid('core') ? '✅ ' + (gTokens.core.hint || '됨') : '❌ 안 됨 — Meta 조회는 구글 로그인(허용 계정)이 필요해요'}`);
+  } catch (e) { push('  ❌ api/meta.js 가 배포에 없어요 — GitHub 의 api 폴더에 meta.js · _auth.js · submit.js · login.js · settings.js 를 올리고 재배포하세요'); }
+  push(`■ 로그인: ${loginOk() ? '✅ ' + (login.kind === 'staff' ? `제작자 ${login.name}` : `구글 계정 ${login.name || (gTokens.core && gTokens.core.hint) || ''}`) : '❌ 안 됨 — 제작자 이름·코드로 로그인하세요'}`);
+  push(`■ 구글 로그인(드라이브·시트·유튜브용): ${gTokenValid('core') ? '✅ ' + (gTokens.core.hint || '됨') : '· 안 됨 — 영상 업로드·시트 읽기 때 묻습니다'}`);
+  try {
+    const c = await gCheckCspHeader();
+    const label = { none: '없음 (vercel.json 미배포)', report: '감시 모드(Report-Only)', enforce: '차단 모드', unknown: '확인 불가' }[c.mode] || c.mode;
+    const vl = gCspLines();
+    push(`■ 보안 헤더(CSP): ${label} · 위반 ${vl.length}건`);
+    vl.slice(0, 20).forEach(l => push('  · ' + l));
+  } catch (e) { push('■ 보안 헤더(CSP): 확인 실패 — ' + e.message); }
   push(`■ 실행 위치: ${ENV.label}  (protocol ${ENV.proto}, iframe ${ENV.inIframe ? 'YES' : 'NO'})`);
   if (!ENV.isHttp || ENV.inIframe) {
     push('');
@@ -2434,7 +2487,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-21.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-10-02.1';
+const G_PAGE_BUILD = '2026-10-06.1';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -2456,19 +2509,75 @@ async function gCheckSecureProxies() {
       return (j && j.ok) ? j : { missing: true, status: r.status };
     } catch (e) { return { missing: true, status: 0 }; }
   };
-  const [m, sb] = await Promise.all([ping(META_PROXY_URL), ping(SUBMIT_URL)]);
+  const [m, sb, lg] = await Promise.all([ping(META_PROXY_URL), ping(SUBMIT_URL), ping(LOGIN_URL)]);
   const bad = [];
   if (m.missing) bad.push('api/meta.js 없음');
   else {
     if (!m.hasToken) bad.push('META_ACCESS_TOKEN 비어 있음');
-    if (!m.allowlistSet) bad.push('ALLOWED_EMAILS 비어 있음');
-    if (String(m.build || '') < META_PROXY_REQUIRED_BUILD) bad.push(`api/meta.js 구버전 (${m.build})`);
+    if (String(m.build || '') < META_PROXY_REQUIRED_BUILD) bad.push(`api/meta.js 구버전 (${m.build}) — 로그인 창 세션을 못 받아요`);
   }
   if (sb.missing) bad.push('api/submit.js 없음');
-  else { if (!sb.hasMeta) bad.push('MAKE_WEBHOOK_META 비어 있음'); if (!sb.hasGoogle) bad.push('MAKE_WEBHOOK_GOOGLE 비어 있음'); }
-  if (bad.length) set('err', `⚠ 보안 중계 함수: ${esc(bad.join(' · '))} — GitHub 의 api 폴더에 meta.js · submit.js · _auth.js 를 올리고 Vercel 환경변수를 채운 뒤 재배포하세요 (그 전엔 Meta 조회·등록이 안 돼요)`);
-  else set('ok', `✅ 보안 중계 함수 최신 (meta ${esc(m.build)} · submit ${esc(sb.build)}) — Meta 토큰·Make 웹훅은 서버에만 있어요${m.hasGoogleApiKey ? '' : ' · GOOGLE_API_KEY 없음: 영상은 대체 주소로 Meta 에 전달돼요 (큰 파일은 실패할 수 있으니 넣는 걸 권해요)'}`);
+  else { if (!sb.hasMeta) bad.push('MAKE_WEBHOOK_META 비어 있음'); if (!sb.hasGoogle) bad.push('MAKE_WEBHOOK_GOOGLE 비어 있음'); if (String(sb.build || '') < META_PROXY_REQUIRED_BUILD) bad.push(`api/submit.js 구버전 (${sb.build})`); }
+  if (lg.missing) bad.push('api/login.js 없음 (제작자 이름·코드 로그인이 안 돼요)');
+  else if (!lg.hasSecret) bad.push('로그인 세션 비밀값 없음 (SESSION_SECRET 또는 SETTINGS_ADMIN_KEY)');
+  else if (!lg.staffCount) bad.push('로그인 가능한 제작자 0명 — 설정 → 제작자(Meta)를 채우고 «모두에게 적용»');
+  if (bad.length) set('err', `⚠ 보안 중계 함수: ${esc(bad.join(' · '))} — GitHub 의 api 폴더에 meta.js · submit.js · login.js · settings.js · _auth.js 를 올리고 Vercel 환경변수를 채운 뒤 재배포하세요`);
+  else set('ok', `✅ 보안 중계 함수 최신 (meta ${esc(m.build)} · submit ${esc(sb.build)} · login ${esc(lg.build)} · 로그인 가능한 제작자 ${lg.staffCount}명) — Meta 토큰·Make 웹훅은 서버에만 있어요${m.hasGoogleApiKey ? '' : ' · GOOGLE_API_KEY 없음: 영상은 대체 주소로 Meta 에 전달돼요 (큰 파일은 실패할 수 있으니 넣는 걸 권해요)'}`);
 }
+/* ===== 보안 헤더(CSP) — vercel.json 이 붙이는 Content-Security-Policy(-Report-Only)
+   · 브라우저에 «이 페이지는 이 도메인들하고만 통신한다» 고 알려주는 헤더. 낯선 주소로 스크립트를 불러오거나 데이터를 보내면 브라우저가 막는다
+   · 감시 모드(-Report-Only)는 막지 않고 알려만 준다 → 위반 0건을 확인한 뒤 차단 모드로 바꾼다
+   · 위반은 <head> 의 작은 스크립트가 window.__cspLog 에 모은다 (연동 탭 · 진단 탭에 표시) ===== */
+const gCsp = { checked: false, mode: 'none', policy: '' };   // mode: none | report | enforce | unknown
+async function gCheckCspHeader(force) {
+  if (gCsp.checked && !force) return gCsp;
+  if (!ENV.isHttp) { gCsp.checked = true; gCsp.mode = 'unknown'; return gCsp; }
+  const url = location.pathname || '/';
+  let r = null;
+  try { r = await fetch(url, { method: 'HEAD', cache: 'no-store' }); if (!r.ok) r = null; } catch (e) { r = null; }
+  if (!r) { try { r = await fetch(url, { cache: 'no-store' }); } catch (e) { r = null; } }
+  gCsp.checked = true;
+  if (!r) { gCsp.mode = 'unknown'; return gCsp; }
+  const enforce = r.headers.get('content-security-policy') || '';
+  const report = r.headers.get('content-security-policy-report-only') || '';
+  gCsp.mode = enforce ? 'enforce' : (report ? 'report' : 'none');
+  gCsp.policy = enforce || report;
+  return gCsp;
+}
+/* 같은 지시어+주소는 한 줄로 묶는다 */
+function gCspGrouped() {
+  const map = new Map();
+  (window.__cspLog || []).forEach(v => {
+    const key = `${v.directive}|${v.blocked}`;
+    const cur = map.get(key);
+    if (cur) { cur.count++; return; }
+    map.set(key, { directive: v.directive, blocked: v.blocked, disposition: v.disposition, src: v.src ? `${String(v.src).split('/').pop()}:${v.line}` : '', count: 1 });
+  });
+  return Array.from(map.values());
+}
+function gCspLines() {
+  return gCspGrouped().map(g => `${g.directive} ← ${g.blocked || '(inline)'}${g.count > 1 ? ` ×${g.count}` : ''}${g.src ? ` (${g.src})` : ''}`);
+}
+function gRenderCspStatus() {
+  const els = ['g_csp_status', 'm_csp_status'].map(id => document.getElementById(id)).filter(Boolean);
+  if (!els.length) return;
+  const groups = gCspGrouped();
+  const n = groups.length;
+  const list = n ? `<div style="margin-top:4px;white-space:pre-wrap;word-break:break-all;">${gCspLines().slice(0, 12).map(esc).join('\n')}${n > 12 ? `\n… 외 ${n - 12}건` : ''}</div>` : '';
+  let cls = '', html;
+  if (!gCsp.checked) html = '보안 헤더(CSP) 확인 중...';
+  else if (gCsp.mode === 'unknown') html = '보안 헤더(CSP)는 배포된 주소에서만 확인할 수 있어요';
+  else if (gCsp.mode === 'none') html = '🛡 보안 헤더(CSP) 아직 없음 — vercel.json 을 저장소 맨 위(index.html 옆)에 올리고 재배포하면 켜져요';
+  else if (gCsp.mode === 'report') {
+    if (!n) { cls = 'ok'; html = '🛡 보안 헤더(CSP) 감시 모드 · 위반 0건 — 이대로 며칠 써보고 계속 0건이면 차단 모드로 바꿔도 돼요 (vercel.json 의 «-Report-Only» 를 지우고 재배포)'; }
+    else { cls = 'err'; html = `🛡 보안 헤더(CSP) 감시 모드 · 위반 ${n}건 (아직 막지는 않아요 — 차단 모드로 바꾸기 전에 아래 목록을 알려주세요)${list}`; }
+  } else {
+    if (!n) { cls = 'ok'; html = '✅ 보안 헤더(CSP) 차단 모드 · 위반 0건 — 허용한 도메인 밖으로는 스크립트·데이터가 못 나가요'; }
+    else { cls = 'err'; html = `⚠ 보안 헤더(CSP) 차단 모드 · ${n}건 막힘 — 뭔가 안 되면 아래 목록을 알려주세요 (급하면 vercel.json 의 헤더 이름 뒤에 -Report-Only 를 붙여 재배포)${list}`; }
+  }
+  els.forEach(el => { el.className = 'field-hint' + (cls ? ' ' + cls : ''); el.innerHTML = html; });
+}
+window.gOnCspViolation = function () { if (gCsp.checked) gRenderCspStatus(); };
 async function gCheckProxyBuild() {
   gShowPageBuild();
   const el = document.getElementById('g_proxy_status');
@@ -2895,7 +3004,7 @@ async function fbGetAs(path, params, asPage) {
   if (asPage) q.set('asPage', String(asPage));
   let res;
   try {
-    res = await gAuthFetch('core', `${META_PROXY_URL}?${q.toString()}`);
+    res = await apiFetch(`${META_PROXY_URL}?${q.toString()}`);
   } catch (e) {
     // 로그인 실패(창 닫힘·차단)는 그대로, 그 밖(요청이 나가지 못함)은 환경 안내
     throw new Error(/로그인|차단|닫혔|초과/.test(String(e.message)) ? e.message : netErrorHint());
@@ -2914,7 +3023,7 @@ async function fbParse(res) {
     throw err;
   }
   if (!res.ok) {
-    if (res.status === 404) throw new Error('api/meta.js 가 배포에 없어요 — GitHub 의 api 폴더에 meta.js · _auth.js 를 올리고 재배포하세요');
+    if (res.status === 404) throw new Error('api/meta.js 가 배포에 없어요 — GitHub 의 api 폴더에 meta.js · _auth.js · login.js 를 올리고 재배포하세요');
     if (res.status === 413) throw new Error('보낸 내용이 너무 커요 (중계 함수 한도 4.5MB)');
     throw new Error(`HTTP ${res.status}`);
   }
@@ -2925,7 +3034,7 @@ async function fbPost(path, body) {
   const q = new URLSearchParams({ path: String(path || '').replace(/^\/+/, '') });
   let res;
   try {
-    res = await gAuthFetch('core', `${META_PROXY_URL}?${q.toString()}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+    res = await apiFetch(`${META_PROXY_URL}?${q.toString()}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
   } catch (e) { throw new Error(/로그인|차단|닫혔|초과/.test(String(e.message)) ? e.message : netErrorHint()); }
   return fbParse(res);
 }
@@ -3233,15 +3342,15 @@ async function loadAll(force) {
     return;
   }
   bar.className = 'sync-bar';
-  document.getElementById('syncMsg').innerHTML = '<span>구글 로그인 확인 중...</span>';
+  document.getElementById('syncMsg').innerHTML = '<span>로그인 확인 중...</span>';
   loadSettings();
   // 구글(디맨드젠)은 설정값으로 동작한다 — 로그인 전에도 채운다
   try { await loadGoogleData(); } catch (e) { console.warn('구글 참조시트 실패', e.message); }
-  // Meta 는 중계 함수(api/meta.js)를 거치고, 중계 함수는 구글 로그인한 허용 계정만 받는다 — 로그인 전엔 Meta 조회를 하지 않는다
-  if (!(await metaAuthReady())) {
+  // Meta 는 중계 함수(api/meta.js)를 거치고, 중계 함수는 로그인한 제작자(또는 허용된 구글 계정)만 받는다 — 로그인 전엔 Meta 조회를 하지 않는다
+  if (!loginOk()) {
     applySettingsToDB(); populateDropdowns(); gLoadLearnedCopies();
     bar.className = 'sync-bar';
-    document.getElementById('syncMsg').innerHTML = `🔐 Meta 계정·페이지를 불러오려면 구글 로그인이 필요해요 (Meta 토큰은 서버에만 있고, 허용된 계정만 쓸 수 있어요) &nbsp; <button class="sync-btn" onclick="metaLoginAndLoad()">구글 로그인</button>`;
+    document.getElementById('syncMsg').innerHTML = `🔐 Meta 계정·페이지를 불러오려면 로그인이 필요해요 (제작자 이름·코드) &nbsp; <button class="sync-btn" onclick="metaLoginAndLoad()">🔐 로그인</button>`;
     return;
   }
   document.getElementById('syncMsg').innerHTML = '<span>Meta API에서 계정 · 페이지 불러오는 중...</span>';
@@ -3284,8 +3393,8 @@ async function metaAuthReady() {
   return gTokenValid('core');
 }
 async function metaLoginAndLoad() {
-  try { await gSignIn('core'); } catch (e) { showToast('로그인 실패: ' + e.message, 'error', 6000); return; }
-  loadAll();
+  if (loginOk()) { loadAll(); return; }
+  loginShow('');
 }
 /* 설정값을 GDB(화면이 참조하는 구조)로 펼친다 */
 function applyGoogleSettings() {
@@ -3783,6 +3892,7 @@ function populateDropdowns() {
       staffSel.innerHTML = '<option value="">선택</option>';
       DB.staff.forEach(s => { const o = document.createElement('option'); o.value = s.name; o.textContent = s.id ? `${s.name} (${s.id})` : s.name; staffSel.appendChild(o); });
       if (prev && Array.from(staffSel.options).some(o => o.value === prev)) staffSel.value = prev;
+      if (!staffSel.value && typeof loginStaffName === 'function' && loginStaffName() && Array.from(staffSel.options).some(o => o.value === loginStaffName())) { staffSel.value = loginStaffName(); try { autoGenNames(t); } catch (e) {} }   // 로그인한 제작자
     }
     const pageSel = document.getElementById(`${t}_페이지`);
     if (pageSel) {
@@ -5190,9 +5300,9 @@ function showToast(msg, type='info', ms) {
 /* =========================================================
    GOOGLE 로직 (기존 참조시트 유지)
    ========================================================= */
-/* Make 로 보내기 — 웹훅 주소는 서버(api/submit.js)에만 있다. 구글 로그인한 허용 계정만 보낼 수 있다 */
+/* Make 로 보내기 — 웹훅 주소는 서버(api/submit.js)에만 있다. 로그인한 제작자(또는 허용된 구글 계정)만 보낼 수 있다 */
 async function submitToMake(platform, payload) {
-  const res = await gAuthFetch('core', SUBMIT_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ platform, payload }) });
+  const res = await apiFetch(SUBMIT_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ platform, payload }) });
   if (res.status === 404) throw new Error('api/submit.js 가 배포에 없어요 — GitHub 의 api 폴더에 submit.js · _auth.js 를 올리고 재배포하세요');
   if (!res.ok && res.status !== 400) {
     const j = await res.clone().json().catch(() => ({}));
@@ -5276,6 +5386,8 @@ function gStoreToken(key, token, expiresIn, via) {
   gSaveTokens();
   if (key === 'core' && !gTokens[key].hint) gFetchAccountEmail(token);
   gRenderLoginStatus();
+  // 로그인 전엔 못 받던 공유 설정(허용 계정만 읽을 수 있음)을 이제 받아 온다
+  if (key === 'core' && typeof sharedInfo !== 'undefined' && sharedInfo.checked && !sharedInfo.available && (sharedInfo.needLogin || sharedInfo.denied)) loadSharedSettings();
   console.info(`[google] ${key} 토큰 ${via || ''} — ${Math.round(secs / 60)}분 유효`);
 }
 /* 토큰을 서버가 거부했을 때(401) 지운다. 계정 힌트는 남겨서 다음엔 조용히 갱신되게 한다 */
@@ -5638,7 +5750,10 @@ function gPopulateDropdowns() {
       staffSel.innerHTML = '<option value="">선택</option>';
       GDB.staff.forEach(x => { const o = document.createElement('option'); o.value = x.name; o.textContent = x.id ? `${x.name} (${x.id})` : x.name; staffSel.appendChild(o); });
       if (prev && Array.from(staffSel.options).some(o => o.value === prev)) staffSel.value = prev;
+      if (!staffSel.value && typeof loginStaffName === 'function' && loginStaffName() && Array.from(staffSel.options).some(o => o.value === loginStaffName())) { staffSel.value = loginStaffName(); try { gAutoGenNames(t); } catch (e) {} }   // 로그인한 제작자
     }
+    // 구글 «광고 등록» 탭의 제작자는 글자 칸 — 비어 있으면 로그인한 이름을 넣는다
+    if (staffSel && staffSel.tagName === 'INPUT' && !staffSel.value && typeof loginStaffName === 'function' && loginStaffName()) { staffSel.value = loginStaffName(); try { gAutoGenNames(t); } catch (e) {} }
     const clinicSel = document.getElementById(`${t}_치과명`);
     if (clinicSel) {
       const prev = clinicSel.value;
@@ -7857,7 +7972,9 @@ const SHARED_GOOGLE_KEYS = ['staff', 'clinics', 'regions', 'channels', 'cta', 'a
 const SHARED_STAMP_KEY = 'adtool_shared_settings_stamp';   // 마지막으로 적용한 공유 설정의 updatedAt
 const SHARED_DIRTY_KEY = 'adtool_settings_local_dirty';    // 이 브라우저에서만 바꾼 게 있음
 const ADMIN_KEY_STORE = 'adtool_admin_key';
-const sharedInfo = { updatedAt: '', updatedBy: '', available: false, checked: false, applied: false, source: '' };
+const sharedInfo = { updatedAt: '', updatedBy: '', available: false, checked: false, applied: false, source: '', needLogin: false, denied: '' };
+/* 공유 설정도 허용된 구글 계정만 읽을 수 있다(api/settings.js 2026-10-02.2 부터) — 로그인돼 있으면 토큰을 같이 보낸다. 팝업은 띄우지 않는다 */
+function sharedAuthHeaders() { return (typeof loginHeaders === 'function') ? loginHeaders() : {}; }
 const lsGet = k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 function markSettingsDirty() { lsSet(SHARED_DIRTY_KEY, '1'); renderSharedStatus(); }
@@ -7883,19 +8000,28 @@ function applySharedSettings(shared, source) {
 }
 async function fetchSharedFrom(url) {
   try {
-    const r = await fetch(url + (url.includes('?') ? '&' : '?') + '_=' + Date.now(), { cache: 'no-store' });
-    if (!r.ok) return { status: r.status, data: null };
+    const r = await fetch(url + (url.includes('?') ? '&' : '?') + '_=' + Date.now(), { cache: 'no-store', headers: sharedAuthHeaders() });
     const j = await r.json().catch(() => null);
+    if (!r.ok) return { status: r.status, data: null, error: (j && j.error) || '' };
     return { status: r.status, data: (j && (j.meta || j.google)) ? j : null };
   } catch (e) { return { status: 0, data: null }; }
 }
-async function loadSharedSettings() {
+let sharedLoadInFlight = null;
+function loadSharedSettings() {
+  if (sharedLoadInFlight) return sharedLoadInFlight;
+  sharedLoadInFlight = loadSharedSettingsNow().catch(() => {}).finally(() => { sharedLoadInFlight = null; });
+  return sharedLoadInFlight;
+}
+async function loadSharedSettingsNow() {
   if (!ENV.isHttp) { sharedInfo.checked = true; renderSharedStatus(); return; }
   const [stat, api] = await Promise.all([fetchSharedFrom(SHARED_SETTINGS_URL), fetchSharedFrom(SHARED_API_URL)]);
   sharedInfo.checked = true;
+  sharedInfo.needLogin = !loginOk() && (api.status === 401 || stat.status === 401);
+  sharedInfo.denied = (api.status === 403 && api.error) || (stat.status === 403 && stat.error) || '';
   const cands = [stat.data, api.data].filter(Boolean).sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
   const newest = cands[0];
   if (!newest) { sharedInfo.available = false; renderSharedStatus(); return; }
+  sharedInfo.needLogin = false; sharedInfo.denied = '';
   Object.assign(sharedInfo, { available: true, updatedAt: newest.updatedAt || '', updatedBy: newest.updatedBy || '' });
   const stamp = lsGet(SHARED_STAMP_KEY), dirty = lsGet(SHARED_DIRTY_KEY) === '1';
   // 이 브라우저에서만 고친 게 있고 공유 설정이 그때 그대로면 로컬을 지킨다. 관리자가 더 새 걸 올렸으면 그걸 적용
@@ -7914,6 +8040,8 @@ function renderSharedStatus() {
   const dirty = lsGet(SHARED_DIRTY_KEY) === '1';
   let txt;
   if (!sharedInfo.checked) txt = '공유 설정 확인 중...';
+  else if (!sharedInfo.available && sharedInfo.needLogin) txt = '🔐 공유 설정은 로그인 뒤에 받아요 — 로그인하면 자동으로 적용됩니다. 지금은 이 브라우저 설정만 쓰는 중';
+  else if (!sharedInfo.available && sharedInfo.denied) txt = `⛔ 공유 설정을 받지 못했어요 — ${esc(sharedInfo.denied)}`;
   else if (!sharedInfo.available) txt = '아직 공유된 설정이 없어요 — 지금은 이 브라우저 설정만 쓰는 중. 관리자가 "모두에게 적용"을 누르면 모든 사람이 같은 설정을 받아요';
   else if (dirty) txt = `이 브라우저에서 바꾼 설정을 쓰는 중 (공유 설정과 다를 수 있어요 · 공유본: ${sharedTimeLabel(sharedInfo.updatedAt)} ${esc(sharedInfo.updatedBy)})`;
   else txt = `✅ 공유 설정 적용 중 — 관리자 저장 ${sharedTimeLabel(sharedInfo.updatedAt)} (${esc(sharedInfo.updatedBy)})`;
@@ -7945,8 +8073,14 @@ async function shareSettingsNow() {
   if (btn) { btn.disabled = true; btn.textContent = '적용 중...'; }
   const done = () => { if (btn) { btn.disabled = false; btn.textContent = '모두에게 적용'; } };
   let r = null;
+  const post = () => fetch(SHARED_API_URL, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, key ? { 'x-admin-key': key } : {}, sharedAuthHeaders()), body: JSON.stringify(payload) });
   try {
-    r = await fetch(SHARED_API_URL, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, key ? { 'x-admin-key': key } : {}), body: JSON.stringify(payload) });
+    r = await post();
+    // 저장도 허용된 구글 계정이어야 한다(관리자 키 + 로그인) — 로그인이 없어서 거절되면 로그인 뒤 한 번 더
+    if (r.status === 401 && !loginOk()) {
+      let j = null; try { j = await r.clone().json(); } catch (e) {}
+      if (j && j.needLogin) { loginShow('공유 설정을 저장하려면 먼저 로그인하세요'); done(); return; }
+    }
   } catch (e) { r = null; }
   if (!r || r.status === 404 || r.status === 501) {
     // 저장소가 없으면 파일로 — GitHub에 올리면 같은 효과
@@ -7958,6 +8092,8 @@ async function shareSettingsNow() {
     return;
   }
   if (r.status === 401 || r.status === 403) {
+    const j = await r.json().catch(() => ({}));
+    if (j && j.needLogin) { showToast('공유 설정 저장은 로그인해야 해요 — ' + (j.error || ''), 'error', 6000); if (j.sessionInvalid) { loginClear(); loginShow(j.error || ''); } done(); return; }
     lsSet(ADMIN_KEY_STORE, '');
     if (keyInput) { keyInput.style.display = ''; keyInput.focus(); }
     showToast(key ? '관리자 키가 맞지 않아요 — 다시 입력해 주세요' : '관리자 키를 입력하고 다시 눌러주세요', 'error');
@@ -8247,13 +8383,131 @@ const GEO_KIND_LABEL = { city: '도시', region: '지역(도·광역시)', subci
 function gKeepViewportTop() { if (window.scrollY || window.scrollX) window.scrollTo(0, 0); setTimeout(() => { if (window.scrollY || window.scrollX) window.scrollTo(0, 0); }, 400); }
 window.addEventListener('scroll', gKeepViewportTop, { passive: true });
 
+/* =========================================================
+   로그인 창 — 아이디 = 설정 → 제작자(Meta)의 이름, 비밀번호 = 같은 줄의 코드
+   · 서버(api/login.js)가 공유 설정의 제작자 목록과 맞춰 보고 서명된 세션(30일)을 준다 → 이 브라우저에 저장
+   · 이후 중계 함수(api/meta · submit · settings) 호출마다 헤더 x-adtool-session 으로 보낸다 (제작자 목록에서 빼면 바로 못 씀)
+   · 구글 계정(허용된 계정 · ALLOWED_EMAILS)으로도 들어올 수 있다 — 관리자가 처음 제작자 목록을 올릴 때
+   · 구글 로그인(드라이브·시트·유튜브)은 그대로 따로 — 필요할 때 전처럼 묻는다
+   ========================================================= */
+const LOGIN_URL = '/api/login';
+const LOGIN_STORE = 'adtool_staff_session_v1';
+const login = { session: '', name: '', exp: 0, kind: '' };   // kind: staff | google
+function loginLoad() {
+  try { const j = JSON.parse(localStorage.getItem(LOGIN_STORE) || 'null'); if (j && j.session && Number(j.exp) > Date.now()) Object.assign(login, { session: j.session, name: j.name || '', exp: Number(j.exp), kind: 'staff' }); } catch (e) {}
+}
+function loginSave() { try { localStorage.setItem(LOGIN_STORE, JSON.stringify({ session: login.session, name: login.name, exp: login.exp })); } catch (e) {} }
+function loginClear() { Object.assign(login, { session: '', name: '', exp: 0, kind: '' }); try { localStorage.removeItem(LOGIN_STORE); } catch (e) {} loginRenderUser(); }
+function loginOk() { return !!login.session || (login.kind === 'google' && gTokenValid('core')); }
+function loginStaffName() { return login.kind === 'staff' ? login.name : ''; }
+/* 중계 함수에 붙일 헤더 — 세션이 있으면 세션, 아니면(관리자 구글 경로) 구글 토큰 */
+function loginHeaders() {
+  if (login.session) return { 'x-adtool-session': login.session };
+  if (gTokenValid('core')) return { Authorization: `Bearer ${gTokens.core.token}` };
+  return {};
+}
+/* 중계 함수 호출 — 세션이 거절되면(만료·목록에서 빠짐) 로그인 창을 다시 띄운다 */
+async function apiFetch(url, init) {
+  const call = () => fetch(url, Object.assign({}, init || {}, { headers: Object.assign({}, (init && init.headers) || {}, loginHeaders()) }));
+  let res = await call();
+  if (res.status === 401 && !login.session && login.kind === 'google') {   // 구글 토큰 만료 → 한 번 갱신
+    gInvalidateToken('core');
+    try { await gSignIn('core'); res = await call(); } catch (e) { /* 아래에서 그대로 */ }
+  }
+  if ((res.status === 401 || res.status === 403) && login.session) {
+    const j = await res.clone().json().catch(() => null);
+    if (j && j.sessionInvalid) { loginClear(); loginShow(loginErrText(j) || '다시 로그인해 주세요'); }
+  }
+  return res;
+}
+/* 서버 오류 문구 — api/meta 는 {error:{message}}, 나머지는 {error:'…'} */
+function loginErrText(j) { const e = j && j.error; return typeof e === 'string' ? e : (e && e.message) || ''; }
+function loginRenderUser() {
+  const el = document.getElementById('topbarUser'); if (!el) return;
+  if (!loginOk()) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  const who = login.name || (gTokens.core && gTokens.core.hint) || '';
+  el.style.display = ''; el.innerHTML = `👤 <b>${esc(who)}</b><span class="link-out" onclick="loginLogout()">로그아웃</span>`;
+}
+function loginShow(msg, isInfo) {
+  const back = document.getElementById('loginBack'); if (!back) return;
+  back.classList.add('show');
+  const err = document.getElementById('login_err');
+  if (err) { err.textContent = msg || ''; err.className = 'login-err' + (isInfo ? ' info' : ''); }
+  loginRenderUser();
+  setTimeout(() => { const n = document.getElementById('login_name'); const c = document.getElementById('login_code'); if (n && !n.value) n.focus(); else if (c) c.focus(); }, 60);
+}
+function loginHide() { const back = document.getElementById('loginBack'); if (back) back.classList.remove('show'); loginRenderUser(); }
+function afterLogin() {
+  loginRenderUser();
+  loadAll();
+  loadSharedSettings();   // 관리자가 올린 공유 설정이 있으면 그걸로 (브라우저 설정은 캐시)
+}
+async function loginSubmit(ev) {
+  if (ev) ev.preventDefault();
+  const nameEl = document.getElementById('login_name'), codeEl = document.getElementById('login_code');
+  const name = nameEl.value.trim(), code = codeEl.value.trim();
+  const err = document.getElementById('login_err'); const btn = document.getElementById('login_btn');
+  err.className = 'login-err';
+  if (!name || !code) { err.textContent = '이름과 코드를 모두 넣어주세요'; (name ? codeEl : nameEl).focus(); return false; }
+  btn.disabled = true; btn.textContent = '확인 중...'; err.textContent = '';
+  try {
+    const r = await fetch(LOGIN_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, code }), cache: 'no-store' });
+    const j = await r.json().catch(() => ({}));
+    if (r.status === 404) throw new Error('api/login.js 가 배포에 없어요 — GitHub 의 api 폴더에 login.js · _auth.js 를 올리고 재배포하세요 (그 전엔 아래 구글 로그인으로)');
+    if (!r.ok || !j.ok || !j.session) throw new Error(j.error || `로그인 실패 (HTTP ${r.status})`);
+    Object.assign(login, { session: j.session, name: j.name || name, exp: Number(j.exp) || (Date.now() + 30 * 86400000), kind: 'staff' });
+    loginSave();
+    codeEl.value = '';
+    loginHide();
+    showToast(`${login.name} 님, 로그인했어요`, 'success');
+    afterLogin();
+  } catch (e) { err.textContent = e.message; codeEl.focus(); }
+  btn.disabled = false; btn.textContent = '로그인';
+  return false;
+}
+/* 구글 계정으로 (허용된 계정만 · 관리자용) */
+async function loginWithGoogle() {
+  const err = document.getElementById('login_err'); err.className = 'login-err'; err.textContent = '';
+  try { await gSignIn('core', { picker: !(gTokens.core && gTokens.core.hint) }); } catch (e) { err.textContent = '구글 로그인 실패: ' + e.message; return; }
+  let r = null; try { r = await fetch(LOGIN_URL + '?check=1', { headers: { Authorization: `Bearer ${gTokens.core.token}` }, cache: 'no-store' }); } catch (e) { r = null; }
+  const j = r ? await r.json().catch(() => ({})) : {};
+  if (r && r.status === 404) { /* login.js 가 아직 없으면 중계 함수(meta.js)가 구글 토큰을 직접 확인한다 — 그냥 들어간다 */ }
+  else if (!r || !j.ok) { err.textContent = (j && j.error) || '허용된 구글 계정이 아니에요 — 제작자 이름·코드로 로그인하세요'; return; }
+  login.kind = 'google'; login.session = ''; login.name = (j && j.name) || (gTokens.core && gTokens.core.hint) || '';
+  loginHide();
+  afterLogin();
+}
+function loginLogout() {
+  loginClear();
+  location.reload();   // 화면·데이터를 비우고 로그인 창부터
+}
+/* 세션이 아직 살아 있는지 뒤에서 확인 — 만료·목록 제외면 로그인 창. 함수가 없으면(404) 그냥 둔다 */
+async function loginVerifyLater() {
+  if (!login.session) return;
+  let r = null; try { r = await fetch(LOGIN_URL + '?check=1', { headers: loginHeaders(), cache: 'no-store' }); } catch (e) { return; }
+  if (r.status === 401 || r.status === 403) {
+    const j = await r.json().catch(() => ({}));
+    if (j && j.sessionInvalid) { loginClear(); loginShow(loginErrText(j) || '다시 로그인해 주세요'); }
+  } else if (r.ok) {
+    const j = await r.json().catch(() => ({}));
+    if (j && j.name && login.kind === 'staff' && j.name !== login.name) { login.name = j.name; loginSave(); loginRenderUser(); }
+  }
+}
+function loginInit() {
+  loginLoad();
+  if (!ENV.isHttp) { afterLogin(); return; }   // 파일로 열었을 땐 어차피 API 를 못 부른다 — 로그인 창 없이 화면만
+  if (login.session) { loginHide(); afterLogin(); loginVerifyLater(); return; }
+  const bar = document.getElementById('syncBar'); if (bar) bar.className = 'sync-bar';
+  const msg = document.getElementById('syncMsg'); if (msg) msg.innerHTML = `🔐 로그인이 필요해요 — 제작자 이름·코드 &nbsp; <button class="sync-btn" onclick="loginShow('')">🔐 로그인</button>`;
+  loginShow('');
+}
+
 /* 시작 */
 console.log(`[광고 자동등록] 페이지 빌드 ${G_PAGE_BUILD}`);
 loadSettings();
 applySettingsToDB();
 populateDropdowns();
-loadAll();
-loadSharedSettings();   // 관리자가 올린 공유 설정이 있으면 그걸로 (브라우저 설정은 캐시)
+loginInit();   // 로그인 창 → 로그인되면 loadAll() + loadSharedSettings()
 </script>
 </body>
 </html>
