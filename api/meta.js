@@ -7,11 +7,11 @@
  *
  * Vercel 환경변수 (Settings → Environment Variables → 넣고 Redeploy)
  *   META_ACCESS_TOKEN   필수 · Meta 시스템 사용자 토큰 (ads_management 등)
- *   ALLOWED_EMAILS      필수 · 쓸 수 있는 구글 계정 (쉼표로 구분)   — api/_auth.js 참고
+ *   ALLOWED_EMAILS      선택 · 구글 계정으로도 들어올 수 있는 사람 (쉼표로 구분) — 제작자 이름·코드 로그인(api/login.js)이 기본
  *   GOOGLE_API_KEY      권장 · Drive API 용 API 키 (영상을 Meta 에 넘길 때 Drive 직접 다운로드 주소에 쓴다)
  *   META_API_VERSION    선택 · 기본 v25.0
  *
- * 호출 (페이지 → 이 함수, 모두 Authorization: Bearer <구글 토큰>)
+ * 호출 (페이지 → 이 함수, 로그인 창의 세션 헤더 x-adtool-session — 또는 예전 방식 Authorization: Bearer <구글 토큰>)
  *   GET  /api/meta?path=me/adaccounts&fields=…          → Graph GET 그대로 중계 (access_token 은 서버가 붙인다)
  *   GET  /api/meta?path=<페이지ID>/leadgen_forms&asPage=<페이지ID>   → 그 페이지의 페이지 토큰으로 부른다
  *   POST /api/meta?path=act_<id>/adimages   본문 {bytes:<base64>} 또는 {drive_file_id}
@@ -19,9 +19,9 @@
  *   GET  /api/meta?ping=1                                 → 로그인 없이 배포 확인
  *   쓰기(POST)는 위 두 경로만 허용 — 캠페인·광고 생성은 Make 가 한다
  */
-const { verifyGoogleUser, noStore } = require('./_auth');
+const { verifyUser, noStore } = require('./_auth');
 
-const BUILD = '2026-10-02.2';
+const BUILD = '2026-10-06.1';
 const GRAPH = 'https://graph.facebook.com';
 const VERSION = process.env.META_API_VERSION || 'v25.0';
 const ALLOW_POST = [/^act_\d+\/adimages$/, /^act_\d+\/advideos$/];
@@ -76,6 +76,7 @@ module.exports = async function handler(req, res) {
       ok: true, build: BUILD, apiVersion: VERSION,
       hasToken: !!process.env.META_ACCESS_TOKEN,
       allowlistSet: !!(process.env.ALLOWED_EMAILS || process.env.ALLOWED_DOMAINS),
+      loginReady: !!(process.env.SESSION_SECRET || process.env.SETTINGS_ADMIN_KEY || process.env.META_ACCESS_TOKEN),
       hasGoogleApiKey: !!process.env.GOOGLE_API_KEY,
     });
   }
@@ -83,8 +84,8 @@ module.exports = async function handler(req, res) {
   const token = String(process.env.META_ACCESS_TOKEN || '').trim().split(/\s+/)[0] || '';
   if (!token) return res.status(500).json({ error: { message: 'Vercel 환경변수 META_ACCESS_TOKEN 이 비어 있어요 — 넣고 재배포하세요', code: 0 } });
   const redact = m => String(m || '').replace(/EAA[A-Za-z0-9]+/g, '[토큰]').split(token).join('[토큰]');   // 오류 문구에 토큰이 섞여 나가지 않게
-  const who = await verifyGoogleUser(req);
-  if (!who.ok) return res.status(who.status).json({ error: { message: who.error, code: who.status, type: 'AuthError' } });
+  const who = await verifyUser(req);   // 제작자 세션(x-adtool-session) 또는 허용된 구글 계정
+  if (!who.ok) return res.status(who.status).json({ error: { message: who.error, code: who.status, type: 'AuthError' }, sessionInvalid: !!who.sessionInvalid });
 
   let path = String(q.path || '').replace(/^\/+/, '').replace(/^v\d+\.\d+\//, '');
   if (!path || !/^[A-Za-z0-9_./-]+$/.test(path) || path.includes('..')) return res.status(400).json({ error: { message: 'path 가 비어 있거나 잘못됐어요', code: 0 } });
