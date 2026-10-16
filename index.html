@@ -2487,7 +2487,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-21.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-10-06.1';
+const G_PAGE_BUILD = '2026-10-16.2';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -3344,6 +3344,8 @@ async function loadAll(force) {
   bar.className = 'sync-bar';
   document.getElementById('syncMsg').innerHTML = '<span>로그인 확인 중...</span>';
   loadSettings();
+  // 구글 토큰이 있으면 참조시트를 Sheets API 로 읽는다(비공개 시트도 됨) — 예전 로그인이 있으면 조용히 살린다
+  try { await gGoogleReady(); } catch (e) {}
   // 구글(디맨드젠)은 설정값으로 동작한다 — 로그인 전에도 채운다
   try { await loadGoogleData(); } catch (e) { console.warn('구글 참조시트 실패', e.message); }
   // Meta 는 중계 함수(api/meta.js)를 거치고, 중계 함수는 로그인한 제작자(또는 허용된 구글 계정)만 받는다 — 로그인 전엔 Meta 조회를 하지 않는다
@@ -3368,6 +3370,7 @@ async function loadAll(force) {
     const firstErr = (loadLog.accounts.find(l => !l.ok) || {}).detail || errMsg || '알 수 없는 오류';
     bar.className = 'sync-bar err';
     document.getElementById('syncMsg').innerHTML = `⚠ 광고계정을 가져오지 못했어요 — ${esc(firstErr)} &nbsp; <button class="sync-btn" onclick="openSettings('diag')">진단 열기</button> <button class="sync-btn" onclick="loadAll()">다시 시도</button>`;
+    gAppendGoogleReminder();
     return;
   }
   const accFail = DB.accounts.filter(a => !a.ok).length;
@@ -3375,6 +3378,7 @@ async function loadAll(force) {
     const firstPageErr = (loadLog.pages.find(l => !l.ok) || {}).detail || '';
     bar.className = 'sync-bar err';
     document.getElementById('syncMsg').innerHTML = `⚠ 계정 ${accOk}개는 정상, 페이지 목록이 비었어요${firstPageErr ? ' — ' + esc(firstPageErr) : ''} &nbsp; <button class="sync-btn" onclick="openSettings('diag')">진단 열기</button> <button class="sync-btn" onclick="openSettings('page')">페이지 직접 입력</button>`;
+    gAppendGoogleReminder();
     return;
   }
   const needSetup = DB.accounts.some(a => a.ok && !a.campaignName && !a.setName) || DB.staff.length === 0 || DB.regions.length === 0;
@@ -3382,15 +3386,32 @@ async function loadAll(force) {
   document.getElementById('syncMsg').innerHTML = `✓ Meta API 연동 완료 (${now}) — 계정 ${accOk}개${accFail ? ` (실패 ${accFail}개)` : ''} · 페이지 ${pageOk}개 · 제작자 ${DB.staff.length}명 · 지역 ${DB.regions.length}개`
     + (needSetup ? ` &nbsp; <button class="sync-btn" onclick="openSettings()">설정에서 네이밍 채우기</button>` : '')
     + (accFail ? ` &nbsp; <button class="sync-btn" onclick="openSettings('diag')">실패 원인 보기</button>` : '');
-  if (!needSetup && !accFail) setTimeout(() => { bar.className = 'sync-bar hidden'; }, 4000);
+  const needGoogle = gAppendGoogleReminder();   // 구글 토큰이 없으면 안내를 붙이고 상단바를 남긴다
+  if (!needSetup && !accFail && !needGoogle) setTimeout(() => { bar.className = 'sync-bar hidden'; }, 4000);
 }
 
-/* Meta 조회 전 구글 로그인 상태 — 예전에 로그인한 적이 있으면 조용히 갱신해 본다 (팝업 없음) */
-async function metaAuthReady() {
+/* 구글 토큰(참조시트·드라이브·유튜브·캠페인명 중복 확인용) — 예전에 로그인한 적이 있으면 숨은 창으로 조용히 갱신해 본다 (팝업 없음).
+   로그인 창(제작자 이름·코드)과는 별개다. 토큰이 없으면 상단바에 «구글 로그인» 버튼을 보여 준다 (gAppendGoogleReminder) */
+async function gGoogleReady() {
   if (!ENV.isHttp) return false;
   if (gTokenValid('core')) return true;
   if (gTokens.core && gTokens.core.hint) { try { await gSilentRefresh('core', 8000); } catch (e) { /* 아래에서 버튼으로 */ } }
   return gTokenValid('core');
+}
+async function metaAuthReady() { return gGoogleReady(); }
+/* 상단바 끝에 «구글 로그인» 안내를 붙인다 — 구글 토큰이 없을 때만. true 면 상단바를 숨기지 말 것 */
+function gAppendGoogleReminder() {
+  if (!ENV.isHttp || gTokenValid('core')) return false;
+  const bar = document.getElementById('syncBar'), msg = document.getElementById('syncMsg');
+  if (!bar || !msg) return false;
+  if (!/\berr\b/.test(bar.className)) bar.className = 'sync-bar';
+  msg.innerHTML += ` &nbsp; 🔐 구글 로그인도 해주세요 — 참조시트·캠페인명 중복 확인·영상 업로드에 필요해요 <button class="sync-btn" onclick="googleLoginAndLoad()">구글 로그인</button>`;
+  return true;
+}
+async function googleLoginAndLoad() {
+  try { await gSignIn('core', { picker: !(gTokens.core && gTokens.core.hint) }); } catch (e) { showToast('구글 로그인 실패: ' + e.message, 'error', 6000); return; }
+  showToast('구글 로그인 완료 — 새로고침해도 유지돼요', 'success');
+  loadAll();
 }
 async function metaLoginAndLoad() {
   if (loginOk()) { loadAll(); return; }
@@ -5388,6 +5409,8 @@ function gStoreToken(key, token, expiresIn, via) {
   gRenderLoginStatus();
   // 로그인 전엔 못 받던 공유 설정(허용 계정만 읽을 수 있음)을 이제 받아 온다
   if (key === 'core' && typeof sharedInfo !== 'undefined' && sharedInfo.checked && !sharedInfo.available && (sharedInfo.needLogin || sharedInfo.denied)) loadSharedSettings();
+  // 구글 토큰이 없어서 못 했던 캠페인명 중복 확인을 다시 돈다
+  if (key === 'core' && typeof gNameCheck !== 'undefined' && gNameCheck.g1 && gNameCheck.g1.state === 'fail') { try { gScheduleNameCheck('g1'); } catch (e) {} }
   console.info(`[google] ${key} 토큰 ${via || ''} — ${Math.round(secs / 60)}분 유효`);
 }
 /* 토큰을 서버가 거부했을 때(401) 지운다. 계정 힌트는 남겨서 다음엔 조용히 갱신되게 한다 */
@@ -6304,15 +6327,17 @@ function gRenderCampaignNameHint(t) {
   const editTail = edited
     ? ` <span class="link-toggle" style="margin-left:6px;" onclick="gResetCampaignName('${t}')">자동으로 되돌리기</span>`
     : '';
-  const who = c => c.fromPage ? '방금 이 페이지에서 보낸 이름' : `${c.customerName ? c.customerName + ' · ' : ''}ID ${c.id}${c.status ? ' · ' + gStatusKo(c.status) : ''}`;
+  const who = c => (c.fromPage ? `방금 이 페이지에서 ${c.customerName ? c.customerName + ' 계정으로 ' : ''}보낸 이름` : `${c.customerName ? c.customerName + ' · ' : ''}ID ${c.id}${c.status ? ' · ' + gStatusKo(c.status) : ''}`)
+    + (c.sameAccount === false ? ' · <b>다른 계정</b>' : '');
   const howTo = `— 만들다 멈춘 캠페인이면 <button type="button" class="sync-btn" onclick="gContinueInSetTab('${t}')">세트 추가 탭에서 이어서 등록</button> 하거나, Google Ads 에서 그 캠페인을 지운 뒤 다시 보내세요. 이름은 바꾸지 않습니다`;
   // ① 같은 이름이 발견돼 있으면(입력 즉시 확인 또는 등록 직전 확인) 이름이 바뀔 때까지 유지
   const dup = (typeof gDupCampaign !== 'undefined') && gDupCampaign[t];
   if (dup && cur && looseName(cur) === looseName(dup.name)) {
     el.className = 'field-hint err';
     const exact = normName(cur) === normName(dup.name) && String(dup.name || '').trim() === cur;
+    const other = dup.sameAccount === false ? ' — MCC 아래 다른 계정에 있어서 구글은 받아주지만, 우리 기준으론 같은 캠페인이 두 개 생깁니다' : '';
     el.innerHTML = (exact || dup.fromPage
-      ? `⚠ 같은 이름의 캠페인이 이미 있어요 (${who(dup)}) ${howTo}`
+      ? `⚠ 같은 이름의 캠페인이 이미 있어요 (${who(dup)})${other} ${howTo}`
       : `⚠ 공백·문자만 다른 <b>거의 같은 이름</b>의 캠페인이 이미 있어요 (${who(dup)}) — 구글은 다른 이름으로 보고 받아주지만, 같은 캠페인이 두 개 생깁니다 ${howTo}`) + editTail;
     return;
   }
@@ -6320,8 +6345,8 @@ function gRenderCampaignNameHint(t) {
   const st = (typeof gNameCheck !== 'undefined') && gNameCheck[t];
   const cid = String((document.getElementById(`${t}_광고계정ID`) || {}).value || '').replace(/[^0-9]/g, '');
   const live = st && cur && cid && st.key === `${cid}|${cur}` ? st.state : '';
-  if (live === 'checking') { el.className = 'field-hint'; el.innerHTML = `🔎 이 계정에 같은 이름이 있는지 확인 중...${editTail}`; return; }
-  if (live === 'ok') { el.className = 'field-hint ok'; el.innerHTML = `✅ 이 계정에 같은 이름 없음 — 등록할 때 한 번 더 확인합니다${editTail}`; return; }
+  if (live === 'checking') { el.className = 'field-hint'; el.innerHTML = `🔎 MCC 아래 모든 계정에 같은 이름이 있는지 확인 중...${editTail}`; return; }
+  if (live === 'ok') { el.className = 'field-hint ok'; el.innerHTML = `✅ MCC 아래 모든 계정에 같은 이름 없음 — 등록할 때 한 번 더 확인합니다${editTail}`; return; }
   if (live === 'fail') { el.className = 'field-hint err'; el.innerHTML = `⚠ 중복을 확인하지 못했어요 (${esc(st.error || '연결 확인')}) — 등록 버튼을 누르면 다시 확인합니다${editTail}`; return; }
   // ③ 기본 안내
   if (edited) {
@@ -7623,42 +7648,69 @@ function looseName(v) {
   try { s = s.normalize('NFKC'); } catch (e) {}
   return s.replace(/[\s 　]+/g, '').toLowerCase();
 }
-/* 그 계정에 이 이름의 캠페인이 있는지 — { ok, hit, near, error }
-     hit  : 완전히 같은 이름 (Google 도 거절할 이름)
+/* 이 이름의 캠페인이 있는지 — { ok, hit, near, error }
+     hit  : 완전히 같은 이름 (같은 계정이면 Google 도 거절할 이름 · 다른 계정이면 우리 규칙상 중복)
      near : 공백·문자 차이만 있는 거의 같은 이름 (Google 은 받아주지만, 실수일 가능성이 높다)
    ok=false 는 «확인 못 함» (중계 함수·권한·네트워크). 호출부는 이때 보내지 않는다.
-   조회는 이름의 첫 단어(치과 약칭)로 그 계정의 캠페인을 받아서 페이지에서 가려낸다 —
-   구글에 이름 그대로 물어보면 공백 두 칸 같은 숨은 차이를 못 잡기 때문. */
+   «MCC 전체» 기준이다 — 우리는 계정을 MCC 로 묶어 돌리므로, 고른 계정만이 아니라 MCC 아래 모든 계정에서 같은 이름을 찾는다:
+     ① 고른 계정 — 첫 단어(치과 약칭)로 그 계정 캠페인을 받아 정확히 비교 (campaignsbyword)
+     ② MCC 아래 모든 계정 — 같은 단어로 전부 훑는다 (findcampaigns · status=all)
+   둘 중 하나라도 못 보면 «확인 못 함». 구글에 이름 그대로 물어보면 공백 두 칸 같은 숨은 차이를 못 잡아서 페이지에서 가려낸다. */
 async function gCampaignNameTaken(name, customerId) {
   const full = String(name || '').trim();
   const cid = String(customerId || '').replace(/[^0-9]/g, '');
   if (!full) return { ok: true, hit: null, near: null };
   const want = normName(full), loose = looseName(full);
-  const sentHit = gSentCampaignsFor(cid).find(n => normName(n) === want);
-  if (sentHit) return { ok: true, hit: { id: '', name: sentHit, status: '방금 보냄', customerId: cid, customerName: '', fromPage: true }, near: null };
+  // 이번 페이지에서 방금 보낸 이름 — 어느 계정으로 보냈든 (Make 가 아직 만드는 중이면 Google 에 안 보인다)
+  const sent = gSentCampaignsAll().find(x => normName(x.name) === want);
+  if (sent) return { ok: true, hit: { id: '', name: sent.name, status: '방금 보냄', customerId: sent.customerId, customerName: gAccountNameById(sent.customerId), fromPage: true, sameAccount: sent.customerId === cid }, near: null };
   if (!cid) return { ok: false, hit: null, near: null, error: '광고계정 ID 가 비어 있어요' };
+  const tag = c => Object.assign({}, c, { sameAccount: String(c.customerId || '').replace(/[^0-9]/g, '') === cid });
   const classify = (list) => {
-    const mine = list.filter(c => !cid || String(c.customerId || '').replace(/[^0-9]/g, '') === cid);
-    const hit = mine.find(c => String(c.name || '').trim() === full) || mine.find(c => normName(c.name) === want) || null;
-    const near = hit ? null : (mine.find(c => looseName(c.name) === loose) || null);
+    // 같은 계정 것을 먼저 (Google 이 거절할 이름), 그 다음 다른 계정
+    const all = list.map(tag).sort((x, y) => (y.sameAccount ? 1 : 0) - (x.sameAccount ? 1 : 0));
+    const hit = all.find(c => String(c.name || '').trim() === full) || all.find(c => normName(c.name) === want) || null;
+    const near = hit ? null : (all.find(c => looseName(c.name) === loose) || null);
     return { ok: true, hit, near };
   };
   const word = (full.split(/\s+/)[0] || full).replace(/['%\\]/g, '');
-  gLastLookupError = '';
-  let list = await gLookup('campaignsbyword', { customerId: cid, q: word });
-  if (Array.isArray(list)) return classify(list);
-  let err = gLastLookupError || '';
-  if (!/알 수 없는 type/.test(err)) return { ok: false, hit: null, near: null, error: err || '중계 함수 조회 실패' };
-  // 배포된 중계 함수가 구버전 → 이름 그대로 묻기(campaignbyname) → 더 옛날이면 LIKE 검색(findcampaigns)
-  gLastLookupError = '';
-  list = await gLookup('campaignbyname', { customerId: cid, name: full });
-  if (Array.isArray(list)) return Object.assign(classify(list), { legacy: true });
-  err = gLastLookupError || '';
-  if (!/알 수 없는 type/.test(err)) return { ok: false, hit: null, near: null, error: err || '중계 함수 조회 실패' };
-  gLastLookupError = '';
-  list = await gLookup('findcampaigns', { q: full, status: 'all' });
-  if (!Array.isArray(list)) return { ok: false, hit: null, near: null, error: gLastLookupError || '중계 함수 조회 실패' };
-  return Object.assign(classify(list), { legacy: true });
+  // ① 고른 계정 (정확) — 구버전 중계 함수면 campaignbyname 으로
+  const mineP = (async () => {
+    gLastLookupError = '';
+    let list = await gLookup('campaignsbyword', { customerId: cid, q: word });
+    if (Array.isArray(list)) return { list };
+    let err = gLastLookupError || '';
+    if (!/알 수 없는 type/.test(err)) return { error: err || '중계 함수 조회 실패' };
+    gLastLookupError = '';
+    list = await gLookup('campaignbyname', { customerId: cid, name: full });
+    if (Array.isArray(list)) return { list, legacy: true };
+    err = gLastLookupError || '';
+    return { error: /알 수 없는 type/.test(err) ? '' : (err || '중계 함수 조회 실패'), legacy: true, unsupported: /알 수 없는 type/.test(err) };
+  })();
+  // ② MCC 아래 모든 계정 (이름 조각 · 일시중지 포함)
+  const allP = (async () => {
+    gLastLookupError = '';
+    const list = await gLookup('findcampaigns', { q: word, status: 'all' });
+    if (Array.isArray(list)) return { list };
+    return { error: gLastLookupError || '중계 함수 조회 실패' };
+  })();
+  const [mine, all] = await Promise.all([mineP, allP]);
+  if (all.error) return { ok: false, hit: null, near: null, error: 'MCC 전체 조회 실패 — ' + all.error };
+  if (mine.error) return { ok: false, hit: null, near: null, error: '고른 계정 조회 실패 — ' + mine.error };
+  const merged = []; const seen = new Set();
+  [...(mine.list || []), ...(all.list || [])].forEach(c => { const k = `${String(c.customerId || '').replace(/[^0-9]/g, '')}|${c.id}`; if (seen.has(k)) return; seen.add(k); merged.push(c); });
+  return Object.assign(classify(merged), { legacy: !!mine.legacy, scope: 'mcc' });
+}
+/* 이번 페이지에서 보낸 캠페인명 전부 (계정 구분 없이) */
+function gSentCampaignsAll() {
+  const out = [];
+  gSentCampaignNames.forEach((arr, key) => arr.forEach(n => out.push({ name: n, customerId: key })));
+  return out;
+}
+function gAccountNameById(id) {
+  const want = String(id || '').replace(/[^0-9]/g, '');
+  const acc = (GDB.accounts || []).find(a => String(a.id || '').replace(/[^0-9]/g, '') === want);
+  return acc ? acc.name : '';
 }
 /* ── 입력하는 즉시 확인 ──────────────────────────────────────────
    캠페인명이 바뀔 때마다(자동 생성·직접 수정·계정 변경) 잠깐 기다렸다가 한 번 물어보고,
@@ -7678,7 +7730,9 @@ function gScheduleNameCheck(t) {
   const seq = ++st.seq;
   st.timer = setTimeout(async () => {
     let r;
-    try { r = await gCampaignNameTaken(name, cid); } catch (e) { r = { ok: false, hit: null, near: null, error: e.message }; }
+    // 중계 함수는 구글 토큰으로 부른다 — 여기서는 팝업을 띄우지 않고(타이머라 차단된다) 조용한 갱신만 해 본다
+    if (!(await gGoogleReady())) { r = { ok: false, hit: null, near: null, error: '구글 로그인이 필요해요 — 상단의 «구글 로그인» 버튼을 눌러주세요' }; if (typeof gAppendGoogleReminder === 'function' && !/googleLoginAndLoad/.test(document.getElementById('syncMsg').innerHTML)) { gAppendGoogleReminder(); } }
+    else { try { r = await gCampaignNameTaken(name, cid); } catch (e) { r = { ok: false, hit: null, near: null, error: e.message }; } }
     if (seq !== st.seq) return;                   // 그 사이 이름이 또 바뀜
     st.state = !r.ok ? 'fail' : (r.hit ? 'dup' : (r.near ? 'near' : 'ok'));
     st.hit = r.hit || null; st.near = r.near || null; st.error = r.error || '';
@@ -7695,7 +7749,7 @@ function gFlagDuplicateName(t, hit, isNear) {
   if (nameEl) { nameEl.classList.add('is-invalid'); setTimeout(() => nameEl.classList.remove('is-invalid'), 6000); }
   gRenderCampaignNameHint(t);
   if (nameEl) { nameEl.scrollIntoView({ block: 'center', behavior: 'smooth' }); try { nameEl.focus({ preventScroll: true }); } catch (e) {} gKeepViewportTop(); }
-  const where = hit && hit.fromPage ? '방금 이 페이지에서 보낸 이름이에요' : `${hit && hit.customerName ? hit.customerName + ' · ' : ''}${(hit && hit.name) || ''}`;
+  const where = (hit && hit.fromPage ? '방금 이 페이지에서 보낸 이름이에요' : `${hit && hit.customerName ? hit.customerName + ' · ' : ''}${(hit && hit.name) || ''}`) + (hit && hit.sameAccount === false ? ' (MCC 아래 다른 계정)' : '');
   showToast(`${isNear ? '공백·문자만 다른 거의 같은 이름의' : '이미 같은 이름의'} 캠페인이 있어서 보내지 않았어요 — ${where}. 이름은 그대로 두고, 아래 안내대로 이어서 등록하거나 Google Ads 에서 그 캠페인을 지운 뒤 다시 보내주세요`, 'error', 9000);
 }
 function gStatusKo(s) { return { ENABLED: '활성', PAUSED: '일시중지', REMOVED: '삭제됨' }[String(s || '').toUpperCase()] || String(s || ''); }
