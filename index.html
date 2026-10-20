@@ -1249,6 +1249,19 @@ document.addEventListener('securitypolicyviolation', function (e) {
           <button class="btn-sm" onclick="dumpProxyRaw()">🔍 원시 응답 보기</button>
         </div>
         <div id="g_api_out" style="margin-top:12px;font-size:12px;line-height:1.7;white-space:pre-wrap;background:var(--bg);border-radius:8px;padding:12px;color:var(--text2);min-height:40px;">아직 테스트하지 않았습니다.</div>
+        <div class="set-box" style="margin-top:16px;">
+          <div class="set-box-head"><b>TikTok 연결 확인 <span class="auto-tag">준비 중 · 1단계</span></b><span class="field-hint">틱톡 토큰은 서버(api/tiktok.js)에만 있어요 — 계정·표시 계정·양식·기존 캠페인 설정을 읽어 와서 등록 탭 설계에 씁니다</span></div>
+          <div class="field-hint" id="tt_status" style="margin:0 0 8px;">틱톡 중계 함수 확인 중...</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <select id="tt_adv" style="height:34px;min-width:220px;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:0 8px;font-family:inherit;font-size:12px;background:var(--white);"><option value="">광고계정 (불러오는 중...)</option></select>
+            <button type="button" class="btn-sm blue" onclick="ttRunDiag()">🩺 틱톡 진단 실행</button>
+            <button type="button" class="btn-sm" onclick="ttRunDiag(true)">전체 계정</button>
+            <button type="button" class="btn-sm" onclick="ttCopyDiag()">결과 복사</button>
+            <input type="text" id="tt_region_q" placeholder="지역 검색 (예: 해운대)" style="height:34px;width:170px;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:0 8px;font-family:inherit;font-size:12px;" onkeydown="if(event.key==='Enter'){event.preventDefault();ttRegionSearch();}">
+            <button type="button" class="btn-sm" onclick="ttRegionSearch()">🔎 지역</button>
+          </div>
+          <div id="tt_out" style="margin:10px 0 8px;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);border-radius:8px;padding:12px;min-height:40px;color:var(--text2);">아직 실행하지 않았어요 — 광고계정을 고르고 «틱톡 진단 실행»</div>
+        </div>
       </div>
     </div>
     <div class="share-bar" id="share_bar">
@@ -1745,6 +1758,7 @@ function openSettings(tab) {
   if (typeof gShowPageBuild === 'function') gShowPageBuild();   // 진단·연동 탭에 페이지 빌드 표시
   if (typeof gCheckSecureProxies === 'function') gCheckSecureProxies().catch(() => {});
   if (typeof gCheckCspHeader === 'function') { gRenderCspStatus(); gCheckCspHeader().then(gRenderCspStatus).catch(() => {}); }
+  if (typeof ttCheck === 'function') ttCheck().catch(() => {});
   document.getElementById('settingsModal').classList.add('show');
 }
 function closeSettings() { document.getElementById('settingsModal').classList.remove('show'); }
@@ -2487,7 +2501,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-21.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-10-16.2';
+const G_PAGE_BUILD = '2026-10-20.1';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -2578,6 +2592,111 @@ function gRenderCspStatus() {
   els.forEach(el => { el.className = 'field-hint' + (cls ? ' ' + cls : ''); el.innerHTML = html; });
 }
 window.gOnCspViolation = function () { if (gCsp.checked) gRenderCspStatus(); };
+
+/* ===== TikTok 연결 확인 (1단계) — api/tiktok.js 를 세션으로 부른다. 토큰은 서버에만 ===== */
+const TIKTOK_PROXY_URL = '/api/tiktok';
+const tt = { checked: false, ping: null, advertisers: [], lastText: '' };
+async function ttFetch(params) {
+  const q = new URLSearchParams(); Object.entries(params || {}).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '') q.set(k, String(v)); });
+  const res = await apiFetch(`${TIKTOK_PROXY_URL}?${q.toString()}`, { cache: 'no-store' });
+  const j = await res.json().catch(() => ({}));
+  if (res.status === 404) throw new Error('api/tiktok.js 가 배포에 없어요 — GitHub 의 api 폴더에 tiktok.js 를 올리고 재배포하세요');
+  if (!res.ok) throw new Error(j.error || `HTTP ${res.status}`);
+  return j;
+}
+async function ttCheck(force) {
+  const el = document.getElementById('tt_status'); if (!el) return;
+  if (!ENV.isHttp) { el.className = 'field-hint'; el.textContent = '배포된 주소에서만 확인할 수 있어요'; return; }
+  if (tt.checked && !force) { ttRenderStatus(); return; }
+  el.className = 'field-hint'; el.textContent = '틱톡 중계 함수 확인 중...';
+  try {
+    const r = await fetch(TIKTOK_PROXY_URL + '?ping=1', { cache: 'no-store' });
+    const j = await r.json().catch(() => null);
+    tt.ping = (j && j.ok) ? j : { missing: true, status: r.status };
+  } catch (e) { tt.ping = { missing: true, status: 0 }; }
+  tt.checked = true;
+  ttRenderStatus();
+  if (!tt.ping.missing && tt.ping.hasToken && loginOk()) ttLoadAdvertisers().catch(() => {});
+}
+function ttRenderStatus() {
+  const el = document.getElementById('tt_status'); if (!el) return;
+  const p = tt.ping || {};
+  if (p.missing) { el.className = 'field-hint err'; el.innerHTML = '⚠ api/tiktok.js 없음 — GitHub 의 api 폴더에 tiktok.js 를 올리고 재배포하세요'; return; }
+  const bad = [];
+  if (!p.hasToken) bad.push('TIKTOK_ACCESS_TOKEN 비어 있음');
+  if (!p.hasApp && !p.hasAdvertiserIds) bad.push('TIKTOK_APP_ID · TIKTOK_APP_SECRET (또는 TIKTOK_ADVERTISER_IDS) 없음 — 광고계정 목록을 못 가져와요');
+  if (bad.length) { el.className = 'field-hint err'; el.innerHTML = `⚠ 틱톡 중계 함수 ${esc(p.build || '')}: ${esc(bad.join(' · '))} — Vercel 환경변수를 채우고 재배포하세요`; return; }
+  el.className = 'field-hint ok'; el.innerHTML = `✅ 틱톡 중계 함수 ${esc(p.build || '')} (조회 전용) — 토큰은 서버에만 있어요${tt.advertisers.length ? ` · 광고계정 ${tt.advertisers.length}개` : ''}`;
+}
+async function ttLoadAdvertisers() {
+  const sel = document.getElementById('tt_adv'); if (!sel) return;
+  const j = await ttFetch({ op: 'advertisers' });
+  tt.advertisers = j.list || [];
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">광고계정 선택</option>' + tt.advertisers.map(a => `<option value="${esc(a.id)}">${esc(a.name || a.id)}${a.status && !/ENABLE/i.test(a.status) ? ' (' + esc(a.status) + ')' : ''}</option>`).join('');
+  if (prev && tt.advertisers.some(a => a.id === prev)) sel.value = prev; else if (tt.advertisers.length === 1) sel.value = tt.advertisers[0].id;
+  ttRenderStatus();
+}
+function ttFmt(v) { return v === undefined || v === null || v === '' ? '-' : (Array.isArray(v) ? (v.length ? v.join(', ') : '-') : (typeof v === 'object' ? JSON.stringify(v) : String(v))); }
+function ttDiagText(d, advName) {
+  const L = [];
+  L.push(`■ 광고계정 ${advName || ''} (${d.advertiser_id})`);
+  const err = d.errors || {};
+  L.push(`[표시 계정(아이덴티티)] ${err.identities ? '❌ ' + err.identities : (d.identities || []).length + '개'}`);
+  (d.identities || []).forEach(i => L.push(`  · ${i.name || '(이름 없음)'} — ${i.type || ''} · ID ${i.id}${i.verified === undefined ? '' : (i.verified ? ' · 인증됨' : ' · 미인증')}`));
+  L.push(`[인스턴트 양식] ${err.forms ? '❌ ' + err.forms : (d.forms || []).length + '개'}`);
+  (d.forms || []).slice(0, 20).forEach(f => L.push(`  · ${f.title || '(제목 없음)'} — ID ${f.id}${f.status ? ' · ' + f.status : ''}`));
+  L.push(`[최근 캠페인] ${err.campaigns ? '❌ ' + err.campaigns : (d.campaigns || []).length + '개'}`);
+  (d.campaigns || []).forEach(c => L.push(`  · ${c.campaign_name} — 목표 ${ttFmt(c.objective_type)} · 예산 ${ttFmt(c.budget)} ${ttFmt(c.budget_mode)} · ${ttFmt(c.operation_status)} · ID ${c.campaign_id}`));
+  L.push(`[최근 광고그룹] ${err.adgroups ? '❌ ' + err.adgroups : (d.adgroups || []).length + '개'}`);
+  (d.adgroups || []).forEach(g => {
+    const locs = (g.location_ids || []).map(id => (d.locationNames && d.locationNames[String(id)]) || id);
+    L.push(`  · ${g.adgroup_name} (캠페인: ${g.campaign_name || g.campaign_id})`);
+    L.push(`      목적 ${ttFmt(g.promotion_type)} · 최적화 ${ttFmt(g.optimization_goal)}${g.optimization_event ? '/' + g.optimization_event : ''} · 입찰 ${ttFmt(g.bid_type)}${g.bid_price ? ' ' + g.bid_price : ''} · 과금 ${ttFmt(g.billing_event)} · 페이싱 ${ttFmt(g.pacing)}`);
+    L.push(`      예산 ${ttFmt(g.budget)} ${ttFmt(g.budget_mode)} · 일정 ${ttFmt(g.schedule_type)} ${ttFmt(g.schedule_start_time)}${g.schedule_end_time ? ' ~ ' + g.schedule_end_time : ''} · 게재 ${ttFmt(g.placement_type)} ${ttFmt(g.placements)}`);
+    L.push(`      지역 ${locs.length ? locs.join(', ') : '-'} · 연령 ${ttFmt(g.age_groups)} · 성별 ${ttFmt(g.gender)} · 언어 ${ttFmt(g.languages)} · 표시계정 ${ttFmt(g.identity_type)} ${ttFmt(g.identity_id)}${g.pixel_id ? ' · 픽셀 ' + g.pixel_id : ''} · ${ttFmt(g.operation_status)} · ID ${g.adgroup_id}`);
+  });
+  L.push(`[최근 광고] ${err.ads ? '❌ ' + err.ads : (d.ads || []).length + '개'}`);
+  (d.ads || []).forEach(a => L.push(`  · ${a.ad_name} — ${ttFmt(a.ad_format)} · 문구 «${String(a.ad_text || '').slice(0, 60)}» · CTA ${ttFmt(a.call_to_action)} · ${a.page_id ? '양식 ' + a.page_id : 'URL ' + ttFmt(a.landing_page_url)} · 표시계정 ${ttFmt(a.identity_type)} ${ttFmt(a.identity_id)} · ${ttFmt(a.operation_status)} · 광고그룹 ${a.adgroup_id}`));
+  if (err.locationNames) L.push(`(지역 이름 조회 실패: ${err.locationNames})`);
+  return L.join('\n');
+}
+async function ttRunDiag(all) {
+  const out = document.getElementById('tt_out'); if (!out) return;
+  if (!loginOk()) { out.textContent = '먼저 로그인하세요'; return; }
+  const sel = document.getElementById('tt_adv');
+  let targets = [];
+  try {
+    if (!tt.advertisers.length) await ttLoadAdvertisers();
+    targets = all ? tt.advertisers : tt.advertisers.filter(a => a.id === (sel && sel.value));
+    if (!targets.length) { out.textContent = tt.advertisers.length ? '광고계정을 고르세요' : '승인된 광고계정이 없어요 — 토큰을 만든 사람이 광고계정 관리자인지, 앱에 계정 권한을 줬는지 확인하세요'; return; }
+  } catch (e) { out.textContent = '❌ ' + e.message; return; }
+  const parts = [`[틱톡 진단 ${new Date().toLocaleString('ko-KR')}] 페이지 ${G_PAGE_BUILD} · 함수 ${(tt.ping && tt.ping.build) || '?'}`];
+  out.textContent = parts[0] + '\n진단 중...';
+  for (const a of targets) {
+    try { const d = await ttFetch({ op: 'diag', advertiser_id: a.id }); parts.push(ttDiagText(d, a.name)); }
+    catch (e) { parts.push(`■ 광고계정 ${a.name || ''} (${a.id})\n  ❌ ${e.message}`); }
+    out.textContent = parts.join('\n\n');
+  }
+  tt.lastText = parts.join('\n\n');
+  out.textContent = tt.lastText;
+}
+function ttCopyDiag() {
+  const text = tt.lastText || (document.getElementById('tt_out') || {}).textContent || '';
+  navigator.clipboard.writeText(text).then(() => showToast('틱톡 진단 결과를 복사했어요', 'success'), () => showToast('복사 실패 — 내용을 직접 선택해 복사해주세요', 'error'));
+}
+async function ttRegionSearch() {
+  const out = document.getElementById('tt_out'); const q = (document.getElementById('tt_region_q') || {}).value || '';
+  const adv = (document.getElementById('tt_adv') || {}).value || (tt.advertisers[0] || {}).id || '';
+  if (!adv) { out.textContent = '광고계정을 먼저 고르세요'; return; }
+  if (!q.trim()) { out.textContent = '검색할 지역 이름을 넣어주세요 (예: 해운대)'; return; }
+  out.textContent = `지역 검색 «${q}» ...`;
+  try {
+    const j = await ttFetch({ op: 'region', advertiser_id: adv, q: q.trim() });
+    const list = j.list || [];
+    out.textContent = `[지역 검색 «${q}»] ${list.length}개\n` + (list.length ? list.map(r => `  · ${r.path || r.name} — ${r.level || ''} · ID ${r.id}`).join('\n') : '  (없음)');
+  } catch (e) { out.textContent = '❌ ' + e.message; }
+}
 async function gCheckProxyBuild() {
   gShowPageBuild();
   const el = document.getElementById('g_proxy_status');
