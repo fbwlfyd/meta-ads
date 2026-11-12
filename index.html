@@ -180,7 +180,8 @@ document.addEventListener('securitypolicyviolation', function (e) {
   .gt-row:last-child { border-bottom: none; }
   .gt-row.err { background: var(--red-bg); color: #b91c1c; }
   .gt-ic { width: 14px; flex-shrink: 0; font-weight: 700; text-align: center; }
-  .gt-ic.ok { color: #047857; } .gt-ic.run { color: var(--blue); } .gt-ic.err { color: var(--red); }
+  .gt-ic.ok { color: #047857; } .gt-ic.run { color: var(--blue); } .gt-ic.err { color: var(--red); } .gt-ic.sw { color: #b45309; }
+  .gt-row.sw { background: #fffbeb; color: #92400e; } .gt-row.sw .gt-step { color: #92400e; }
   .gt-time { color: var(--text3); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; flex-shrink: 0; }
   .gt-step { font-weight: 600; color: var(--text1); flex-shrink: 0; }
   .gt-step small { font-weight: 400; color: var(--text3); }
@@ -910,6 +911,10 @@ document.addEventListener('securitypolicyviolation', function (e) {
             <option value="UChg_3mq-CO2kFPkbXlTR3pw">오늘의병원</option>
           </select>
         </div>
+        <div class="field"><label>서브 채널 <span class="auto-tag g">본 채널이 한도일 때</span></label>
+          <select id="g1_서브채널" onchange="gOnSubChannelPick('g1')"><option value="">없음</option></select>
+          <div class="field-hint" id="g1_sub_hint"></div>
+        </div>
         <div class="field"><label>업체명 <span class="auto-tag g">자동</span></label><input type="text" id="g1_업체명" readonly placeholder="채널 선택 시 자동입력"></div>
         <div class="field-hint">영상·광고 문구·CTA는 오른쪽 <b>광고 소재</b> 카드에서 넣어요 (소재 1개 = 광고 1개)</div>
       </div>
@@ -1027,6 +1032,10 @@ document.addEventListener('securitypolicyviolation', function (e) {
           <select id="g2_유튜브채널" onchange="gOnYoutubeChannel('g2')" hidden>
             <option value="UChg_3mq-CO2kFPkbXlTR3pw">오늘의병원</option>
           </select>
+        </div>
+        <div class="field"><label>서브 채널 <span class="auto-tag g">본 채널이 한도일 때</span></label>
+          <select id="g2_서브채널" onchange="gOnSubChannelPick('g2')"><option value="">없음</option></select>
+          <div class="field-hint" id="g2_sub_hint"></div>
         </div>
         <div class="field"><label>업체명 <span class="auto-tag g">자동</span></label><input type="text" id="g2_업체명" readonly placeholder="채널 선택 시 자동입력"></div>
       </div>
@@ -1415,9 +1424,9 @@ document.addEventListener('securitypolicyviolation', function (e) {
       </div>
 
       <div class="modal-sec" id="msec_gchannel">
-        <div class="set-note">YouTube 채널과 로고입니다. 채널은 어느 계정에서든 고를 수 있고, 업체명은 채널명이 그대로 들어갑니다.<br>로고는 Drive <b>공유 링크를 통째로 붙여넣으면</b> 파일ID만 자동으로 남습니다. 미리보기가 안 뜨면 그 파일의 공유가 <b>"링크가 있는 모든 사용자"</b>가 아닌 경우예요 — Make도 같은 파일을 읽으니 링크 공유로 두세요 (<b>열기</b>로 바로 확인).</div>
+        <div class="set-note">YouTube 채널과 로고입니다. 채널은 어느 계정에서든 고를 수 있고, 업체명은 채널명이 그대로 들어갑니다.<br><b>서브 채널</b>을 정해 두면, 그 채널이 YouTube <b>하루 업로드 한도</b>에 걸렸을 때 남은 영상을 서브 채널로 이어서 올립니다 — 업체명·로고는 본 채널 그대로이고, 이미 올라간 영상은 다시 올리지 않아요 (메이크 시나리오 v17 이상). 등록 화면의 YouTube 채널 아래 «서브 채널» 칸에서 골라도 여기와 같은 값이 저장됩니다.<br>로고는 Drive <b>공유 링크를 통째로 붙여넣으면</b> 파일ID만 자동으로 남습니다. 미리보기가 안 뜨면 그 파일의 공유가 <b>"링크가 있는 모든 사용자"</b>가 아닌 경우예요 — Make도 같은 파일을 읽으니 링크 공유로 두세요 (<b>열기</b>로 바로 확인).</div>
         <table class="set-table">
-          <thead><tr><th style="width:30%">채널명</th><th style="width:32%">채널 ID</th><th style="width:34%">로고 (Drive 링크 또는 파일ID)</th><th></th></tr></thead>
+          <thead><tr><th style="width:22%">채널명</th><th style="width:26%">채널 ID</th><th style="width:20%">서브 채널 <small style="font-weight:400;color:var(--text3);">한도에 걸리면</small></th><th style="width:28%">로고 (Drive 링크 또는 파일ID)</th><th></th></tr></thead>
           <tbody id="gset_channel_body"></tbody>
         </table>
         <div style="display:flex;gap:8px;margin-top:10px;">
@@ -2447,7 +2456,7 @@ const G_TABLES = {
   staff:     { body: 'gset_staff_body',     cols: [['name','홍길동'], ['id','KCS']] },
   clinics:   { body: 'gset_clinic_body',    cols: [['clinic','오늘의치과'], ['short','오늘']] },
   regions:   { body: 'gset_region_body',    cols: [['clinic','공통'], ['name','부산'], ['criterionId','검색으로 자동 입력'], ['campRef','비우면 오른쪽 값'], ['refName','비우면 안 붙음'], ['custom','35.18,128.11,10; 35.20,128.05,8']] },
-  channels:  { body: 'gset_channel_body',   cols: [['channelName','오늘의병원'], ['channelId','UC...'], ['logoFileId','Drive 링크를 붙여넣으면 파일ID만 남아요']] },
+  channels:  { body: 'gset_channel_body',   cols: [['channelName','오늘의병원'], ['channelId','UC...'], ['subChannelId','없음'], ['logoFileId','Drive 링크를 붙여넣으면 파일ID만 남아요']] },
 };
 /* Drive 공유 링크 어떤 형태든 파일ID만 뽑는다 (이미 ID면 그대로)
    https://drive.google.com/file/d/<ID>/view?usp=sharing · /open?id=<ID> · /uc?id=<ID> · drive.google.com/d/<ID> */
@@ -2506,6 +2515,10 @@ function gRenderTable(key) {
           ? `반경 ${n}곳으로 타겟합니다 — 반경은 새 캠페인에서만 걸려요. 세트 추가에도 쓰려면 왼쪽 criterion ID를 채워주세요` : '지도에서 핀 찍기 (반경 타겟 · 마일)';
         return `<td><div style="display:flex;gap:4px;align-items:center;"><input type="text" data-g="${key}" data-f="${f}" data-i="${i}" value="${esc(r[f] || '')}" placeholder="비우면 criterion ID로 타겟"><button type="button" class="btn-pin${n ? ' has' : ''}" onclick="openPinMap('google',${i})" title="${esc(tip)}">${n ? '📍 ' + n : '📍 지도'}</button></div></td>`;
       }
+      if (key === 'channels' && f === 'subChannelId') {
+        // 서브 채널 — 이 채널이 하루 업로드 한도에 걸리면 남은 영상을 올릴 채널 (자기 자신은 못 고른다)
+        return `<td><select data-g="${key}" data-f="${f}" data-i="${i}" onmousedown="gRefreshSubChannelOptions(this)" onfocus="gRefreshSubChannelOptions(this)" style="width:100%;height:34px;border:1px solid var(--border2);border-radius:6px;padding:0 8px;font-family:inherit;font-size:12px;">${gSubChannelOptionsHtml(rows, r.channelId, r.subChannelId)}</select></td>`;
+      }
       const isLogo = key === 'channels' && f === 'logoFileId';
       const extra = isLogo ? ' onchange="gOnLogoInput(this)" onpaste="setTimeout(() => gOnLogoInput(this), 0)"' : '';
       const val = isLogo ? gExtractDriveId(r[f]) : r[f];
@@ -2525,6 +2538,23 @@ function gRenderTable(key) {
   if (key === 'regions') dragRowsInit(cfg.body, (from, to) => gReorderRow(key, from, to));
   const extraCols = key === 'regions' ? 3 : 1;   // 지역 표는 손잡이 · [제외] 칸이 더 있다
   if (rows.length === 0) body.innerHTML = `<tr><td colspan="${cfg.cols.length + extraCols}" style="padding:14px 4px;color:var(--text3);font-size:12px;">비어 있습니다. 아래 버튼으로 추가하세요.</td></tr>`;
+}
+/* 서브 채널 고르기 — 표의 다른 채널들. 고른 값이 목록에서 사라졌으면 그 값도 남겨 둔다 (지우지 않고 보여준다) */
+function gSubChannelOptionsHtml(rows, ownId, cur) {
+  ownId = String(ownId || '').trim(); cur = String(cur || '').trim();
+  const seen = new Set();
+  const others = (rows || []).filter(x => { const id = String(x.channelId || '').trim(); if (!id || id === ownId || seen.has(id)) return false; seen.add(id); return true; });
+  const opts = ['<option value="">없음</option>'].concat(others.map(x => { const id = String(x.channelId).trim(); return `<option value="${esc(id)}"${id === cur ? ' selected' : ''}>${esc(x.channelName || id)}</option>`; }));
+  if (cur && !seen.has(cur)) opts.push(`<option value="${esc(cur)}" selected>${esc(cur)} (목록에 없음)</option>`);
+  return opts.join('');
+}
+/* 채널명·ID 를 방금 고쳤거나 줄을 추가했을 수 있으니, 열 때마다 지금 표 내용으로 다시 채운다 */
+function gRefreshSubChannelOptions(sel) {
+  const body = document.getElementById(G_TABLES.channels.body); const tr = sel.closest('tr'); if (!body || !tr) return;
+  const rows = Array.from(body.querySelectorAll('tr')).map(x => ({ channelName: (x.querySelector('[data-f="channelName"]') || {}).value || '', channelId: (x.querySelector('[data-f="channelId"]') || {}).value || '' }));
+  const own = (tr.querySelector('[data-f="channelId"]') || {}).value || '';
+  const html = gSubChannelOptionsHtml(rows, own, sel.value);
+  if (sel.dataset.opts !== html) { sel.innerHTML = html; sel.dataset.opts = html; }
 }
 function gAddRow(key) {
   gCollectSettings();
@@ -2790,7 +2820,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-21.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-11-12.7';
+const G_PAGE_BUILD = '2026-11-12.9';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -3950,7 +3980,7 @@ function applyGoogleSettings() {
     if (!id || seenCh.has(id)) return;
     seenCh.add(id);
     const logo = gExtractDriveId(c.logoFileId || '');
-    GDB.youtubeChannels.push({ channelName: c.channelName || '', channelId: id, logoFileId: logo });
+    GDB.youtubeChannels.push({ channelName: c.channelName || '', channelId: id, logoFileId: logo, subChannelId: String(c.subChannelId || '').trim() });
     if (logo) { GDB.logoByChannelId[id] = logo; if (c.channelName) GDB.logoByChannel[c.channelName] = logo; }
   });
   // 계정·잠재고객은 API로 못 가져왔을 때의 폴백
@@ -6401,6 +6431,45 @@ function gOnYoutubeChannel(t) {
   if (!window._logoFileId) window._logoFileId = {};
   window._logoFileId[t] = gLogoForChannelSelect(sel);
   gRenderChannelButton(t);
+  gFillSubChannelSelect(t, true);
+}
+/* ── 폼의 «서브 채널» 칸 ───────────────────────────────────────────────
+   지금 고른 본 채널이 YouTube 하루 업로드 한도에 걸리면 남은 영상을 올릴 채널. 설정 → 채널의 «서브 채널» 칸과 «같은 값» 이다 —
+   여기서 고르면 그 본 채널의 서브 채널로 바로 저장되고(이 브라우저), 다음에 그 채널을 고르면 다시 나온다. 다른 사람에게도 적용하려면 설정에서 «모두에게 적용». */
+function gFillSubChannelSelect(t, force) {
+  const sel = document.getElementById(`${t}_서브채널`); const main = document.getElementById(`${t}_유튜브채널`); if (!sel || !main) return;
+  const mainId = main.value || G_DEFAULT_CHANNEL.channelId;
+  const cur = (gSubChannelOf(mainId) || {}).channelId || '';
+  const html = ['<option value="">없음</option>'].concat(gChannelChoices().filter(c => c.channelId !== mainId).map(c => {
+    const st = gYtChannelState(c.channelId);
+    return `<option value="${esc(c.channelId)}">${esc(c.channelName)}${st && st.state === 'blocked' ? ' · ⛔ 한도' : ''}</option>`;
+  })).join('');
+  // 목록을 펼쳐 보고 있을 때 배경 갱신으로 닫히지 않게 — 내용이 바뀌었을 때만, 그리고 지금 만지고 있지 않을 때만 다시 그린다
+  if (sel.dataset.opts !== html && (force || document.activeElement !== sel)) { sel.innerHTML = html; sel.dataset.opts = html; }
+  if (force || document.activeElement !== sel) sel.value = cur;
+  gRenderSubHint(t);
+}
+function gRenderSubHint(t) {
+  const el = document.getElementById(`${t}_sub_hint`); const main = document.getElementById(`${t}_유튜브채널`); if (!el || !main) return;
+  const sub = gSubChannelOf(main.value || G_DEFAULT_CHANNEL.channelId);
+  if (!sub) { el.className = 'field-hint'; el.textContent = '골라 두면, 본 채널이 올리다가 하루 한도에 걸렸을 때 남은 영상을 이 채널로 이어서 올려요'; return; }
+  const st = gYtChannelState(sub.channelId);
+  if (st && st.state === 'blocked') { el.className = 'field-hint err'; el.textContent = `⛔ «${sub.channelName}» 채널도 지금 하루 한도예요 — 다른 채널을 서브로 고르세요`; return; }
+  el.className = 'field-hint'; el.textContent = `본 채널이 하루 한도로 막히면 남은 영상은 «${sub.channelName}» 로 이어서 올려요 (업체명·로고는 본 채널 그대로)`;
+}
+function gOnSubChannelPick(t) {
+  const sel = document.getElementById(`${t}_서브채널`); const main = document.getElementById(`${t}_유튜브채널`); if (!sel || !main) return;
+  const mainId = main.value || G_DEFAULT_CHANNEL.channelId; const subId = sel.value;
+  const choices = gChannelChoices();
+  const mainCh = choices.find(c => c.channelId === mainId) || { channelId: mainId, channelName: mainId, logoFileId: '' };
+  const list = (GSET.channels = GSET.channels || []);
+  let row = list.find(c => String(c.channelId || '').trim() === mainId);
+  if (!row) { row = { channelName: mainCh.channelName, channelId: mainId, logoFileId: mainCh.logoFileId || '' }; list.push(row); }   // 기본 채널처럼 설정 표에 없던 채널이면 줄을 만든다
+  row.subChannelId = subId;
+  persistGoogleSettings(); markSettingsDirty(); applyGoogleSettings();
+  ['g1', 'g2'].forEach(x => { gFillSubChannelSelect(x, x !== t); gRenderChannelUsage(x); });
+  const subCh = choices.find(c => c.channelId === subId);
+  showToast(subCh ? `«${mainCh.channelName}» 의 서브 채널을 «${subCh.channelName}» 로 저장했어요 — 다른 사람에게도 적용하려면 설정에서 «모두에게 적용»` : `«${mainCh.channelName}» 의 서브 채널을 없앴어요`, 'success', 5000);
 }
 const G_DEFAULT_CHANNEL = { channelId: 'UChg_3mq-CO2kFPkbXlTR3pw', channelName: '오늘의병원' };
 /* Drive 파일ID → 화면에 보여줄 썸네일 주소 (링크 공유된 파일만 보인다) */
@@ -6416,9 +6485,18 @@ function gChannelChoices() {
   list.forEach(ch => {
     if (!ch.channelId || seen.has(ch.channelId)) return;
     seen.add(ch.channelId);
-    out.push({ channelId: ch.channelId, channelName: ch.channelName || ch.channelId, logoFileId: ch.logoFileId || GDB.logoByChannelId[ch.channelId] || '' });
+    out.push({ channelId: ch.channelId, channelName: ch.channelName || ch.channelId, logoFileId: ch.logoFileId || GDB.logoByChannelId[ch.channelId] || '', subChannelId: ch.subChannelId || '' });
   });
   return out;
+}
+/* 이 채널의 «서브 채널» — 본 채널이 YouTube 하루 업로드 한도에 걸리면 남은 영상을 여기로 올린다 (메이크 v17).
+   설정에 있고, 채널 목록에 실제로 있고, 자기 자신이 아닐 때만 돌려준다. 업체명·로고는 본 채널 것을 그대로 쓴다 */
+function gSubChannelOf(channelId) {
+  const list = gChannelChoices();
+  const me = list.find(c => c.channelId === channelId);
+  const subId = me ? String(me.subChannelId || '').trim() : '';
+  if (!subId || subId === channelId) return null;
+  return list.find(c => c.channelId === subId) || null;
 }
 function gLogoBadgeHtml(ch, size) {
   const url = gLogoUrl(ch.logoFileId, size);
@@ -6724,7 +6802,12 @@ function gRenderChannelUsage(t) {
     const fromSheet = !!(r && r.source === 'sheet');
     const when = fromSheet ? `${gYtTimeLabel(r.at)} 예약 확인` : 'YouTube 확인';
     const stale = fromSheet && !gYtIsFresh(r, G_YT_SHEET_STALE_MS);
-    if (r && r.state === 'blocked') { cls += ' err'; bits.push(`⛔ ${when}: YouTube 가 «${esc(ch.channelName)}» 채널의 업로드를 거절했어요 (하루 한도 도달) — 다른 채널을 고르거나, 다음 확인에서 ✅ 로 바뀐 뒤 등록하세요`); }
+    if (r && r.state === 'blocked') {
+      // 서브 채널이 있고 그쪽이 막혀 있지 않으면 등록할 수 있다 — 처음부터 서브 채널로 올린다
+      const sub0 = gSubChannelOf(id); const subSt = sub0 ? gYtChannelState(sub0.channelId) : null;
+      if (sub0 && !(subSt && subSt.state === 'blocked')) bits.push(`⛔ ${when}: «${esc(ch.channelName)}» 채널은 하루 업로드 한도예요 — <b>등록하면 서브 채널 «${esc(sub0.channelName)}» 로 올립니다</b> (업체명·로고는 그대로)`);
+      else { cls += ' err'; bits.push(`⛔ ${when}: YouTube 가 «${esc(ch.channelName)}» 채널의 업로드를 거절했어요 (하루 한도 도달)` + (sub0 ? ` · 서브 채널 «${esc(sub0.channelName)}» 도 한도예요 — 아래에서 서브 채널을 바꾸거나, 다른 채널을 고르거나, 다음 확인에서 ✅ 로 바뀐 뒤 등록하세요` : ` — 아래 «서브 채널» 을 고르면 그 채널로 올릴 수 있어요. 아니면 다른 채널을 고르거나, 다음 확인에서 ✅ 로 바뀐 뒤 등록하세요`)); }
+    }
     else if (r && r.state === 'error') { cls += ' err'; bits.push(`⚠ ${when}: «${esc(ch.channelName)}» 채널 확인에서 오류 (${esc(r.reason || r.status || '')}${r.message ? ' · ' + esc(r.message) : ''}) — 메이크의 YouTube 연결을 확인하세요`); }
     else if (r && r.state === 'ok') { cls += ' ok'; bits.push(`✅ ${when}: 지금 올릴 수 있어요${stale ? ' (오래된 결과예요)' : ''}`); }
     else if (r && r.state === 'quota') bits.push(`업로드 가능 여부를 확인하지 못했어요 — YouTube API 프로젝트의 하루 확인 한도가 다 찼어요 (한국 ${gPtResetLabel()} 리셋)`);
@@ -6740,6 +6823,7 @@ function gRenderChannelUsage(t) {
   } else {
     bits.push('등록 전 확인이 꺼져 있어요 — 메이크 «유튜브 업로드 가능 확인 (예약)» 시나리오를 켜면 채널별 상태가 여기 보이고, 설정 → 연동에 확인 웹훅을 넣으면 등록 직전에 직접 확인합니다');
   }
+  gFillSubChannelSelect(t);   // 채널 상태(⛔)가 바뀌었을 수 있으니 서브 채널 칸도 같이 맞춘다
   if (gYtUsage.at && !gYtUsage.error) bits.push(`<span style="color:var(--text3)">최근 24시간 이 채널로 ${gYtCountFor(id)}개 (도구 기준)</span>`);
   const lim = gYtProjectLimit();
   if (lim && ((gYtUsage.at && !gYtUsage.error) || (gYtSheet.at && !gYtSheet.error) || gYtProbeSpent.length)) {
@@ -6774,7 +6858,25 @@ async function gTestYtProbe() {
   out.textContent = ` ${ch.channelName}: ${lb.text}${r.error ? ' — ' + r.error : ''}${r.message ? ' — ' + r.message : ''}`;
   ['g1', 'g2'].forEach(x => gRenderChannelUsage(x));
 }
-/* 보내기 전 확인 — { ok:true } 또는 { ok:false, msg } */
+/* 본 채널이 하루 한도일 때 — 서브 채널이 있으면 그쪽으로 보낼 수 있는지 본다.
+     { ok:true, useSub:true, sub }  서브 채널로 보낸다 (메이크에 «본 채널은 막혔다» 고 알려 처음부터 서브로 올리게 한다)
+     { ok:false, … }               서브 채널도 한도
+     null                          서브 채널이 없거나 확인이 안 됨 → 원래 안내대로 */
+async function gYtSubGate(t, mainId, mainCh) {
+  const sub = gSubChannelOf(mainId);
+  if (!sub) return null;
+  let st = gYtChannelState(sub.channelId);
+  const sheetFresh = !!(st && st.source === 'sheet' && (st.state === 'ok' || st.state === 'blocked') && gYtIsFresh(st, G_YT_SHEET_FRESH_MS));
+  if (!sheetFresh && gYtProbeUrl()) st = await gYtProbeChannel(sub.channelId, true);   // 예약 결과가 없거나 오래됐으면 직접 물어본다 (한도 1개)
+  gRenderChannelUsage(t);
+  if (st && st.state === 'blocked') {
+    const box = document.getElementById(`${t}_chpick`); if (box) { box.scrollIntoView({ block: 'center', behavior: 'smooth' }); gKeepViewportTop(); }
+    return { ok: false, state: 'blocked', msg: `«${mainCh.channelName}» 채널과 서브 채널 «${sub.channelName}» 모두 YouTube 하루 업로드 한도예요 — 다른 채널을 고르거나 24시간쯤 뒤에 등록하세요` };
+  }
+  if (st && st.state === 'error') return null;
+  return { ok: true, state: 'sub', useSub: true, sub };
+}
+/* 보내기 전 확인 — { ok:true } 또는 { ok:false, msg } · 본 채널이 한도인데 서브 채널로 보낼 수 있으면 { ok:true, useSub:true, sub } */
 async function gYtLimitGate(t, channelId, need) {
   if (gYtForce[t] === channelId) { gYtForce[t] = ''; return { ok: true, forced: true }; }
   const ch = gChannelChoices().find(c => c.channelId === channelId) || { channelName: channelId };
@@ -6799,11 +6901,15 @@ async function gYtLimitGate(t, channelId, need) {
   const fromSheet = !!(s && s.source === 'sheet');
   // 하루 안의 «한도» 는 풀렸다는 확인이 있기 전까지 막는다 — 다만 3시간 넘게 지난 결과이고 웹훅이 있으면 아래 ③에서 다시 물어본다
   if (fromSheet && s.state === 'blocked' && gYtIsFresh(s, 24 * 3600000) && (gYtIsFresh(s, G_YT_SHEET_STALE_MS) || !gYtProbeUrl())) {
+    const alt = await gYtSubGate(t, channelId, ch);
+    if (alt) return alt;
     gRenderChannelUsage(t); offerForce(); focus();
     return { ok: false, state: 'blocked', msg: `${gYtTimeLabel(s.at)} 예약 확인에서 YouTube 가 «${ch.channelName}» 채널의 업로드를 거절해서 보내지 않았어요 (하루 한도 도달) — 다른 채널을 고르거나 다음 확인에서 ✅ 로 바뀐 뒤 등록하세요. 그 사이 풀린 게 확실하면 «그래도 등록»` };
   }
   if (fromSheet && s.state === 'ok' && gYtIsFresh(s, G_YT_SHEET_FRESH_MS)) { gRenderChannelUsage(t); return { ok: true, state: 'ok', via: 'sheet' }; }
   if (!gYtProbeUrl()) {
+    // 실시간 확인이 꺼져 있어도, 방금 등록 중에 이 채널이 업로드를 거절한 걸 봤으면(3시간 안) 서브 채널이 있을 때 바로 서브로 보낸다
+    if (s && s.source === 'live' && s.state === 'blocked' && gYtIsFresh(s, G_YT_SHEET_STALE_MS)) { const alt = await gYtSubGate(t, channelId, ch); if (alt && alt.ok) return alt; }
     if (fromSheet && s.state === 'ok') showToast(`«${ch.channelName}» 채널의 마지막 예약 확인(${gYtTimeLabel(s.at)})이 좀 지났어요 — 그대로 보냅니다`, 'info', 5000);
     return { ok: true, off: true };
   }
@@ -6811,8 +6917,10 @@ async function gYtLimitGate(t, channelId, need) {
   const r = await gYtProbeChannel(channelId, true);
   gRenderChannelUsage(t);
   if (r.state === 'blocked') {
+    const alt = await gYtSubGate(t, channelId, ch);
+    if (alt) return alt;
     focus();
-    return { ok: false, state: r.state, msg: `YouTube 가 «${ch.channelName}» 채널의 업로드를 지금 거절해서 보내지 않았어요 (하루 한도 도달) — 다른 채널을 고르거나 24시간쯤 뒤에 등록하세요` };
+    return { ok: false, state: r.state, msg: `YouTube 가 «${ch.channelName}» 채널의 업로드를 지금 거절해서 보내지 않았어요 (하루 한도 도달) — 다른 채널을 고르거나 24시간쯤 뒤에 등록하세요. 바로 아래 «서브 채널» 을 골라 두면 이럴 때 자동으로 서브 채널로 올립니다` };
   }
   if (r.state === 'error') {
     offerForce(); focus();
@@ -7798,6 +7906,10 @@ function gGetData(t) {
     채널: gCollectChannels(t),
     잠재고객ID: g(`${t}_잠재고객`),
     유튜브채널ID: g(`${t}_유튜브채널`) || 'UChg_3mq-CO2kFPkbXlTR3pw',
+    // 서브 채널 — 본 채널이 하루 업로드 한도로 거절하면 메이크(v17)가 남은 영상을 이 채널로 이어서 올린다. 없으면 빈 값
+    서브채널ID: (gSubChannelOf(g(`${t}_유튜브채널`) || 'UChg_3mq-CO2kFPkbXlTR3pw') || {}).channelId || '',
+    서브채널명: (gSubChannelOf(g(`${t}_유튜브채널`) || 'UChg_3mq-CO2kFPkbXlTR3pw') || {}).channelName || '',
+    유튜브막힌채널: '',      // 보내기 직전 확인에서 본 채널이 이미 한도면 본 채널 ID 를 넣는다 → 메이크가 처음부터 서브 채널로 올린다
     기기: g(`${t}_기기`),
     기기제외목록: (() => {
       const device = document.getElementById(`${t}_기기`)?.value || 'ALL';
@@ -7859,6 +7971,7 @@ function gEnrichForMake(d, t, uploadedIds) {
   d.설명JSON = jsonTexts(d.설명목록);
   (d.광고목록 || []).forEach((a, i) => {
     a.순번 = i + 1;
+    a.키 = `_SWAD${i + 1}_`;   // 메이크(v17)가 «이 광고에서 서브 채널로 넘어갔다» 를 표시할 때 쓰는 이름표 — 영숫자·밑줄만
     if (!a.광고명) a.광고명 = gAdNameFor(t, i + 1) || d.광고그룹명 || '';
     if (!(a.광고제목목록 || []).length) a.광고제목목록 = (d.광고제목목록 || []).slice();
     if (!(a.긴광고제목목록 || []).length) a.긴광고제목목록 = (d.긴광고제목목록 || []).slice();
@@ -7867,7 +7980,7 @@ function gEnrichForMake(d, t, uploadedIds) {
     if (!a.CTA버튼) a.CTA버튼 = d.CTA버튼 || '';
     a.광고제목JSON = jsonTexts(a.광고제목목록); a.긴광고제목JSON = jsonTexts(a.긴광고제목목록); a.설명JSON = jsonTexts(a.설명목록);
     a.CTA연산JSON = a.CTA버튼 ? '[{"asset":"__CTA__"}]' : '[]';
-    (a.영상목록 || []).forEach((v, j) => { v.순번 = j + 1; v.직접업로드 = uploaded.has(v.파일ID) ? 'true' : 'false'; });
+    (a.영상목록 || []).forEach((v, j) => { v.순번 = j + 1; v.키 = `_VID${i + 1}x${j + 1}_`; v.직접업로드 = uploaded.has(v.파일ID) ? 'true' : 'false'; });   // 키 = 서브 채널로 넘어갔을 때 «이미 올린 영상» 을 다시 올리지 않으려는 이름표
     a.영상수 = (a.영상목록 || []).length;
   });
   (d.영상목록 || []).forEach((v, i) => {
@@ -8123,7 +8236,9 @@ function gErrorHint(row) {
   /* ── YouTube API 프로젝트 하루 업로드 한도 (모든 채널 합산) ── */
   if (/defaultVideoInsertPerDayPerProject|Video Uploads per day|video_insert/i.test(s) || (/rateLimitExceeded|RATE_LIMIT_EXCEEDED/i.test(s) && /youtube/i.test(s))) return 'YouTube API 프로젝트의 하루 영상 업로드 한도(기본 100개)를 다 썼어요 — 채널이 아니라 API 프로젝트 기준이라 모든 채널이 같이 씁니다. 채널을 바꿔도 소용없고, 미국 태평양 자정(한국 16:00 · 겨울 17:00)에 리셋됩니다. 같은 영상을 다시 올리는 등록을 줄이거나, Google Cloud 콘솔 → YouTube Data API → 할당량에서 «Video Uploads per day» 상향을 신청하세요';
   /* ── YouTube 채널 하루 업로드 한도 ── */
-  if (/uploadLimitExceeded|exceeded the number of videos they may upload/i.test(s)) return 'YouTube 채널의 하루 업로드 한도를 넘었어요 — 이 채널은 24시간쯤 지나야 다시 올릴 수 있습니다. 다른 채널로 등록하거나 내일 하세요. 채널 고르기에 최근 24시간 업로드 수가 보이니 그걸 보고 고르면 됩니다 (한도는 채널마다 달라요 — YouTube 스튜디오 → 설정 → 채널 → 기능 사용 자격에서 «고급 기능»을 켜면 한도가 올라갑니다)';
+  if (/서브 채널도 업로드를 거절/.test(s)) return '본 채널과 서브 채널 모두 YouTube 가 업로드를 거절했어요 (하루 한도) — 만들어진 광고는 그대로 두고, 남은 광고는 다른 채널로 «광고만 추가» 하거나 24시간쯤 뒤에 다시 보내세요';
+  if (/채널 한도는 아닙니다/.test(s)) return '채널 하루 한도가 아닌 다른 이유로 업로드가 실패했어요 (그래서 서브 채널로 넘기지 않았습니다) — Make 가 자동으로 다시 시도합니다. 계속 실패하면 Make 실행 기록에서 YouTube 업로드 모듈의 오류 내용을 확인하세요';
+  if (/uploadLimitExceeded|exceeded the number of videos they may upload/i.test(s)) return 'YouTube 채널의 하루 업로드 한도를 넘었어요 — 이 채널은 24시간쯤 지나야 다시 올릴 수 있습니다. 다른 채널로 등록하거나 내일 하세요. YouTube 채널 아래 «서브 채널» 을 골라 두면 다음부터는 남은 영상을 서브 채널로 자동으로 이어서 올립니다. 채널 고르기에 최근 24시간 업로드 수가 보이니 그걸 보고 고르면 됩니다 (한도는 채널마다 달라요 — YouTube 스튜디오 → 설정 → 채널 → 기능 사용 자격에서 «고급 기능»을 켜면 한도가 올라갑니다)';
   /* ── 이름 중복 ── */
   if (/DUPLICATE_CAMPAIGN_NAME|CampaignError\.DUPLICATE_NAME/i.test(s)) return '같은 이름의 캠페인이 이미 있어요 — 앞선 전송이 캠페인까지 만들고 멈춘 경우예요. 이름은 그대로 두고, 세트 추가 탭에서 그 캠페인을 골라 이어서 등록하거나 Google Ads 에서 지운 뒤 다시 보내세요. Make 의 Incomplete Executions 에 남은 건은 지우세요 (같은 이름으로 재시도해서 계속 실패합니다)';
   if (/CampaignBudgetError\.DUPLICATE_NAME/i.test(s)) return '같은 이름의 캠페인 예산이 이미 있어요 — 캠페인명을 조금 바꿔서 다시 보내주세요';
@@ -8198,16 +8313,46 @@ function gErrorHint(row) {
   if (/ECONNRESET|ETIMEDOUT|socket hang up|ENOTFOUND/i.test(s)) return '네트워크가 끊겼어요 — 자동으로 다시 시도합니다';
   return '';
 }
+/* 등록로그에서 «서브 채널» 관련 내용을 읽는다 (메이크 v17)
+     ver         수신 기록에 적힌 시나리오 버전 숫자 ('17' …)
+     switched    본 채널이 업로드를 거절해 서브 채널로 넘어간 적이 있다 («유튜브 업로드 · 전환» 줄)
+     subUploads  서브 채널에 올라간 영상 수 («… · 서브 채널» 이 붙은 업로드 완료 줄) */
+function gSubInfoFromLog(rows) {
+  const out = { ver: '', switched: false, subUploads: 0 };
+  (rows || []).forEach(r => {
+    if (r.step === '수신') { const m = String(r.msg || '').match(/시나리오 v(\d+)/); if (m) out.ver = m[1]; }
+    if (r.step !== '유튜브 업로드') return;
+    if (r.status === '전환') out.switched = true;
+    if (r.status === '완료' && /·\s*서브 채널/.test(String(r.msg || ''))) out.subUploads++;
+  });
+  return out;
+}
+/* «유튜브 업로드 · 오류» 바로 뒤에 같은 영상의 «전환» 이 따라오면 실패가 아니라 «거절 → 서브 채널로 넘어감» 이다 — 빨간 줄로 보이지 않게 바꿔 보여준다 */
+function gSoftenSwitchRows(rows) {
+  return (rows || []).map((r, i) => {
+    const nx = rows[i + 1];
+    if (r.step === '유튜브 업로드' && r.status === '오류' && nx && nx.step === '유튜브 업로드' && nx.status === '전환' && nx.ad === r.ad)
+      return Object.assign({}, r, { status: '확인', msg: r.msg || '본 채널이 업로드를 거절했어요 — 한도인지 확인' });
+    return r;
+  });
+}
+/* 결과 문구 뒤에 붙일 서브 채널 안내 */
+function gSubNote(data, sub) {
+  if (!sub) return '';
+  const name = data.서브채널명 || '서브 채널';
+  if (sub.subUploads > 0) return ` · 영상 ${sub.subUploads}개는 서브 채널 «${name}» 에 올렸어요`;
+  return '';
+}
 function gRenderTrack(t, idx, data, state) {
   const box = document.getElementById(`gtrack_${t}_${idx}`);
   const steps = document.getElementById(`gsteps_${t}_${idx}`);
   const check = document.getElementById(`gcheck_${t}_${idx}`);
   if (!box || !steps) return;
   box.style.display = 'block';
-  const rows = state.rows || [];
-  const icon = s => s === '오류' ? '<span class="gt-ic err">✕</span>' : (s === '완료' ? '<span class="gt-ic ok">✓</span>' : '<span class="gt-ic run">●</span>');
+  const rows = gSoftenSwitchRows(state.rows || []);
+  const icon = s => s === '오류' ? '<span class="gt-ic err">✕</span>' : (s === '완료' ? '<span class="gt-ic ok">✓</span>' : (s === '전환' ? '<span class="gt-ic sw">↪</span>' : '<span class="gt-ic run">●</span>'));
   steps.innerHTML = rows.length
-    ? rows.map(r => `<div class="gt-row ${r.status === '오류' ? 'err' : ''}">${icon(r.status)}<span class="gt-time">${esc((r.time || '').slice(11, 19))}</span><span class="gt-step">${esc(r.step)}${r.ad ? ` <small>${esc(r.ad)}</small>` : ''}</span><span class="gt-msg" title="${esc(r.detail || r.msg)}">${esc(r.msg)}${r.detail ? ' · ' + esc(r.detail).slice(0, 160) : ''}</span></div>`).join('')
+    ? rows.map(r => `<div class="gt-row ${r.status === '오류' ? 'err' : (r.status === '전환' ? 'sw' : '')}">${icon(r.status)}<span class="gt-time">${esc((r.time || '').slice(11, 19))}</span><span class="gt-step">${esc(r.step)}${r.ad ? ` <small>${esc(r.ad)}</small>` : ''}</span><span class="gt-msg" title="${esc(r.detail || r.msg)}">${esc(r.msg)}${r.detail ? ' · ' + esc(r.detail).slice(0, 160) : ''}</span></div>`).join('')
     : `<div class="gt-row"><span class="gt-ic run">●</span><span class="gt-step">Make 처리 대기 중</span><span class="gt-msg">${state.emptyText || (state.sheetOk === false ? '등록로그 시트를 읽을 수 없어요 — 구글 로그인 상태를 확인하세요' : (state.elapsed > 90000 ? 'Make 기록이 아직 없어요 — 시나리오가 꺼져 있거나 로그 모듈이 없는 버전일 수 있어요' : '기록이 올라오면 여기 단계별로 표시됩니다'))}</span></div>`;
   if (check) {
     const c = state.check;
@@ -8234,6 +8379,19 @@ async function gTrackRegistration(t, idx, data) {
     // Make가 남긴 리소스 이름에서 캠페인·광고그룹 ID를 가져온다 (이름으로 찾지 않아도 된다)
     const logIds = gIdsFromLog(state.rows);
     state.logIds = logIds;
+    // 서브 채널 — 본 채널이 거절해 넘어갔으면 채널 목록에도 바로 ⛔ 로 보이게 해 둔다 (다음 예약 확인이 올 때까지)
+    const subInfo = gSubInfoFromLog(state.rows);
+    state.sub = subInfo;
+    if (subInfo.switched && !state.subMarked && data.유튜브채널ID) {
+      state.subMarked = true;
+      gYtProbe.byChannel.set(data.유튜브채널ID, { state: 'blocked', reason: 'uploadLimitExceeded', message: '등록 중 YouTube 가 업로드를 거절 — 서브 채널로 넘어감', at: Date.now() });
+      ['g1', 'g2'].forEach(x => gRenderChannelUsage(x));
+    }
+    // 서브 채널을 보냈는데 메이크 시나리오가 옛 버전이면 넘어가지 않는다 — 한 번만 알려준다
+    if (data.서브채널ID && subInfo.ver && Number(subInfo.ver) < 17 && !state.subVerWarned) {
+      state.subVerWarned = true;
+      showToast(`메이크 구글 시나리오가 v${subInfo.ver} 이라 서브 채널로 넘어가지 않아요 — v17 블루프린트를 올려주세요`, 'error', 9000);
+    }
     if (logIds.campaignId) state.campaignId = logIds.campaignId;
     if (logIds.groupId) state.groupId = logIds.groupId;
     if (n % 3 === 0 || state.forceCheck) {
@@ -8250,16 +8408,20 @@ async function gTrackRegistration(t, idx, data) {
       state.running = false;
       const cnt = doneByLog ? logIds.doneAds : state.check.found.length;
       const gid = (state.check && state.check.groupId) || logIds.groupId || '';
-      gUpdateCard(t, idx, '완료', `광고 ${cnt}개 생성 완료${gid ? ' · 광고그룹 ' + gid : ''}${doneByLog && !doneByAds ? ' (Make 기록 기준)' : ''}`);
+      gUpdateCard(t, idx, '완료', `광고 ${cnt}개 생성 완료${gid ? ' · 광고그룹 ' + gid : ''}${doneByLog && !doneByAds ? ' (Make 기록 기준)' : ''}${gSubNote(data, subInfo)}`);
       // 광고가 확인됐으니 직접 첨부로 올린 임시 영상은 올린 계정(지금 로그인)으로 지운다 — Make가 먼저 지웠으면 404라 그냥 넘어간다
       gDeleteTempFiles(data.업로드파일IDs).then(res => { if (res.deleted) console.log(`[광고 자동등록] 임시 영상 ${res.deleted}개 삭제`); }).catch(() => {});
       return;
     }
-    if (last && last.status === '오류') {
+    // 메이크 v17: 업로드가 거절되면 «오류» 줄을 적고 몇 초 뒤 한도 확인 결과(«전환» 또는 «오류» + 사유)를 이어서 적는다 — 그 사이에는 실패로 단정하지 않는다
+    const probing = !!(last && last.status === '오류' && last.step === '유튜브 업로드' && !last.msg && Number(subInfo.ver) >= 17 && Date.now() - gParseKst(last.time) < 120000);
+    if (probing) gUpdateCard(t, idx, '진행중', `유튜브 업로드${last.ad ? ' (' + last.ad + ')' : ''} 가 거절됐어요 — 채널 하루 한도인지 확인하는 중`);
+    else if (last && last.status === '오류') {
       const hint = gErrorHint(last);
       gUpdateCard(t, idx, '실패', `${last.step}에서 멈췄어요 — ${last.msg}` + (hint ? ` · ${hint}` : (/재시도/.test(last.msg) ? '' : ' · Make가 자동 재시도하면 기록이 이어집니다')));
     }
-    else if (last) gUpdateCard(t, idx, '진행중', `${last.step}${last.ad ? ' (' + last.ad + ')' : ''} ${last.status === '완료' ? '완료' : '진행 중'} — 다음 단계를 기다리는 중`);
+    else if (last && last.status === '전환') gUpdateCard(t, idx, '진행중', `본 채널이 업로드를 거절해 서브 채널${data.서브채널명 ? ' «' + data.서브채널명 + '»' : ''} 로 이어서 올리는 중${last.ad ? ' (' + last.ad + ')' : ''}`);
+    else if (last) gUpdateCard(t, idx, '진행중', `${last.step}${last.ad ? ' (' + last.ad + ')' : ''} ${last.status === '완료' ? '완료' : '진행 중'} — 다음 단계를 기다리는 중${subInfo.subUploads ? ' · 서브 채널로 올리는 중' : ''}`);
     if (state.elapsed > G_TRACK_MAX_MS) {
       state.running = false;
       gUpdateCard(t, idx, '주의', '25분 동안 완료를 확인하지 못했어요 — Make 실행 기록과 Google Ads에서 직접 확인해 주세요');
@@ -8538,6 +8700,13 @@ async function gSubmitAd(t) {
     showToast('YouTube 채널 업로드 가능 확인 중...', 'info');
     const gate = await gYtLimitGate(t, data.유튜브채널ID, gAllVideoSlots(t).length);
     if (!gate.ok) { showToast(gate.msg, 'error', 10000); restore(); return; }
+    data.유튜브막힌채널 = '';
+    if (gate.useSub && gate.sub) {
+      // 본 채널이 이미 하루 한도 — 메이크(v17)에 알려서 처음부터 서브 채널로 올린다. 업체명·로고는 본 채널 그대로
+      data.유튜브막힌채널 = data.유튜브채널ID; data.서브채널ID = gate.sub.channelId; data.서브채널명 = gate.sub.channelName;
+      const mainName = (gChannelChoices().find(c => c.channelId === data.유튜브채널ID) || {}).channelName || '본';
+      showToast(`«${mainName}» 채널이 하루 업로드 한도라 서브 채널 «${gate.sub.channelName}» 로 올립니다`, 'info', 7000);
+    }
   }
   showToast('Make로 전송 중...', 'info');
   const blocks = gAllVideoSlots(t).map(x => x.slot);   // 영상 슬롯 단위 (광고 여러 개 × 영상 여러 개)
@@ -8601,7 +8770,7 @@ async function gSubmitAd(t) {
       // 새 캠페인: 보낸 이름을 기억한다 (같은 이름을 한 번 더 보내면 막는다 · 이름은 절대 바꾸지 않는다 — UTM 과 맞물려 있다)
       if (!isT2) { gRememberSentCampaign(data.광고계정ID, data.캠페인명); const nc = gNameCheck[t]; if (nc) nc.key = ''; gScheduleNameCheck(t); }
       // 이번 업로드를 채널 사용량에 미리 더해 둔다 (Make 가 로그에 적기 전까지)
-      if (data.유튜브채널ID) { gYtPending.push({ reqId: data.요청ID, channelId: data.유튜브채널ID, n: blocks.length, at: Date.now() }); ['g1', 'g2'].forEach(x => gRenderChannelUsage(x)); }
+      if (data.유튜브채널ID) { gYtPending.push({ reqId: data.요청ID, channelId: (data.유튜브막힌채널 && data.서브채널ID) || data.유튜브채널ID, n: blocks.length, at: Date.now() }); ['g1', 'g2'].forEach(x => gRenderChannelUsage(x)); }
       // 직접 첨부한 임시 파일은 Make가 등록을 마치면 Drive에서 지운다.
       // 같은 카드를 한 번 더 보내면 지워진 ID를 다시 쓰게 되므로(404 File not found) ID를 비워 두고, 다음 전송 때 첨부 파일을 새로 올린다.
       blocks.forEach(block => {
