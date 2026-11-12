@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-12T05:08:55.796Z",
+  "updatedAt": "2026-11-12T05:09:28.947Z",
   "updatedBy": "fbwlfyd9271@gmail.com",
   "meta": {
     "staff": [
@@ -653,6 +653,15 @@
         "criterionId": "1009884",
         "campRef": "타지역_통영",
         "refName": "통영타겟",
+        "noName": false,
+        "custom": ""
+      },
+      {
+        "clinic": "부산통합",
+        "name": "부산",
+        "criterionId": "1009866",
+        "campRef": "",
+        "refName": "",
         "noName": false,
         "custom": ""
       }
