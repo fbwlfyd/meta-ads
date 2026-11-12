@@ -22,6 +22,7 @@ document.addEventListener('securitypolicyviolation', function (e) {
     --red: #ff3b30; --red-bg: #fff5f5; --yellow-bg: #fffbf0; --yellow: #ff9500;
     --radius: 12px; --radius-sm: 8px;
     --g-red: #ea4335; --g-red-bg: #fdecea; --g-red-border: #f6c6c1; --g-red-dark: #c5221f;
+    --tt: #161823; --tt-bg: #eef0f4; --tt-border: #c9ccd6; --tt-accent: #fe2c55; --tt-accent-bg: #ffe9ee;
   }
   body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text1); height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-size: 14px; }
   .topbar { height: 56px; background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 16px; flex-shrink: 0; overflow-x: auto; overflow-y: hidden; }
@@ -30,13 +31,15 @@ document.addEventListener('securitypolicyviolation', function (e) {
   .platform-tab { padding: 6px 14px; border: none; background: none; border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text2); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
   .platform-tab.active.meta { background: var(--white); color: var(--blue); box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
   .platform-tab.active.google { background: var(--white); color: var(--g-red); box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+  .platform-tab.active.tiktok { background: var(--tt); color: var(--white); box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
   .subtabs-group { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
   .tab-btn { height: 56px; padding: 0 8px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text2); font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 6px; white-space: nowrap; flex-shrink: 0; }
   .tab-btn:hover { color: var(--text1); }
   .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
   .tab-btn.g-active { color: var(--g-red); border-bottom-color: var(--g-red); }
+  .tab-btn.k-active { color: var(--tt); border-bottom-color: var(--tt-accent); }
   .tab-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.5; flex-shrink: 0; }
-  .tab-btn.active .tab-dot, .tab-btn.g-active .tab-dot { opacity: 1; }
+  .tab-btn.active .tab-dot, .tab-btn.g-active .tab-dot, .tab-btn.k-active .tab-dot { opacity: 1; }
   .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   .icon-btn { height: 34px; padding: 0 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--white); font-family: inherit; font-size: 12px; font-weight: 500; color: var(--text2); cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 5px; }
   .icon-btn:hover { background: var(--bg); color: var(--text1); border-color: var(--border2); }
@@ -78,6 +81,8 @@ document.addEventListener('securitypolicyviolation', function (e) {
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .auto-tag { display: inline-flex; align-items: center; font-size: 10px; font-weight: 600; color: var(--blue); background: var(--blue-bg); padding: 2px 7px; border-radius: 20px; margin-left: 6px; }
   .auto-tag.g { color: var(--g-red); background: var(--g-red-bg); }
+  .auto-tag.tt { color: var(--tt); background: var(--tt-bg); }
+  .auto-tag.tt.fixed { color: var(--tt-accent); background: var(--tt-accent-bg); }
   .auto-tag.api { color: #047857; background: var(--green-bg); }
   .divider { height: 1px; background: var(--border); margin: 4px 0 16px; }
   .link-toggle { display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 500; color: var(--blue); text-decoration: underline; cursor: pointer; }
@@ -101,6 +106,8 @@ document.addEventListener('securitypolicyviolation', function (e) {
   .btn-primary:disabled { background: var(--border); color: var(--text3); cursor: not-allowed; transform: none; }
   .btn-primary.g { background: var(--g-red); }
   .btn-primary.g:hover { background: var(--g-red-dark); }
+  .btn-primary.tt { background: var(--tt); }
+  .btn-primary.tt:hover { background: #000; }
   .btn-ghost { width: 100%; height: 36px; background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text2); font-family: inherit; font-size: 13px; cursor: pointer; transition: all 0.15s; }
   .btn-ghost:hover { background: var(--bg); color: var(--text1); }
   .main { flex: 1; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }
@@ -127,6 +134,28 @@ document.addEventListener('securitypolicyviolation', function (e) {
   .type-new { background: #eef4ff; color: #2563eb; }
   .type-add { background: var(--yellow-bg); color: #c2760a; }
   .type-g-new { background: var(--g-red-bg); color: var(--g-red-dark); }
+  .type-k-new { background: var(--tt-bg); color: var(--tt); }
+  /* TikTok 탭 — 칩(지역·제외 타겟·관심사)·목록 */
+  .kchips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; min-height: 0; }
+  .kchip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px 4px 10px; border-radius: 20px; background: var(--tt-bg); border: 1px solid var(--tt-border); font-size: 12px; color: var(--text1); max-width: 100%; }
+  .kchip small { color: var(--text3); font-size: 11px; }
+  .kchip b { font-weight: 600; }
+  .kchip .x { border: none; background: none; cursor: pointer; color: var(--text3); font-size: 13px; line-height: 1; padding: 0 2px; }
+  .kchip .x:hover { color: var(--red); }
+  .ksearch-wrap { position: relative; }
+  .ksearch-wrap .region-results { max-height: 220px; }
+  .kfixed { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--text2); line-height: 1.7; }
+  .kfixed b { color: var(--text1); font-weight: 600; }
+  .kradio { display: flex; gap: 8px; flex-wrap: wrap; }
+  .kradio label { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border: 1px solid var(--border2); border-radius: var(--radius-sm); font-size: 12px; cursor: pointer; background: var(--white); }
+  .kradio label.on { border-color: var(--tt); background: var(--tt-bg); font-weight: 600; }
+  .field .kradio input[type="radio"], .kradio input[type="radio"] { width: 14px; height: 14px; padding: 0; margin: 0; appearance: auto; -webkit-appearance: auto; border: none; box-shadow: none; accent-color: var(--tt); flex-shrink: 0; }
+  .kradio label small { display: block; font-weight: 400; }
+  .kradio label > span { display: flex; flex-direction: column; gap: 1px; }
+  .chip.k.checked { background: var(--tt-bg); border-color: var(--tt-border); color: var(--tt); }
+  .kutm { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; background: var(--bg); border-radius: 6px; padding: 6px 10px; color: var(--text2); line-height: 1.8; }
+  .kstep-btn { margin-left: 6px; }
+
   .card-title { font-size: 14px; font-weight: 600; letter-spacing: -0.2px; }
   .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
   .badge-wait { background: #fff8ec; color: #b45309; }
@@ -451,6 +480,7 @@ document.addEventListener('securitypolicyviolation', function (e) {
   <div class="platform-tabs">
     <button class="platform-tab active meta" id="platform-meta-btn" onclick="switchPlatform('meta')">Meta</button>
     <button class="platform-tab google" id="platform-google-btn" onclick="switchPlatform('google')">Google</button>
+    <button class="platform-tab tiktok" id="platform-tiktok-btn" onclick="switchPlatform('tiktok')">TikTok</button>
   </div>
   <div class="subtabs-group" id="meta-subtabs">
     <button class="tab-btn active" id="tab1-btn" onclick="switchTab(1)"><div class="tab-dot"></div> 광고 등록</button>
@@ -459,6 +489,10 @@ document.addEventListener('securitypolicyviolation', function (e) {
   <div class="subtabs-group" id="google-subtabs" style="display:none;">
     <button class="tab-btn g-active" id="gtab1-btn" onclick="switchGTab(1)"><div class="tab-dot"></div> 광고 등록</button>
     <button class="tab-btn" id="gtab2-btn" onclick="switchGTab(2)"><div class="tab-dot"></div> 세트 추가</button>
+  </div>
+  <div class="subtabs-group" id="tiktok-subtabs" style="display:none;">
+    <button class="tab-btn k-active" id="ktab1-btn" onclick="switchKTab(1)"><div class="tab-dot"></div> 광고 등록</button>
+    <button class="tab-btn" id="ktab2-btn" title="2차에서 — 기존 캠페인에 광고그룹·광고 추가" disabled style="opacity:.45;cursor:not-allowed;"><div class="tab-dot"></div> 세트 추가 (준비 중)</button>
   </div>
   <div class="topbar-right">
     <span class="topbar-user" id="topbarUser" style="display:none;"></span>
@@ -1048,6 +1082,188 @@ document.addEventListener('securitypolicyviolation', function (e) {
 </div>
 </div>
 
+<!-- TIKTOK -->
+<div class="platform-panel" id="platform-tiktok-panel">
+<div class="layout tab-panel active" id="k-tab1-panel">
+  <div class="panel">
+    <div class="panel-head"><h2>TikTok 광고 등록</h2><p>리드 캠페인 · 광고그룹 · 단일 동영상 광고 생성 (API 직접 · 만들고 나면 꺼진 상태)</p></div>
+    <div class="panel-body">
+      <div class="section"><div class="sec-label">기본 정보</div>
+        <div class="row2">
+          <div class="field"><label>제작자</label><input type="text" id="k1_제작자" placeholder="이름 입력" oninput="kAutoGenNames()"></div>
+          <div class="field"><label>날짜 <span class="auto-tag">▲▼ 로 차수</span></label><div class="date-seq"><input type="text" id="k1_날짜" placeholder="예: 261109_1" oninput="kAutoGenNames()"><span class="seq-btns"><button type="button" onclick="bumpDateSeq('k1',1)" title="차수 +1 (예: _1 → _2)">▲</button><button type="button" onclick="bumpDateSeq('k1',-1)" title="차수 -1">▼</button></span></div></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>광고계정 <span class="auto-tag tt">API</span></label><select id="k1_계정" onchange="kOnAccount()"><option value="">불러오는 중...</option></select><div class="field-hint" id="k1_계정_hint"></div></div>
+          <div class="field"><label>치과명</label><select id="k1_치과명" onchange="kOnClinic()"><option value="">선택</option></select><span class="link-toggle" onclick="openSettings('kclinic')">치과 · 날짜코드 관리</span></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>리드 방식</label>
+            <select id="k1_리드방식" onchange="kOnLeadMode()">
+              <option value="web">랜딩페이지 (웹사이트 · 픽셀 이벤트)</option>
+              <option value="form">리드 (인스턴트 양식)</option>
+            </select>
+          </div>
+          <div class="field"><label>유형 <span class="auto-tag tt">이름에 들어감</span></label><input type="text" id="k1_유형" placeholder="예: 랜딩" oninput="kTypeEdited=true;kAutoGenNames()"></div>
+        </div>
+        <div class="field"><label>메모 <span class="auto-tag tt">캠페인명 맨 뒤</span></label><input type="text" id="k1_메모" placeholder="예: [광고20]" oninput="kAutoGenNames()"></div>
+        <div class="field"><label>캠페인명 <span class="auto-tag tt">자동 · 수정 가능</span></label>
+          <textarea id="k1_캠페인명" class="name-box" rows="1" placeholder="자동생성" oninput="kOnCampaignNameEdit()" onkeydown="if(event.key==='Enter')event.preventDefault();"></textarea>
+          <div class="field-hint" id="k1_캠페인명_hint">치과·날짜·제작자를 고르면 자동으로 만들어져요 — 모든 광고계정에서 같은 이름이 있는지 확인합니다</div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section"><div class="sec-label">캠페인 설정</div>
+        <div class="field"><label>예산 전략 <span class="auto-tag tt">둘 중 하나</span></label>
+          <div class="kradio" id="k1_예산전략">
+            <label class="on"><input type="radio" name="k1_budget_strategy" value="adgroup" checked onchange="kOnBudgetStrategy()"><span>광고그룹 예산<small style="color:var(--text3);">캠페인은 무제한 · 그룹이 일예산(동적)</small></span></label>
+            <label><input type="radio" name="k1_budget_strategy" value="campaign" onchange="kOnBudgetStrategy()"><span>캠페인 예산<small style="color:var(--text3);">캠페인 예산 최적화(CBO) · 일예산</small></span></label>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field"><label id="k1_예산_label">광고그룹 일일예산 (원)</label><input type="number" id="k1_예산" value="30000" step="1000" min="0"></div>
+          <div class="field"><label>캠페인 목표 <span class="auto-tag tt fixed">고정</span></label><input type="text" value="리드 생성 (LEAD_GENERATION)" readonly></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section"><div class="sec-label">광고그룹 설정</div>
+        <div class="row2">
+          <div class="field"><label>최적화 목표 <span class="auto-tag tt fixed">고정</span></label><input type="text" value="리드" readonly></div>
+          <div class="field"><label>최적화 위치 <span class="auto-tag tt">리드 방식 따라 자동</span></label><input type="text" id="k1_최적화위치" value="웹사이트" readonly></div>
+        </div>
+        <div id="k1_web_wrap">
+          <div class="row2">
+            <div class="field"><label>데이터 연결 (픽셀 · 데이터 세트) <span class="auto-tag tt">API · 활성만</span></label><select id="k1_픽셀" onchange="kOnPixel()"><option value="">광고계정 선택 후</option></select></div>
+            <div class="field"><label>최적화 이벤트 <span class="auto-tag tt">고른 데이터 세트의 이벤트</span></label><select id="k1_이벤트"><option value="">데이터 연결 선택 후</option></select></div>
+          </div>
+          <div class="field-hint" id="k1_픽셀_hint" style="margin-top:-4px;margin-bottom:8px;"><label class="chk" style="display:inline-flex;gap:4px;align-items:center;margin:0;"><input type="checkbox" id="k1_픽셀_전체" onchange="kFillPixelSelects()"> 비활성(이벤트 없는) 것도 보기</label></div>
+        </div>
+        <div id="k1_form_wrap" style="display:none;">
+          <div class="field"><label>인스턴트 양식 <span class="auto-tag tt">API</span></label><select id="k1_양식"><option value="">광고계정 선택 후</option></select><div class="field-hint" id="k1_양식_hint"></div></div>
+        </div>
+        <div class="field"><label>입찰 · 과금 <span class="auto-tag tt fixed">고정</span></label>
+          <div class="kfixed"><span><b>입찰</b> 최대 결과 (NO_BID)</span><span><b>과금</b> oCPM</span><span><b>게재</b> 표준 (PACING_MODE_SMOOTH)</span><span id="k1_attr_fixed"><b>어트리뷰션</b> 클릭 7일 · 조회 1일 · 모든 전환</span></div>
+        </div>
+        <div class="sec-label" style="margin-top:12px;">인구통계</div>
+        <div class="field"><label>지역 <span class="auto-tag tt">API 검색 · 여러 개</span></label>
+          <div class="ksearch-wrap">
+            <input type="text" id="k1_지역검색" placeholder="지역 이름으로 검색 (예: 해운대, 양산시, 부산)" autocomplete="off" oninput="kOnRegionInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();kRegionSearchNow();}">
+            <div class="region-results" id="k1_지역결과"></div>
+          </div>
+          <div class="kchips" id="k1_지역칩"></div>
+          <div class="field-hint" id="k1_지역_hint">치과를 고르면 그 치과의 기본 지역이 들어와요 <span class="link-toggle" onclick="kSaveClinicRegions()">지금 지역을 이 치과 기본으로 저장</span></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>연령</label>
+            <div class="chip-group" id="k1_연령">
+              <label class="chip k"><input type="checkbox" value="AGE_18_24" onchange="gToggleChip(this)"> 18-24</label>
+              <label class="chip k"><input type="checkbox" value="AGE_25_34" onchange="gToggleChip(this)"> 25-34</label>
+              <label class="chip k"><input type="checkbox" value="AGE_35_44" onchange="gToggleChip(this)"> 35-44</label>
+              <label class="chip k checked"><input type="checkbox" value="AGE_45_54" checked onchange="gToggleChip(this)"> 45-54</label>
+              <label class="chip k checked"><input type="checkbox" value="AGE_55_100" checked onchange="gToggleChip(this)"> 55+</label>
+            </div>
+          </div>
+          <div class="field"><label>성별</label>
+            <select id="k1_성별">
+              <option value="GENDER_UNLIMITED" selected>전체</option>
+              <option value="GENDER_FEMALE">여성</option>
+              <option value="GENDER_MALE">남성</option>
+            </select>
+            <div class="field-hint">언어: 한국어(ko) 고정</div>
+          </div>
+        </div>
+        <div class="sec-label" style="margin-top:12px;">사용자 지정 타겟</div>
+        <div class="field"><label>시청자 제외 (맞춤 타겟) <span class="auto-tag tt">API</span></label>
+          <div class="ksearch-wrap">
+            <input type="text" id="k1_제외검색" placeholder="제외할 타겟 이름으로 찾기" autocomplete="off" oninput="kOnPickInput('aud')" onfocus="kOnPickInput('aud')">
+            <div class="region-results" id="k1_제외결과"></div>
+          </div>
+          <div class="kchips" id="k1_제외칩"></div>
+          <div class="field-hint" id="k1_제외_hint"></div>
+        </div>
+        <div class="field"><label>세부 타겟팅 — 관심사 <span class="auto-tag tt">API</span></label>
+          <div class="ksearch-wrap">
+            <input type="text" id="k1_관심사검색" placeholder="관심사 이름으로 찾기 (예: 미용, 건강)" autocomplete="off" oninput="kOnPickInput('int')" onfocus="kOnPickInput('int')">
+            <div class="region-results" id="k1_관심사결과"></div>
+          </div>
+          <div class="kchips" id="k1_관심사칩"></div>
+          <div class="field-hint" id="k1_관심사_hint"></div>
+        </div>
+        <div class="field"><label>세부 타겟팅 — 행동 (영상 상호작용 · 최근 15일) <span class="auto-tag tt">API</span></label>
+          <div class="ksearch-wrap">
+            <input type="text" id="k1_행동검색" placeholder="행동 카테고리 이름으로 찾기" autocomplete="off" oninput="kOnPickInput('act')" onfocus="kOnPickInput('act')">
+            <div class="region-results" id="k1_행동결과"></div>
+          </div>
+          <div class="kchips" id="k1_행동칩"></div>
+          <div class="field-hint" id="k1_행동_hint"></div>
+        </div>
+        <div class="sec-label" style="margin-top:12px;">게재 위치</div>
+        <div class="field">
+          <div class="kradio" id="k1_게재">
+            <label class="on"><input type="radio" name="k1_placement" value="PLACEMENT_TYPE_AUTOMATIC" checked onchange="kOnPlacement()"><span>자동 게재 위치<small style="color:var(--text3);">기본</small></span></label>
+            <label><input type="radio" name="k1_placement" value="PLACEMENT_TYPE_NORMAL" onchange="kOnPlacement()"><span>직접 선택<small style="color:var(--text3);">TikTok · Global App Bundle · Pangle</small></span></label>
+          </div>
+          <div class="chip-group" id="k1_게재목록" style="display:none;margin-top:8px;">
+            <label class="chip k checked"><input type="checkbox" value="PLACEMENT_TIKTOK" checked onchange="gToggleChip(this)"> TikTok</label>
+            <label class="chip k"><input type="checkbox" value="PLACEMENT_GLOBAL_APP_BUNDLE" onchange="gToggleChip(this)"> Global App Bundle</label>
+            <label class="chip k"><input type="checkbox" value="PLACEMENT_PANGLE" onchange="gToggleChip(this)"> Pangle</label>
+          </div>
+          <div class="field-hint">댓글 · 동영상 다운로드 · 공유: <b>전부 끔</b> (고정)</div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section"><div class="sec-label">광고 공통</div>
+        <div class="row2">
+          <div class="field"><label>아이덴티티 (TikTok 계정) <span class="auto-tag tt">API · 기본 오늘의병원</span></label><select id="k1_아이덴티티"><option value="">불러오는 중...</option></select><div class="field-hint" id="k1_아이덴티티_hint"></div></div>
+          <div class="field"><label>콜 투 액션 (CTA) <span class="auto-tag tt">모든 광고 공통</span></label><select id="k1_CTA" onchange="K.ctaTouched=true"></select></div>
+        </div>
+        <div class="field"><label class="chk" style="display:inline-flex;align-items:center;gap:6px;margin:0;"><input type="checkbox" checked disabled> 광고로만 표시 <span class="auto-tag tt fixed">항상 체크</span></label><div class="field-hint">게시물을 광고로만 게재하고 TikTok 프로필에는 올리지 않아요 (dark post)</div></div>
+        <div id="k1_url_wrap">
+          <div class="field"><label>웹사이트 URL (랜딩 페이지) <span class="auto-tag tt">공통 · 카드에서 개별 수정 가능</span></label><input type="text" id="k1_URL" placeholder="https://todaydoc.kr/event/..." oninput="kSyncCreativeCommon()"></div>
+          <div class="field"><label>URL 파라미터 (사용자 지정) <span class="auto-tag tt fixed">고정</span></label>
+            <div class="kutm">campaign_id = __CAMPAIGN_ID__<br>adset_id = __AID__<br>ad_id = __CID__</div>
+            <div class="field-hint">웹사이트 및 상품 URL 에 자동으로 붙어요 — 틱톡이 실제 캠페인·광고그룹·광고 ID 로 바꿔 넣습니다</div>
+          </div>
+        </div>
+        <div class="kfixed" style="margin-top:4px;"><span><b>광고 형식</b> 단일 동영상</span><span><b>자동 향상 기능</b> 끔</span><span><b>CRM 이벤트</b> 자동 추적 세트 (틱톡이 계정 기준으로 붙임)</span></div>
+      </div>
+      <div class="divider"></div>
+      <div class="section"><div class="sec-label">자동생성 / 고정 값</div>
+        <div class="field"><label>광고그룹명 <span class="auto-tag tt">자동</span></label><input type="text" id="k1_광고그룹명" readonly placeholder="자동생성"></div>
+        <div class="field"><label>광고명 <span class="auto-tag tt">자동 · 영상 파일명 + 이름</span></label><input type="text" id="k1_광고명" readonly placeholder="소재 개수만큼 1.1T, 1.2T ..."></div>
+        <div class="row2">
+          <div class="field"><label>시작 <span class="auto-tag tt fixed">고정</span></label><input type="text" value="지금부터 · 종료 없음" readonly></div>
+          <div class="field"><label>만든 뒤 상태 <span class="auto-tag tt fixed">고정</span></label><input type="text" value="일시중지 (검토 뒤 직접 켜기)" readonly></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel-foot">
+      <button class="btn-primary tt" id="k1_submitBtn" onclick="kSubmitAd()">TikTok 등록하기</button>
+      <button class="btn-ghost" onclick="kClearForm()">초기화</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="main-top">
+      <div class="main-head"><div><h3>등록 현황</h3><p id="k1_count">등록된 캠페인이 없습니다</p></div><div class="live-pill" style="color:var(--tt);background:var(--tt-bg);"><div class="live-dot" style="background:var(--tt-accent);"></div>실시간</div></div>
+      <div class="content">
+        <div class="empty" id="k1_empty"><div class="empty-icon">🎵</div><h4>아직 등록된 캠페인이 없어요</h4><p>왼쪽에서 캠페인 정보를, 아래 카드에서 영상과 문구를 넣으세요</p></div>
+        <div class="cards" id="k1_cards" style="display:none;"></div>
+      </div>
+    </div>
+    <div class="creative-pane">
+      <div class="creative-head">
+        <div><h3>광고 소재</h3><p id="k1_creative_count">소재 1개 · 광고그룹 1개에 광고 1개가 만들어져요</p></div>
+        <div class="creative-actions">
+          <label class="common-toggle"><input type="checkbox" id="k1_creative_common" checked onchange="kToggleCreativeCommon()"> 문구 공통</label>
+          <button type="button" class="btn-add-creative" onclick="kAddCreativeBlock()">+ 광고 추가</button>
+        </div>
+      </div>
+      <div class="creative-strip" id="k1_creative_list"></div>
+    </div>
+  </div>
+</div>
+</div>
+
 <!-- ===== 설정 모달 ===== -->
 <div class="modal-back" id="settingsModal" onclick="if(event.target===this)closeSettings()">
   <div class="modal">
@@ -1071,6 +1287,11 @@ document.addEventListener('securitypolicyviolation', function (e) {
       <button class="modal-tab" id="mtab_gregion" onclick="switchSettingsTab('gregion')">지역</button>
       <button class="modal-tab" id="mtab_gchannel" onclick="switchSettingsTab('gchannel')">채널</button>
       <button class="modal-tab" id="mtab_gsheet" onclick="switchSettingsTab('gsheet')">연동</button>
+    </div>
+    <div class="modal-tabs" id="tiktokSettingsTabs" style="display:none;">
+      <button class="modal-tab active" id="mtab_kclinic" onclick="switchSettingsTab('kclinic')">치과 · 날짜코드</button>
+      <button class="modal-tab" id="mtab_kdefault" onclick="switchSettingsTab('kdefault')">기본값</button>
+      <button class="modal-tab" id="mtab_klink" onclick="switchSettingsTab('klink')">연동</button>
     </div>
     <div class="modal-body">
       <!-- 제작자 -->
@@ -1249,14 +1470,65 @@ document.addEventListener('securitypolicyviolation', function (e) {
           <button class="btn-sm" onclick="dumpProxyRaw()">🔍 원시 응답 보기</button>
         </div>
         <div id="g_api_out" style="margin-top:12px;font-size:12px;line-height:1.7;white-space:pre-wrap;background:var(--bg);border-radius:8px;padding:12px;color:var(--text2);min-height:40px;">아직 테스트하지 않았습니다.</div>
-        <div class="set-box" style="margin-top:16px;">
-          <div class="set-box-head"><b>TikTok 연결 확인 <span class="auto-tag">준비 중 · 1단계</span></b><span class="field-hint">틱톡 토큰은 서버(api/tiktok.js)에만 있어요 — 계정·표시 계정·양식·기존 캠페인 설정을 읽어 와서 등록 탭 설계에 씁니다</span></div>
+        <div class="field-hint" style="margin-top:14px;">TikTok 연결 확인은 <b>TikTok 탭 → ⚙ TikTok 설정 → 연동</b> 으로 옮겼어요</div>
+      </div>
+      <!-- ===== TikTok 설정 ===== -->
+      <div class="modal-sec" id="msec_kclinic">
+        <div class="set-note"><b>치과 전체명</b>은 광고그룹명·광고명에, <b>약칭</b>은 캠페인명 맨 앞에 들어갑니다. <b>틱톡 날짜코드</b>는 그 치과의 광고그룹명·광고명 끝에 늘 붙는 코드(처음 틱톡을 시작한 날)예요.<br>캠페인명 = 약칭 + 시술 + 유형 + (날짜_차수) + 제작자 + 메모 &nbsp;·&nbsp; 광고그룹명 = 전체명 + 시술 + 유형 + 1T + 날짜코드 &nbsp;·&nbsp; 광고명 = 영상파일명_전체명 + 시술 + 유형 + 1.1T + 날짜코드<br><b>기본 광고계정</b>을 적어 두면 치과를 고를 때 계정이 같이 잡혀요. <b>기본 지역</b>은 등록 탭에서 지역을 고른 뒤 «지금 지역을 이 치과 기본으로 저장»으로 넣습니다.</div>
+        <table class="set-table">
+          <thead><tr><th style="width:24%">치과 전체명</th><th style="width:14%">약칭</th><th style="width:12%">시술</th><th style="width:12%">틱톡 날짜코드</th><th style="width:18%">기본 광고계정</th><th style="width:16%">기본 지역</th><th></th></tr></thead>
+          <tbody id="kset_clinic_body"></tbody>
+        </table>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+          <button class="btn-sm" onclick="kAddClinicRow()">+ 치과 추가</button>
+          <button class="btn-sm" onclick="kImportClinicsFromGoogle()" title="Google 설정의 치과·약칭 목록에서 없는 치과를 가져옵니다">구글 설정의 치과 가져오기</button>
+        </div>
+      </div>
+      <div class="modal-sec" id="msec_kdefault">
+        <div class="set-note">등록 탭이 처음 열릴 때 들어가는 값들이에요. 아이덴티티는 API 로 목록을 받아오되 여기 적힌 계정이 기본으로 잡힙니다 (목록을 못 받아도 이 값으로 등록돼요).</div>
+        <div class="row2">
+          <div class="field"><label>기본 아이덴티티 이름</label><input type="text" id="kset_identityName" placeholder="오늘의병원"></div>
+          <div class="field"><label>아이덴티티 ID</label><input type="text" id="kset_identityId" placeholder="진단 결과의 ID"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>아이덴티티 종류</label><select id="kset_identityType"><option value="BC_AUTH_TT">BC_AUTH_TT (비즈니스 센터가 승인한 틱톡 계정)</option><option value="TT_USER">TT_USER (광고계정에 연결된 틱톡 계정)</option><option value="CUSTOMIZED_USER">CUSTOMIZED_USER (이름·프로필만)</option></select></div>
+          <div class="field"><label>비즈니스 센터 ID <span class="auto-tag tt">BC_AUTH_TT 일 때</span></label><input type="text" id="kset_identityBcId" placeholder="비우면 API 의 BC 목록에서 자동 (1개일 때)"><div class="field-hint" id="kset_bc_hint"></div></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>기본 CTA</label><select id="kset_cta"></select></div>
+          <div class="field"><label>기본 일일예산 (원)</label><input type="number" id="kset_budget" step="1000" min="0" placeholder="30000"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>기본 예산 전략</label><select id="kset_budgetStrategy"><option value="adgroup">광고그룹 예산 (동적 일예산)</option><option value="campaign">캠페인 예산 (CBO)</option></select></div>
+          <div class="field"><label>기본 연령 <span class="auto-tag tt">쉼표로</span></label><input type="text" id="kset_ages" placeholder="AGE_45_54, AGE_55_100"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>유형 이름 — 랜딩페이지 방식</label><input type="text" id="kset_typeWeb" placeholder="랜딩"></div>
+          <div class="field"><label>유형 이름 — 인스턴트 양식 방식</label><input type="text" id="kset_typeForm" placeholder="리드"></div>
+        </div>
+        <label class="chk"><input type="checkbox" id="kset_adNameWithFile"> 광고명 앞에 영상 파일명을 붙인다 <small>(파일명_치과명 시술 유형 1.1T 날짜코드)</small></label>
+        <div class="set-note" style="margin-top:12px;"><b>고정값</b> — 캠페인 목표 리드 생성 · 입찰 최대 결과(NO_BID) · 과금 oCPM · 표준 게재 · 어트리뷰션 클릭 7일/조회 1일/모든 전환 · 언어 ko · 댓글/다운로드/공유 끔 · 광고로만 표시 · 자동 향상 끔 · 광고 형식 단일 동영상 · URL 파라미터 campaign_id=__CAMPAIGN_ID__ · adset_id=__AID__ · ad_id=__CID__ · 만든 뒤 일시중지</div>
+      </div>
+      <div class="modal-sec" id="msec_klink">
+        <div class="set-note" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <span id="k_login_status" style="flex:1;min-width:220px;">구글 로그인 상태 확인 중...</span>
+          <button class="btn-sm blue" onclick="gLoginNow()">지금 로그인</button>
+        </div>
+        <div class="field-hint" style="margin:-6px 0 10px;">영상은 Drive 임시 파일(링크 공유)로 올린 뒤 틱톡이 받아 가요 — 그래서 구글 로그인이 필요합니다. 등록 단계 기록은 구글 탭과 같은 «등록로그» 시트에 남아요.</div>
+        <div class="field-hint" id="k_page_build" style="margin:0 0 4px;"></div>
+        <div class="set-box" style="margin-top:4px;">
+          <div class="set-box-head"><b>TikTok 연결 확인</b><span class="field-hint">틱톡 토큰은 서버(api/tiktok.js)에만 있어요 — 광고계정·표시 계정·양식·픽셀을 여기서 읽어 오고, 등록도 같은 함수로 보냅니다</span></div>
           <div class="field-hint" id="tt_status" style="margin:0 0 8px;">틱톡 중계 함수 확인 중...</div>
           <div id="tt_token_box" style="display:none;margin:0 0 10px;padding:10px 12px;background:var(--yellow-bg);border:1px solid #ffe0a0;border-radius:var(--radius-sm);">
             <div style="font-size:12px;color:var(--text1);margin-bottom:8px;"><b>토큰 만들기 (처음 한 번)</b> — 개발자 포털 My Apps → 앱 → <b>Advertiser redirect URL</b> 을 <code id="tt_redirect_url" style="user-select:all;background:var(--white);padding:1px 6px;border-radius:4px;"></code> 로 저장한 뒤, 아래 링크를 열어 광고계정 관리자로 로그인 → 광고계정 전부 체크 → Confirm. 돌아온 화면의 토큰을 Vercel 환경변수 <code>TIKTOK_ACCESS_TOKEN</code> 에 넣고 재배포하세요.</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;">
+              <span class="field-hint" style="margin:0;">앱에 <b>승인된</b> redirect URL</span>
+              <input type="text" id="tt_redirect_in" placeholder="앱 화면의 Advertiser redirect URLs 중 승인된(검은 글씨) 주소를 그대로" style="height:34px;flex:1;min-width:320px;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:0 8px;font-family:inherit;font-size:12px;">
               <button type="button" class="btn-sm blue" onclick="ttOpenAuth()">🔗 틱톡 승인 링크 열기</button>
-              <span class="field-hint" style="margin:0;">redirect URL 을 못 바꾸면 →</span>
+            </div>
+            <div class="field-hint" style="margin:0 0 8px;">새로 추가한 redirect URL 은 틱톡 심사가 끝나기 전엔 "Validation of the app status has failed" 로 거부돼요 — 그동안은 원래 있던(승인된) 주소로 승인받고, 돌아온 화면의 주소를 아래 칸에 붙여넣으면 돼요</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+              <span class="field-hint" style="margin:0;">승인 뒤 돌아온 주소 →</span>
               <input type="text" id="tt_auth_code" placeholder="주소창의 auth_code 붙여넣기" style="height:34px;width:260px;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:0 8px;font-family:inherit;font-size:12px;">
               <button type="button" class="btn-sm" onclick="ttExchange()">토큰 만들기</button>
             </div>
@@ -1749,19 +2021,23 @@ function parseCustomCoords(str) {
 let settingsTab = 'staff';
 const META_TABS = ['staff','account','region','page','diag'];
 const GOOGLE_TABS = ['gstaff','gclinic','gregion','gchannel','gsheet'];
+const TIKTOK_TABS = ['kclinic','kdefault','klink'];
 function openSettings(tab) {
-  const isG = currentPlatform === 'google';
-  document.getElementById('settingsTitle').textContent = isG ? 'Google 설정' : 'Meta 설정';
-  document.getElementById('settingsDesc').textContent = isG
+  const isG = currentPlatform === 'google', isK = currentPlatform === 'tiktok';
+  document.getElementById('settingsTitle').textContent = isK ? 'TikTok 설정' : (isG ? 'Google 설정' : 'Meta 설정');
+  document.getElementById('settingsDesc').textContent = isK
+    ? 'TikTok API로 가져올 수 없는 사내 규칙(치과·약칭·날짜코드·기본값)과 연결 상태를 여기서 관리합니다'
+    : (isG
     ? 'Google Ads API로 가져올 수 없는 사내 규칙(제작자·치과·지역·채널)과 로그인·연동 상태를 여기서 관리합니다'
-    : 'Meta API로 가져올 수 없는 사내 규칙만 여기서 관리합니다';
-  document.getElementById('metaSettingsTabs').style.display = isG ? 'none' : 'flex';
+    : 'Meta API로 가져올 수 없는 사내 규칙만 여기서 관리합니다');
+  document.getElementById('metaSettingsTabs').style.display = (isG || isK) ? 'none' : 'flex';
   document.getElementById('googleSettingsTabs').style.display = isG ? 'flex' : 'none';
+  document.getElementById('tiktokSettingsTabs').style.display = isK ? 'flex' : 'none';
   document.getElementById('settingsSaveBtn').style.display = 'inline-block';
-  document.getElementById('settingsResetBtn').style.display = isG ? 'none' : 'inline-block';
-  if (isG) renderGoogleSettings(); else renderSettings();
+  document.getElementById('settingsResetBtn').style.display = (isG || isK) ? 'none' : 'inline-block';
+  if (isK) renderTiktokSettings(); else if (isG) renderGoogleSettings(); else renderSettings();
   renderSharedStatus();
-  const valid = isG ? GOOGLE_TABS : META_TABS;
+  const valid = isK ? TIKTOK_TABS : (isG ? GOOGLE_TABS : META_TABS);
   const want = tab && valid.includes(tab) ? tab : (valid.includes(settingsTab) ? settingsTab : valid[0]);
   switchSettingsTab(want);
   if (typeof gShowPageBuild === 'function') gShowPageBuild();   // 진단·연동 탭에 페이지 빌드 표시
@@ -1773,7 +2049,7 @@ function openSettings(tab) {
 function closeSettings() { document.getElementById('settingsModal').classList.remove('show'); }
 function switchSettingsTab(tab) {
   settingsTab = tab;
-  META_TABS.concat(GOOGLE_TABS).forEach(k => {
+  META_TABS.concat(GOOGLE_TABS, TIKTOK_TABS).forEach(k => {
     const b = document.getElementById(`mtab_${k}`);
     const sec = document.getElementById(`msec_${k}`);
     if (b) b.classList.toggle('active', k === tab);
@@ -2373,7 +2649,8 @@ function saveGoogleSettingsNow() {
   closeSettings();
 }
 function saveCurrentSettings() {
-  if (currentPlatform === 'google') saveGoogleSettingsNow();
+  if (currentPlatform === 'tiktok') saveTiktokSettingsNow();
+  else if (currentPlatform === 'google') saveGoogleSettingsNow();
   else saveSettings();
 }
 
@@ -2510,7 +2787,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-21.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-10-20.2';
+const G_PAGE_BUILD = '2026-11-11.1';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -2632,16 +2909,19 @@ function ttRenderStatus() {
   const p = tt.ping || {};
   const box = document.getElementById('tt_token_box'); const ru = document.getElementById('tt_redirect_url');
   if (ru && p.redirectUrl) ru.textContent = p.redirectUrl;
+  const ri = document.getElementById('tt_redirect_in'); if (ri && !ri.value && p.redirectUrl) ri.value = p.redirectUrl;
   if (box) box.style.display = (!p.missing && p.hasApp && !p.hasToken) ? '' : 'none';   // 앱 정보는 있는데 토큰이 아직 없을 때만
   if (p.missing) { el.className = 'field-hint err'; el.innerHTML = '⚠ api/tiktok.js 없음 — GitHub 의 api 폴더에 tiktok.js 를 올리고 재배포하세요'; return; }
   if (!p.hasApp && !p.hasAdvertiserIds) { el.className = 'field-hint err'; el.innerHTML = `⚠ 틱톡 중계 함수 ${esc(p.build || '')}: Vercel 환경변수 <b>TIKTOK_APP_ID · TIKTOK_APP_SECRET</b> 부터 넣고 재배포하세요 (개발자 포털 My Apps → 앱 → Basic Information 에 있어요)`; return; }
   if (!p.hasToken) { el.className = 'field-hint err'; el.innerHTML = `⚠ 틱톡 중계 함수 ${esc(p.build || '')}: 토큰(TIKTOK_ACCESS_TOKEN)이 아직 없어요 — 아래 «틱톡 승인 링크 열기»로 만들어 넣으세요`; return; }
-  el.className = 'field-hint ok'; el.innerHTML = `✅ 틱톡 중계 함수 ${esc(p.build || '')} (조회 전용) — 토큰은 서버에만 있어요${tt.advertisers.length ? ` · 광고계정 ${tt.advertisers.length}개` : ''}`;
+  if (p.readOnly || !p.canWrite) { el.className = 'field-hint err'; el.innerHTML = `⚠ 틱톡 중계 함수 ${esc(p.build || '')} 는 조회 전용(1단계) 버전이에요 — 광고 등록을 하려면 새 api/tiktok.js 를 올리고 재배포하세요${tt.advertisers.length ? ` · 광고계정 ${tt.advertisers.length}개` : ''}`; return; }
+  el.className = 'field-hint ok'; el.innerHTML = `✅ 틱톡 중계 함수 ${esc(p.build || '')} — 조회·등록 가능 · 토큰은 서버에만 있어요${tt.advertisers.length ? ` · 광고계정 ${tt.advertisers.length}개` : ''}${p.hasGoogleApiKey === false ? ' · <b>GOOGLE_API_KEY 없음</b> (영상은 Drive 공유 링크로 받아 가요 — 큰 파일은 실패할 수 있어요)' : ''}`;
 }
 async function ttOpenAuth() {
   const out = document.getElementById('tt_out');
   try {
-    const j = await ttFetch({ op: 'auth_url' });
+    const redirect = ((document.getElementById('tt_redirect_in') || {}).value || '').trim();
+    const j = await ttFetch({ op: 'auth_url', redirect });
     const w = window.open(j.url, '_blank');
     if (!w) { out.textContent = '팝업이 막혔어요 — 이 주소를 새 탭에 붙여넣어 열어주세요:\n' + j.url; return; }
     out.textContent = `승인 창을 열었어요 — 광고계정 관리자로 로그인 → 광고계정 전부 체크 → Confirm.\n돌아온 화면(${j.redirectUrl})에 토큰이 보이면 복사해서 Vercel 환경변수 TIKTOK_ACCESS_TOKEN 에 넣고 재배포하세요.\n«사이트에 연결할 수 없음» 이 뜨면 앱의 Advertiser redirect URL 이 ${j.redirectUrl} 이 아닌 거예요 — 그땐 주소창의 auth_code 를 복사해 왼쪽 칸에 넣고 «토큰 만들기»`;
@@ -2678,18 +2958,26 @@ function ttDiagText(d, advName) {
   (d.identities || []).forEach(i => L.push(`  · ${i.name || '(이름 없음)'} — ${i.type || ''} · ID ${i.id}${i.verified === undefined ? '' : (i.verified ? ' · 인증됨' : ' · 미인증')}`));
   L.push(`[인스턴트 양식] ${err.forms ? '❌ ' + err.forms : (d.forms || []).length + '개'}`);
   (d.forms || []).slice(0, 20).forEach(f => L.push(`  · ${f.title || '(제목 없음)'} — ID ${f.id}${f.status ? ' · ' + f.status : ''}`));
-  L.push(`[최근 캠페인] ${err.campaigns ? '❌ ' + err.campaigns : (d.campaigns || []).length + '개'}`);
-  (d.campaigns || []).forEach(c => L.push(`  · ${c.campaign_name} — 목표 ${ttFmt(c.objective_type)} · 예산 ${ttFmt(c.budget)} ${ttFmt(c.budget_mode)} · ${ttFmt(c.operation_status)} · ID ${c.campaign_id}`));
-  L.push(`[최근 광고그룹] ${err.adgroups ? '❌ ' + err.adgroups : (d.adgroups || []).length + '개'}`);
+  L.push(`[비즈니스 센터] ${err.bcs ? '❌ ' + err.bcs : (d.bcs || []).length + '개'}`);
+  (d.bcs || []).forEach(b => L.push(`  · ${b.name || '(이름 없음)'} — ID ${b.id}${b.role ? ' · ' + b.role : ''}`));
+  L.push(`[픽셀] ${err.pixels ? '❌ ' + err.pixels : (d.pixels || []).length + '개'}`);
+  (d.pixels || []).forEach(x => L.push(`  · ${x.name || '(이름 없음)'} — ID ${x.id}${x.code ? ' · ' + x.code : ''}`));
+  L.push(`[최근 캠페인] ${err.campaigns ? '❌ ' + err.campaigns : (d.campaigns || []).length + '개'}${err.campaignsExtra ? ' (추가 항목 못 읽음: ' + err.campaignsExtra + ')' : ''}`);
+  (d.campaigns || []).forEach(c => L.push(`  · ${c.campaign_name} — 목표 ${ttFmt(c.objective_type)} · 예산 ${ttFmt(c.budget)} ${ttFmt(c.budget_mode)}${c.budget_optimize_on !== undefined ? ' · CBO ' + c.budget_optimize_on : ''}${c.is_smart_performance_campaign !== undefined ? ' · Smart+ ' + c.is_smart_performance_campaign : ''}${c.campaign_type ? ' · ' + c.campaign_type : ''} · ${ttFmt(c.operation_status)}${c.secondary_status ? '/' + c.secondary_status : ''} · ID ${c.campaign_id}`));
+  L.push(`[최근 광고그룹] ${err.adgroups ? '❌ ' + err.adgroups : (d.adgroups || []).length + '개'}${err.adgroupsExtra ? ' (추가 항목 못 읽음: ' + err.adgroupsExtra + ')' : ''}`);
   (d.adgroups || []).forEach(g => {
     const locs = (g.location_ids || []).map(id => (d.locationNames && d.locationNames[String(id)]) || id);
     L.push(`  · ${g.adgroup_name} (캠페인: ${g.campaign_name || g.campaign_id})`);
-    L.push(`      목적 ${ttFmt(g.promotion_type)} · 최적화 ${ttFmt(g.optimization_goal)}${g.optimization_event ? '/' + g.optimization_event : ''} · 입찰 ${ttFmt(g.bid_type)}${g.bid_price ? ' ' + g.bid_price : ''} · 과금 ${ttFmt(g.billing_event)} · 페이싱 ${ttFmt(g.pacing)}`);
-    L.push(`      예산 ${ttFmt(g.budget)} ${ttFmt(g.budget_mode)} · 일정 ${ttFmt(g.schedule_type)} ${ttFmt(g.schedule_start_time)}${g.schedule_end_time ? ' ~ ' + g.schedule_end_time : ''} · 게재 ${ttFmt(g.placement_type)} ${ttFmt(g.placements)}`);
-    L.push(`      지역 ${locs.length ? locs.join(', ') : '-'} · 연령 ${ttFmt(g.age_groups)} · 성별 ${ttFmt(g.gender)} · 언어 ${ttFmt(g.languages)} · 표시계정 ${ttFmt(g.identity_type)} ${ttFmt(g.identity_id)}${g.pixel_id ? ' · 픽셀 ' + g.pixel_id : ''} · ${ttFmt(g.operation_status)} · ID ${g.adgroup_id}`);
+    L.push(`      목적 ${ttFmt(g.promotion_type)}${g.promotion_target_type ? '/' + g.promotion_target_type : ''} · 최적화 ${ttFmt(g.optimization_goal)}${g.optimization_event ? '/' + g.optimization_event : ''} · 입찰 ${ttFmt(g.bid_type)}${g.bid_price ? ' ' + g.bid_price : ''}${g.conversion_bid_price ? ' 전환입찰 ' + g.conversion_bid_price : ''}${g.deep_bid_type ? ' ' + g.deep_bid_type : ''} · 과금 ${ttFmt(g.billing_event)} · 페이싱 ${ttFmt(g.pacing)}`);
+    L.push(`      예산 ${ttFmt(g.budget)} ${ttFmt(g.budget_mode)} · 일정 ${ttFmt(g.schedule_type)} ${ttFmt(g.schedule_start_time)}${g.schedule_end_time ? ' ~ ' + g.schedule_end_time : ''} · 게재 ${ttFmt(g.placement_type)} ${ttFmt(g.placements)}${g.creative_material_mode ? ' · 소재 ' + g.creative_material_mode : ''}`);
+    L.push(`      지역 ${locs.length ? locs.join(', ') : '-'} · 연령 ${ttFmt(g.age_groups)} · 성별 ${ttFmt(g.gender)} · 언어 ${ttFmt(g.languages)}${g.smart_audience_enabled !== undefined ? ' · 스마트타겟 ' + g.smart_audience_enabled : ''}${g.targeting_expansion ? ' · 확장 ' + JSON.stringify(g.targeting_expansion) : ''}${(g.interest_category_ids || []).length ? ' · 관심사 ' + g.interest_category_ids.length + '개' : ''}${(g.audience_ids || []).length ? ' · 잠재고객 ' + g.audience_ids.join(',') : ''}${(g.excluded_audience_ids || []).length ? ' · 제외 ' + g.excluded_audience_ids.join(',') : ''}`);
+    L.push(`      표시계정 ${ttFmt(g.identity_type)} ${ttFmt(g.identity_id)}${g.identity_authorized_bc_id ? ' (BC ' + g.identity_authorized_bc_id + ')' : ''}${g.pixel_id ? ' · 픽셀 ' + g.pixel_id : ''}${g.brand_safety_type ? ' · 브랜드세이프티 ' + g.brand_safety_type : ''}${g.comment_disabled !== undefined ? ' · 댓글끔 ' + g.comment_disabled : ''} · ${ttFmt(g.operation_status)}${g.secondary_status ? '/' + g.secondary_status : ''} · ID ${g.adgroup_id}`);
   });
-  L.push(`[최근 광고] ${err.ads ? '❌ ' + err.ads : (d.ads || []).length + '개'}`);
-  (d.ads || []).forEach(a => L.push(`  · ${a.ad_name} — ${ttFmt(a.ad_format)} · 문구 «${String(a.ad_text || '').slice(0, 60)}» · CTA ${ttFmt(a.call_to_action)} · ${a.page_id ? '양식 ' + a.page_id : 'URL ' + ttFmt(a.landing_page_url)} · 표시계정 ${ttFmt(a.identity_type)} ${ttFmt(a.identity_id)} · ${ttFmt(a.operation_status)} · 광고그룹 ${a.adgroup_id}`));
+  const adLine = a => `  · ${a._auto ? '(자동변형) ' : ''}${a.ad_name} — ${ttFmt(a.ad_format)}${a.creative_type ? '/' + a.creative_type : ''} · 문구 «${String(a.ad_text || (a.ad_texts || [])[0] || '').slice(0, 60)}» · CTA ${ttFmt(a.call_to_action || a.call_to_action_id)} · ${a.page_id ? '양식/페이지 ' + a.page_id : 'URL ' + ttFmt(a.landing_page_url)} · 영상 ${ttFmt(a.video_id)}${(a.image_ids || []).length ? ' · 이미지 ' + a.image_ids.length + '개' : ''} · 표시계정 ${ttFmt(a.identity_type)} ${ttFmt(a.identity_id)}${a.identity_authorized_bc_id ? ' (BC ' + a.identity_authorized_bc_id + ')' : ''}${a.music_id ? ' · 음악 ' + a.music_id : ''} · ${ttFmt(a.operation_status)}${a.secondary_status ? '/' + a.secondary_status : ''} · 광고그룹 ${a.adgroup_name || a.adgroup_id}`;
+  L.push(`[최근 광고] ${err.ads ? '❌ ' + err.ads : (d.ads || []).length + '개'}${d.adsAutoCount ? ` (틱톡 자동 변형 ${d.adsAutoCount}개는 뒤에 일부만)` : ''}${err.adsExtra ? ' (추가 항목 못 읽음: ' + err.adsExtra + ')' : ''}`);
+  (d.ads || []).forEach(a => L.push(adLine(a)));
+  L.push(`[최근 광고그룹 3개의 광고] ${err.adsOfRecentGroups ? '❌ ' + err.adsOfRecentGroups : (d.adsOfRecentGroups || []).length + '개'}`);
+  (d.adsOfRecentGroups || []).forEach(a => L.push(adLine(a)));
   if (err.locationNames) L.push(`(지역 이름 조회 실패: ${err.locationNames})`);
   return L.join('\n');
 }
@@ -3695,13 +3983,21 @@ function switchPlatform(p) {
   currentPlatform = p;
   document.getElementById('platform-meta-btn').classList.toggle('active', p === 'meta');
   document.getElementById('platform-google-btn').classList.toggle('active', p === 'google');
+  document.getElementById('platform-tiktok-btn').classList.toggle('active', p === 'tiktok');
   document.getElementById('platform-meta-panel').classList.toggle('active', p === 'meta');
   document.getElementById('platform-google-panel').classList.toggle('active', p === 'google');
+  document.getElementById('platform-tiktok-panel').classList.toggle('active', p === 'tiktok');
   document.getElementById('meta-subtabs').style.display = p === 'meta' ? 'flex' : 'none';
   document.getElementById('google-subtabs').style.display = p === 'google' ? 'flex' : 'none';
+  document.getElementById('tiktok-subtabs').style.display = p === 'tiktok' ? 'flex' : 'none';
   const btn = document.getElementById('settingsBtn');
-  if (btn) btn.textContent = p === 'google' ? '⚙ Google 설정' : '⚙ Meta 설정';
+  if (btn) btn.textContent = p === 'google' ? '⚙ Google 설정' : (p === 'tiktok' ? '⚙ TikTok 설정' : '⚙ Meta 설정');
   if (document.getElementById('settingsModal').classList.contains('show')) openSettings();
+  if (p === 'tiktok' && typeof kEnsureLoaded === 'function') kEnsureLoaded();   // 틱톡 탭은 처음 열 때 광고계정 목록을 받아온다
+}
+function switchKTab(n) {
+  if (currentPlatform !== 'tiktok') switchPlatform('tiktok');
+  [1].forEach(i => { const b = document.getElementById(`ktab${i}-btn`); const pn = document.getElementById(`k-tab${i}-panel`); if (b) b.classList.toggle('k-active', i === n); if (pn) pn.classList.toggle('active', i === n); });
 }
 function switchTab(n) {
   if (currentPlatform !== 'meta') switchPlatform('meta');
@@ -5776,7 +6072,8 @@ async function gSwitchGoogleAccount() {
 }
 function gRenderLoginStatus() {
   const el = document.getElementById('g_login_status');
-  if (!el) return;
+  const el2 = document.getElementById('k_login_status');
+  if (!el && !el2) return;
   const c = gTokens.core;
   const who = c && (c.hint || c.name) ? ` <b>${esc(c.hint || c.name)}</b>` : '';
   let html;
@@ -5789,8 +6086,9 @@ function gRenderLoginStatus() {
     html = '로그인 안 됨 · 캠페인을 찾거나 등록할 때 구글 로그인 창이 한 번 뜹니다';
   }
   const y = gTokens.youtube;
+  if (el2) el2.innerHTML = html;
   html += `<br><span style="opacity:.75">YouTube 권한: ${gTokenValid('youtube') ? '있음' : (y && y.token ? '만료됨 (필요할 때 자동 갱신)' : '없음 — 채널 가져오기 때 별도 승인')}</span>`;
-  el.innerHTML = html;
+  if (el) el.innerHTML = html;
 }
 gLoadTokens();
 setInterval(gTokenMaintenance, 60 * 1000);
@@ -8165,6 +8463,1007 @@ function gClearForm(t) {
 document.getElementById('g1_시작일').value = new Date().toISOString().split('T')[0];
 
 /* =========================================================
+   TikTok 광고 등록 (k1) — api/tiktok.js 를 세션으로 직접 부른다 (Make 없음)
+   흐름: 영상 Drive 임시 업로드(붙이자마자) → [등록] 캠페인명 중복 확인(모든 광고계정) → 틱톡 영상 업로드(URL) → 커버 → 캠페인 → 광고그룹 → 광고 → 캠페인 일시중지
+   단계마다 카드에 표시하고 구글 탭과 같은 «등록로그» 시트에 남긴다. 중간에 실패하면 만든 것까지 기억했다가 «이어서 재시도».
+   ========================================================= */
+const TIKTOK_SETTINGS_KEY = 'adtool_tiktok_settings_v1';
+const T_DEFAULTS = {
+  seeded: false,
+  clinics: [],                 // {clinic, short, product, dateCode, advertiserId, regions:[{id,name,path}]}
+  identityName: '오늘의병원', identityId: '9493607a-f8a4-5f34-aba5-c97a607a2e98', identityType: 'BC_AUTH_TT', identityBcId: '',
+  cta: 'LEARN_MORE', budget: 30000, budgetStrategy: 'adgroup', ages: ['AGE_45_54', 'AGE_55_100'],
+  typeWeb: '랜딩', typeForm: '리드', adNameWithFile: true,
+};
+/* 지금 틱톡에서 쓰는 치과별 날짜코드 (진단에서 읽은 값) — 설정 표의 시작값. 표에서 고치면 그게 우선 */
+const K_KNOWN_DATECODES = { '충주인플란트치과': '250606', '양산서울에스원치과': '250301', '서면오늘플란트치과': '260805', '울산더조은플란트치과': '251003', '진주리더플란트치과': '260504', '울산서울탑치과': '230102', '다이트짐': '260505' };
+const TIKTOK_CTA = [
+  { value: 'LEARN_MORE', label: '더 알아보기' }, { value: 'GET_QUOTE', label: '견적 받기' }, { value: 'BOOK_NOW', label: '지금 예약하기' }, { value: 'CONTACT_US', label: '문의하기' },
+  { value: 'APPLY_NOW', label: '지금 신청하기' }, { value: 'SIGN_UP', label: '가입하기' }, { value: 'INTERESTED', label: '관심 있어요' }, { value: 'SUBSCRIBE', label: '구독하기' },
+  { value: 'CALL_NOW', label: '지금 전화하기' }, { value: 'SEND_MESSAGE', label: '메시지 보내기' }, { value: 'VIEW_NOW', label: '지금 보기' }, { value: 'READ_MORE', label: '더 읽기' },
+  { value: 'DOWNLOAD_NOW', label: '지금 다운로드' }, { value: 'SHOP_NOW', label: '지금 쇼핑하기' }, { value: 'ORDER_NOW', label: '지금 주문하기' }, { value: 'VISIT_STORE', label: '매장 방문' },
+  { value: 'WATCH_NOW', label: '지금 시청하기' }, { value: 'EXPERIENCE_NOW', label: '지금 체험하기' }, { value: 'PRE_ORDER_NOW', label: '사전 주문' }, { value: 'GET_TICKETS_NOW', label: '티켓 받기' },
+];
+const K_AGE_ORDER = ['AGE_18_24', 'AGE_25_34', 'AGE_35_44', 'AGE_45_54', 'AGE_55_100'];
+const K_TEXT_LIMIT = 100;   // 틱톡 광고 문구 — 한글은 2로 센다 (구글과 같은 규칙)
+const K_ENGAGE_EVENTS = ['ON_WEB_DETAIL', 'PAGE_VIEW', 'LANDING_PAGE_VIEW', 'BUTTON', 'ON_WEB_SEARCH', 'SEARCH', 'ON_WEB_CART', 'ADD_TO_CART', 'ON_WEB_ADD_TO_WISHLIST', 'ADD_TO_WISHLIST', 'INITIATE_CHECKOUT', 'ON_WEB_ORDER', 'VIEW_CONTENT', 'CLICK_BUTTON'];
+const K_UTM = [{ key: 'campaign_id', value: '__CAMPAIGN_ID__' }, { key: 'adset_id', value: '__AID__' }, { key: 'ad_id', value: '__CID__' }];
+let TSET = JSON.parse(JSON.stringify(T_DEFAULTS));
+function loadTiktokSettings() {
+  try {
+    const raw = localStorage.getItem(TIKTOK_SETTINGS_KEY);
+    if (raw) { const j = JSON.parse(raw) || {}; Object.keys(T_DEFAULTS).forEach(k => { if (j[k] !== undefined) TSET[k] = j[k]; }); }
+  } catch (e) { /* 무시 */ }
+  if (!Array.isArray(TSET.clinics)) TSET.clinics = [];
+  if (!Array.isArray(TSET.ages) || !TSET.ages.length) TSET.ages = T_DEFAULTS.ages.slice();
+}
+function persistTiktokSettings() { try { localStorage.setItem(TIKTOK_SETTINGS_KEY, JSON.stringify(TSET)); } catch (e) { showToast('틱톡 설정 저장 실패', 'error'); } }
+/* 치과 표 시작값 — 알려진 날짜코드 + 구글 설정의 치과·약칭. 이미 있는 치과는 건드리지 않는다 */
+function kSeedClinics(silent) {
+  const have = new Set(TSET.clinics.map(c => normName(c.clinic)));
+  let n = 0;
+  const add = (clinic, short) => {
+    const key = normName(clinic); if (!clinic || have.has(key)) return;
+    have.add(key);
+    const gShort = short || ((GSET.clinics || []).find(c => normName(c.clinic) === key) || {}).short || '';
+    TSET.clinics.push({ clinic, short: gShort, product: /짐$|헬스|필라테스|피티/.test(clinic) ? '' : '임플란트', dateCode: K_KNOWN_DATECODES[clinic] || '', advertiserId: '', regions: [] });
+    n++;
+  };
+  Object.keys(K_KNOWN_DATECODES).forEach(c => add(c, ''));
+  (GSET.clinics || []).forEach(c => add(c.clinic, c.short));
+  // 약칭이 비어 있던 줄도 구글 설정에서 채워 준다
+  TSET.clinics.forEach(c => { if (!c.short) { const g = (GSET.clinics || []).find(x => normName(x.clinic) === normName(c.clinic)); if (g && g.short) c.short = g.short; } });
+  TSET.seeded = true;
+  persistTiktokSettings();
+  if (!silent && n) showToast(`치과 ${n}곳을 가져왔어요 — 약칭·시술·날짜코드를 확인하세요`, 'success');
+  return n;
+}
+function kImportClinicsFromGoogle() { kCollectSettings(); const n = kSeedClinics(false); if (!n) showToast('새로 가져올 치과가 없어요', 'info'); renderTiktokSettings(); markSettingsDirty(); }
+function kClinicByName(name) { const key = normName(name); return (TSET.clinics || []).find(c => normName(c.clinic) === key) || null; }
+/* 설정 → 화면 (치과 드롭다운 · CTA · 기본값) */
+function kApplySettings() {
+  if (!TSET.seeded) kSeedClinics(true);
+  const sel = document.getElementById('k1_치과명');
+  if (sel) {
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">선택</option>' + (TSET.clinics || []).filter(c => c.clinic).map(c => `<option value="${esc(c.clinic)}">${esc(c.clinic)}${c.dateCode ? ' · ' + esc(c.dateCode) : ''}</option>`).join('');
+    if (prev) sel.value = prev;
+  }
+  const cta = document.getElementById('k1_CTA');
+  if (cta) { const prev = cta.value; kFillCta(cta, K.ctaTouched ? (prev || TSET.cta) : TSET.cta); }
+  const budget = document.getElementById('k1_예산');
+  if (budget && !budget.dataset.touched) budget.value = TSET.budget || 30000;
+  const strat = document.querySelector(`input[name="k1_budget_strategy"][value="${TSET.budgetStrategy === 'campaign' ? 'campaign' : 'adgroup'}"]`);
+  if (strat && !K.strategyTouched) { strat.checked = true; kOnBudgetStrategy(true); }
+  if (!K.agesTouched) kSetAges(TSET.ages);
+  if (!kTypeEdited) kFillTypeFromMode();
+  kAutoGenNames();
+}
+function kFillCta(sel, want) {
+  if (!sel) return;
+  sel.innerHTML = TIKTOK_CTA.map(c => `<option value="${c.value}">${esc(c.label)}</option>`).join('');
+  const v = want && TIKTOK_CTA.some(c => c.value === want) ? want : (TIKTOK_CTA.some(c => c.value === TSET.cta) ? TSET.cta : 'LEARN_MORE');
+  sel.value = v;
+}
+function kSetAges(list) {
+  const want = new Set((list || []).map(String));
+  document.querySelectorAll('#k1_연령 input[type="checkbox"]').forEach(cb => { cb.checked = want.has(cb.value); gToggleChip(cb); });
+}
+function kGetAges() { return K_AGE_ORDER.filter(a => { const cb = document.querySelector(`#k1_연령 input[value="${a}"]`); return cb && cb.checked; }); }
+/* 설정 모달 (TikTok) */
+function renderTiktokSettings() {
+  if (!TSET.seeded) kSeedClinics(true);
+  const body = document.getElementById('kset_clinic_body');
+  if (body) {
+    const advOpts = cur => '<option value="">선택 안 함</option>' + (tt.advertisers || []).map(a => `<option value="${esc(a.id)}"${String(a.id) === String(cur || '') ? ' selected' : ''}>${esc(a.name || a.id)}</option>`).join('') + (cur && !(tt.advertisers || []).some(a => String(a.id) === String(cur)) ? `<option value="${esc(cur)}" selected>${esc(cur)}</option>` : '');
+    body.innerHTML = (TSET.clinics || []).map((c, i) => `<tr>
+      <td><input type="text" data-k="clinic" data-i="${i}" value="${esc(c.clinic || '')}" placeholder="양산서울에스원치과"></td>
+      <td><input type="text" data-k="short" data-i="${i}" value="${esc(c.short || '')}" placeholder="양산서울"></td>
+      <td><input type="text" data-k="product" data-i="${i}" value="${esc(c.product || '')}" placeholder="임플란트"></td>
+      <td><input type="text" data-k="dateCode" data-i="${i}" value="${esc(c.dateCode || '')}" placeholder="250301" inputmode="numeric"></td>
+      <td><select data-k="advertiserId" data-i="${i}" style="width:100%;height:34px;border:1px solid var(--border2);border-radius:6px;padding:0 8px;font-family:inherit;font-size:12px;">${advOpts(c.advertiserId)}</select></td>
+      <td style="font-size:11px;color:var(--text2);">${(c.regions || []).length ? esc((c.regions || []).map(r => r.name).join(', ')) : '<span style="color:var(--text3)">없음</span>'}${(c.regions || []).length ? ` <button type="button" class="set-del" title="기본 지역 지우기" onclick="kClearClinicRegions(${i})">✕</button>` : ''}</td>
+      <td><button class="set-del" onclick="kRemoveClinicRow(${i})">✕</button></td></tr>`).join('');
+    if (!(TSET.clinics || []).length) body.innerHTML = '<tr><td colspan="7" style="padding:14px 4px;color:var(--text3);font-size:12px;">비어 있습니다. 아래 버튼으로 추가하세요.</td></tr>';
+  }
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v == null ? '' : v; };
+  set('kset_identityName', TSET.identityName); set('kset_identityId', TSET.identityId); set('kset_identityType', TSET.identityType || 'BC_AUTH_TT'); set('kset_identityBcId', TSET.identityBcId);
+  const ctaSel = document.getElementById('kset_cta'); if (ctaSel) kFillCta(ctaSel, TSET.cta);
+  set('kset_budget', TSET.budget); set('kset_budgetStrategy', TSET.budgetStrategy || 'adgroup'); set('kset_ages', (TSET.ages || []).join(', '));
+  set('kset_typeWeb', TSET.typeWeb); set('kset_typeForm', TSET.typeForm);
+  const cb = document.getElementById('kset_adNameWithFile'); if (cb) cb.checked = TSET.adNameWithFile !== false;
+  const bcHint = document.getElementById('kset_bc_hint');
+  if (bcHint) { const bcs = K.bcs || []; bcHint.textContent = bcs.length ? `API 의 비즈니스 센터: ${bcs.map(b => `${b.name} (${b.id})`).join(', ')}` : ''; }
+  if (typeof gRenderLoginStatus === 'function') gRenderLoginStatus();
+  if (typeof gShowPageBuild === 'function') gShowPageBuild();
+  const kb = document.getElementById('k_page_build'); const gb = document.getElementById('g_page_build'); if (kb && gb) kb.innerHTML = gb.innerHTML;
+}
+function kCollectSettings() {
+  const rows = [];
+  document.querySelectorAll('[data-k]').forEach(el => {
+    const i = Number(el.dataset.i); if (isNaN(i)) return;
+    rows[i] = rows[i] || Object.assign({}, (TSET.clinics || [])[i] || {});
+    rows[i][el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value.trim();
+  });
+  if (document.getElementById('kset_clinic_body')) TSET.clinics = rows.filter(r => r && (r.clinic || r.short || r.dateCode));
+  const val = id => ((document.getElementById(id) || {}).value || '').trim();
+  if (document.getElementById('kset_identityName')) {
+    TSET.identityName = val('kset_identityName'); TSET.identityId = val('kset_identityId'); TSET.identityType = val('kset_identityType') || 'BC_AUTH_TT'; TSET.identityBcId = val('kset_identityBcId').replace(/[^0-9]/g, '');
+    TSET.cta = val('kset_cta') || 'LEARN_MORE';
+    TSET.budget = Math.max(0, parseInt(val('kset_budget'), 10) || 0) || 30000;
+    TSET.budgetStrategy = val('kset_budgetStrategy') === 'campaign' ? 'campaign' : 'adgroup';
+    const ages = val('kset_ages').split(/[,;\s]+/).map(x => x.trim().toUpperCase()).filter(x => K_AGE_ORDER.includes(x));
+    TSET.ages = ages.length ? ages : T_DEFAULTS.ages.slice();
+    TSET.typeWeb = val('kset_typeWeb') || '랜딩'; TSET.typeForm = val('kset_typeForm') || '리드';
+    TSET.adNameWithFile = !!(document.getElementById('kset_adNameWithFile') || {}).checked;
+  }
+}
+function kAddClinicRow() { kCollectSettings(); TSET.clinics.push({ clinic: '', short: '', product: '임플란트', dateCode: '', advertiserId: '', regions: [] }); renderTiktokSettings(); }
+function kRemoveClinicRow(i) { kCollectSettings(); TSET.clinics.splice(i, 1); renderTiktokSettings(); }
+function kClearClinicRegions(i) { kCollectSettings(); if (TSET.clinics[i]) TSET.clinics[i].regions = []; renderTiktokSettings(); }
+function saveTiktokSettingsNow() {
+  kCollectSettings(); persistTiktokSettings(); markSettingsDirty();
+  kApplySettings();
+  showToast('틱톡 설정을 저장했어요', 'success');
+  closeSettings();
+}
+/* 등록 탭에서 고른 지역을 그 치과의 기본 지역으로 */
+function kSaveClinicRegions() {
+  const clinic = kClinicByName((document.getElementById('k1_치과명') || {}).value);
+  if (!clinic) { showToast('치과를 먼저 골라주세요', 'error'); return; }
+  if (!K.regions.length) { showToast('지역을 먼저 골라주세요', 'error'); return; }
+  clinic.regions = K.regions.map(r => ({ id: r.id, name: r.name, path: r.path || '' }));
+  const adv = (document.getElementById('k1_계정') || {}).value; if (adv && !clinic.advertiserId) clinic.advertiserId = adv;
+  persistTiktokSettings(); markSettingsDirty();
+  showToast(`«${clinic.clinic}» 기본 지역 ${clinic.regions.length}곳을 저장했어요 — 모두에게 적용하려면 설정에서 «모두에게 적용»`, 'success', 6000);
+}
+loadTiktokSettings();
+
+/* ── 상태 ── */
+const K = { loaded: false, loading: null, byAdv: {}, regions: [], excl: [], ints: [], acts: [], strategyTouched: false, agesTouched: false, nameEdited: false, bcs: [], rows: [], sent: [], regionTimer: null, regionSeq: 0, check: { key: '', state: '', hit: null, near: null, error: '', timer: null, seq: 0 }, dup: null };
+let kTypeEdited = false;
+async function ttPost(body) {
+  const res = await apiFetch(TIKTOK_PROXY_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), cache: 'no-store' });
+  const j = await res.json().catch(() => ({}));
+  if (res.status === 404) throw new Error('api/tiktok.js 가 배포에 없어요 — GitHub 의 api 폴더에 tiktok.js 를 올리고 재배포하세요');
+  if (res.status === 405) throw new Error('배포된 api/tiktok.js 가 조회 전용(1단계) 버전이에요 — 새 tiktok.js 로 바꿔 재배포하세요');
+  if (!res.ok) { const e = new Error(j.error || `HTTP ${res.status}`); e.code = j.code; e.tried = j.tried; e.sent = j.sent; throw e; }
+  return j;
+}
+function kAdvName(id) { const a = (tt.advertisers || []).find(x => String(x.id) === String(id)); return a ? (a.name || a.id) : String(id || ''); }
+function kHint(id, text, cls) { const el = document.getElementById(id); if (!el) return; el.className = 'field-hint' + (cls ? ' ' + cls : ''); el.innerHTML = text || ''; }
+/* 틱톡 탭을 처음 열 때 — 중계 함수 확인 + 광고계정 목록 */
+async function kEnsureLoaded(force) {
+  if (K.loading) return K.loading;
+  if (K.loaded && !force) return;
+  K.loading = (async () => {
+    const sel = document.getElementById('k1_계정'); if (!sel) return;
+    if (!ENV.isHttp) { sel.innerHTML = '<option value="">배포된 주소에서만</option>'; return; }
+    if (!loginOk()) { sel.innerHTML = '<option value="">로그인 후 사용 가능</option>'; kHint('k1_계정_hint', '🔐 먼저 로그인하세요 (제작자 이름·코드)'); return; }
+    sel.innerHTML = '<option value="">불러오는 중...</option>';
+    try {
+      if (!tt.checked) await ttCheck();
+      if (tt.ping && tt.ping.missing) throw new Error('api/tiktok.js 가 배포에 없어요');
+      if (tt.ping && !tt.ping.hasToken) throw new Error('틱톡 토큰이 아직 없어요 — 설정 → 연동에서 토큰을 만들어 넣으세요');
+      if (!tt.advertisers.length) await ttLoadAdvertisers();
+      const prev = sel.value;
+      kFillStaffName();
+      sel.innerHTML = '<option value="">선택</option>' + tt.advertisers.map(a => `<option value="${esc(a.id)}">${esc(a.name || a.id)}${a.status && !/ENABLE/i.test(a.status) ? ' (' + esc(a.status) + ')' : ''}</option>`).join('');
+      if (prev && tt.advertisers.some(a => a.id === prev)) sel.value = prev;
+      kHint('k1_계정_hint', tt.advertisers.length ? `광고계정 ${tt.advertisers.length}개${tt.ping && tt.ping.build ? ' · 중계 함수 ' + esc(tt.ping.build) : ''}${tt.ping && tt.ping.canWrite ? '' : ' · <b style="color:var(--red)">조회 전용 버전 — 새 tiktok.js 배포 필요</b>'}` : '승인된 광고계정이 없어요', tt.advertisers.length ? '' : 'err');
+      K.loaded = true;
+      const clinic = kClinicByName((document.getElementById('k1_치과명') || {}).value);
+      if (clinic && clinic.advertiserId && !sel.value && tt.advertisers.some(a => a.id === clinic.advertiserId)) { sel.value = clinic.advertiserId; kOnAccount(); }
+      else if (tt.advertisers.length === 1 && !sel.value) { sel.value = tt.advertisers[0].id; kOnAccount(); }
+      try { const b = await ttFetch({ op: 'bcs' }); K.bcs = b.list || []; } catch (e) { /* 선택 사항 */ }
+    } catch (e) {
+      sel.innerHTML = '<option value="">불러오지 못함</option>';
+      kHint('k1_계정_hint', '⚠ ' + esc(e.message) + ' <span class="link-toggle" onclick="kEnsureLoaded(true)">다시 시도</span> · <span class="link-toggle" onclick="openSettings(\'klink\')">연동 확인</span>', 'err');
+    }
+  })().finally(() => { K.loading = null; });
+  return K.loading;
+}
+/* 광고계정을 고르면 그 계정의 표시 계정·픽셀·양식·제외 타겟을 받아온다 (관심사·행동은 검색할 때) */
+function kOnAccount() {
+  const adv = (document.getElementById('k1_계정') || {}).value || '';
+  kAutoGenNames();
+  if (!adv) return;
+  kLoadAccountData(adv).catch(() => {});
+}
+async function kLoadAccountData(adv, force) {
+  const d = K.byAdv[adv] = (!force && K.byAdv[adv]) || { identities: null, pixels: null, pages: null, audiences: null, interests: null, actions: null, errors: {} };
+  const run = async (key, params, pick) => {
+    if (d[key] !== null && !force) return;
+    try { const j = await ttFetch(Object.assign({ advertiser_id: adv }, params)); d[key] = pick(j); d.errors[key] = ''; }
+    catch (e) { d[key] = []; d.errors[key] = e.message; }
+  };
+  kRenderIdentitySelect(adv); kFillPixelSelects(); kFillPageSelect(adv);
+  await Promise.all([
+    run('identities', { op: 'identities' }, j => { if (j.bcs) K.bcs = j.bcs; const errs = Object.values(j.errors || {}).filter(Boolean); if (errs.length && !(j.list || []).length) d.errors.identitiesDetail = errs.join(' / '); return j.list || []; }).then(() => kRenderIdentitySelect(adv)),
+    run('pixels', { op: 'pixels' }, j => j.list || []).then(() => kFillPixelSelects()),
+    run('pages', { op: 'pages' }, j => j.list || []).then(() => kFillPageSelect(adv)),
+    run('audiences', { op: 'audiences' }, j => j.list || []).then(() => kHint('k1_제외_hint', d.errors.audiences ? `⚠ 제외 타겟 목록을 못 받았어요 — ${esc(d.errors.audiences)}` : `맞춤 타겟 ${d.audiences.length}개 — 이름으로 찾아 추가하세요`, d.errors.audiences ? 'err' : '')),
+  ]);
+}
+function kRenderIdentitySelect(adv) {
+  const sel = document.getElementById('k1_아이덴티티'); if (!sel) return;
+  const d = K.byAdv[adv] || {};
+  const list = (d.identities || []).slice();
+  const prev = sel.value;
+  const defId = String(TSET.identityId || ''); const defName = normName(TSET.identityName || '');
+  // 설정의 기본 아이덴티티가 목록에 없으면 맨 위에 넣어 둔다 (목록을 못 받아도 등록은 된다)
+  if (defId && !list.some(i => String(i.id) === defId)) list.unshift({ id: defId, type: TSET.identityType || 'BC_AUTH_TT', name: TSET.identityName || defId, bcId: TSET.identityBcId || '', fromSettings: true });
+  sel.innerHTML = list.length ? list.map(i => `<option value="${esc(i.id)}|${esc(i.type)}|${esc(i.bcId || '')}">${esc(i.name || i.id)} — ${esc(i.type || '')}${i.verified === false ? ' · 미인증' : ''}${i.fromSettings ? ' (설정 기본값)' : ''}</option>`).join('') : '<option value="">표시 계정 없음</option>';
+  let pick = '';
+  if (prev && Array.from(sel.options).some(o => o.value === prev)) pick = prev;
+  else {
+    const hit = list.find(i => String(i.id) === defId) || list.find(i => defName && normName(i.name) === defName) || list[0];
+    if (hit) pick = `${hit.id}|${hit.type}|${hit.bcId || ''}`;
+  }
+  if (pick) sel.value = pick;
+  if (d.identities === null) kHint('k1_아이덴티티_hint', '목록 불러오는 중... (설정 기본값은 바로 쓸 수 있어요)');
+  else if (d.errors.identities || d.errors.identitiesDetail) kHint('k1_아이덴티티_hint', `⚠ 목록을 못 받았어요 — ${esc(d.errors.identities || d.errors.identitiesDetail)} · 설정의 기본 아이덴티티로 등록돼요`, 'err');
+  else kHint('k1_아이덴티티_hint', `표시 계정 ${(d.identities || []).length}개${K.bcs.length ? ' · BC ' + K.bcs.map(b => b.name).join(', ') : ''}`);
+}
+function kSelectedIdentity() {
+  const v = (document.getElementById('k1_아이덴티티') || {}).value || '';
+  const [id, type, bcId] = v.split('|');
+  if (!id) return TSET.identityId ? { id: TSET.identityId, type: TSET.identityType || 'BC_AUTH_TT', bcId: TSET.identityBcId || '' } : null;
+  let bc = bcId || '';
+  if (!bc && (type || 'BC_AUTH_TT') === 'BC_AUTH_TT') bc = TSET.identityBcId || (K.bcs.length === 1 ? K.bcs[0].id : '');
+  return { id, type: type || 'BC_AUTH_TT', bcId: bc };
+}
+function kFillPixelSelects() {
+  const adv = (document.getElementById('k1_계정') || {}).value || '';
+  const d = K.byAdv[adv] || {};
+  const sel = document.getElementById('k1_픽셀'); if (!sel) return;
+  const all = !!(document.getElementById('k1_픽셀_전체') || {}).checked;
+  const prev = sel.value;
+  const list = (d.pixels || []).filter(x => all || x.active !== false);
+  if (d.pixels === null) sel.innerHTML = '<option value="">불러오는 중...</option>';
+  else sel.innerHTML = '<option value="">선택</option>' + list.map(x => `<option value="${esc(x.id)}">${esc(x.name || x.id)}${x.active === false ? ' (비활성)' : ''} · 이벤트 ${(x.events || []).length}개</option>`).join('');
+  const clinic = kClinicByName((document.getElementById('k1_치과명') || {}).value);
+  if (prev && list.some(x => x.id === prev)) sel.value = prev;
+  else if (clinic && clinic.pixelId && list.some(x => x.id === clinic.pixelId)) sel.value = clinic.pixelId;
+  else if (list.length === 1) sel.value = list[0].id;
+  const h = document.getElementById('k1_픽셀_hint');
+  if (h) {
+    const lab = h.querySelector('label');
+    const msg = d.pixels === null ? '' : (d.errors.pixels ? ` <span class="err">⚠ ${esc(d.errors.pixels)}</span>` : ` <span style="color:var(--text3)">픽셀 ${(d.pixels || []).length}개 (활성 ${(d.pixels || []).filter(x => x.active !== false).length}개)</span>`);
+    let span = h.querySelector('[data-role="pxmsg"]'); if (!span) { span = document.createElement('span'); span.dataset.role = 'pxmsg'; h.appendChild(span); }
+    span.innerHTML = msg; if (lab) lab.style.marginRight = '8px';
+  }
+  kOnPixel();
+}
+function kOnPixel() {
+  const adv = (document.getElementById('k1_계정') || {}).value || '';
+  const d = K.byAdv[adv] || {};
+  const pid = (document.getElementById('k1_픽셀') || {}).value || '';
+  const sel = document.getElementById('k1_이벤트'); if (!sel) return;
+  const all = !!(document.getElementById('k1_픽셀_전체') || {}).checked;
+  const px = (d.pixels || []).find(x => x.id === pid);
+  const prev = sel.value;
+  const events = px ? (px.events || []).filter(ev => all || ev.active !== false) : [];
+  sel.innerHTML = px ? (events.length ? '<option value="">선택</option>' + events.map(ev => `<option value="${esc(ev.type)}">${esc(ev.name || ev.type)}${ev.name && ev.name !== ev.type ? ' (' + esc(ev.type) + ')' : ''}${ev.active === false ? ' · 비활성' : ''}</option>`).join('') : '<option value="">이 데이터 세트에 이벤트가 없어요</option>') : '<option value="">데이터 연결 선택 후</option>';
+  if (prev && events.some(ev => ev.type === prev)) sel.value = prev;
+  else {
+    // 리드 이벤트를 먼저 (양식 제출 · 가입 완료 · 문의)
+    const pref = ['FORM', 'ON_WEB_REGISTER', 'CONTACT', 'SUBMIT_FORM', 'ON_WEB_SUBSCRIBE', 'COMPLETE_REGISTRATION'];
+    const hit = pref.map(p => events.find(ev => ev.type === p)).find(Boolean) || (events.length === 1 ? events[0] : null);
+    if (hit) sel.value = hit.type;
+  }
+}
+function kFillPageSelect(adv) {
+  const d = K.byAdv[adv] || {};
+  const sel = document.getElementById('k1_양식'); if (!sel) return;
+  const prev = sel.value;
+  if (d.pages === null) sel.innerHTML = '<option value="">불러오는 중...</option>';
+  else sel.innerHTML = '<option value="">선택</option>' + (d.pages || []).map(p => `<option value="${esc(p.id)}">${esc(p.title || p.id)}${p.status && !/PUBLISH|ACTIVE|ENABLE/i.test(p.status) ? ' (' + esc(p.status) + ')' : ''}</option>`).join('');
+  const clinic = kClinicByName((document.getElementById('k1_치과명') || {}).value);
+  if (prev && (d.pages || []).some(p => p.id === prev)) sel.value = prev;
+  else if (clinic && clinic.pageId && (d.pages || []).some(p => p.id === clinic.pageId)) sel.value = clinic.pageId;
+  kHint('k1_양식_hint', d.pages === null ? '' : (d.errors.pages ? `⚠ 양식 목록을 못 받았어요 — ${esc(d.errors.pages)}` : `인스턴트 양식 ${(d.pages || []).length}개`), d.errors.pages ? 'err' : '');
+}
+function kOnClinic() {
+  const clinic = kClinicByName((document.getElementById('k1_치과명') || {}).value);
+  const sel = document.getElementById('k1_계정');
+  if (clinic && clinic.advertiserId && sel && Array.from(sel.options).some(o => o.value === clinic.advertiserId) && sel.value !== clinic.advertiserId) { sel.value = clinic.advertiserId; kOnAccount(); }
+  if (clinic && (clinic.regions || []).length) { K.regions = clinic.regions.map(r => ({ id: r.id, name: r.name, path: r.path || '' })); kRenderChips('region'); }
+  kFillPixelSelects(); kFillPageSelect(sel ? sel.value : '');
+  kAutoGenNames();
+}
+function kLeadMode() { return (document.getElementById('k1_리드방식') || {}).value === 'form' ? 'form' : 'web'; }
+function kFillTypeFromMode() { const el = document.getElementById('k1_유형'); if (el) el.value = kLeadMode() === 'form' ? (TSET.typeForm || '리드') : (TSET.typeWeb || '랜딩'); }
+function kOnLeadMode() {
+  const web = kLeadMode() === 'web';
+  const w = document.getElementById('k1_web_wrap'), f = document.getElementById('k1_form_wrap'), u = document.getElementById('k1_url_wrap');
+  if (w) w.style.display = web ? '' : 'none'; if (f) f.style.display = web ? 'none' : ''; if (u) u.style.display = web ? '' : 'none';
+  const loc = document.getElementById('k1_최적화위치'); if (loc) loc.value = web ? '웹사이트' : '인스턴트 양식';
+  const attr = document.getElementById('k1_attr_fixed'); if (attr) attr.style.display = web ? '' : 'none';
+  if (!kTypeEdited) kFillTypeFromMode();
+  kCreativeBlocks().forEach(b => { const uw = b.querySelector('[data-role="url_wrap"]'); if (uw) uw.style.display = web ? '' : 'none'; });
+  kAutoGenNames();
+}
+function kOnBudgetStrategy(silent) {
+  if (!silent) K.strategyTouched = true;
+  const cbo = (document.querySelector('input[name="k1_budget_strategy"]:checked') || {}).value === 'campaign';
+  document.querySelectorAll('#k1_예산전략 label').forEach(l => l.classList.toggle('on', !!l.querySelector('input:checked')));
+  const lab = document.getElementById('k1_예산_label'); if (lab) lab.textContent = cbo ? '캠페인 일일예산 (원)' : '광고그룹 일일예산 (원)';
+}
+function kOnPlacement() {
+  const normal = (document.querySelector('input[name="k1_placement"]:checked') || {}).value === 'PLACEMENT_TYPE_NORMAL';
+  document.querySelectorAll('#k1_게재 label').forEach(l => l.classList.toggle('on', !!l.querySelector('input:checked')));
+  const list = document.getElementById('k1_게재목록'); if (list) list.style.display = normal ? 'flex' : 'none';
+}
+/* ── 칩 (지역 · 제외 타겟 · 관심사 · 행동) ── */
+const K_CHIP = { region: { key: 'regions', box: 'k1_지역칩', empty: '지역을 검색해서 추가하세요 (여러 개 가능)' }, aud: { key: 'excl', box: 'k1_제외칩', empty: '' }, int: { key: 'ints', box: 'k1_관심사칩', empty: '' }, act: { key: 'acts', box: 'k1_행동칩', empty: '' } };
+function kRenderChips(kind) {
+  const cfg = K_CHIP[kind]; const box = document.getElementById(cfg.box); if (!box) return;
+  const list = K[cfg.key];
+  box.innerHTML = list.length ? list.map(x => `<span class="kchip" title="${esc(x.path || x.name)}"><b>${esc(x.name)}</b>${x.sub ? `<small>${esc(x.sub)}</small>` : ''}<button type="button" class="x" title="빼기" onclick="kRemoveChip('${kind}','${esc(x.id)}')">✕</button></span>`).join('') : (cfg.empty ? `<span style="font-size:12px;color:var(--text3);">${cfg.empty}</span>` : '');
+}
+function kRemoveChip(kind, id) { const cfg = K_CHIP[kind]; K[cfg.key] = K[cfg.key].filter(x => String(x.id) !== String(id)); if (kind === 'region') K.regionsTouched = true; kRenderChips(kind); }
+function kAddChip(kind, item) { const cfg = K_CHIP[kind]; if (K[cfg.key].some(x => String(x.id) === String(item.id))) return; K[cfg.key].push(item); if (kind === 'region') K.regionsTouched = true; kRenderChips(kind); }
+function kOnRegionInput() {
+  clearTimeout(K.regionTimer);
+  const q = ((document.getElementById('k1_지역검색') || {}).value || '').trim();
+  const box = document.getElementById('k1_지역결과'); if (!box) return;
+  if (q.length < 1) { box.classList.remove('show'); box.innerHTML = ''; return; }
+  box.innerHTML = '<div class="region-result">검색 중...</div>'; box.classList.add('show');
+  K.regionTimer = setTimeout(kRegionSearchNow, 350);
+}
+async function kRegionSearchNow() {
+  const q = ((document.getElementById('k1_지역검색') || {}).value || '').trim();
+  const box = document.getElementById('k1_지역결과'); if (!box) return;
+  const adv = (document.getElementById('k1_계정') || {}).value || (tt.advertisers[0] || {}).id || '';
+  if (!adv) { box.innerHTML = '<div class="region-result">광고계정을 먼저 고르세요</div>'; box.classList.add('show'); return; }
+  if (!q) { box.classList.remove('show'); return; }
+  const seq = ++K.regionSeq;
+  try {
+    const j = await ttFetch({ op: 'region', advertiser_id: adv, q });
+    if (seq !== K.regionSeq) return;
+    const list = j.list || [];
+    box.innerHTML = list.length ? list.slice(0, 30).map((r, i) => `<div class="region-result" onclick="kPickRegion(${i})"><span><b>${esc(r.name)}</b> <span class="sub">${esc(r.path || '')}</span></span><span class="sub">${esc(r.level || '')}</span></div>`).join('') : '<div class="region-result">검색 결과가 없어요</div>';
+    K.regionFound = list;
+    box.classList.add('show');
+  } catch (e) { box.innerHTML = `<div class="region-result">❌ ${esc(e.message)}</div>`; box.classList.add('show'); }
+}
+function kPickRegion(i) {
+  const r = (K.regionFound || [])[i]; if (!r) return;
+  kAddChip('region', { id: r.id, name: r.name, path: r.path || '', sub: r.level || '' });
+  const box = document.getElementById('k1_지역결과'); if (box) { box.classList.remove('show'); box.innerHTML = ''; }
+  const inp = document.getElementById('k1_지역검색'); if (inp) { inp.value = ''; inp.focus({ preventScroll: true }); }
+}
+/* 제외 타겟 · 관심사 · 행동 — 목록을 받아 두고 이름으로 거른다 */
+const K_PICK = { aud: { key: 'audiences', input: 'k1_제외검색', box: 'k1_제외결과', hint: 'k1_제외_hint', chip: 'aud', op: 'audiences' }, int: { key: 'interests', input: 'k1_관심사검색', box: 'k1_관심사결과', hint: 'k1_관심사_hint', chip: 'int', op: 'interests' }, act: { key: 'actions', input: 'k1_행동검색', box: 'k1_행동결과', hint: 'k1_행동_hint', chip: 'act', op: 'actions' } };
+async function kEnsureList(kind) {
+  const cfg = K_PICK[kind];
+  const adv = (document.getElementById('k1_계정') || {}).value || '';
+  if (!adv) return null;
+  const d = K.byAdv[adv] = K.byAdv[adv] || { identities: null, pixels: null, pages: null, audiences: null, interests: null, actions: null, errors: {} };
+  if (d[cfg.key] !== null) return d[cfg.key];
+  try {
+    const j = await ttFetch({ op: cfg.op, advertiser_id: adv });
+    d[cfg.key] = j.list || []; d.errors[cfg.key] = (j.errors && j.errors.length && !d[cfg.key].length) ? j.errors.join(' / ') : '';
+  } catch (e) { d[cfg.key] = []; d.errors[cfg.key] = e.message; }
+  return d[cfg.key];
+}
+let kPickTimer = null;
+function kOnPickInput(kind) {
+  clearTimeout(kPickTimer);
+  kPickTimer = setTimeout(() => kPickSearch(kind), 250);
+}
+async function kPickSearch(kind) {
+  const cfg = K_PICK[kind];
+  const box = document.getElementById(cfg.box); const inp = document.getElementById(cfg.input); if (!box || !inp) return;
+  const adv = (document.getElementById('k1_계정') || {}).value || '';
+  if (!adv) { box.innerHTML = '<div class="region-result">광고계정을 먼저 고르세요</div>'; box.classList.add('show'); return; }
+  box.innerHTML = '<div class="region-result">목록 불러오는 중...</div>'; box.classList.add('show');
+  const list = await kEnsureList(kind);
+  const d = K.byAdv[adv] || { errors: {} };
+  if (d.errors && d.errors[cfg.key]) { kHint(cfg.hint, `⚠ 목록을 못 받았어요 — ${esc(d.errors[cfg.key])}`, 'err'); box.innerHTML = `<div class="region-result">❌ ${esc(d.errors[cfg.key])}</div>`; return; }
+  const q = (inp.value || '').trim().toLowerCase();
+  const chosen = new Set(K[K_CHIP[cfg.chip].key].map(x => String(x.id)));
+  const pool = (list || []).filter(x => !chosen.has(String(x.id)));
+  const found = (q ? pool.filter(x => `${x.name} ${x.path || ''} ${x.type || ''}`.toLowerCase().includes(q)) : pool).slice(0, 40);
+  K.pickFound = K.pickFound || {}; K.pickFound[kind] = found;
+  box.innerHTML = found.length ? found.map((x, i) => `<div class="region-result" onclick="kPick('${kind}',${i})"><span><b>${esc(x.name)}</b> <span class="sub">${esc(x.path && x.path !== x.name ? x.path : (x.type || ''))}${x.size != null ? ' · ' + Number(x.size).toLocaleString() + '명' : ''}${x.valid === false ? ' · 사용 불가' : ''}${x.scene && x.scene !== 'VIDEO_RELATED' ? ' · ' + esc(x.scene) : ''}</span></span></div>`).join('') : `<div class="region-result">${(list || []).length ? '검색 결과가 없어요' : '목록이 비어 있어요'}</div>`;
+  box.classList.add('show');
+  if (!q) kHint(cfg.hint, `${(list || []).length}개 중에서 고르세요`);
+}
+function kPick(kind, i) {
+  const cfg = K_PICK[kind];
+  const x = ((K.pickFound || {})[kind] || [])[i]; if (!x) return;
+  kAddChip(cfg.chip, { id: x.id, name: x.name, path: x.path || '', sub: kind === 'act' ? (x.scene || '') : (x.type || ''), scene: x.scene || '' });
+  const box = document.getElementById(cfg.box); if (box) { box.classList.remove('show'); box.innerHTML = ''; }
+  const inp = document.getElementById(cfg.input); if (inp) inp.value = '';
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.ksearch-wrap')) document.querySelectorAll('#platform-tiktok-panel .region-results.show').forEach(b => b.classList.remove('show'));
+});
+
+/* ── 이름 ── */
+function kNameParts() {
+  const clinic = kClinicByName((document.getElementById('k1_치과명') || {}).value) || {};
+  return { full: clinic.clinic || '', short: clinic.short || '', product: clinic.product === undefined ? '임플란트' : clinic.product, dateCode: clinic.dateCode || '', type: ((document.getElementById('k1_유형') || {}).value || '').trim(), staff: ((document.getElementById('k1_제작자') || {}).value || '').trim(), date: ((document.getElementById('k1_날짜') || {}).value || '').trim(), memo: ((document.getElementById('k1_메모') || {}).value || '').trim() };
+}
+function kBuildCampaignName() {
+  const p = kNameParts();
+  if (!p.full) return '';
+  return [p.short || p.full, p.product, p.type, p.date ? `(${p.date})` : '', p.staff, p.memo].filter(Boolean).join(' ');
+}
+function kBuildGroupName(token) { const p = kNameParts(); if (!p.full) return ''; return [p.full, p.product, p.type, token, p.dateCode].filter(Boolean).join(' '); }
+function kAdNameFor(i, fileBase) {
+  const base = kBuildGroupName(`1.${i}T`); if (!base) return '';
+  const fb = String(fileBase || '').replace(/\.[^.]+$/, '').trim();
+  return (TSET.adNameWithFile !== false && fb) ? `${fb}_${base}` : base;
+}
+function kAutoGenNames() {
+  const camp = kBuildCampaignName();
+  const el = document.getElementById('k1_캠페인명');
+  if (el && !K.nameEdited) { el.value = camp; growNameBox(el); }
+  kScheduleNameCheck();
+  const g = document.getElementById('k1_광고그룹명'); if (g) g.value = kBuildGroupName('1T');
+  const blocks = kCreativeBlocks();
+  const n = blocks.length || 1;
+  const first = kAdNameFor(1, kCardFileBase(blocks[0]));
+  const a = document.getElementById('k1_광고명'); if (a) a.value = first ? (n > 1 ? `${first} 외 ${n - 1}개 (1.2T~1.${n}T)` : first) : '';
+  kUpdateCardAdNames();
+}
+function kOnCampaignNameEdit() { K.nameEdited = true; growNameBox(document.getElementById('k1_캠페인명')); kScheduleNameCheck(); }
+function kResetCampaignName() { K.nameEdited = false; kAutoGenNames(); showToast('자동 이름으로 되돌렸어요', 'success'); }
+/* 캠페인명 중복 — 모든 광고계정에서 (틱톡은 계정마다 같은 이름을 받아주지만 우리 기준으론 전체에서 하나) */
+async function kCampaignNameTaken(name) {
+  const full = String(name || '').trim();
+  if (!full) return { ok: true, hit: null, near: null };
+  const want = normName(full), loose = looseName(full);
+  const sent = K.sent.find(x => normName(x.name) === want);
+  if (sent) return { ok: true, hit: { id: sent.id || '', name: sent.name, advertiserName: kAdvName(sent.advertiserId), fromPage: true }, near: null };
+  const words = full.split(/\s+/).filter(Boolean);
+  const q = words.slice(0, 2).join(' ');
+  try {
+    const j = await ttFetch({ op: 'campaign_search', q });
+    const list = j.list || [];
+    const errs = Object.keys(j.errors || {}).length;
+    const hit = list.find(c => String(c.name || '').trim() === full) || list.find(c => normName(c.name) === want) || null;
+    const near = hit ? null : (list.find(c => looseName(c.name) === loose) || null);
+    if (!hit && !near && errs) return { ok: false, hit: null, near: null, error: `광고계정 ${errs}개를 못 봤어요 (${Object.values(j.errors)[0]})` };
+    return { ok: true, hit, near, scanned: j.advertisers };
+  } catch (e) { return { ok: false, hit: null, near: null, error: e.message }; }
+}
+function kScheduleNameCheck() {
+  const st = K.check;
+  const name = ((document.getElementById('k1_캠페인명') || {}).value || '').trim();
+  if (name === st.key && st.state && st.state !== 'fail') { kRenderCampaignNameHint(); return; }
+  clearTimeout(st.timer);
+  if (!name) { st.key = name; st.state = ''; st.hit = null; st.near = null; st.error = ''; kRenderCampaignNameHint(); return; }
+  st.key = name; st.state = 'checking'; st.hit = null; st.near = null; st.error = '';
+  kRenderCampaignNameHint();
+  const seq = ++st.seq;
+  st.timer = setTimeout(async () => {
+    let r;
+    if (!loginOk()) r = { ok: false, hit: null, near: null, error: '로그인이 필요해요' };
+    else if (!K.loaded) r = { ok: false, hit: null, near: null, error: '광고계정 목록을 아직 못 받았어요' };
+    else r = await kCampaignNameTaken(name);
+    if (seq !== st.seq) return;
+    st.state = !r.ok ? 'fail' : (r.hit ? 'dup' : (r.near ? 'near' : 'ok'));
+    st.hit = r.hit || null; st.near = r.near || null; st.error = r.error || '';
+    if (st.state === 'dup' || st.state === 'near') K.dup = st.hit || st.near;
+    else if (K.dup && normName(K.dup.name) === normName(name)) K.dup = null;
+    kRenderCampaignNameHint();
+  }, 800);
+}
+function kRenderCampaignNameHint() {
+  const el = document.getElementById('k1_캠페인명_hint'); if (!el) return;
+  const cur = ((document.getElementById('k1_캠페인명') || {}).value || '').trim();
+  const editTail = K.nameEdited ? ` <span class="link-toggle" style="margin-left:6px;" onclick="kResetCampaignName()">자동으로 되돌리기</span>` : '';
+  const who = c => c.fromPage ? '방금 이 페이지에서 보낸 이름' : `${c.advertiserName ? c.advertiserName + ' · ' : ''}ID ${c.id}${c.status ? ' · ' + c.status : ''}`;
+  const dup = K.dup;
+  if (dup && cur && looseName(cur) === looseName(dup.name)) {
+    el.className = 'field-hint err';
+    const exact = String(dup.name || '').trim() === cur || normName(cur) === normName(dup.name);
+    el.innerHTML = (exact ? `⚠ 같은 이름의 캠페인이 이미 있어요 (${who(dup)}) — 이름은 바꾸지 않습니다. 날짜 차수(▲)를 올리거나 틱톡에서 그 캠페인을 정리한 뒤 다시 보내세요` : `⚠ 공백·문자만 다른 <b>거의 같은 이름</b>의 캠페인이 있어요 (${who(dup)})`) + editTail;
+    return;
+  }
+  const st = K.check;
+  const live = st && cur && st.key === cur ? st.state : '';
+  if (live === 'checking') { el.className = 'field-hint'; el.innerHTML = `🔎 모든 광고계정에 같은 이름이 있는지 확인 중...${editTail}`; return; }
+  if (live === 'ok') { el.className = 'field-hint ok'; el.innerHTML = `✅ 모든 광고계정에 같은 이름 없음 — 등록할 때 한 번 더 확인합니다${editTail}`; return; }
+  if (live === 'fail') { el.className = 'field-hint err'; el.innerHTML = `⚠ 중복을 확인하지 못했어요 (${esc(st.error || '연결 확인')}) — 등록 버튼을 누르면 다시 확인합니다${editTail}`; return; }
+  el.className = 'field-hint' + (K.nameEdited ? ' ok' : '');
+  el.innerHTML = K.nameEdited ? `✏️ 직접 고친 이름으로 등록됩니다${editTail}` : '치과·날짜·제작자를 고르면 자동으로 만들어져요 — 모든 광고계정에서 같은 이름이 있는지 확인합니다';
+}
+
+/* ── 광고 소재 카드 (1카드 = 영상 1개 = 광고 1개) ── */
+const K_CREATIVE_MAX = 10;
+let kCreativeSeq = 0;
+function kCreativeBlocks() { const list = document.getElementById('k1_creative_list'); return list ? Array.from(list.children) : []; }
+function kCardFileBase(block) {
+  if (!block) return '';
+  const f = block.querySelector('[data-role="파일첨부"]');
+  if (f && f.files && f.files[0]) return f.files[0].name;
+  return block.dataset.driveName || '';
+}
+function kAddCreativeBlock() {
+  const list = document.getElementById('k1_creative_list'); if (!list) return;
+  if (list.children.length >= K_CREATIVE_MAX) { showToast(`광고는 한 번에 최대 ${K_CREATIVE_MAX}개까지예요`, 'error'); return; }
+  const id = `k1_kcr_${kCreativeSeq++}`;
+  const idx = list.children.length + 1;
+  const block = document.createElement('div');
+  block.className = 'creative-card'; block.id = id; block.style.flex = '0 0 520px';
+  block.innerHTML = `
+    <div class="creative-card-head"><span class="creative-card-title">광고 ${idx}</span>
+      <button type="button" class="creative-remove" onclick="kRemoveCreativeBlock('${id}')">삭제</button>
+    </div>
+    <div class="creative-adname is-empty" data-role="광고명">치과 선택 시 광고명 자동생성</div>
+    <div class="gcard-cols">
+      <div class="gcard-col">
+        <div class="gcard-sub">영상 (단일 동영상)</div>
+        <div class="gvideo" data-role="video">
+          <div data-role="upload_wrap">
+            <div class="creative-drop" data-role="dropzone" onclick="kOpenCardFile(this)" ondragover="onCreativeDragOver(event,this)" ondragleave="onCreativeDragLeave(this)" ondrop="kOnCardDrop(event,this)">📎 클릭하거나 드래그<br><span style="font-size:11px;color:var(--text3);">영상 (mp4 · 세로 9:16 권장)</span></div>
+            <input type="file" data-role="파일첨부" accept="video/*" style="display:none;" onchange="kOnCardFileSelected(this)">
+          </div>
+          <span class="gvideo-link" data-role="drive_toggle" onclick="kToggleSlotDrive(this)">Drive에 있는 영상이면 링크·파일ID로 넣기</span>
+          <div data-role="drive_wrap" style="display:none;margin-top:4px;"><input type="text" data-role="파일ID" placeholder="Drive 링크 또는 파일ID 붙여넣기" oninput="extractDriveId(this);kOnSlotDriveInput(this)"></div>
+          <div class="field" style="margin:6px 0 0;"><input type="text" data-role="파일명" placeholder="광고명 앞에 붙을 영상 이름 (파일명 자동)" oninput="kAutoGenNames()"></div>
+        </div>
+      </div>
+      <div class="gcard-col right" data-role="text_wrap">
+        <div class="gcard-sub">광고 문구</div>
+        <div class="field"><label>텍스트 <span class="len-tag" data-role="len" style="float:right;">0/${K_TEXT_LIMIT}</span></label><textarea data-role="텍스트" placeholder="예: 양산 시민이라면 정품 포인트 임플란트 29만원에 가능!!" oninput="kUpdateLenTag(this);kSyncCreativeCommon()"></textarea></div>
+        <div class="field" data-role="url_wrap"><label>웹사이트 URL <span class="auto-tag tt">공통값 대신 쓰려면</span></label><input type="text" data-role="URL" placeholder="비우면 공통 URL" oninput="kSyncCreativeCommon()"></div>
+      </div>
+    </div>`;
+  list.appendChild(block);
+  const uw = block.querySelector('[data-role="url_wrap"]'); if (uw) uw.style.display = kLeadMode() === 'web' ? '' : 'none';
+  kApplyCreativeCommon(); kSyncCreativeCommon(); kUpdateCreativeCount(); kAutoGenNames();
+}
+function kRemoveCreativeBlock(id) {
+  const list = document.getElementById('k1_creative_list');
+  if (list.children.length <= 1) { showToast('소재는 1개 이상 있어야 해요', 'error'); return; }
+  document.getElementById(id)?.remove();
+  kCreativeBlocks().forEach((b, i) => { const t = b.querySelector('.creative-card-title'); if (t) t.textContent = `광고 ${i + 1}`; });
+  kApplyCreativeCommon(); kUpdateCreativeCount(); kAutoGenNames();
+}
+function kUpdateCreativeCount() { const n = kCreativeBlocks().length; const el = document.getElementById('k1_creative_count'); if (el) el.textContent = `소재 ${n}개 · 광고그룹 1개에 광고 ${n}개가 만들어져요`; }
+function kUpdateLenTag(ta) {
+  const tag = ta.parentElement && ta.parentElement.querySelector('[data-role="len"]'); if (!tag) return;
+  const w = gTextWidth(ta.value); tag.textContent = `${w}/${K_TEXT_LIMIT}`; tag.classList.toggle('over', w > K_TEXT_LIMIT); tag.title = '틱톡은 한글 한 글자를 2로 세요';
+}
+function kToggleCreativeCommon() { kApplyCreativeCommon(); kSyncCreativeCommon(); }
+function kApplyCreativeCommon() {
+  const on = !!(document.getElementById('k1_creative_common') || {}).checked;
+  kCreativeBlocks().forEach((b, i) => { const w = b.querySelector('[data-role="text_wrap"]'); const hide = on && i > 0; if (w) w.style.display = hide ? 'none' : 'block'; b.style.flex = hide ? '0 0 280px' : '0 0 520px'; });
+}
+function kSyncCreativeCommon() {
+  const on = !!(document.getElementById('k1_creative_common') || {}).checked;
+  if (!on) return;
+  const blocks = kCreativeBlocks(); const first = blocks[0]; if (!first) return;
+  ['텍스트', 'URL'].forEach(role => {
+    const v = (first.querySelector(`[data-role="${role}"]`) || {}).value || '';
+    blocks.forEach((b, i) => { if (i === 0) return; const el = b.querySelector(`[data-role="${role}"]`); if (el) { el.value = v; if (role === '텍스트') kUpdateLenTag(el); } });
+  });
+}
+function kOpenCardFile(dz) { const input = dz.parentElement.querySelector('[data-role="파일첨부"]'); if (input) input.click(); }
+function kOnCardDrop(e, dz) {
+  e.preventDefault(); onCreativeDragLeave(dz);
+  const file = e.dataTransfer.files[0]; if (!file) return;
+  const input = dz.parentElement.querySelector('[data-role="파일첨부"]');
+  const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files;
+  kOnCardFileSelected(input);
+}
+function kOnCardFileSelected(input) {
+  const slot = input.closest('[data-role="video"]'); const block = input.closest('.creative-card'); if (!slot || !block) return;
+  const file = input.files[0]; if (!file) return;
+  setCreativeDropText(slot.querySelector('[data-role="dropzone"]'), file.name);
+  slot.dataset.uploadedId = ''; slot.dataset.coverId = ''; slot.querySelector('[data-role="파일ID"]').value = '';
+  const dw = slot.querySelector('[data-role="drive_wrap"]'); const dl = slot.querySelector('[data-role="drive_toggle"]');
+  if (dw) dw.style.display = 'none'; if (dl) dl.textContent = 'Drive에 있는 영상이면 링크·파일ID로 넣기';
+  const nm = slot.querySelector('[data-role="파일명"]'); if (nm && !nm.dataset.touched) nm.value = file.name.replace(/\.[^.]+$/, '');
+  block.dataset.driveName = '';
+  kAutoGenNames();
+  kPrefetchDriveUpload(slot);
+}
+function kToggleSlotDrive(link) {
+  const slot = link.closest('[data-role="video"]'); if (!slot) return;
+  const wrap = slot.querySelector('[data-role="drive_wrap"]'); const open = wrap.style.display === 'none';
+  wrap.style.display = open ? 'block' : 'none'; link.textContent = open ? '접기' : 'Drive에 있는 영상이면 링크·파일ID로 넣기';
+  if (open) { try { wrap.querySelector('input').focus({ preventScroll: true }); } catch (e) {} }
+}
+function kOnSlotDriveInput(input) {
+  const slot = input.closest('[data-role="video"]'); const block = input.closest('.creative-card'); if (!slot) return;
+  const dz = slot.querySelector('[data-role="dropzone"]');
+  const id = (input.value || '').trim();
+  if (id && id !== (slot.dataset.uploadedId || '')) {
+    dz.innerHTML = `🔗 Drive 파일 사용<br><span style="font-size:11px;color:var(--text3);">${esc(id)} · 클릭하면 대신 파일 첨부</span>`;
+    // 파일 이름을 Drive 에서 읽어 광고명에 쓴다 (구글 로그인돼 있을 때만)
+    if (typeof gTokenValid === 'function' && gTokenValid('core')) {
+      gAuthFetch('core', `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?fields=name`).then(r => r.ok ? r.json() : null).then(j => {
+        if (!j || !j.name || (input.value || '').trim() !== id) return;
+        block.dataset.driveName = j.name; const nm = slot.querySelector('[data-role="파일명"]'); if (nm && !nm.dataset.touched && !nm.value) nm.value = j.name.replace(/\.[^.]+$/, '');
+        kAutoGenNames();
+      }).catch(() => {});
+    }
+  } else if (!id) {
+    const f = slot.querySelector('[data-role="파일첨부"]');
+    if (f && f.files[0]) setCreativeDropText(dz, f.files[0].name);
+    else dz.innerHTML = '📎 클릭하거나 드래그<br><span style="font-size:11px;color:var(--text3);">영상 (mp4 · 세로 9:16 권장)</span>';
+  }
+}
+/* 영상 한 장면을 커버 후보로 뽑는다 (틱톡 추천 커버가 안 될 때 쓴다) — 실패해도 등록은 된다 */
+function kCaptureCover(file) {
+  return new Promise(resolve => {
+    try {
+      const url = URL.createObjectURL(file); const v = document.createElement('video');
+      v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = url;
+      const done = blob => { try { URL.revokeObjectURL(url); } catch (e) {} resolve(blob || null); };
+      const timer = setTimeout(() => done(null), 8000);
+      v.onloadeddata = () => { try { v.currentTime = Math.min(1, Math.max(0.1, (v.duration || 2) * 0.1)); } catch (e) { clearTimeout(timer); done(null); } };
+      v.onseeked = () => {
+        try {
+          const c = document.createElement('canvas'); c.width = v.videoWidth || 720; c.height = v.videoHeight || 1280;
+          c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+          c.toBlob(b => { clearTimeout(timer); done(b); }, 'image/jpeg', 0.88);
+        } catch (e) { clearTimeout(timer); done(null); }
+      };
+      v.onerror = () => { clearTimeout(timer); done(null); };
+    } catch (e) { resolve(null); }
+  });
+}
+const kUploadInFlight = new WeakMap();
+async function kPrefetchDriveUpload(slot) {
+  const dz = slot.querySelector('[data-role="dropzone"]'); const input = slot.querySelector('[data-role="파일첨부"]');
+  const file = input && input.files[0]; if (!file) return;
+  const badge = (txt, color) => { let el = dz.querySelector('[data-role="upstat"]'); if (!el) { el = document.createElement('div'); el.dataset.role = 'upstat'; el.style.cssText = 'font-size:10px;margin-top:4px;'; dz.appendChild(el); } el.style.color = color; el.textContent = txt; };
+  if (!(await gGoogleReady())) { badge('구글 로그인 뒤 등록할 때 올립니다', 'var(--text3)'); return; }
+  badge(`Drive에 올리는 중... (${(file.size / 1048576).toFixed(1)}MB)`, 'var(--blue)');
+  const p = (async () => {
+    const id = await uploadFileToDrive(file);
+    if (input.files[0] !== file) return null;
+    slot.dataset.uploadedId = id; slot.querySelector('[data-role="파일ID"]').value = id;
+    badge(gUploadPermissionFailed[id] ? '⚠ 올라갔지만 공유 설정에 실패했어요 — 틱톡이 못 읽을 수 있으니 다시 첨부해 보세요' : '✓ Drive 업로드 완료 — 등록 시 틱톡이 받아 가요', gUploadPermissionFailed[id] ? 'var(--red)' : '#047857');
+    // 커버 후보도 미리 올려 둔다 (작은 jpg)
+    try { const blob = await kCaptureCover(file); if (blob && input.files[0] === file) { const cf = new File([blob], file.name.replace(/\.[^.]+$/, '') + '_cover.jpg', { type: 'image/jpeg' }); slot.dataset.coverId = await uploadFileToDrive(cf); } } catch (e) { /* 선택 사항 */ }
+    return id;
+  })();
+  kUploadInFlight.set(slot, p);
+  try { await p; }
+  catch (e) {
+    badge('미리 올리기 실패 — 등록할 때 다시 올립니다 (' + e.message + ')', 'var(--red)');
+    slot.dataset.uploadedId = ''; slot.querySelector('[data-role="파일ID"]').value = '';
+  } finally { if (kUploadInFlight.get(slot) === p) kUploadInFlight.delete(slot); }
+}
+function kCollectCreatives() {
+  const common = !!(document.getElementById('k1_creative_common') || {}).checked;
+  const blocks = kCreativeBlocks(); const first = blocks[0];
+  const pick = (b, role) => { const src = (common && b !== first) ? first : b; return ((src.querySelector(`[data-role="${role}"]`) || {}).value || '').trim(); };
+  return blocks.map((b, i) => {
+    const slot = b.querySelector('[data-role="video"]');
+    const fileInput = slot.querySelector('[data-role="파일첨부"]');
+    const file = fileInput && fileInput.files[0] ? fileInput.files[0] : null;
+    const fileId = (slot.querySelector('[data-role="파일ID"]').value || '').trim();
+    const nameEl = slot.querySelector('[data-role="파일명"]');
+    const fileBase = (nameEl && nameEl.value.trim()) || (file ? file.name : (b.dataset.driveName || ''));
+    return { block: b, slot, 순번: i + 1, 파일첨부: file, 파일명: file ? file.name : (b.dataset.driveName || ''), 파일ID: fileId, 미리올림: !!(fileId && slot.dataset.uploadedId === fileId), 커버ID: slot.dataset.coverId || '', 영상이름: fileBase, 광고명: kAdNameFor(i + 1, fileBase), 텍스트: pick(b, '텍스트'), CTA버튼: (document.getElementById('k1_CTA') || {}).value || TSET.cta, URL: pick(b, 'URL') };
+  });
+}
+function kUpdateCardAdNames() {
+  kCreativeBlocks().forEach((b, i) => {
+    const box = b.querySelector('[data-role="광고명"]'); if (!box) return;
+    const name = kAdNameFor(i + 1, kCardFileBase(b) || ((b.querySelector('[data-role="파일명"]') || {}).value || ''));
+    if (name) { box.classList.remove('is-empty'); box.innerHTML = `<strong>${esc(name)}</strong>`; box.title = name; } else { box.classList.add('is-empty'); box.textContent = '치과 선택 시 광고명 자동생성'; box.title = ''; }
+  });
+}
+/* ── 수집 · 검증 ── */
+function kGetData() {
+  const web = kLeadMode() === 'web';
+  const adv = (document.getElementById('k1_계정') || {}).value || '';
+  const parts = kNameParts();
+  const cards = kCollectCreatives();
+  const commonUrl = ((document.getElementById('k1_URL') || {}).value || '').trim();
+  const placementNormal = (document.querySelector('input[name="k1_placement"]:checked') || {}).value === 'PLACEMENT_TYPE_NORMAL';
+  const pixelSel = document.getElementById('k1_픽셀');
+  const pxName = pixelSel && pixelSel.selectedOptions[0] ? pixelSel.selectedOptions[0].textContent : '';
+  const ev = ((document.getElementById('k1_이벤트') || {}).value || '').trim();
+  const d = {
+    플랫폼: 'tiktok', 상태: '대기중',
+    제작자: parts.staff, 날짜: parts.date, 유형: parts.type, 메모: parts.memo,
+    광고계정ID: adv, 광고계정명: kAdvName(adv), 치과명: parts.full, 약칭: parts.short, 시술: parts.product, 날짜코드: parts.dateCode,
+    리드방식: web ? 'web' : 'form', 캠페인명: ((document.getElementById('k1_캠페인명') || {}).value || '').trim(), 광고그룹명: kBuildGroupName('1T'),
+    예산전략: (document.querySelector('input[name="k1_budget_strategy"]:checked') || {}).value === 'campaign' ? 'campaign' : 'adgroup',
+    예산: Math.max(0, parseInt((document.getElementById('k1_예산') || {}).value, 10) || 0),
+    픽셀ID: web ? ((pixelSel || {}).value || '') : '', 픽셀명: web ? pxName : '', 이벤트: web ? ev : '',
+    최적화목표: web ? (K_ENGAGE_EVENTS.includes(ev.toUpperCase()) ? 'LEAD_WEB_ENGAGEMENT' : 'LEADS') : 'LEADS',
+    양식ID: web ? '' : ((document.getElementById('k1_양식') || {}).value || ''),
+    지역목록: K.regions.map(r => ({ id: r.id, name: r.name, path: r.path || '' })), 연령: kGetAges(), 성별: (document.getElementById('k1_성별') || {}).value || 'GENDER_UNLIMITED', 언어: ['ko'],
+    제외타겟: K.excl.map(x => ({ id: x.id, name: x.name })), 관심사: K.ints.map(x => ({ id: x.id, name: x.name })), 행동: K.acts.map(x => ({ id: x.id, name: x.name, scene: x.scene || 'VIDEO_RELATED' })),
+    게재방식: placementNormal ? 'PLACEMENT_TYPE_NORMAL' : 'PLACEMENT_TYPE_AUTOMATIC', 게재위치: placementNormal ? Array.from(document.querySelectorAll('#k1_게재목록 input:checked')).map(x => x.value) : [],
+    아이덴티티: kSelectedIdentity(), CTA: (document.getElementById('k1_CTA') || {}).value || TSET.cta, 공통URL: commonUrl, URL파라미터: K_UTM.slice(),
+    광고목록: cards.map(c => ({ 순번: c.순번, 광고명: c.광고명, 영상이름: c.영상이름, 파일ID: c.파일ID, 파일명: c.파일명, 미리올림: c.미리올림, 커버ID: c.커버ID, 텍스트: c.텍스트, CTA버튼: c.CTA버튼, URL: web ? (c.URL || commonUrl) : '', 파일첨부: c.파일첨부, slot: c.slot })),
+  };
+  return d;
+}
+function kFocusBad(el, msg) {
+  if (el) { el.classList.add('is-invalid'); try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {} try { el.focus({ preventScroll: true }); } catch (e) {} gKeepViewportTop(); setTimeout(() => el.classList.remove('is-invalid'), 5000); }
+  return msg;
+}
+function kValidate(d) {
+  const $ = id => document.getElementById(id);
+  if (!d.광고계정ID) return kFocusBad($('k1_계정'), '광고계정을 골라주세요');
+  if (!d.치과명) return kFocusBad($('k1_치과명'), '치과를 골라주세요 (설정 → 치과 · 날짜코드)');
+  if (!d.날짜코드) return kFocusBad($('k1_치과명'), `«${d.치과명}» 의 틱톡 날짜코드가 비어 있어요 — 설정 → 치과 · 날짜코드에서 채워주세요`);
+  if (!d.캠페인명) return kFocusBad($('k1_캠페인명'), '캠페인명이 비어 있어요');
+  if (!d.광고그룹명) return '광고그룹명을 만들지 못했어요 — 치과 설정을 확인하세요';
+  if (!(d.예산 > 0)) return kFocusBad($('k1_예산'), '일일예산(원)을 넣어주세요');
+  if (d.리드방식 === 'web') {
+    if (!d.픽셀ID) return kFocusBad($('k1_픽셀'), '데이터 연결(픽셀)을 골라주세요');
+    if (!d.이벤트) return kFocusBad($('k1_이벤트'), '최적화 이벤트를 골라주세요');
+  } else if (!d.양식ID) return kFocusBad($('k1_양식'), '인스턴트 양식을 골라주세요');
+  if (!d.지역목록.length) return kFocusBad($('k1_지역검색'), '지역을 1개 이상 골라주세요');
+  if (!d.연령.length) return '연령을 1개 이상 체크해주세요';
+  if (d.게재방식 === 'PLACEMENT_TYPE_NORMAL' && !d.게재위치.length) return '게재 위치를 1개 이상 체크해주세요';
+  if (!d.아이덴티티 || !d.아이덴티티.id) return kFocusBad($('k1_아이덴티티'), '아이덴티티(TikTok 계정)를 골라주세요');
+  if (d.아이덴티티.type === 'BC_AUTH_TT' && !d.아이덴티티.bcId && K.bcs.length !== 1) return kFocusBad($('k1_아이덴티티'), '이 아이덴티티의 비즈니스 센터 ID 를 모르겠어요 — 설정 → 기본값의 «비즈니스 센터 ID» 를 채워주세요');
+  for (const a of d.광고목록) {
+    const b = a.slot && a.slot.closest('.creative-card');
+    if (!a.파일ID && !a.파일첨부) return kFocusBad(a.slot && a.slot.querySelector('[data-role="dropzone"]'), `광고 ${a.순번}: 영상을 첨부하거나 Drive 파일ID를 넣어주세요`);
+    if (!a.광고명) return `광고 ${a.순번}: 광고명을 만들지 못했어요`;
+    if (!a.텍스트) return kFocusBad(b && b.querySelector('[data-role="텍스트"]'), `광고 ${a.순번}: 광고 텍스트가 비어 있어요`);
+    const w = gTextWidth(a.텍스트); if (w > K_TEXT_LIMIT) return kFocusBad(b && b.querySelector('[data-role="텍스트"]'), `광고 ${a.순번}: 텍스트가 너무 길어요 (${w}/${K_TEXT_LIMIT}) — 틱톡은 한글 한 글자를 2로 세요`);
+    if (d.리드방식 === 'web' && !/^https?:\/\/\S+$/i.test(a.URL)) return kFocusBad($('k1_URL'), `광고 ${a.순번}: 웹사이트 URL 이 비어 있거나 https:// 로 시작하지 않아요`);
+  }
+  return '';
+}
+
+/* ── 등록 현황 카드 · 단계 ── */
+function kAddCard(data) {
+  const idx = K.rows.length; K.rows.push(data);
+  document.getElementById('k1_empty').style.display = 'none';
+  const list = document.getElementById('k1_cards'); list.style.display = 'flex';
+  const card = document.createElement('div'); card.className = 'card'; card.id = `kcard_${idx}`;
+  card.innerHTML = `<div class="card-top"><div class="card-title-wrap"><span class="card-type type-k-new">TikTok 신규</span><span class="card-title">${esc(data.캠페인명)}</span></div><span class="card-top-right"><span class="badge badge-sending" id="kbadge_${idx}">진행 중</span><button type="button" class="card-del" title="목록에서 삭제" onclick="kRemoveCard(${idx},this)">삭제</button></span></div>
+    <div class="card-meta"><span class="meta-item"><span class="meta-label">계정</span>${esc(data.광고계정명 || data.광고계정ID)}</span><span class="meta-item"><span class="meta-label">광고그룹</span>${esc(data.광고그룹명)}</span><span class="meta-item"><span class="meta-label">광고</span>${data.광고목록.length}개 · ${data.리드방식 === 'web' ? '웹사이트' : '인스턴트 양식'}</span><span class="meta-item"><span class="meta-label">요청ID</span><code style="font-size:11px;">${esc(data.요청ID)}</code></span></div>
+    <div class="card-result" id="kresult_${idx}">시작하는 중...</div>
+    <div class="gtrack" id="ktrack_${idx}">
+      <div class="gtrack-steps" id="ksteps_${idx}"></div>
+      <div class="gtrack-foot"><span id="kcheck_${idx}" class="gtrack-check"></span><span class="gtrack-actions" id="kactions_${idx}"></span></div>
+    </div>`;
+  list.appendChild(card);
+  document.getElementById('k1_count').textContent = `총 ${K.rows.filter(Boolean).length}건 등록됨`;
+  return idx;
+}
+function kRemoveCard(idx, btn) {
+  if (btn && !btn.classList.contains('confirm')) { btn.classList.add('confirm'); btn.textContent = '정말 삭제?'; setTimeout(() => { if (btn.isConnected) { btn.classList.remove('confirm'); btn.textContent = '삭제'; } }, 3000); return; }
+  K.rows[idx] = null;
+  const card = document.getElementById(`kcard_${idx}`); if (card) card.remove();
+  const remain = K.rows.filter(Boolean).length;
+  if (!remain) { document.getElementById('k1_cards').style.display = 'none'; document.getElementById('k1_empty').style.display = ''; }
+  document.getElementById('k1_count').textContent = remain ? `총 ${remain}건 등록됨` : '등록된 캠페인이 없습니다';
+}
+function kUpdateCard(idx, status, msg, html) {
+  const badge = document.getElementById(`kbadge_${idx}`); const result = document.getElementById(`kresult_${idx}`);
+  if (!badge || !result) return;
+  const styles = { '진행중': ['badge badge-sending', '진행 중', 'card-result'], '완료': ['badge badge-done', '등록 완료', 'card-result success'], '주의': ['badge badge-wait', '확인 필요', 'card-result'], '실패': ['badge badge-fail', '실패', 'card-result fail'] };
+  const [bc, bt, rc] = styles[status] || styles['실패'];
+  badge.className = bc; badge.textContent = bt; result.className = rc;
+  if (html) result.innerHTML = msg; else result.textContent = msg;
+}
+function kRenderSteps(idx) {
+  const st = K.rows[idx] && K.rows[idx].state; const box = document.getElementById(`ksteps_${idx}`); if (!st || !box) return;
+  const icon = s => s === '오류' ? '<span class="gt-ic err">✕</span>' : (s === '완료' ? '<span class="gt-ic ok">✓</span>' : '<span class="gt-ic run">●</span>');
+  box.innerHTML = st.log.map(r => `<div class="gt-row ${r.status === '오류' ? 'err' : ''}">${icon(r.status)}<span class="gt-time">${esc(r.time)}</span><span class="gt-step">${esc(r.step)}${r.ad ? ` <small>${esc(r.ad)}</small>` : ''}</span><span class="gt-msg" title="${esc(r.detail || r.msg)}">${esc(r.msg)}${r.detail ? ' · ' + esc(String(r.detail).slice(0, 200)) : ''}</span></div>`).join('');
+  box.scrollTop = box.scrollHeight;
+  const check = document.getElementById(`kcheck_${idx}`);
+  if (check) check.textContent = [st.campaignId ? `캠페인 ${st.campaignId}` : '', st.adgroupId ? `광고그룹 ${st.adgroupId}` : '', Object.keys(st.adIds).length ? `광고 ${Object.values(st.adIds).join(', ')}` : ''].filter(Boolean).join(' · ');
+  const act = document.getElementById(`kactions_${idx}`);
+  if (act) act.innerHTML = (st.failed ? `<button type="button" class="sync-btn" onclick="kRetry(${idx})">이어서 재시도</button>` : '') + (st.campaignId ? `<a class="sync-btn" href="https://ads.tiktok.com/i18n/perf/campaign?aadvid=${encodeURIComponent(K.rows[idx].광고계정ID)}" target="_blank" rel="noopener">틱톡 광고관리자</a>` : '') + (Object.keys(st.adIds).length ? `<button type="button" class="sync-btn" onclick="kCheckAds(${idx})">검토 상태 확인</button>` : '') + (st.needTerms ? `<button type="button" class="sync-btn" onclick="kConfirmTerms(${idx})">리드 광고 약관 동의 처리</button>` : '');
+}
+function kNewRequestId() { const d = new Date(); const p = n => String(n).padStart(2, '0'); return `T${String(d.getFullYear()).slice(2)}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}-${Math.random().toString(36).slice(2, 6)}`; }
+/* 등록로그 시트에 한 줄 (구글 탭과 같은 열: 요청ID · 시각 · 단계 · 상태 · 메시지 · 광고명 · 상세) — 순서를 지키려고 줄을 세운다 */
+let kLogQueue = Promise.resolve();
+function kLogRow(reqId, step, status, msg, ad, detail) {
+  if (!gTokenValid('core')) return;
+  kLogQueue = kLogQueue.then(async () => {
+    try {
+      if (!(await gEnsureLogSheet())) return;
+      const now = new Date(); const p = n => String(n).padStart(2, '0');
+      const time = `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())} ${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
+      await gAuthFetch('core', `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(G_LOG_SHEET + '!A:G')}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ values: [[reqId, time, `[틱톡] ${step}`, status, String(msg || ''), String(ad || ''), String(detail || '').slice(0, 2000)]] }) });
+    } catch (e) { console.warn('등록로그 기록 실패', e.message); }
+  });
+}
+function kStep(idx, step, status, msg, ad, detail) {
+  const row = K.rows[idx]; if (!row) return;
+  const st = row.state;
+  const now = new Date(); const p = n => String(n).padStart(2, '0');
+  st.log.push({ time: `${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`, step, status, msg: String(msg || ''), ad: ad || '', detail: detail || '' });
+  kRenderSteps(idx);
+  kLogRow(row.요청ID, step, status, msg, ad, detail);
+}
+function kErrHint(e) {
+  const s = String((e && e.message) || e || '');
+  if (/term|agreement|TOS/i.test(s) && /lead/i.test(s)) return '리드 광고 약관 동의가 필요해요 — 아래 «리드 광고 약관 동의 처리» 를 누르고 다시 시도하세요';
+  if (/permission|grant|not authorized|40001/i.test(s) && /identity|page|pixel|audience|dmp/i.test(s)) return '토큰 권한 부족 — 앱 권한을 추가한 뒤 승인을 다시 받아 새 토큰을 넣어야 해요 (설정 → 연동)';
+  if (/budget/i.test(s) && /minimum|min|at least|lower|too low/i.test(s)) return '예산이 틱톡 최소 금액보다 작아요 — 예산을 올려주세요';
+  if (/download|fetch.*video|video_url|url is invalid/i.test(s)) return '틱톡이 Drive 영상을 못 받아 갔어요 — 파일 공유가 «링크가 있는 모든 사용자» 인지, 영상이 너무 크지 않은지 확인하세요';
+  if (/already exist|duplicate/i.test(s) && /file|video|name/i.test(s)) return '같은 이름의 영상이 이미 있어요 — 영상 이름을 바꾸거나 Drive 파일ID로 기존 영상을 쓰세요';
+  if (/review|audit/i.test(s)) return '광고 검토 단계 문제예요 — 틱톡 광고관리자에서 확인하세요';
+  if (/ECONNRESET|ETIMEDOUT|timeout|504|502/i.test(s)) return '서버가 잠깐 불안정했어요 — «이어서 재시도» 를 눌러주세요';
+  return '';
+}
+/* 실제 등록 — 단계별로 실행. 실패하면 그 자리에서 멈추고 만든 ID 는 남긴다 */
+async function kRunSteps(idx) {
+  const row = K.rows[idx]; if (!row) return;
+  const st = row.state; st.failed = false; st.running = true;
+  const adv = row.광고계정ID;
+  kRenderSteps(idx); kUpdateCard(idx, '진행중', '등록 진행 중...');
+  try {
+    // ① 영상 업로드 (광고마다)
+    for (const a of row.광고목록) {
+      if (st.videoIds[a.순번]) continue;
+      if (!a.파일ID) {
+        kStep(idx, '영상 Drive 업로드', '진행', '첨부 파일을 Drive 임시 파일로 올리는 중', a.광고명);
+        const slotP = a.slot && kUploadInFlight.get(a.slot); if (slotP) { try { await slotP; } catch (e) { /* 아래에서 다시 */ } }
+        a.파일ID = (a.slot && a.slot.querySelector('[data-role="파일ID"]').value || '').trim();
+        if (!a.파일ID) { a.파일ID = await uploadFileToDrive(a.파일첨부); if (a.slot) { a.slot.dataset.uploadedId = a.파일ID; a.slot.querySelector('[data-role="파일ID"]').value = a.파일ID; } a.미리올림 = true; }
+        if (!a.커버ID && a.slot && a.slot.dataset.coverId) a.커버ID = a.slot.dataset.coverId;
+      }
+      kStep(idx, '틱톡 영상 업로드', '진행', `Drive 파일 ${a.파일ID} 을 틱톡이 받아 가는 중`, a.광고명);
+      const up = await ttPost({ op: 'upload_video', advertiser_id: adv, drive_file_id: a.파일ID, file_name: a.파일명 || `${a.영상이름 || 'video'}.mp4` });
+      st.videoIds[a.순번] = up.video_id;
+      kStep(idx, '틱톡 영상 업로드', '완료', `video_id ${up.video_id}${up.reused ? ' (이미 있던 영상)' : ''}${up.file_name ? ' · ' + up.file_name : ''}`, a.광고명);
+    }
+    // ② 커버
+    for (const a of row.광고목록) {
+      if (st.imageIds[a.순번]) continue;
+      kStep(idx, '커버 이미지', '진행', '틱톡 추천 커버를 받는 중', a.광고명);
+      const c = await ttPost({ op: 'cover', advertiser_id: adv, video_id: st.videoIds[a.순번], cover_drive_file_id: a.커버ID || '' });
+      st.imageIds[a.순번] = c.image_id;
+      kStep(idx, '커버 이미지', '완료', `image_id ${c.image_id} (${c.source === 'suggest' ? '틱톡 추천' : '영상 장면'})`, a.광고명);
+    }
+    // ③ 캠페인
+    if (!st.campaignId) {
+      kStep(idx, '캠페인 생성', '진행', `${row.캠페인명} · ${row.예산전략 === 'campaign' ? 'CBO 일예산 ' + row.예산.toLocaleString() + '원' : '예산 무제한(그룹이 일예산)'}`);
+      const c = await ttPost({ op: 'create_campaign', advertiser_id: adv, campaign_name: row.캠페인명, budget_strategy: row.예산전략, budget: row.예산, optimization_goal: 'LEAD_GENERATION', operation_status: 'DISABLE' });
+      st.campaignId = c.campaign_id;
+      K.sent.push({ name: row.캠페인명, id: c.campaign_id, advertiserId: adv });
+      kStep(idx, '캠페인 생성', '완료', `campaign_id ${c.campaign_id}${c.tried && c.tried.length ? ' · 조정 ' + c.tried.join(', ') : ''}`);
+    }
+    // ④ 광고그룹
+    if (!st.adgroupId) {
+      kStep(idx, '광고그룹 생성', '진행', `${row.광고그룹명} · ${row.리드방식 === 'web' ? '웹사이트 · ' + (row.픽셀명 || row.픽셀ID) + ' / ' + row.이벤트 : '인스턴트 양식 ' + row.양식ID} · 지역 ${row.지역목록.map(r => r.name).join(', ')} · 연령 ${row.연령.join(', ')}`);
+      const g = await ttPost({ op: 'create_adgroup', advertiser_id: adv, campaign_id: st.campaignId, adgroup_name: row.광고그룹명, lead_mode: row.리드방식, budget_strategy: row.예산전략, budget: row.예산,
+        pixel_id: row.픽셀ID, optimization_event: row.이벤트, optimization_goal: row.최적화목표,
+        location_ids: row.지역목록.map(r => r.id), age_groups: row.연령, gender: row.성별, languages: row.언어,
+        excluded_audience_ids: row.제외타겟.map(x => x.id), interest_category_ids: row.관심사.map(x => x.id),
+        actions: row.행동.length ? Object.values(row.행동.reduce((acc, x) => { const k = x.scene || 'VIDEO_RELATED'; (acc[k] = acc[k] || { action_scene: k, action_period: 15, action_category_ids: [] }).action_category_ids.push(x.id); return acc; }, {})) : [],
+        placement_type: row.게재방식, placements: row.게재위치, operation_status: 'DISABLE' });
+      st.adgroupId = g.adgroup_id;
+      kStep(idx, '광고그룹 생성', '완료', `adgroup_id ${g.adgroup_id}${g.tried && g.tried.length ? ' · 조정 ' + g.tried.join(', ') : ''}`, '', g.sent ? `보낸 값: optimization_goal ${g.sent.optimization_goal} · promotion_target_type ${g.sent.promotion_target_type} · budget_mode ${g.sent.budget_mode}` : '');
+    }
+    // ⑤ 광고 (광고마다)
+    for (const a of row.광고목록) {
+      if (st.adIds[a.순번]) continue;
+      kStep(idx, '광고 생성', '진행', `${a.텍스트.slice(0, 40)}… · CTA ${a.CTA버튼}${row.리드방식 === 'web' ? ' · ' + a.URL : ' · 양식 ' + row.양식ID}`, a.광고명);
+      try {
+        const r = await ttPost({ op: 'create_ad', advertiser_id: adv, adgroup_id: st.adgroupId, ad_name: a.광고명, identity: row.아이덴티티, video_id: st.videoIds[a.순번], image_id: st.imageIds[a.순번], ad_text: a.텍스트, call_to_action: a.CTA버튼, lead_mode: row.리드방식, landing_page_url: a.URL, page_id: row.양식ID, utm_params: row.URL파라미터, dark_post: true, operation_status: 'DISABLE' });
+        st.adIds[a.순번] = r.ad_id;
+        kStep(idx, '광고 생성', '완료', `ad_id ${r.ad_id}${r.utm_appended ? ' · URL 파라미터는 주소에 직접 붙임' : ''}${r.tried && r.tried.length ? ' · 조정 ' + r.tried.join(', ') : ''}`, a.광고명);
+      } catch (e) { if (/term|agreement/i.test(e.message) && /lead/i.test(e.message)) st.needTerms = true; throw e; }
+    }
+    // ⑥ 캠페인 일시중지 (메타·구글처럼 전부 꺼진 채로 — 검토 뒤 직접 켠다)
+    if (!st.paused) {
+      try { await ttPost({ op: 'pause_campaign', advertiser_id: adv, campaign_id: st.campaignId }); st.paused = true; kStep(idx, '일시중지', '완료', '캠페인·광고그룹·광고 모두 꺼진 상태 — 틱톡 광고관리자에서 검토 뒤 켜주세요'); }
+      catch (e) { st.paused = true; kStep(idx, '일시중지', '완료', `캠페인 끄기는 못 했어요 (${e.message}) — 광고그룹·광고는 꺼져 있어요`); }
+    }
+    st.running = false;
+    kUpdateCard(idx, '완료', `캠페인 ${st.campaignId} · 광고그룹 ${st.adgroupId} · 광고 ${Object.keys(st.adIds).length}개 생성 — 꺼진 상태라 틱톡 광고관리자에서 검토 뒤 켜주세요`);
+    kStep(idx, '완료', '완료', `광고 ${Object.keys(st.adIds).length}개`);
+    // 임시 영상·커버는 틱톡이 받아 갔으니 지운다
+    const temp = row.광고목록.filter(a => a.미리올림).map(a => a.파일ID).concat(row.광고목록.map(a => a.커버ID)).filter(Boolean);
+    if (temp.length) gDeleteTempFiles(temp).then(r => { if (r.deleted) console.log(`[광고 자동등록] 틱톡 임시 파일 ${r.deleted}개 삭제`); }).catch(() => {});
+    row.광고목록.forEach(a => { if (a.slot && a.미리올림) { a.slot.querySelector('[data-role="파일ID"]').value = ''; a.slot.dataset.uploadedId = ''; a.slot.dataset.coverId = ''; const dz = a.slot.querySelector('[data-role="dropzone"]'); const el = dz && dz.querySelector('[data-role="upstat"]'); if (el) { el.style.color = 'var(--text3)'; el.textContent = '✓ 전송됨 — 같은 소재를 다시 등록하면 영상을 새로 올립니다'; } } });
+    const nc = K.check; if (nc) nc.key = ''; kScheduleNameCheck();
+  } catch (e) {
+    st.running = false; st.failed = true;
+    const last = st.log[st.log.length - 1];
+    const stepName = last && last.status === '진행' ? last.step : '등록';
+    const hint = kErrHint(e);
+    const detail = [e.tried && e.tried.length ? '조정 시도: ' + e.tried.join(', ') : '', e.sent ? '보낸 값: ' + JSON.stringify(e.sent).slice(0, 600) : ''].filter(Boolean).join(' · ');
+    kStep(idx, stepName, '오류', e.message, last && last.ad, detail);
+    kUpdateCard(idx, '실패', `${stepName}에서 멈췄어요 — ${e.message}${hint ? ' · ' + hint : ''} · 만든 것은 그대로 두고 «이어서 재시도» 로 이어서 할 수 있어요`);
+    kRenderSteps(idx);
+  }
+}
+function kRetry(idx) { const row = K.rows[idx]; if (!row || row.state.running) return; showToast('이어서 재시도합니다', 'info'); kRunSteps(idx); }
+async function kConfirmTerms(idx) {
+  const row = K.rows[idx]; if (!row) return;
+  try { await ttPost({ op: 'confirm_terms', advertiser_id: row.광고계정ID }); row.state.needTerms = false; kStep(idx, '약관 동의', '완료', '리드 광고 약관 동의 처리됨 — «이어서 재시도» 를 눌러주세요'); }
+  catch (e) { kStep(idx, '약관 동의', '오류', e.message); }
+}
+async function kCheckAds(idx) {
+  const row = K.rows[idx]; if (!row) return;
+  const ids = Object.values(row.state.adIds).filter(Boolean); if (!ids.length) return;
+  try {
+    const j = await ttFetch({ op: 'ad_status', advertiser_id: row.광고계정ID, ad_ids: ids.join(',') });
+    const list = j.list || [];
+    const txt = list.length ? list.map(a => `${a.ad_name}: ${a.operation_status || ''}${a.secondary_status ? ' / ' + a.secondary_status : ''}${a.dark_post_status ? ' · 광고로만 ' + a.dark_post_status : ''}${(a.utm_params || []).length ? ' · URL 파라미터 ' + a.utm_params.map(u => u.key).join(',') : ''}${(a.tracking_offline_event_set_ids || []).length ? ' · 오프라인/CRM 세트 ' + a.tracking_offline_event_set_ids.join(',') : ''}`).join(' | ') : '틱톡에서 광고를 아직 못 찾았어요';
+    kStep(idx, '검토 상태', '완료', txt);
+  } catch (e) { kStep(idx, '검토 상태', '오류', e.message); }
+}
+/* 등록 버튼 */
+async function kSubmitAd() {
+  if (!loginOk()) { showToast('먼저 로그인하세요', 'error'); loginShow(''); return; }
+  const data = kGetData();
+  const problem = kValidate(data);
+  if (problem) { showToast(problem, 'error', 7000); return; }
+  const btn = document.getElementById('k1_submitBtn'); btn.disabled = true; btn.textContent = '확인 중...';
+  const restore = () => { btn.disabled = false; btn.textContent = 'TikTok 등록하기'; };
+  if (!(await gGoogleReady())) {
+    showToast('영상을 Drive 에 올리려면 구글 로그인이 필요해요 — 로그인 창을 엽니다', 'info', 5000);
+    try { await gSignIn('core', { picker: !(gTokens.core && gTokens.core.hint) }); } catch (e) { showToast('구글 로그인 실패: ' + e.message, 'error', 6000); restore(); return; }
+  }
+  if (tt.ping && tt.ping.readOnly) { showToast('배포된 api/tiktok.js 가 조회 전용(1단계) 버전이에요 — 새 tiktok.js 를 배포한 뒤 등록할 수 있어요', 'error', 9000); restore(); return; }
+  showToast('캠페인명 중복 확인 중 (모든 광고계정)...', 'info');
+  const chk = await kCampaignNameTaken(data.캠페인명);
+  if (!chk.ok) { showToast(`캠페인명 중복을 확인하지 못해서 보내지 않았어요 (${chk.error || '연결 확인'}) — 잠시 뒤 다시 눌러주세요`, 'error', 9000); restore(); return; }
+  if (chk.hit || chk.near) {
+    K.dup = chk.hit || chk.near; kRenderCampaignNameHint();
+    const el = document.getElementById('k1_캠페인명'); if (el) { el.classList.add('is-invalid'); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); gKeepViewportTop(); setTimeout(() => el.classList.remove('is-invalid'), 6000); }
+    showToast(`${chk.hit ? '이미 같은 이름의' : '공백·문자만 다른 거의 같은 이름의'} 캠페인이 있어서 보내지 않았어요 — ${K.dup.advertiserName || ''} ${K.dup.name}. 이름은 그대로 두고 날짜 차수를 올리거나 틱톡에서 정리한 뒤 다시 보내주세요`, 'error', 9000);
+    restore(); return;
+  }
+  K.dup = null; const nc = K.check; if (nc) { nc.key = data.캠페인명; nc.state = 'ok'; nc.hit = null; nc.near = null; }
+  data.요청ID = kNewRequestId();
+  data.state = { log: [], videoIds: {}, imageIds: {}, campaignId: '', adgroupId: '', adIds: {}, paused: false, failed: false, running: false, needTerms: false };
+  const idx = kAddCard(data);
+  kStep(idx, '수신', '완료', `${data.광고계정명} · ${data.치과명} · ${data.리드방식 === 'web' ? '웹사이트' : '인스턴트 양식'} · 광고 ${data.광고목록.length}개 · 제작자 ${data.제작자}`);
+  showToast('틱톡 등록을 시작했어요 — 오른쪽 카드에서 단계를 볼 수 있어요', 'success');
+  restore();
+  kRunSteps(idx);
+}
+function kClearForm() {
+  K.nameEdited = false; kTypeEdited = false; K.regionsTouched = false; K.strategyTouched = false; K.agesTouched = false;
+  ['k1_날짜', 'k1_메모', 'k1_캠페인명', 'k1_광고그룹명', 'k1_광고명', 'k1_URL', 'k1_지역검색', 'k1_제외검색', 'k1_관심사검색', 'k1_행동검색'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const staff = document.getElementById('k1_제작자'); if (staff) { staff.value = ''; kFillStaffName(); }
+  kDefaultDate();
+  const clinic = document.getElementById('k1_치과명'); if (clinic) clinic.value = '';
+  const mode = document.getElementById('k1_리드방식'); if (mode) mode.value = 'web';
+  K.regions = []; K.excl = []; K.ints = []; K.acts = []; Object.keys(K_CHIP).forEach(kRenderChips);
+  const budget = document.getElementById('k1_예산'); if (budget) { budget.value = TSET.budget || 30000; budget.dataset.touched = ''; }
+  const strat = document.querySelector(`input[name="k1_budget_strategy"][value="${TSET.budgetStrategy === 'campaign' ? 'campaign' : 'adgroup'}"]`); if (strat) strat.checked = true; kOnBudgetStrategy(true);
+  const auto = document.querySelector('input[name="k1_placement"][value="PLACEMENT_TYPE_AUTOMATIC"]'); if (auto) auto.checked = true; kOnPlacement();
+  const gender = document.getElementById('k1_성별'); if (gender) gender.value = 'GENDER_UNLIMITED';
+  kSetAges(TSET.ages);
+  const cl = document.getElementById('k1_creative_list'); if (cl) { cl.innerHTML = ''; kAddCreativeBlock(); }
+  const cc = document.getElementById('k1_creative_common'); if (cc) { cc.checked = true; kToggleCreativeCommon(); }
+  K.ctaTouched = false; const cta = document.getElementById('k1_CTA'); if (cta) kFillCta(cta, TSET.cta);
+  kOnLeadMode(); kFillPixelSelects(); kAutoGenNames();
+}
+function kDefaultDate() {
+  const el = document.getElementById('k1_날짜'); if (!el || el.value) return;
+  const d = new Date(); const p = n => String(n).padStart(2, '0');
+  el.value = `${String(d.getFullYear()).slice(2)}${p(d.getMonth() + 1)}${p(d.getDate())}_1`;
+}
+/* 처음 한 번 — 카드 1장, 기본값 */
+(function kInit() {
+  if (!document.getElementById('k1_creative_list')) return;
+  kAddCreativeBlock();
+  const budget = document.getElementById('k1_예산'); if (budget) budget.addEventListener('input', () => { budget.dataset.touched = '1'; });
+  document.querySelectorAll('#k1_연령 input').forEach(cb => cb.addEventListener('change', () => { K.agesTouched = true; }));
+  kDefaultDate();
+  kApplySettings();
+  kOnLeadMode(); kOnBudgetStrategy(true); kOnPlacement(); Object.keys(K_CHIP).forEach(kRenderChips);
+  kFillStaffName();
+})();
+/* 로그인한 제작자 이름을 제작자 칸에 (비어 있을 때만) */
+function kFillStaffName() {
+  const staff = document.getElementById('k1_제작자'); if (!staff || staff.value) return;
+  try { const n = (typeof loginStaffName === 'function') ? loginStaffName() : ''; if (n) { staff.value = n; kAutoGenNames(); } } catch (e) { /* 로그인 모듈이 아직 안 읽혔을 때 */ }
+}
+
+/* =========================================================
    공유 설정 — 관리자가 "모두에게 적용"한 settings.json 을 모두가 받아 쓴다.
    · 페이지를 열 때 /settings.json (배포에 포함) 과 /api/settings (GitHub 최신) 을 읽어 더 새 것을 적용
    · 브라우저 저장소는 캐시. 이 브라우저에서만 고친 게 있으면(dirty) 관리자가 더 새 걸 올리기 전까진 그대로 둔다
@@ -8174,6 +9473,7 @@ const SHARED_SETTINGS_URL = '/settings.json';
 const SHARED_API_URL = '/api/settings';
 const SHARED_META_KEYS = ['staff', 'accounts', 'accountVariants', 'pages', 'pageInstagram', 'regions'];
 const SHARED_GOOGLE_KEYS = ['staff', 'clinics', 'regions', 'channels', 'cta', 'accounts', 'audiences', 'blockedAccounts'];
+const SHARED_TIKTOK_KEYS = ['clinics', 'identityName', 'identityId', 'identityType', 'identityBcId', 'cta', 'budget', 'budgetStrategy', 'ages', 'typeWeb', 'typeForm', 'adNameWithFile'];
 const SHARED_STAMP_KEY = 'adtool_shared_settings_stamp';   // 마지막으로 적용한 공유 설정의 updatedAt
 const SHARED_DIRTY_KEY = 'adtool_settings_local_dirty';    // 이 브라우저에서만 바꾼 게 있음
 const ADMIN_KEY_STORE = 'adtool_admin_key';
@@ -8186,19 +9486,22 @@ function markSettingsDirty() { lsSet(SHARED_DIRTY_KEY, '1'); renderSharedStatus(
 function buildSharedPayload() {
   const meta = {}; SHARED_META_KEYS.forEach(k => { meta[k] = SETTINGS[k] === undefined ? null : SETTINGS[k]; });
   const google = {}; SHARED_GOOGLE_KEYS.forEach(k => { google[k] = GSET[k] === undefined ? null : GSET[k]; });
+  const tiktok = {}; if (typeof TSET !== 'undefined') SHARED_TIKTOK_KEYS.forEach(k => { tiktok[k] = TSET[k] === undefined ? null : TSET[k]; });
   const who = (typeof gTokens !== 'undefined' && gTokens.core && gTokens.core.hint) || '관리자';
-  return { version: 1, updatedAt: new Date().toISOString(), updatedBy: who, meta, google };
+  return { version: 1, updatedAt: new Date().toISOString(), updatedBy: who, meta, google, tiktok };
 }
 function applySharedSettings(shared, source) {
-  if (!shared || typeof shared !== 'object' || (!shared.meta && !shared.google)) return false;
+  if (!shared || typeof shared !== 'object' || (!shared.meta && !shared.google && !shared.tiktok)) return false;
   if (shared.meta) { SHARED_META_KEYS.forEach(k => { if (shared.meta[k] !== undefined && shared.meta[k] !== null) SETTINGS[k] = shared.meta[k]; }); persistSettings(); }
   if (shared.google) { SHARED_GOOGLE_KEYS.forEach(k => { if (shared.google[k] !== undefined && shared.google[k] !== null) GSET[k] = shared.google[k]; }); GSET.seeded = true; persistGoogleSettings(); }
+  if (shared.tiktok && typeof TSET !== 'undefined') { SHARED_TIKTOK_KEYS.forEach(k => { if (shared.tiktok[k] !== undefined && shared.tiktok[k] !== null) TSET[k] = shared.tiktok[k]; }); TSET.seeded = true; persistTiktokSettings(); }
   lsSet(SHARED_STAMP_KEY, shared.updatedAt || ''); lsSet(SHARED_DIRTY_KEY, '');
   Object.assign(sharedInfo, { updatedAt: shared.updatedAt || '', updatedBy: shared.updatedBy || '', available: true, applied: true, source: source || '' });
   applySettingsToDB(); populateDropdowns(); ['t1', 't2'].forEach(t => { try { autoGenNames(t); } catch (e) {} });
   if (typeof applyGoogleSettings === 'function') { applyGoogleSettings(); if (typeof gPopulateDropdowns === 'function') gPopulateDropdowns(); ['g1', 'g2'].forEach(t => { try { gAutoGenNames(t); } catch (e) {} }); }
+  if (typeof kApplySettings === 'function') { try { kApplySettings(); } catch (e) {} }
   const modal = document.getElementById('settingsModal');
-  if (modal && modal.classList.contains('show')) { if (currentPlatform === 'google') renderGoogleSettings(); else renderSettings(); }
+  if (modal && modal.classList.contains('show')) { if (currentPlatform === 'tiktok') renderTiktokSettings(); else if (currentPlatform === 'google') renderGoogleSettings(); else renderSettings(); }
   else { const ab = document.getElementById('set_account_body'); if (ab) { ab.innerHTML = ''; ab.dataset.vstamp = ''; } }   // 닫혀 있던 낡은 계정 표는 버린다
   renderSharedStatus();
   return true;
@@ -8208,7 +9511,7 @@ async function fetchSharedFrom(url) {
     const r = await fetch(url + (url.includes('?') ? '&' : '?') + '_=' + Date.now(), { cache: 'no-store', headers: sharedAuthHeaders() });
     const j = await r.json().catch(() => null);
     if (!r.ok) return { status: r.status, data: null, error: (j && j.error) || '' };
-    return { status: r.status, data: (j && (j.meta || j.google)) ? j : null };
+    return { status: r.status, data: (j && (j.meta || j.google || j.tiktok)) ? j : null };
   } catch (e) { return { status: 0, data: null }; }
 }
 let sharedLoadInFlight = null;
@@ -8646,6 +9949,8 @@ function afterLogin() {
   loginRenderUser();
   loadAll();
   loadSharedSettings();   // 관리자가 올린 공유 설정이 있으면 그걸로 (브라우저 설정은 캐시)
+  if (typeof kFillStaffName === 'function') kFillStaffName();
+  if (currentPlatform === 'tiktok' && typeof kEnsureLoaded === 'function') kEnsureLoaded(true);
 }
 async function loginSubmit(ev) {
   if (ev) ev.preventDefault();
