@@ -1520,7 +1520,7 @@ document.addEventListener('securitypolicyviolation', function (e) {
           <div class="set-box-head"><b>TikTok 연결 확인</b><span class="field-hint">틱톡 토큰은 서버(api/tiktok.js)에만 있어요 — 광고계정·표시 계정·양식·픽셀을 여기서 읽어 오고, 등록도 같은 함수로 보냅니다</span></div>
           <div class="field-hint" id="tt_status" style="margin:0 0 8px;">틱톡 중계 함수 확인 중...</div>
           <div id="tt_token_box" style="display:none;margin:0 0 10px;padding:10px 12px;background:var(--yellow-bg);border:1px solid #ffe0a0;border-radius:var(--radius-sm);">
-            <div style="font-size:12px;color:var(--text1);margin-bottom:8px;"><b>토큰 만들기 (처음 한 번)</b> — 개발자 포털 My Apps → 앱 → <b>Advertiser redirect URL</b> 을 <code id="tt_redirect_url" style="user-select:all;background:var(--white);padding:1px 6px;border-radius:4px;"></code> 로 저장한 뒤, 아래 링크를 열어 광고계정 관리자로 로그인 → 광고계정 전부 체크 → Confirm. 돌아온 화면의 토큰을 Vercel 환경변수 <code>TIKTOK_ACCESS_TOKEN</code> 에 넣고 재배포하세요.</div>
+            <div style="font-size:12px;color:var(--text1);margin-bottom:8px;"><b>토큰 만들기 (처음 한 번 · 앱 권한을 추가했을 때 다시)</b> — 개발자 포털 My Apps → 앱 → <b>Advertiser redirect URL</b> 을 <code id="tt_redirect_url" style="user-select:all;background:var(--white);padding:1px 6px;border-radius:4px;"></code> 로 저장한 뒤, 아래 링크를 열어 광고계정 관리자로 로그인 → 광고계정 전부 체크 → Confirm. 돌아온 화면의 토큰을 Vercel 환경변수 <code>TIKTOK_ACCESS_TOKEN</code> 에 넣고 재배포하세요.</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;">
               <span class="field-hint" style="margin:0;">앱에 <b>승인된</b> redirect URL</span>
               <input type="text" id="tt_redirect_in" placeholder="앱 화면의 Advertiser redirect URLs 중 승인된(검은 글씨) 주소를 그대로" style="height:34px;flex:1;min-width:320px;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:0 8px;font-family:inherit;font-size:12px;">
@@ -2787,7 +2787,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-21.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-11-11.1';
+const G_PAGE_BUILD = '2026-11-12.1';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -2910,13 +2910,15 @@ function ttRenderStatus() {
   const box = document.getElementById('tt_token_box'); const ru = document.getElementById('tt_redirect_url');
   if (ru && p.redirectUrl) ru.textContent = p.redirectUrl;
   const ri = document.getElementById('tt_redirect_in'); if (ri && !ri.value && p.redirectUrl) ri.value = p.redirectUrl;
-  if (box) box.style.display = (!p.missing && p.hasApp && !p.hasToken) ? '' : 'none';   // 앱 정보는 있는데 토큰이 아직 없을 때만
+  if (box) box.style.display = (!p.missing && p.hasApp && (!p.hasToken || tt.showTokenBox)) ? '' : 'none';   // 토큰이 아직 없을 때 + «토큰 다시 받기» 를 눌렀을 때
+  const again = p.hasApp ? ` · <span class="link-toggle" onclick="ttToggleTokenBox()">${tt.showTokenBox ? '토큰 상자 닫기' : '앱 권한을 추가했으면 → 토큰 다시 받기'}</span>` : '';
   if (p.missing) { el.className = 'field-hint err'; el.innerHTML = '⚠ api/tiktok.js 없음 — GitHub 의 api 폴더에 tiktok.js 를 올리고 재배포하세요'; return; }
   if (!p.hasApp && !p.hasAdvertiserIds) { el.className = 'field-hint err'; el.innerHTML = `⚠ 틱톡 중계 함수 ${esc(p.build || '')}: Vercel 환경변수 <b>TIKTOK_APP_ID · TIKTOK_APP_SECRET</b> 부터 넣고 재배포하세요 (개발자 포털 My Apps → 앱 → Basic Information 에 있어요)`; return; }
   if (!p.hasToken) { el.className = 'field-hint err'; el.innerHTML = `⚠ 틱톡 중계 함수 ${esc(p.build || '')}: 토큰(TIKTOK_ACCESS_TOKEN)이 아직 없어요 — 아래 «틱톡 승인 링크 열기»로 만들어 넣으세요`; return; }
-  if (p.readOnly || !p.canWrite) { el.className = 'field-hint err'; el.innerHTML = `⚠ 틱톡 중계 함수 ${esc(p.build || '')} 는 조회 전용(1단계) 버전이에요 — 광고 등록을 하려면 새 api/tiktok.js 를 올리고 재배포하세요${tt.advertisers.length ? ` · 광고계정 ${tt.advertisers.length}개` : ''}`; return; }
-  el.className = 'field-hint ok'; el.innerHTML = `✅ 틱톡 중계 함수 ${esc(p.build || '')} — 조회·등록 가능 · 토큰은 서버에만 있어요${tt.advertisers.length ? ` · 광고계정 ${tt.advertisers.length}개` : ''}${p.hasGoogleApiKey === false ? ' · <b>GOOGLE_API_KEY 없음</b> (영상은 Drive 공유 링크로 받아 가요 — 큰 파일은 실패할 수 있어요)' : ''}`;
+  if (p.readOnly || !p.canWrite) { el.className = 'field-hint err'; el.innerHTML = `⚠ 틱톡 중계 함수 ${esc(p.build || '')} 는 조회 전용(1단계) 버전이에요 — 광고 등록을 하려면 새 api/tiktok.js 를 올리고 재배포하세요${tt.advertisers.length ? ` · 광고계정 ${tt.advertisers.length}개` : ''}${again}`; return; }
+  el.className = 'field-hint ok'; el.innerHTML = `✅ 틱톡 중계 함수 ${esc(p.build || '')} — 조회·등록 가능 · 토큰은 서버에만 있어요${tt.advertisers.length ? ` · 광고계정 ${tt.advertisers.length}개` : ''}${p.hasGoogleApiKey === false ? ' · <b>GOOGLE_API_KEY 없음</b> (영상은 Drive 공유 링크로 받아 가요 — 큰 파일은 실패할 수 있어요)' : ''}${again}`;
 }
+function ttToggleTokenBox() { tt.showTokenBox = !tt.showTokenBox; ttRenderStatus(); }
 async function ttOpenAuth() {
   const out = document.getElementById('tt_out');
   try {
