@@ -33,6 +33,10 @@
   "functions": {
     "api/*.js": {
       "includeFiles": "settings.json"
+    },
+    "api/tiktok.js": {
+      "includeFiles": "settings.json",
+      "maxDuration": 60
     }
   }
 }
