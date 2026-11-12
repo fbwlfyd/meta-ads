@@ -20,13 +20,13 @@
  * 호출
  *   GET  /api/settings?ping=1 → 배포 확인 (로그인 없이)
  *   GET  /api/settings        → 저장된 settings.json 내용 (허용 계정만 · 없으면 404)
- *   POST /api/settings        → 허용 계정 + 헤더 x-admin-key 가 맞으면 settings.json 을 커밋 (본문 = 설정 JSON)
+ *   POST /api/settings        → 허용 계정 + 헤더 x-admin-key 가 맞으면 settings.json 을 커밋 (본문 = 설정 JSON · meta · google · tiktok)
  */
 const fs = require('fs');
 const path = require('path');
 const { verifyUser, noStore } = require('./_auth');
 
-const BUILD = '2026-10-06.1';
+const BUILD = '2026-11-11.1';   // 2026-11-11.1 — 공유 설정에 tiktok 블록 추가
 const REPO = process.env.GITHUB_REPO || '';
 const TOKEN = String(process.env.GITHUB_TOKEN || '').trim().split(/\s+/)[0] || '';
 const BRANCH = process.env.GITHUB_BRANCH || 'main';
@@ -102,8 +102,8 @@ module.exports = async function handler(req, res) {
       if (key !== ADMIN_KEY) return res.status(401).json({ error: '관리자 키가 맞지 않아요' });
       let body = req.body;
       if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = null; } }
-      if (!body || typeof body !== 'object' || (!body.meta && !body.google)) return res.status(400).json({ error: '설정 내용이 비어 있어요' });
-      const payload = { version: body.version || 1, updatedAt: body.updatedAt || new Date().toISOString(), updatedBy: body.updatedBy || who.label || '관리자', meta: body.meta || {}, google: body.google || {} };
+      if (!body || typeof body !== 'object' || (!body.meta && !body.google && !body.tiktok)) return res.status(400).json({ error: '설정 내용이 비어 있어요' });
+      const payload = { version: body.version || 1, updatedAt: body.updatedAt || new Date().toISOString(), updatedBy: body.updatedBy || who.label || '관리자', meta: body.meta || {}, google: body.google || {}, tiktok: body.tiktok || {} };
       const text = JSON.stringify(payload, null, 2);
       const cur = await readCurrent();
       const put = await fetch(contentsUrl(), {
