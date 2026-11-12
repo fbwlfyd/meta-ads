@@ -41,7 +41,7 @@
  */
 const { verifyUser, noStore } = require('./_auth');
 
-const BUILD = '2026-11-11.1';
+const BUILD = '2026-11-12.2';   // 11-12.2: 19자리 ID 를 숫자로 다루다 끝자리가 깨지는 일 방지(양식 page_id) · 데이터 연결에 «기존 광고그룹이 쓰는 픽셀·이벤트» 보강 / 11-12.1: 픽셀 page_size 20 · 목록 전부 넘겨 받기 · 지역 구 단위+한글 검색 · 진단 항목 자동 보정
 const HOST = 'https://business-api.tiktok.com/open_api/v1.3';
 // 조회만 허용 — 페이지가 path 로 직접 부를 수 있는 경로
 const ALLOW_GET = ['advertiser/info/', 'campaign/get/', 'adgroup/get/', 'ad/get/', 'identity/get/', 'page/get/', 'tool/region/', 'tool/language/', 'file/video/ad/info/', 'bc/get/', 'pixel/list/', 'tool/action_category/', 'tool/interest_category/', 'dmp/custom_audience/list/'];
@@ -58,6 +58,35 @@ const str = v => (v === undefined || v === null) ? '' : String(v);
 const arr = v => Array.isArray(v) ? v : (v === undefined || v === null || v === '') ? [] : String(v).split(',').map(s => s.trim()).filter(Boolean);
 const bad = msg => { const e = new Error(msg); e.http = 400; return e; };   // 틱톡을 부르기 전에 우리가 잡는 입력 오류
 
+/* 큰 정수(틱톡 ID 는 16~19자리) — JS 숫자는 15~16자리까지만 정확해서, 그대로 JSON.parse/Number 하면 끝자리가 바뀐다.
+   · 받을 때: 16자리 이상 정수는 문자열로 바꿔서 읽는다 (문자열 안의 숫자는 건드리지 않는다)
+   · 보낼 때: 숫자 타입이어야 하는 ID(page_id 등)는 자릿수 그대로 JSON 숫자로 써 넣는다 */
+function quoteBigInts(text) {
+  if (!/\d{16}/.test(text)) return text;
+  const parts = []; let last = 0, i = 0; const n = text.length;
+  while (i < n) {
+    const c = text.charCodeAt(i);
+    if (c === 34) {   // "문자열" 은 통째로 건너뛴다
+      i++;
+      while (i < n) { const d = text.charCodeAt(i); if (d === 92) i += 2; else if (d === 34) { i++; break; } else i++; }
+      continue;
+    }
+    if (c === 45 || (c >= 48 && c <= 57)) {
+      let j = i + 1;
+      while (j < n) { const d = text.charCodeAt(j); if ((d >= 48 && d <= 57) || d === 46 || d === 101 || d === 69 || d === 43 || d === 45) j++; else break; }
+      if (j - i >= 16) { const tok = text.slice(i, j); if (/^-?\d{16,}$/.test(tok)) { parts.push(text.slice(last, i), '"', tok, '"'); last = j; } }
+      i = j; continue;
+    }
+    i++;
+  }
+  if (!parts.length) return text;
+  parts.push(text.slice(last));
+  return parts.join('');
+}
+class RawInt { constructor(d) { this.d = String(d); } toJSON() { return `@@int:${this.d}@@`; } }
+const rawInt = v => { const d = digits(v); return d.length >= 16 ? new RawInt(d) : Number(d); };
+const toJsonBody = body => JSON.stringify(body).replace(/"@@int:(\d+)@@"/g, '$1');
+
 /* TikTok 호출 — GET 은 쿼리(배열·객체는 JSON 문자열), POST 는 JSON 본문. 응답 {code, message, data} 에서 code≠0 이면 오류 */
 async function tt(path, params, body) {
   const p = String(path || '').replace(/^\/+/, '');
@@ -67,12 +96,48 @@ async function tt(path, params, body) {
   const r = await fetch(url, {
     method: body ? 'POST' : 'GET',
     headers: Object.assign({ 'Access-Token': token() }, body ? { 'Content-Type': 'application/json' } : {}),
-    body: body ? JSON.stringify(body) : undefined,
+    body: body ? toJsonBody(body) : undefined,
   });
   const text = await r.text();
-  let j; try { j = JSON.parse(text); } catch (e) { throw new Error(`TikTok 이 JSON 이 아닌 응답 (HTTP ${r.status}): ${text.slice(0, 160)}`); }
+  let j; try { j = JSON.parse(quoteBigInts(text)); } catch (e) { throw new Error(`TikTok 이 JSON 이 아닌 응답 (HTTP ${r.status}): ${text.slice(0, 160)}`); }
   if (!r.ok || Number(j.code) !== 0) { const err = new Error(`${j.message || 'TikTok 오류'} (code ${j.code}${j.request_id ? ' · ' + j.request_id : ''})`); err.code = j.code; err.http = r.status; err.ttMessage = j.message || ''; throw err; }
   return j.data || {};
+}
+
+/* 목록을 페이지를 넘기며 전부 모은다 — 엔드포인트마다 page_size 한도가 다르다 (픽셀 20 · 양식/타겟 100 · 캠페인 1000).
+   한도를 넘겨 거절되면("page_size: number must be most 20") 오류문에 적힌 한도로 줄여 다시 묻는다 */
+async function ttAll(path, params, listKeys, pageSize, maxPages) {
+  const out = [];
+  let size = pageSize || 100;
+  for (let page = 1; page <= (maxPages || 10); page++) {
+    let d;
+    try { d = await tt(path, Object.assign({}, params, { page, page_size: size })); }
+    catch (e) {
+      const m = /page_size[^0-9]*(\d+)/.exec(e.ttMessage || e.message || '');
+      if (page === 1 && m && Number(m[1]) > 0 && Number(m[1]) < size) { size = Number(m[1]); page = 0; continue; }
+      throw e;
+    }
+    const list = listKeys.map(k => d[k]).find(Array.isArray) || [];
+    list.forEach(x => out.push(x));
+    const total = Number((d.page_info && d.page_info.total_page) || 1);
+    if (page >= total || !list.length) break;
+  }
+  return out;
+}
+/* fields 에 틱톡이 모르는 항목이 섞여 있으면("… error is ad_url") 그 항목만 빼고 다시 묻는다 — 버전에 따라 항목 이름이 달라서 */
+async function ttFields(path, params, fields) {
+  let cur = fields.slice(); const dropped = [];
+  for (let i = 0; i < 8; i++) {
+    try { const d = await tt(path, Object.assign({}, params, { fields: cur })); return { data: d, dropped }; }
+    catch (e) {
+      const m = /error is ([A-Za-z0-9_,\s'"\[\]]+)/.exec(e.ttMessage || e.message || '');
+      const bad = m ? m[1].replace(/[\[\]'"]/g, '').split(/[,\s]+/).filter(x => cur.includes(x)) : [];
+      if (!bad.length) throw e;
+      bad.forEach(b => dropped.push(b));
+      cur = cur.filter(x => !bad.includes(x));
+    }
+  }
+  throw new Error('fields 재시도 한도를 넘었어요');
 }
 
 /* auth_code → 장기 액세스 토큰 (만료 없음 · 취소 전까지). 앱 ID·시크릿이 있어야 한다 */
@@ -131,31 +196,111 @@ async function advertisers() {
   return list;
 }
 
-/* 그 계정이 쓸 수 있는 지역 전부 (1시간 캐시) */
+/* 한글 지명 → 로마자 (국어의 로마자 표기법 · 지명에 흔한 연음·유음화·비음화만).
+   틱톡 지역 이름이 영문(Yangsan · Haeundae-gu)으로만 올 때 한글 검색어(양산 · 해운대구)를 맞춰 보려고 쓴다 */
+const RR_I = ['g', 'kk', 'n', 'd', 'tt', 'r', 'm', 'b', 'pp', 's', 'ss', '', 'j', 'jj', 'ch', 'k', 't', 'p', 'h'];
+const RR_M = ['a', 'ae', 'ya', 'yae', 'eo', 'e', 'yeo', 'ye', 'o', 'wa', 'wae', 'oe', 'yo', 'u', 'wo', 'we', 'wi', 'yu', 'eu', 'ui', 'i'];
+const RR_F = ['', 'k', 'k', 'k', 'n', 'n', 'n', 't', 'l', 'k', 'm', 'l', 'l', 'l', 'p', 'l', 'm', 'p', 'p', 't', 't', 'ng', 't', 't', 'k', 't', 'p', 't'];
+const RR_LINK = { 1: 'g', 4: 'n', 7: 'd', 8: 'r', 16: 'm', 17: 'b', 19: 's', 20: 'ss', 22: 'j', 23: 'ch', 24: 'k', 25: 't', 26: 'p' };   // 받침이 다음 글자 첫소리(ㅇ)로 넘어갈 때
+function romanize(text) {
+  const syl = [];
+  for (const ch of String(text || '')) {
+    const c = ch.charCodeAt(0) - 0xAC00;
+    if (c < 0 || c > 11171) { syl.push({ raw: ch }); continue; }
+    syl.push({ i: Math.floor(c / 588), m: Math.floor((c % 588) / 28), f: c % 28 });
+  }
+  let out = '';
+  for (let k = 0; k < syl.length; k++) {
+    const cur = syl[k], prev = syl[k - 1], next = syl[k + 1];
+    if (cur.raw !== undefined) { out += cur.raw; continue; }
+    let ini = RR_I[cur.i];
+    if (prev && prev.raw === undefined) {
+      if (cur.i === 11 && prev.f && RR_LINK[prev.f] !== undefined) ini = RR_LINK[prev.f];   // 연음: 밀양 → miryang
+      else if (cur.i === 5 && (prev.f === 4 || prev.f === 8)) ini = 'l';                     // ㄴ·ㄹ + ㄹ: 전라 → jeolla
+      else if (cur.i === 5 && (prev.f === 16 || prev.f === 21)) ini = 'n';                   // ㅁ·ㅇ + ㄹ: 종로 → jongno
+    }
+    let fin = RR_F[cur.f];
+    if (next && next.raw === undefined && cur.f) {
+      if (next.i === 11 && RR_LINK[cur.f] !== undefined) fin = '';
+      else if (next.i === 5 && cur.f === 4) fin = 'l';
+      else if ((next.i === 2 || next.i === 6) && fin === 'k') fin = 'ng';
+      else if ((next.i === 2 || next.i === 6) && fin === 't') fin = 'n';
+      else if ((next.i === 2 || next.i === 6) && fin === 'p') fin = 'm';
+    }
+    out += ini + RR_M[cur.m] + fin;
+  }
+  return out;
+}
+const normGeo = v => String(v || '').toLowerCase().replace(/[\s\-'.·,]/g, '');
+
+/* 지역 이름의 한글 번역 (있으면) — /search/region/ 은 language=ko 를 받는다. ID 체계가 달라 못 맞추면 그냥 비어 있다 */
+async function regionKoNames(advertiserId) {
+  try {
+    const d = await tt('search/region/', { advertiser_id: advertiserId, language: 'ko' });
+    const list = d.region_list || d.regions || d.region_info || d.list || [];
+    const map = {};
+    list.forEach(r => { const id = String(r.region_id || r.location_id || r.id || ''); const nm = r.region_name || r.name || ''; if (id && nm) map[id] = nm; });
+    return map;
+  } catch (e) { return {}; }
+}
+/* 그 계정이 쓸 수 있는 지역 (한국 것만 · 구 단위까지 · 1시간 캐시) */
 async function regionList(advertiserId) {
   const hit = regionCache.get(advertiserId);
   if (hit && Date.now() - hit.at < 60 * 60 * 1000) return hit.list;
-  // objective_type 은 필수 (리드 생성 기준으로 묻는다). promotion_type 까지 요구하면 그것도 붙여 한 번 더
-  let d;
-  try { d = await tt('tool/region/', { advertiser_id: advertiserId, placements: ['PLACEMENT_TIKTOK'], objective_type: 'LEAD_GENERATION' }); }
-  catch (e) { if (/promotion_type/.test(e.message)) d = await tt('tool/region/', { advertiser_id: advertiserId, placements: ['PLACEMENT_TIKTOK'], objective_type: 'LEAD_GENERATION', promotion_type: 'LEAD_GENERATION' }); else throw e; }
-  const list = (d.region_info || d.list || []).map(r => ({ id: String(r.location_id || r.region_id || ''), name: r.name || '', level: r.level || r.region_level || '', parentId: String(r.parent_id || ''), code: r.region_code || r.country_code || '' }));
-  regionCache.set(advertiserId, { at: Date.now(), list });
+  // objective_type 은 필수. level_range(구 단위까지)·language 는 받으면 쓰고, 거절하면 그 항목만 빼고 다시
+  const params = { advertiser_id: advertiserId, placements: ['PLACEMENT_TIKTOK'], objective_type: 'LEAD_GENERATION', level_range: 'TO_DISTRICT', language: 'ko' };
+  let d = null, lastErr = null;
+  for (let i = 0; i < 5 && !d; i++) {
+    try { d = await tt('tool/region/', params); }
+    catch (e) {
+      lastErr = e; const msg = String(e.ttMessage || e.message || '');
+      if (/language/i.test(msg) && params.language) delete params.language;
+      else if (/level_range/i.test(msg) && params.level_range) delete params.level_range;
+      else if (/promotion_type/i.test(msg) && !params.promotion_type) params.promotion_type = 'LEAD_GENERATION';
+      else if (params.language) delete params.language;           // 어느 항목 탓인지 모르면 선택 항목부터 하나씩 뺀다
+      else if (params.level_range) delete params.level_range;
+      else throw e;
+    }
+  }
+  if (!d) throw lastErr || new Error('지역 목록을 받지 못했어요');
+  const all = (d.region_info || d.list || []).map(r => ({ id: String(r.location_id || r.region_id || ''), name: r.name || '', level: r.level || r.region_level || '', parentId: String(r.parent_id || ''), code: r.region_code || r.country_code || '' }));
+  // 한국 것만 남긴다 (목록이 수만 줄이라) — 국가 코드가 없으면 상위를 따라 올라가 본다
+  const byAll = {}; all.forEach(r => { byAll[r.id] = r; });
+  const isKr = r => { let cur = r; for (let i = 0; cur && i < 6; i++) { if (/^KR$/i.test(cur.code) || /^(South Korea|Korea|대한민국|한국)$/i.test(cur.name)) return true; cur = byAll[cur.parentId]; } return false; };
+  let list = all.filter(isKr);
+  if (!list.length) list = all;
+  const ko = await regionKoNames(advertiserId);
+  list.forEach(r => { const k = ko[r.id]; r.nameKo = (k && k !== r.name) ? k : (/[가-힣]/.test(r.name) ? r.name : ''); });
+  regionCache.set(advertiserId, { at: Date.now(), list, levels: params.level_range || 'default', lang: params.language || 'en' });
   if (regionCache.size > 50) regionCache.clear();
   return list;
 }
-/* 지역 검색 — 이름으로 거른다 (한국 것 우선). ids 를 주면 그 ID 들의 이름·경로만 돌려준다 */
+/* 지역 검색 — 한글·영문 어느 쪽으로 쳐도 찾는다 (영문 이름뿐이면 한글 검색어를 로마자로 바꿔 맞춘다). ids 를 주면 그 ID 들의 이름·경로만 */
 async function regions(advertiserId, q, ids) {
   const list = await regionList(advertiserId);
   const byId = {}; list.forEach(r => { byId[r.id] = r; });
-  const chain = r => { const out = []; let cur = r; for (let i = 0; cur && i < 5; i++) { out.push(cur.name); cur = byId[cur.parentId]; } return out; };
+  const label = r => r.nameKo || r.name;
+  const chain = r => { const out = []; let cur = r; for (let i = 0; cur && i < 5; i++) { out.push(label(cur)); cur = byId[cur.parentId]; } return out; };
   const withPath = r => Object.assign({}, r, { path: chain(r).join(', ') });
   if (ids && ids.length) return ids.map(id => byId[String(id)]).filter(Boolean).map(withPath);
-  const word = String(q || '').trim().toLowerCase();
-  const kr = list.filter(r => /KR|대한민국|South Korea/i.test([r.code, ...chain(r)].join(' ')));
-  const pool = kr.length ? kr : list;
-  const found = word ? pool.filter(r => String(r.name || '').toLowerCase().includes(word)) : pool.slice(0, 50);
-  return found.slice(0, 50).map(withPath);
+  const word = String(q || '').trim();
+  if (!word) return list.filter(r => /PROVINCE/i.test(r.level)).slice(0, 50).map(withPath);
+  const needles = [normGeo(word)];
+  if (/[가-힣]/.test(word)) {
+    needles.push(normGeo(romanize(word)));
+    const stripped = word.replace(/(특별자치시|특별자치도|특별시|광역시|시|군|구|도)$/, '');
+    if (stripped !== word && stripped.length >= 2) { needles.push(normGeo(stripped)); needles.push(normGeo(romanize(stripped))); }
+  }
+  const uniq = needles.filter((n, i) => n && needles.indexOf(n) === i);
+  const score = r => {
+    const hay = [normGeo(r.name), normGeo(r.nameKo)].filter(Boolean);
+    let best = 0;
+    hay.forEach(h => uniq.forEach(n => { if (h === n) best = Math.max(best, 3); else if (h.startsWith(n)) best = Math.max(best, 2); else if (h.includes(n)) best = Math.max(best, 1); }));
+    return best;
+  };
+  return list.map(r => ({ r, sc: score(r) })).filter(x => x.sc > 0)
+    .sort((a, b) => b.sc - a.sc || String(a.r.name).length - String(b.r.name).length)
+    .slice(0, 50).map(x => withPath(x.r));
 }
 
 /* ───────────────────────── 등록 탭용 목록 ───────────────────────── */
@@ -167,37 +312,41 @@ async function bcs() {
 /* 표시 계정(아이덴티티) — 기본 목록 + 비즈니스 센터가 승인한 틱톡 계정(BC_AUTH_TT) 까지 합친다 */
 async function identities(advertiserId) {
   const out = { list: [], errors: {} };
-  const seen = new Set();
+  const seen = new Map();
   const push = (i, bcId) => {
     const id = str(i.identity_id); if (!id) return;
     const key = id + '|' + str(i.identity_type);
-    if (seen.has(key)) return; seen.add(key);
-    out.list.push({ id, type: i.identity_type || '', name: i.display_name || '', bcId: bcId || str(i.identity_authorized_bc_id), verified: i.is_verified === undefined ? undefined : !!i.is_verified, profile: i.profile_image || '' });
+    const bc = bcId || str(i.identity_authorized_bc_id);
+    if (seen.has(key)) { const cur = seen.get(key); if (!cur.bcId && bc) cur.bcId = bc; return; }   // 기본 목록에 먼저 잡힌 BC 계정에도 BC ID 를 채운다
+    const item = { id, type: i.identity_type || '', name: i.display_name || '', bcId: bc, verified: i.is_verified === undefined ? undefined : !!i.is_verified, profile: i.profile_image || '' };
+    seen.set(key, item); out.list.push(item);
   };
-  try { const d = await tt('identity/get/', { advertiser_id: advertiserId, page_size: 100 }); (d.identity_list || d.list || []).forEach(i => push(i, '')); }
+  try { (await ttAll('identity/get/', { advertiser_id: advertiserId }, ['identity_list', 'list'], 100, 5)).forEach(i => push(i, '')); }
   catch (e) { out.errors.identities = redact(e.message); }
   let bcList = [];
   try { bcList = await bcs(); out.bcs = bcList; } catch (e) { out.errors.bcs = redact(e.message); }
   for (const bc of bcList.slice(0, 10)) {
-    try { const d = await tt('identity/get/', { advertiser_id: advertiserId, identity_type: 'BC_AUTH_TT', identity_authorized_bc_id: bc.id, page_size: 100 }); (d.identity_list || d.list || []).forEach(i => push(i, bc.id)); }
+    try { (await ttAll('identity/get/', { advertiser_id: advertiserId, identity_type: 'BC_AUTH_TT', identity_authorized_bc_id: bc.id }, ['identity_list', 'list'], 100, 5)).forEach(i => push(i, bc.id)); }
     catch (e) { out.errors['bc_' + bc.id] = redact(e.message); }
   }
+  if (bcList.length === 1) out.list.forEach(i => { if (i.type === 'BC_AUTH_TT' && !i.bcId) i.bcId = bcList[0].id; });
   return out;
 }
 /* 인스턴트 양식 */
 async function pages(advertiserId) {
-  const d = await tt('page/get/', { advertiser_id: advertiserId, business_type: 'LEAD_GEN', page_size: 100 });
-  return (d.list || []).map(p => ({ id: str(p.page_id), title: p.title || p.name || '', status: p.status || '', updated: p.update_time || p.modify_time || '' }));
+  const list = await ttAll('page/get/', { advertiser_id: advertiserId, business_type: 'LEAD_GEN' }, ['list'], 100, 10);
+  return list.map(p => ({ id: str(p.page_id), title: p.title || p.name || '', status: p.status || '', updated: p.update_time || p.modify_time || '' }));
 }
 /* 활성 여부 — 상태 비슷한 값이 하나라도 «꺼짐» 이면 false, 아무 정보도 없으면 null */
 function activeFlag(o) {
   if (!o || typeof o !== 'object') return null;
+  if (o.deprecated === true) return false;
   for (const k of ['status', 'pixel_status', 'event_status', 'activity_status', 'active_status', 'is_active', 'active', 'enabled']) {
     if (o[k] === undefined || o[k] === null || o[k] === '') continue;
     const v = o[k];
     if (typeof v === 'boolean') return v;
     const s = String(v).toUpperCase();
-    if (/INACTIVE|DISABLE|PAUSED|DELETED|REMOVED|OFF|FALSE|EXPIRED|UNAVAILABLE/.test(s)) return false;
+    if (/INACTIVE|NO_ACTIVITY|NO_RECENT|NOT_ACTIVE|NEVER|DISABLE|PAUSED|DELETED|REMOVED|OFF|FALSE|EXPIRED|UNAVAILABLE/.test(s)) return false;
     if (/ACTIVE|ENABLE|ON|TRUE|AVAILABLE|NORMAL/.test(s)) return true;
   }
   for (const k of ['last_active_time', 'last_event_time', 'last_fired_time']) {
@@ -207,28 +356,61 @@ function activeFlag(o) {
   }
   return null;
 }
-/* 픽셀(데이터 세트) + 그 안의 이벤트 — 최적화 이벤트 드롭다운은 고른 픽셀의 이벤트만 보여준다 */
-async function pixels(advertiserId) {
-  const d = await tt('pixel/list/', { advertiser_id: advertiserId, page_size: 50 });
-  return (d.pixels || d.list || []).map(x => {
-    const events = (x.events || x.event_list || []).map(ev => ({
-      type: str(ev.event_type || ev.type || ev.optimization_event || ''), name: str(ev.name || ev.event_name || ev.event_type || ''), id: str(ev.event_id || ev.id || ''),
-      active: activeFlag(ev), statistic: str(ev.statistic_type || ''),
-    })).filter(ev => ev.type);
-    return { id: str(x.pixel_id), name: x.pixel_name || x.name || '', code: x.pixel_code || '', active: activeFlag(x), mode: str(x.pixel_setup_mode || x.pixel_mode || ''), events };
-  }).filter(x => x.id);
+/* 픽셀(데이터 세트) + 그 안의 이벤트 — 최적화 이벤트 드롭다운은 고른 픽셀의 이벤트만 보여준다.
+   pixel/list 는 page_size 가 20 까지라 페이지를 넘겨 전부 받는다. 이벤트 값은 광고그룹에 넣을 optimization_event 를 우선한다 */
+async function pixelsRaw(advertiserId) { return ttAll('pixel/list/', { advertiser_id: advertiserId }, ['pixels', 'list'], 20, 10); }
+function pixelShape(x) {
+  const events = (x.events || x.event_list || []).map(ev => ({
+    type: str(ev.optimization_event || ev.event_type || ev.type || ''), eventType: str(ev.event_type || ''), name: str(ev.name || ev.event_name || ev.external_event_type || ev.event_type || ''), id: str(ev.event_id || ev.id || ''),
+    active: activeFlag(ev), statistic: str(ev.statistic_type || ''),
+  })).filter(ev => ev.type);
+  return { id: str(x.pixel_id), name: x.pixel_name || x.name || '', code: x.pixel_code || '', active: activeFlag(x), mode: str(x.pixel_setup_mode || x.pixel_mode || ''), events };
+}
+async function pixels(advertiserId) { return (await pixelsRaw(advertiserId)).map(pixelShape).filter(x => x.id); }
+/* 기존 웹사이트(랜딩) 광고그룹에 실제로 걸려 있는 픽셀·최적화 이벤트 — 픽셀 ID → (이벤트 → 광고그룹 수) */
+async function pixelsInUse(advertiserId) {
+  const map = new Map();
+  let fields = ['adgroup_id', 'adgroup_name', 'pixel_id', 'optimization_event', 'promotion_target_type'];
+  for (let page = 1; page <= 3; page++) {   // 최근 광고그룹 300개까지
+    const r = await ttFields('adgroup/get/', { advertiser_id: advertiserId, page, page_size: 100 }, fields);
+    if (r.dropped.length) fields = fields.filter(x => !r.dropped.includes(x));
+    const list = (r.data && r.data.list) || [];
+    list.forEach(g => {
+      const id = digits(g.pixel_id), ev = str(g.optimization_event);
+      if (!id || /^0+$/.test(id) || str(g.promotion_target_type) === 'INSTANT_PAGE') return;   // 양식 광고그룹은 웹 전환용이 아니다
+      if (!map.has(id)) map.set(id, new Map());
+      if (ev) map.get(id).set(ev, (map.get(id).get(ev) || 0) + 1);
+    });
+    const total = Number((r.data && r.data.page_info && r.data.page_info.total_page) || 1);
+    if (page >= total || !list.length) break;
+  }
+  return map;
+}
+/* 등록 화면의 «데이터 연결» 목록 — 픽셀 목록에 «기존 광고그룹이 쓰는 값» 을 보탠다.
+   픽셀 목록을 못 받거나(권한·한도) 이벤트가 빠져 와도, 지금 돌아가는 광고그룹과 같은 픽셀·이벤트는 고를 수 있다 */
+async function pixelsForForm(advertiserId) {
+  let list = [], error = null;
+  try { list = await pixels(advertiserId); } catch (e) { error = e; }
+  let used = new Map();
+  try { used = await pixelsInUse(advertiserId); } catch (e) { /* 보조 정보 — 없어도 된다 */ }
+  let addedPixels = 0, addedEvents = 0;
+  used.forEach((evs, id) => {
+    let px = list.find(x => x.id === id);
+    if (!px) { px = { id, name: '', code: '', active: null, mode: '', events: [], fromAdgroups: true }; list.push(px); addedPixels++; }
+    px.used = true;
+    evs.forEach((n, type) => {
+      let ev = px.events.find(e => e.type === type);
+      if (!ev) { ev = { type, eventType: '', name: type, id: '', active: null, statistic: '', fromAdgroups: true }; px.events.push(ev); addedEvents++; }
+      ev.used = n;
+    });
+  });
+  if (error && !list.length) throw error;
+  return { list, source: error ? 'adgroups' : ((addedPixels || addedEvents) ? 'pixels+adgroups' : 'pixels'), note: error ? redact(error.message) : '' };
 }
 /* 맞춤 타겟(시청자) — 제외 타겟에 쓴다. Audience management 권한이 있어야 한다 */
 async function audiences(advertiserId) {
-  const out = [];
-  let page = 1;
-  for (let i = 0; i < 5; i++, page++) {
-    const d = await tt('dmp/custom_audience/list/', { advertiser_id: advertiserId, page, page_size: 100 });
-    (d.list || []).forEach(a => out.push({ id: str(a.audience_id), name: a.name || '', type: str(a.audience_type || a.audience_sub_type || ''), size: a.cover_num === undefined ? null : a.cover_num, valid: a.is_valid === undefined ? null : !!a.is_valid, expiring: !!a.is_expiring, shared: a.is_creator === undefined ? null : !a.is_creator }));
-    const total = Number((d.page_info && d.page_info.total_page) || 1);
-    if (page >= total) break;
-  }
-  return out;
+  const list = await ttAll('dmp/custom_audience/list/', { advertiser_id: advertiserId }, ['list'], 100, 10);
+  return list.map(a => ({ id: str(a.audience_id), name: a.name || '', type: str(a.audience_type || a.audience_sub_type || ''), size: a.cover_num === undefined ? null : a.cover_num, valid: a.is_valid === undefined ? null : !!a.is_valid, expiring: !!a.is_expiring, shared: a.is_creator === undefined ? null : !a.is_creator }));
 }
 /* 트리 → 한 줄 목록 (id · 이름 · 상위 경로) */
 function flattenTree(nodes, idKey, nameKey, parentPath, out, depth) {
@@ -485,9 +667,9 @@ async function createAd(b) {
     c.utm_params = Array.isArray(b.utm_params) && b.utm_params.length ? b.utm_params.map(u => ({ key: str(u.key), value: str(u.value) })).filter(u => u.key) : FIXED_UTM.slice();
   } else {
     if (!digits(b.page_id)) throw bad('인스턴트 양식을 골라주세요');
-    c.page_id = Number(digits(b.page_id));
+    c.page_id = rawInt(b.page_id);   // 숫자 타입 · 자릿수 그대로
   }
-  if (digits(b.tracking_pixel_id)) c.tracking_pixel_id = Number(digits(b.tracking_pixel_id));
+  if (digits(b.tracking_pixel_id)) c.tracking_pixel_id = rawInt(b.tracking_pixel_id);
   const body = { advertiser_id: adv, adgroup_id: group, creatives: [c] };
   // 영상이 아직 처리 중이면 잠시 기다렸다 다시 (최대 6번)
   let last = null;
@@ -540,40 +722,40 @@ async function confirmTerms(b) {
   await tt('term/confirm/', null, { advertiser_id: adv, term_type: 'LEAD_ADS' });
   return { ok: true };
 }
+const AD_FIELDS = ['ad_id', 'ad_name', 'adgroup_id', 'adgroup_name', 'campaign_id', 'campaign_name', 'ad_format', 'video_id', 'image_ids', 'ad_text', 'ad_texts', 'call_to_action', 'call_to_action_id', 'landing_page_url', 'landing_page_urls', 'page_id', 'identity_id', 'identity_type', 'identity_authorized_bc_id', 'display_name', 'operation_status', 'secondary_status', 'create_time', 'creative_type', 'music_id', 'promotional_music_disabled', 'tiktok_item_id', 'dark_post_status', 'creative_authorized', 'utm_params', 'deeplink_utm_params', 'tracking_pixel_id', 'tracking_offline_event_set_ids', 'tracking_message_event_set_id', 'ad_ref_pixel_id', 'creative_auto_enhancement_strategy_list', 'is_new_structure', 'smart_plus_ad_id', 'campaign_automation_type', 'is_aco', 'optimization_event', 'comment_disabled', 'share_disabled', 'video_download_disabled', 'vertical_video_strategy', 'dynamic_format', 'aigc_disclosure_type', 'image_mode'];
 async function adStatus(adv, ids) {
-  const d = await tt('ad/get/', { advertiser_id: adv, page_size: 50, fields: ['ad_id', 'ad_name', 'adgroup_id', 'campaign_id', 'operation_status', 'secondary_status', 'landing_page_url', 'page_id', 'dark_post_status', 'identity_id', 'identity_type', 'call_to_action', 'video_id', 'image_ids', 'tracking_pixel_id', 'tracking_offline_event_set_ids', 'utm_params', 'create_time'], filtering: { ad_ids: ids.slice(0, 50) } });
-  return (d.list || []);
+  const r = await ttFields('ad/get/', { advertiser_id: adv, page_size: 50, filtering: { ad_ids: ids.slice(0, 50) } }, AD_FIELDS);
+  return (r.data.list || []);
 }
 
-/* 진단 — 한 계정의 표시 계정·양식·최근 캠페인/광고그룹/광고 (이름 규칙·기본 설정을 읽어 가기 위해) */
+/* 진단 — 한 계정의 표시 계정·양식·픽셀·최근 캠페인/광고그룹/광고 (이름 규칙·기본 설정을 읽어 가기 위해) */
 async function diag(advertiserId) {
-  const out = { advertiser_id: advertiserId, errors: {} };
+  const out = { advertiser_id: advertiserId, errors: {}, dropped: {} };
   const safe = async (key, fn) => { try { out[key] = await fn(); } catch (e) { out.errors[key] = redact(e.message); out[key] = null; } };
-  await safe('identities', async () => { const d = await tt('identity/get/', { advertiser_id: advertiserId }); return (d.identity_list || d.list || []).map(i => ({ id: i.identity_id, type: i.identity_type, name: i.display_name, verified: i.is_verified === undefined ? undefined : !!i.is_verified })); });
-  await safe('forms', async () => { const d = await tt('page/get/', { advertiser_id: advertiserId, business_type: 'LEAD_GEN', page_size: 50 }); return (d.list || []).map(p => ({ id: p.page_id, title: p.title || p.name || '', status: p.status || '' })); });
+  await safe('identities', async () => (await identities(advertiserId)).list.map(i => ({ id: i.id, type: i.type, name: i.name, bcId: i.bcId, verified: i.verified })));
+  await safe('forms', async () => (await pages(advertiserId)).map(p => ({ id: p.id, title: p.title, status: p.status })));
   await safe('bcs', bcs);
-  await safe('pixels', async () => (await pixels(advertiserId)).map(x => ({ id: x.id, name: x.name, code: x.code, active: x.active, events: x.events.map(ev => `${ev.name || ev.type}${ev.type && ev.name !== ev.type ? ' (' + ev.type + ')' : ''}${ev.active === false ? ' ⏸' : ''}`) })));
-  // 캠페인 — 기본 항목 + (되면) Smart+ 여부 같은 추가 항목
-  const campBase = ['campaign_id', 'campaign_name', 'objective_type', 'budget', 'budget_mode', 'operation_status', 'create_time'];
-  const campExtra = ['campaign_type', 'is_smart_performance_campaign', 'budget_optimize_on', 'bid_type', 'optimization_goal', 'secondary_status'];
-  await safe('campaigns', async () => {
-    try { const d = await tt('campaign/get/', { advertiser_id: advertiserId, page_size: 15, fields: campBase.concat(campExtra) }); return (d.list || []); }
-    catch (e) { out.errors.campaignsExtra = redact(e.message); const d = await tt('campaign/get/', { advertiser_id: advertiserId, page_size: 15, fields: campBase }); return (d.list || []); }
+  await safe('pixels', async () => {
+    const raw = await pixelsRaw(advertiserId);
+    // 응답 모양을 보려고 첫 픽셀의 원본을 조금 같이 돌려준다 (이벤트는 앞 3개만 · 값은 코드/이름뿐이라 비밀값 아님)
+    if (raw[0]) { const sample = Object.assign({}, raw[0]); ['events', 'event_list'].forEach(k => { if (Array.isArray(sample[k])) sample[k] = sample[k].slice(0, 3); }); out.pixelSample = JSON.stringify(sample).slice(0, 1500); }
+    return raw.map(pixelShape).filter(x => x.id).map(x => ({ id: x.id, name: x.name, code: x.code, active: x.active, events: x.events.map(ev => `${ev.name || ev.type}${ev.type && ev.name !== ev.type ? ' (' + ev.type + ')' : ''}${ev.active === false ? ' ⏸' : ''}`) }));
   });
-  const agBase = ['adgroup_id', 'adgroup_name', 'campaign_id', 'campaign_name', 'promotion_type', 'placement_type', 'placements', 'optimization_goal', 'optimization_event', 'bid_type', 'bid_price', 'billing_event', 'budget', 'budget_mode', 'schedule_type', 'schedule_start_time', 'schedule_end_time', 'location_ids', 'zipcode_ids', 'age_groups', 'gender', 'languages', 'identity_id', 'identity_type', 'pacing', 'operation_status', 'create_time', 'pixel_id', 'promotion_website_type'];
-  const agExtra = ['conversion_bid_price', 'deep_bid_type', 'smart_audience_enabled', 'targeting_expansion', 'interest_category_ids', 'audience_ids', 'excluded_audience_ids', 'operating_systems', 'secondary_status', 'creative_material_mode', 'brand_safety_type', 'comment_disabled', 'video_download_disabled', 'share_disabled', 'promotion_target_type', 'is_smart_performance_campaign', 'identity_authorized_bc_id', 'optimization_event', 'click_attribution_window', 'view_attribution_window', 'attribution_event_count', 'actions'];
-  await safe('adgroups', async () => {
-    try { const d = await tt('adgroup/get/', { advertiser_id: advertiserId, page_size: 15, fields: agBase.concat(agExtra) }); return (d.list || []); }
-    catch (e) { out.errors.adgroupsExtra = redact(e.message); const d = await tt('adgroup/get/', { advertiser_id: advertiserId, page_size: 15, fields: agBase }); return (d.list || []); }
-  });
-  const adFields = ['ad_id', 'ad_name', 'adgroup_id', 'adgroup_name', 'campaign_id', 'ad_format', 'video_id', 'image_ids', 'ad_text', 'ad_texts', 'call_to_action', 'call_to_action_id', 'landing_page_url', 'page_id', 'identity_id', 'identity_type', 'identity_authorized_bc_id', 'display_name', 'operation_status', 'create_time', 'creative_type', 'secondary_status', 'music_id', 'promotional_music_disabled', 'tiktok_item_id', 'dark_post_status', 'creative_authorized', 'ad_url', 'utm_params', 'tracking_pixel_id', 'tracking_offline_event_set_ids'];
-  const adBase = ['ad_id', 'ad_name', 'adgroup_id', 'campaign_id', 'ad_format', 'video_id', 'image_ids', 'ad_text', 'call_to_action', 'landing_page_url', 'page_id', 'identity_id', 'identity_type', 'identity_authorized_bc_id', 'display_name', 'operation_status', 'create_time'];
+  await safe('audiences', async () => { const list = await audiences(advertiserId); return { count: list.length, sample: list.slice(0, 8).map(a => `${a.name}${a.type ? ' · ' + a.type : ''}${a.valid === false ? ' · 사용 불가' : ''}`) }; });
+  const fetchFields = async (key, path, params, fields) => {
+    const r = await ttFields(path, params, fields);
+    if (r.dropped.length) out.dropped[key] = r.dropped;
+    return r.data.list || [];
+  };
+  const campFields = ['campaign_id', 'campaign_name', 'objective_type', 'budget', 'budget_mode', 'operation_status', 'create_time', 'campaign_type', 'is_smart_performance_campaign', 'budget_optimize_on', 'bid_type', 'optimization_goal', 'secondary_status'];
+  await safe('campaigns', () => fetchFields('campaigns', 'campaign/get/', { advertiser_id: advertiserId, page_size: 15 }, campFields));
+  const agFields = ['adgroup_id', 'adgroup_name', 'campaign_id', 'campaign_name', 'promotion_type', 'placement_type', 'placements', 'optimization_goal', 'optimization_event', 'bid_type', 'bid_price', 'billing_event', 'budget', 'budget_mode', 'schedule_type', 'schedule_start_time', 'schedule_end_time', 'location_ids', 'zipcode_ids', 'age_groups', 'gender', 'languages', 'identity_id', 'identity_type', 'pacing', 'operation_status', 'create_time', 'pixel_id', 'promotion_website_type',
+    'conversion_bid_price', 'deep_bid_type', 'smart_audience_enabled', 'targeting_expansion', 'interest_category_ids', 'audience_ids', 'excluded_audience_ids', 'operating_systems', 'secondary_status', 'creative_material_mode', 'brand_safety_type', 'comment_disabled', 'video_download_disabled', 'share_disabled', 'promotion_target_type', 'is_smart_performance_campaign', 'identity_authorized_bc_id', 'click_attribution_window', 'view_attribution_window', 'attribution_event_count', 'actions'];
+  await safe('adgroups', () => fetchFields('adgroups', 'adgroup/get/', { advertiser_id: advertiserId, page_size: 15 }, agFields));
   // 광고 — 틱톡이 자동으로 만든 변형(Music_Refresh · auto carousel generation)은 뒤로 보내고, 최근 광고그룹 3개의 광고를 따로 본다
   const isAuto = a => /-Music_Refresh-|^auto carousel generation_|smart creative|_Smart_Creative_/i.test(String(a.ad_name || ''));
   await safe('ads', async () => {
-    let list;
-    try { const d = await tt('ad/get/', { advertiser_id: advertiserId, page_size: 60, fields: adFields }); list = (d.list || []); }
-    catch (e) { out.errors.adsExtra = redact(e.message); const d = await tt('ad/get/', { advertiser_id: advertiserId, page_size: 60, fields: adBase }); list = (d.list || []); }
+    const list = await fetchFields('ads', 'ad/get/', { advertiser_id: advertiserId, page_size: 60 }, AD_FIELDS);
     const real = list.filter(a => !isAuto(a)), auto = list.filter(isAuto);
     out.adsAutoCount = auto.length;
     return real.slice(0, 20).concat(auto.slice(0, 3).map(a => Object.assign({ _auto: true }, a)));
@@ -581,17 +763,18 @@ async function diag(advertiserId) {
   await safe('adsOfRecentGroups', async () => {
     const ids = (out.adgroups || []).slice(0, 3).map(g => String(g.adgroup_id)).filter(Boolean);
     if (!ids.length) return [];
-    let list;
-    try { const d = await tt('ad/get/', { advertiser_id: advertiserId, page_size: 60, fields: adFields, filtering: { adgroup_ids: ids } }); list = (d.list || []); }
-    catch (e) { const d = await tt('ad/get/', { advertiser_id: advertiserId, page_size: 60, fields: adBase, filtering: { adgroup_ids: ids } }); list = (d.list || []); }
+    const list = await fetchFields('adsOfRecentGroups', 'ad/get/', { advertiser_id: advertiserId, page_size: 60, filtering: { adgroup_ids: ids } }, AD_FIELDS);
     return list.filter(a => !isAuto(a)).slice(0, 15).concat(list.filter(isAuto).slice(0, 2).map(a => Object.assign({ _auto: true }, a)));
   });
-  // 광고그룹에 걸린 지역 ID → 이름
+  // 광고그룹에 걸린 지역 ID → 이름 (한글 이름이 있으면 같이)
   try {
     const ids = new Set(); (out.adgroups || []).forEach(g => (g.location_ids || []).forEach(id => ids.add(String(id))));
+    const list = await regionList(advertiserId);
+    const meta = regionCache.get(advertiserId) || {};
+    out.regionInfo = { count: list.length, levels: meta.levels || '', lang: meta.lang || '', withKo: list.filter(r => r.nameKo).length, districts: list.filter(r => /DISTRICT/i.test(r.level)).length };
     if (ids.size) {
-      const byId = {}; (await regionList(advertiserId)).forEach(r => { byId[r.id] = r; });
-      out.locationNames = {}; ids.forEach(id => { const r = byId[id]; out.locationNames[id] = r ? `${r.name}${r.level ? ' (' + r.level + ')' : ''}` : ''; });
+      const byId = {}; list.forEach(r => { byId[r.id] = r; });
+      out.locationNames = {}; ids.forEach(id => { const r = byId[id]; out.locationNames[id] = r ? `${r.nameKo && r.nameKo !== r.name ? r.nameKo + ' · ' : ''}${r.name}${r.level ? ' (' + r.level + ')' : ''}` : ''; });
     }
   } catch (e) { out.errors.locationNames = redact(e.message); }
   return out;
@@ -643,7 +826,7 @@ module.exports = async function handler(req, res) {
     if (op === 'diag') { needAdv(); return res.status(200).json(await diag(adv)); }
     if (op === 'identities') { needAdv(); return res.status(200).json(await identities(adv)); }
     if (op === 'pages') { needAdv(); return res.status(200).json({ list: await pages(adv) }); }
-    if (op === 'pixels') { needAdv(); return res.status(200).json({ list: await pixels(adv) }); }
+    if (op === 'pixels') { needAdv(); return res.status(200).json(await pixelsForForm(adv)); }
     if (op === 'audiences') { needAdv(); return res.status(200).json({ list: await audiences(adv) }); }
     if (op === 'interests') { needAdv(); return res.status(200).json({ list: await interests(adv) }); }
     if (op === 'actions') { needAdv(); return res.status(200).json(await actions(adv)); }
