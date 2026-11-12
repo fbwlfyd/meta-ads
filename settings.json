@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-12T05:46:17.849Z",
+  "updatedAt": "2026-11-12T11:28:35.296Z",
   "updatedBy": "fbwlfyd9271@gmail.com",
   "meta": {
     "staff": [
@@ -670,7 +670,8 @@
       {
         "channelName": "오늘의병원",
         "channelId": "UChg_3mq-CO2kFPkbXlTR3pw",
-        "logoFileId": "1hJZjmLoPvlQfURssgGB6fZxGBD8AOuif"
+        "logoFileId": "1hJZjmLoPvlQfURssgGB6fZxGBD8AOuif",
+        "subChannelId": "UCw_AM9sM_y6Sacw10Ay2vfA"
       },
       {
         "channelName": "알쓸의잡",
@@ -4092,68 +4093,54 @@
     ]
   },
   "tiktok": {
+    "advertiserId": "7307541033200664577",
+    "advertiserName": "메디컬마케팅3부서",
     "clinics": [
       {
         "clinic": "충주인플란트치과",
         "short": "충주 임플란트",
         "product": "임플란트",
-        "dateCode": "250606",
-        "advertiserId": "",
         "regions": []
       },
       {
         "clinic": "양산서울에스원치과",
         "short": "양산서울에스원 임플란트",
         "product": "임플란트",
-        "dateCode": "250301",
-        "advertiserId": "",
         "regions": []
       },
       {
         "clinic": "서면오늘플란트치과",
         "short": "서면오늘플란트 임플란트",
         "product": "임플란트",
-        "dateCode": "260805",
-        "advertiserId": "",
         "regions": []
       },
       {
         "clinic": "울산더조은플란트치과",
         "short": "울산더조은플란트치과 임플란트",
         "product": "임플란트",
-        "dateCode": "251003",
-        "advertiserId": "",
         "regions": []
       },
       {
         "clinic": "진주리더플란트치과",
         "short": "진주 임플란트",
         "product": "임플란트",
-        "dateCode": "260504",
-        "advertiserId": "",
         "regions": []
       },
       {
         "clinic": "울산서울탑치과",
         "short": "울산서울탑치과 임플란트",
         "product": "임플란트",
-        "dateCode": "230102",
-        "advertiserId": "",
-        "regions": []
-      },
-      {
-        "clinic": "다이트짐",
-        "short": "",
-        "product": "",
-        "dateCode": "260505",
-        "advertiserId": "",
         "regions": []
       }
+    ],
+    "pixelShow": [
+      "[EZMNC] 데이터세트",
+      "[다이트짐] 데이터 세트"
     ],
     "identityName": "오늘의병원",
     "identityId": "9493607a-f8a4-5f34-aba5-c97a607a2e98",
     "identityType": "BC_AUTH_TT",
-    "identityBcId": "",
+    "identityBcId": "7154311791894331393",
     "cta": "LEARN_MORE",
     "budget": 30000,
     "budgetStrategy": "adgroup",
@@ -4161,8 +4148,7 @@
       "AGE_45_54",
       "AGE_55_100"
     ],
-    "typeWeb": "랜딩",
-    "typeForm": "리드",
-    "adNameWithFile": true
+    "adNameWithFile": true,
+    "fixes": 1
   }
 }
