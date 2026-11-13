@@ -153,9 +153,41 @@ document.addEventListener('securitypolicyviolation', function (e) {
   .field .kradio input[type="radio"], .kradio input[type="radio"] { width: 14px; height: 14px; padding: 0; margin: 0; appearance: auto; -webkit-appearance: auto; border: none; box-shadow: none; accent-color: var(--tt); flex-shrink: 0; }
   .kradio label small { display: block; font-weight: 400; }
   .kradio label > span { display: flex; flex-direction: column; gap: 1px; }
+  /* 둘 중 하나 고르기 — 좌우 같은 크기 한 줄 (예산 전략) */
+  .kradio.even { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .kradio.even label { justify-content: center; height: 40px; padding: 0 8px; white-space: nowrap; }
+  /* TikTok 설정 → 지역 표 */
+  .kreg-locs { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-height: 34px; }
+  .kreg-locs .kchip { font-size: 11px; padding: 3px 5px 3px 8px; }
+  .kreg-locs .kchip.guess { border-style: dashed; background: var(--white); }
+  .kreg-warn { font-size: 11px; font-weight: 700; color: var(--red); white-space: nowrap; }
+  .kreg-warn.soft { color: #b45309; font-weight: 600; }
+  .kreg-cand { height: 24px; padding: 0 8px; border: 1px dashed var(--tt-border); border-radius: 20px; background: var(--white); font-family: inherit; font-size: 11px; color: var(--tt); cursor: pointer; white-space: nowrap; }
+  .kreg-cand:hover { background: var(--tt-bg); border-style: solid; }
+  .kreg-cand.ok { border-style: solid; border-color: #b45309; color: #b45309; font-weight: 600; }
+  .kreg-cand.ok:hover { background: #fffbeb; }
+  .kreg-add { width: 24px; height: 24px; border: 1px dashed var(--border2); border-radius: 20px; background: none; color: var(--text3); cursor: pointer; font-family: inherit; font-size: 13px; line-height: 1; padding: 0; flex-shrink: 0; }
+  .kreg-add:hover { border-color: var(--tt); color: var(--tt); background: var(--tt-bg); }
+  .kreg-add.on { width: auto; padding: 0 9px; font-size: 11px; font-weight: 600; border-style: solid; border-color: var(--tt); color: var(--tt); background: var(--tt-bg); }
   .chip.k.checked { background: var(--tt-bg); border-color: var(--tt-border); color: var(--tt); }
   .kutm { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; background: var(--bg); border-radius: 6px; padding: 6px 10px; color: var(--text2); line-height: 1.8; }
   .kstep-btn { margin-left: 6px; }
+  /* TikTok 소재 카드 — 광고 문구 칸을 넓고 크게 */
+  .creative-card.kcard .gcard-col.right { flex: 1.6 1 0; }
+  .creative-card.kcard textarea.ktext { height: 124px; font-size: 13px; line-height: 1.55; padding: 9px 11px; resize: vertical; }
+  .creative-card.kcard .creative-drop { padding: 18px 8px; }
+  .creative-card.kcard .gvideo { margin-bottom: 0; }
+  .creative-card.kcard .kcard-url { margin: 10px 0 0; padding-top: 9px; border-top: 1px dashed var(--border2); }
+  /* TikTok 고정 값 — 왼쪽 맨 아래 한 묶음 (입력 칸이 아니라 읽기만 하는 줄) */
+  .kfixlist { border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); padding: 2px 12px; }
+  .kfixlist .kfix-row { display: flex; gap: 10px; padding: 7px 0; font-size: 12px; line-height: 1.5; border-top: 1px solid var(--border); }
+  .kfixlist .kfix-row:first-child { border-top: none; }
+  .kfixlist .kfix-k { flex: 0 0 88px; color: var(--text3); font-weight: 500; }
+  .kfixlist .kfix-v { flex: 1; min-width: 0; color: var(--text1); word-break: break-word; }
+  .kfixlist .kfix-v small { display: block; color: var(--text3); font-size: 11px; }
+  .kfixlist .kfix-v .field-hint { margin-top: 2px; }
+  .kfixlist .kfix-v .field-hint:empty { display: none; }
+  .kfixlist #k1_계정:disabled { display: block; width: 100%; height: auto; border: none; background: none; padding: 0; margin: 0; font-family: inherit; font-size: 12px; font-weight: 600; color: var(--text1); letter-spacing: 0; }
 
   .card-title { font-size: 14px; font-weight: 600; letter-spacing: -0.2px; }
   .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
@@ -912,7 +944,11 @@ document.addEventListener('securitypolicyviolation', function (e) {
           </select>
         </div>
         <div class="field"><label>서브 채널 <span class="auto-tag g">본 채널이 한도일 때</span></label>
-          <select id="g1_서브채널" onchange="gOnSubChannelPick('g1')"><option value="">없음</option></select>
+          <div class="chpick" id="g1_subpick">
+            <button type="button" class="chpick-btn" id="g1_subpick_btn" onclick="gToggleSubMenu('g1')" aria-haspopup="listbox"><span class="chpick-logo noimg">–</span><span class="chpick-name" style="color:var(--text3);">없음</span><span class="chpick-caret">▾</span></button>
+            <div class="chpick-menu" id="g1_subpick_menu" role="listbox"></div>
+          </div>
+          <select id="g1_서브채널" hidden><option value="">없음</option></select>
           <div class="field-hint" id="g1_sub_hint"></div>
         </div>
         <div class="field"><label>업체명 <span class="auto-tag g">자동</span></label><input type="text" id="g1_업체명" readonly placeholder="채널 선택 시 자동입력"></div>
@@ -1034,7 +1070,11 @@ document.addEventListener('securitypolicyviolation', function (e) {
           </select>
         </div>
         <div class="field"><label>서브 채널 <span class="auto-tag g">본 채널이 한도일 때</span></label>
-          <select id="g2_서브채널" onchange="gOnSubChannelPick('g2')"><option value="">없음</option></select>
+          <div class="chpick" id="g2_subpick">
+            <button type="button" class="chpick-btn" id="g2_subpick_btn" onclick="gToggleSubMenu('g2')" aria-haspopup="listbox"><span class="chpick-logo noimg">–</span><span class="chpick-name" style="color:var(--text3);">없음</span><span class="chpick-caret">▾</span></button>
+            <div class="chpick-menu" id="g2_subpick_menu" role="listbox"></div>
+          </div>
+          <select id="g2_서브채널" hidden><option value="">없음</option></select>
           <div class="field-hint" id="g2_sub_hint"></div>
         </div>
         <div class="field"><label>업체명 <span class="auto-tag g">자동</span></label><input type="text" id="g2_업체명" readonly placeholder="채널 선택 시 자동입력"></div>
@@ -1105,14 +1145,15 @@ document.addEventListener('securitypolicyviolation', function (e) {
   <div class="panel">
     <div class="panel-head"><h2>TikTok 광고 등록</h2><p>리드 캠페인 · 광고그룹 · 단일 동영상 광고 생성 (API 직접 · 만들고 나면 꺼진 상태)</p></div>
     <div class="panel-body">
+      <div class="field-hint err" id="k1_계정_alert" style="display:none;margin:0 0 12px;"></div>
       <div class="section"><div class="sec-label">기본 정보</div>
         <div class="row2">
           <div class="field"><label>제작자</label><select id="k1_제작자" onchange="kOnStaff()"><option value="">선택</option></select><div class="field-hint" id="k1_제작자_hint"></div></div>
           <div class="field"><label>날짜 <span class="auto-tag">▲▼ 로 차수</span></label><div class="date-seq"><input type="text" id="k1_날짜" placeholder="예: 261109_1" oninput="kAutoGenNames()"><span class="seq-btns"><button type="button" onclick="bumpDateSeq('k1',1)" title="차수 +1 (예: _1 → _2)">▲</button><button type="button" onclick="bumpDateSeq('k1',-1)" title="차수 -1">▼</button></span></div></div>
         </div>
         <div class="row2">
-          <div class="field"><label>광고계정 <span class="auto-tag tt fixed">고정</span></label><select id="k1_계정" disabled onchange="kOnAccount()"><option value="">불러오는 중...</option></select><div class="field-hint" id="k1_계정_hint"></div></div>
           <div class="field"><label>치과명</label><select id="k1_치과명" onchange="kOnClinic()"><option value="">선택</option></select><span class="link-toggle" onclick="openSettings('kclinic')">치과 관리</span></div>
+          <div class="field"><label>지역구분자</label><select id="k1_지역구분자" onchange="kOnRegion()"><option value="">선택</option></select><span class="link-toggle" onclick="openSettings('kregion')">지역 관리</span></div>
         </div>
         <div class="row2">
           <div class="field"><label>리드 방식</label>
@@ -1132,22 +1173,15 @@ document.addEventListener('securitypolicyviolation', function (e) {
       <div class="divider"></div>
       <div class="section"><div class="sec-label">캠페인 설정</div>
         <div class="field"><label>예산 전략 <span class="auto-tag tt">둘 중 하나</span></label>
-          <div class="kradio" id="k1_예산전략">
-            <label class="on"><input type="radio" name="k1_budget_strategy" value="adgroup" checked onchange="kOnBudgetStrategy()"><span>광고그룹 예산<small style="color:var(--text3);">캠페인은 무제한 · 그룹이 일예산(동적)</small></span></label>
-            <label><input type="radio" name="k1_budget_strategy" value="campaign" onchange="kOnBudgetStrategy()"><span>캠페인 예산<small style="color:var(--text3);">캠페인 예산 최적화(CBO) · 일예산</small></span></label>
+          <div class="kradio even" id="k1_예산전략">
+            <label class="on" title="캠페인은 무제한 · 광고그룹이 일예산(동적)"><input type="radio" name="k1_budget_strategy" value="adgroup" checked onchange="kOnBudgetStrategy()"><span>광고그룹 예산</span></label>
+            <label title="캠페인 예산 최적화(CBO) · 캠페인이 일예산"><input type="radio" name="k1_budget_strategy" value="campaign" onchange="kOnBudgetStrategy()"><span>캠페인 예산</span></label>
           </div>
         </div>
-        <div class="row2">
-          <div class="field"><label id="k1_예산_label">광고그룹 일일예산 (원)</label><input type="number" id="k1_예산" value="30000" step="1000" min="0"></div>
-          <div class="field"><label>캠페인 목표 <span class="auto-tag tt fixed">고정</span></label><input type="text" value="리드 생성 (LEAD_GENERATION)" readonly></div>
-        </div>
+        <div class="field"><label id="k1_예산_label">광고그룹 일일예산 (원)</label><input type="number" id="k1_예산" value="30000" step="1000" min="0"></div>
       </div>
       <div class="divider"></div>
       <div class="section"><div class="sec-label">광고그룹 설정</div>
-        <div class="row2">
-          <div class="field"><label>최적화 목표 <span class="auto-tag tt fixed">고정</span></label><input type="text" value="리드" readonly></div>
-          <div class="field"><label>최적화 위치 <span class="auto-tag tt">리드 방식 따라 자동</span></label><input type="text" id="k1_최적화위치" value="웹사이트" readonly></div>
-        </div>
         <div id="k1_web_wrap">
           <div class="row2">
             <div class="field"><label>데이터 연결 (픽셀 · 데이터 세트) <span class="auto-tag tt">API</span></label><select id="k1_픽셀" onchange="kOnPixel()"><option value="">광고계정 선택 후</option></select></div>
@@ -1158,17 +1192,10 @@ document.addEventListener('securitypolicyviolation', function (e) {
         <div id="k1_form_wrap" style="display:none;">
           <div class="field"><label>인스턴트 양식 <span class="auto-tag tt">API</span></label><select id="k1_양식"><option value="">광고계정 선택 후</option></select><div class="field-hint" id="k1_양식_hint"></div></div>
         </div>
-        <div class="field"><label>입찰 · 과금 <span class="auto-tag tt fixed">고정</span></label>
-          <div class="kfixed"><span><b>입찰</b> 최대 결과 (NO_BID)</span><span><b>과금</b> oCPM</span><span><b>게재</b> 표준 (PACING_MODE_SMOOTH)</span><span id="k1_attr_fixed"><b>어트리뷰션</b> 클릭 7일 · 조회 1일 · 모든 전환</span></div>
-        </div>
         <div class="sec-label" style="margin-top:12px;">인구통계</div>
-        <div class="field"><label>지역 <span class="auto-tag tt">API 검색 · 여러 개</span></label>
-          <div class="ksearch-wrap">
-            <input type="text" id="k1_지역검색" placeholder="지역 이름으로 검색 — 한글·영문 모두 (예: 해운대, 양산시, Busan)" autocomplete="off" oninput="kOnRegionInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();kRegionSearchNow();}">
-            <div class="region-results" id="k1_지역결과"></div>
-          </div>
+        <div class="field"><label>지역 타겟 <span class="auto-tag tt">지역구분자 따라 자동</span></label>
           <div class="kchips" id="k1_지역칩"></div>
-          <div class="field-hint" id="k1_지역_hint">치과를 고르면 그 치과의 기본값(지역·데이터 연결·이벤트·연령)이 들어와요 <span class="link-toggle" onclick="kSaveClinicDefaults()">지금 값을 이 치과 기본으로 저장</span></div>
+          <div class="field-hint" id="k1_지역_hint"></div>
         </div>
         <div class="row2">
           <div class="field"><label>연령</label>
@@ -1186,7 +1213,6 @@ document.addEventListener('securitypolicyviolation', function (e) {
               <option value="GENDER_FEMALE">여성</option>
               <option value="GENDER_MALE">남성</option>
             </select>
-            <div class="field-hint">언어: 한국어(ko) 고정</div>
           </div>
         </div>
         <div class="sec-label" style="margin-top:12px;">사용자 지정 타겟</div>
@@ -1225,7 +1251,6 @@ document.addEventListener('securitypolicyviolation', function (e) {
             <label class="chip k"><input type="checkbox" value="PLACEMENT_GLOBAL_APP_BUNDLE" onchange="gToggleChip(this)"> Global App Bundle</label>
             <label class="chip k"><input type="checkbox" value="PLACEMENT_PANGLE" onchange="gToggleChip(this)"> Pangle</label>
           </div>
-          <div class="field-hint">댓글 · 동영상 다운로드 · 공유: <b>전부 끔</b> (고정)</div>
         </div>
       </div>
       <div class="divider"></div>
@@ -1234,23 +1259,31 @@ document.addEventListener('securitypolicyviolation', function (e) {
           <div class="field"><label>TikTok 계정 <span class="auto-tag tt">API</span></label><select id="k1_아이덴티티" onchange="K.identityTouched=true"><option value="">불러오는 중...</option></select><div class="field-hint" id="k1_아이덴티티_hint"></div></div>
           <div class="field"><label>콜 투 액션 (CTA) <span class="auto-tag tt">모든 광고 공통</span></label><select id="k1_CTA" onchange="K.ctaTouched=true"></select></div>
         </div>
-        <div class="field"><label class="chk" style="display:inline-flex;align-items:center;gap:6px;margin:0;"><input type="checkbox" checked disabled> 광고로만 표시 <span class="auto-tag tt fixed">항상 체크</span></label><div class="field-hint">게시물을 광고로만 게재하고 TikTok 프로필에는 올리지 않아요 (dark post)</div></div>
         <div id="k1_url_wrap">
-          <div class="field"><label>웹사이트 URL (랜딩 페이지) <span class="auto-tag tt">공통 · 카드에서 개별 수정 가능</span></label><input type="text" id="k1_URL" placeholder="https://todaydoc.kr/event/..." oninput="kSyncCreativeCommon()"></div>
-          <div class="field"><label>URL 파라미터 (사용자 지정) <span class="auto-tag tt fixed">고정</span></label>
-            <div class="kutm">campaign_id = __CAMPAIGN_ID__<br>adset_id = __AID__<br>ad_id = __CID__</div>
-            <div class="field-hint">웹사이트 및 상품 URL 에 자동으로 붙어요 — 틱톡이 실제 캠페인·광고그룹·광고 ID 로 바꿔 넣습니다</div>
-          </div>
+          <div class="field"><label>웹사이트 URL (랜딩 페이지) <span class="auto-tag tt">모든 광고에 들어가요</span></label><input type="text" id="k1_URL" placeholder="https://todaydoc.kr/event/..."><div class="field-hint">광고마다 주소가 다르면, 그 광고만 오른쪽 카드의 <b>«이 광고만 다른 랜딩 주소»</b> 에 따로 적어요</div></div>
         </div>
-        <div class="kfixed" style="margin-top:4px;"><span><b>광고 형식</b> 단일 동영상</span><span><b>자동 향상 기능</b> 끔</span><span><b>CRM 이벤트</b> 자동 추적 세트 (틱톡이 계정 기준으로 붙임)</span></div>
       </div>
       <div class="divider"></div>
-      <div class="section"><div class="sec-label">자동생성 / 고정 값</div>
+      <div class="section"><div class="sec-label">자동으로 만들어지는 이름</div>
         <div class="field"><label>광고그룹명 <span class="auto-tag tt">자동</span></label><input type="text" id="k1_광고그룹명" readonly placeholder="자동생성"></div>
-        <div class="field"><label>광고명 <span class="auto-tag tt">자동 · 영상 파일명 + 이름</span></label><input type="text" id="k1_광고명" readonly placeholder="소재 개수만큼 1.1T, 1.2T ..."></div>
-        <div class="row2">
-          <div class="field"><label>시작 <span class="auto-tag tt fixed">고정</span></label><input type="text" value="지금부터 · 종료 없음" readonly></div>
-          <div class="field"><label>만든 뒤 상태 <span class="auto-tag tt fixed">고정</span></label><input type="text" value="일시중지 (검토 뒤 직접 켜기)" readonly></div>
+        <div class="field"><label>광고명 <span class="auto-tag tt">자동</span></label><input type="text" id="k1_광고명" readonly placeholder="소재 개수만큼 1.1T, 1.2T ..."></div>
+      </div>
+      <div class="divider"></div>
+      <div class="section" id="k1_fixed_sec"><div class="sec-label">고정 값 <span class="auto-tag tt fixed" style="text-transform:none;letter-spacing:0;">항상 이 값으로 등록돼요</span></div>
+        <div class="kfixlist">
+          <div class="kfix-row"><div class="kfix-k">광고계정</div><div class="kfix-v"><select id="k1_계정" disabled onchange="kOnAccount()"><option value="">불러오는 중...</option></select><div class="field-hint" id="k1_계정_hint"></div></div></div>
+          <div class="kfix-row"><div class="kfix-k">캠페인 목표</div><div class="kfix-v">리드 생성 (LEAD_GENERATION)</div></div>
+          <div class="kfix-row"><div class="kfix-k">최적화 목표</div><div class="kfix-v">리드</div></div>
+          <div class="kfix-row"><div class="kfix-k">최적화 위치</div><div class="kfix-v"><span id="k1_최적화위치">웹사이트</span><small>리드 방식에 따라 자동</small></div></div>
+          <div class="kfix-row"><div class="kfix-k">입찰 · 과금</div><div class="kfix-v">최대 결과 (NO_BID) · oCPM · 표준 게재 (PACING_MODE_SMOOTH)<span id="k1_attr_fixed"> · 어트리뷰션 클릭 7일 · 조회 1일 · 모든 전환</span></div></div>
+          <div class="kfix-row"><div class="kfix-k">언어</div><div class="kfix-v">한국어 (ko)</div></div>
+          <div class="kfix-row"><div class="kfix-k">댓글 · 다운로드 · 공유</div><div class="kfix-v">전부 끔</div></div>
+          <div class="kfix-row"><div class="kfix-k">광고로만 표시</div><div class="kfix-v">항상 켬<small>광고로만 게재하고 TikTok 프로필에는 올리지 않아요 (dark post)</small></div></div>
+          <div class="kfix-row"><div class="kfix-k">광고 형식</div><div class="kfix-v">단일 동영상 · 자동 향상 기능 끔</div></div>
+          <div class="kfix-row"><div class="kfix-k">CRM 이벤트</div><div class="kfix-v">자동 추적 세트<small>틱톡이 계정 기준으로 붙여요</small></div></div>
+          <div class="kfix-row" id="k1_utm_fixed"><div class="kfix-k">URL 파라미터</div><div class="kfix-v">campaign_id=__CAMPAIGN_ID__ · adset_id=__AID__ · ad_id=__CID__<small>랜딩 주소 뒤에 자동으로 붙어요 — 틱톡이 실제 캠페인·광고그룹·광고 ID 로 바꿔 넣습니다</small></div></div>
+          <div class="kfix-row"><div class="kfix-k">시작 · 종료</div><div class="kfix-v">지금부터 · 종료 없음</div></div>
+          <div class="kfix-row"><div class="kfix-k">만든 뒤 상태</div><div class="kfix-v">일시중지 (검토 뒤 직접 켜기)</div></div>
         </div>
       </div>
     </div>
@@ -1307,6 +1340,7 @@ document.addEventListener('securitypolicyviolation', function (e) {
     </div>
     <div class="modal-tabs" id="tiktokSettingsTabs" style="display:none;">
       <button class="modal-tab active" id="mtab_kclinic" onclick="switchSettingsTab('kclinic')">치과</button>
+      <button class="modal-tab" id="mtab_kregion" onclick="switchSettingsTab('kregion')">지역</button>
       <button class="modal-tab" id="mtab_kdefault" onclick="switchSettingsTab('kdefault')">기본값</button>
       <button class="modal-tab" id="mtab_klink" onclick="switchSettingsTab('klink')">연동</button>
     </div>
@@ -1424,9 +1458,9 @@ document.addEventListener('securitypolicyviolation', function (e) {
       </div>
 
       <div class="modal-sec" id="msec_gchannel">
-        <div class="set-note">YouTube 채널과 로고입니다. 채널은 어느 계정에서든 고를 수 있고, 업체명은 채널명이 그대로 들어갑니다.<br><b>서브 채널</b>을 정해 두면, 그 채널이 YouTube <b>하루 업로드 한도</b>에 걸렸을 때 남은 영상을 서브 채널로 이어서 올립니다 — 업체명·로고는 본 채널 그대로이고, 이미 올라간 영상은 다시 올리지 않아요 (메이크 시나리오 v17 이상). 등록 화면의 YouTube 채널 아래 «서브 채널» 칸에서 골라도 여기와 같은 값이 저장됩니다.<br>로고는 Drive <b>공유 링크를 통째로 붙여넣으면</b> 파일ID만 자동으로 남습니다. 미리보기가 안 뜨면 그 파일의 공유가 <b>"링크가 있는 모든 사용자"</b>가 아닌 경우예요 — Make도 같은 파일을 읽으니 링크 공유로 두세요 (<b>열기</b>로 바로 확인).</div>
+        <div class="set-note">YouTube 채널과 로고입니다. 채널은 어느 계정에서든 고를 수 있고, <b>업체명은 채널명을 따릅니다</b> — 채널명에 «오늘의병원» 이 들어 있으면 «오늘의병원», 아니면 채널명 그대로.<br><b>서브 채널</b>(본 채널이 YouTube 하루 업로드 한도에 걸렸을 때 대신 올릴 채널)은 여기가 아니라 <b>등록 화면의 YouTube 채널 아래</b>에서 각자 고릅니다 — 사람마다 따로 저장돼요.<br>로고는 Drive <b>공유 링크를 통째로 붙여넣으면</b> 파일ID만 자동으로 남습니다. 미리보기가 안 뜨면 그 파일의 공유가 <b>"링크가 있는 모든 사용자"</b>가 아닌 경우예요 — Make도 같은 파일을 읽으니 링크 공유로 두세요 (<b>열기</b>로 바로 확인).</div>
         <table class="set-table">
-          <thead><tr><th style="width:22%">채널명</th><th style="width:26%">채널 ID</th><th style="width:20%">서브 채널 <small style="font-weight:400;color:var(--text3);">한도에 걸리면</small></th><th style="width:28%">로고 (Drive 링크 또는 파일ID)</th><th></th></tr></thead>
+          <thead><tr><th style="width:30%">채널명</th><th style="width:32%">채널 ID</th><th style="width:34%">로고 (Drive 링크 또는 파일ID)</th><th></th></tr></thead>
           <tbody id="gset_channel_body"></tbody>
         </table>
         <div style="display:flex;gap:8px;margin-top:10px;">
@@ -1491,15 +1525,36 @@ document.addEventListener('securitypolicyviolation', function (e) {
       </div>
       <!-- ===== TikTok 설정 ===== -->
       <div class="modal-sec" id="msec_kclinic">
-        <div class="set-note"><b>치과 전체명</b>은 광고그룹명·광고명에, <b>약칭</b>은 캠페인명 맨 앞에 들어갑니다. 광고그룹명·광고명 끝의 번호는 <b>제작자 사번</b>이에요 (등록 탭에서 고른 제작자 것 · 사번은 Meta/Google 설정 → 제작자의 ID).<br>캠페인명 = 약칭 + 시술 + 유형 + (날짜_차수) + 제작자 + 메모 &nbsp;·&nbsp; 광고그룹명 = 전체명 + 시술 + 유형 + 1T + 사번 &nbsp;·&nbsp; 광고명 = 영상파일명_전체명 + 시술 + 유형 + 1.1T + 사번<br><b>기본값(지역·데이터 연결·이벤트·연령)</b>은 등록 탭에서 값을 고른 뒤 «지금 값을 이 치과 기본으로 저장»으로 넣습니다.</div>
+        <div class="set-note"><b>치과 전체명</b>은 광고그룹명·광고명에, <b>약칭</b>은 캠페인명 맨 앞에 들어갑니다. 광고그룹명·광고명 끝의 번호는 <b>제작자 사번</b>이에요 (등록 탭에서 고른 제작자 것 · 사번은 Meta/Google 설정 → 제작자의 ID).<br>캠페인명 = 약칭 + 시술 + 유형 + 지역표기 + (날짜_차수) + 제작자 + 메모 &nbsp;·&nbsp; 광고그룹명 = 전체명 + 시술 + 유형 + 지역표기 + 1T + 사번 &nbsp;·&nbsp; 광고명 = 전체명 + 시술 + 유형 + 지역표기 + 1.1T + 사번<br><b>지역</b>(타겟 · 이름에 붙는 지역표기)은 <b>«지역» 탭</b>에서 치과별로 관리합니다.</div>
         <table class="set-table">
-          <thead><tr><th style="width:32%">치과 전체명</th><th style="width:22%">약칭</th><th style="width:14%">시술</th><th style="width:28%">기본값 (지역·이벤트·연령)</th><th></th></tr></thead>
+          <thead><tr><th style="width:44%">치과 전체명</th><th style="width:30%">약칭</th><th style="width:20%">시술</th><th></th></tr></thead>
           <tbody id="kset_clinic_body"></tbody>
         </table>
         <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
           <button class="btn-sm" onclick="kAddClinicRow()">+ 치과 추가</button>
           <button class="btn-sm" onclick="kImportClinicsFromGoogle()" title="Google 설정의 치과·약칭 목록에서 없는 치과를 가져옵니다">구글 설정의 치과 가져오기</button>
         </div>
+      </div>
+      <div class="modal-sec" id="msec_kregion">
+        <div class="set-note">Meta·Google 과 같은 방식이에요 — 지역은 <b>치과별로</b> 묶이고, 등록 탭에서 치과를 고르면 그 치과의 지역만 <b>«지역구분자»</b> 에 나옵니다 (치과를 «공통» 으로 두면 모든 치과에서 보임).<br><b>TikTok 지역</b>이 실제로 광고가 나가는 곳이에요 — TikTok 은 핀·반경 타겟이 없어서 시·군·구 단위로 고릅니다. 한 줄에 여러 곳을 넣으려면 그 줄의 <b>＋</b> 를 누르고 검색하세요.<br><b>표기명</b>은 이름에 붙는 말 — <b>캠페인명</b>용(예: <code>타지역_부산</code>)과 <b>광고그룹·광고명</b>용(예: <code>부산타겟</code>)을 따로 적습니다. 캠페인 칸을 비우면 오른쪽 값을 쓰고, 둘 다 비우거나 <b>[제외]</b>를 체크하면 이름에 지역이 안 붙어요.</div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+          <span style="font-size:12px;color:var(--text2);white-space:nowrap;">검색 결과를 추가할 치과</span>
+          <select id="k_region_target_clinic" style="flex:1;height:36px;border:1px solid var(--border2);border-radius:8px;padding:0 10px;font-family:inherit;font-size:12px;"><option value="">공통 (모든 치과)</option></select>
+        </div>
+        <div class="region-search-wrap">
+          <input type="text" id="k_region_search" placeholder="TikTok 지역 이름을 입력하세요 — 한글·영문 모두 (예: 양산, 해운대구, Busan)" oninput="kOnSetRegionSearch()" onkeydown="if(event.key==='Enter'){event.preventDefault();kSetRegionSearchNow();}" autocomplete="off">
+          <div class="region-results" id="k_region_results"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin:-4px 0 10px;flex-wrap:wrap;">
+          <button class="btn-sm" id="k_region_import_btn" onclick="kImportMetaRegions()" title="Meta 설정 → 지역의 줄(계정·지역명·표기명·제외)을 그대로 가져오고, TikTok 지역은 지역명으로 찾아 연결합니다. 이미 있는 줄은 건드리지 않아요">Meta 설정의 지역 가져오기</button>
+          <button class="btn-sm" onclick="fillCampRefs('tiktok')" title="그룹·광고 표기명을 보고 «타지역_○○» 을 만들어 넣습니다">캠페인 표기명 자동 채우기</button>
+          <button class="btn-sm" onclick="kAddRegionRow()">+ 빈 줄 추가</button>
+        </div>
+        <div class="field-hint" id="kset_region_note" style="display:none;margin:0 0 10px;line-height:1.6;"></div>
+        <table class="set-table">
+          <thead><tr><th style="width:4%"></th><th style="width:16%">치과</th><th style="width:10%">지역명</th><th style="width:29%">TikTok 지역 (실제 타겟)</th><th style="width:14%">표기명 (캠페인명)</th><th style="width:14%">표기명 (그룹·광고명)</th><th style="width:8%">제외</th><th style="width:5%"></th></tr></thead>
+          <tbody id="kset_region_body"></tbody>
+        </table>
       </div>
       <div class="modal-sec" id="msec_kdefault">
         <div class="set-note">등록 탭이 처음 열릴 때 들어가는 값들이에요. <b>광고계정은 여기서 정한 하나로 고정</b>되고(등록 탭에서는 못 바꿈), <b>TikTok 계정</b>은 비즈니스 센터에 연결된 실제 틱톡 계정 중에서 고릅니다.</div>
@@ -1516,7 +1571,6 @@ document.addEventListener('securitypolicyviolation', function (e) {
           <div class="field"><label>기본 연령 <span class="auto-tag tt">쉼표로</span></label><input type="text" id="kset_ages" placeholder="AGE_45_54, AGE_55_100"></div>
         </div>
         <div class="field"><label>등록 탭에 보여줄 데이터 연결 <span class="auto-tag tt">쉼표로 · 첫 번째가 기본</span></label><input type="text" id="kset_pixelShow" placeholder="[EZMNC] 데이터세트, [다이트짐] 데이터 세트"><div class="field-hint">틱톡에 있는 이름 그대로 적어요. 비우면 전부 보여줍니다 · 등록 탭의 «전체 보기» 를 켜면 여기 없는 것도 볼 수 있어요</div></div>
-        <label class="chk"><input type="checkbox" id="kset_adNameWithFile"> 광고명 앞에 영상 파일명을 붙인다 <small>(파일명_치과명 시술 유형 1.1T 사번)</small></label>
         <div class="set-note" style="margin-top:12px;"><b>고정값</b> — 유형: 랜딩페이지 방식은 «랜딩» · 리드(양식) 방식은 직접 입력 · 캠페인 목표 리드 생성 · 입찰 최대 결과(NO_BID) · 과금 oCPM · 표준 게재 · 어트리뷰션 클릭 7일/조회 1일/모든 전환 · 언어 ko · 댓글/다운로드/공유 끔 · 광고로만 표시 · 자동 향상 끔 · 광고 형식 단일 동영상 · URL 파라미터 campaign_id=__CAMPAIGN_ID__ · adset_id=__AID__ · ad_id=__CID__ · 만든 뒤 일시중지</div>
       </div>
       <div class="modal-sec" id="msec_klink">
@@ -1987,7 +2041,7 @@ function guessCampRef(refName) {
 /* 표에서 그룹 표기명을 고치고 빠져나올 때, 캠페인 칸이 비어 있으면 대신 채워 준다 */
 function onRefNameChanged(el) {
   const tr = el.closest('tr');
-  const camp = tr && tr.querySelector('[data-f="campRef"], [data-set="reg-campRef"]');
+  const camp = tr && tr.querySelector('[data-f="campRef"], [data-set="reg-campRef"], [data-kr="campRef"]');
   if (camp && !String(camp.value || '').trim()) camp.value = guessCampRef(el.value);
 }
 /* 비어 있는 캠페인 표기명을 한 번에 채운다 */
@@ -1999,6 +2053,7 @@ function fillCampRefs(platform) {
     if (v) { r.campRef = v; n++; }
   });
   if (platform === 'google') { gCollectSettings(); fill(GSET.regions); gRenderTable('regions'); }
+  else if (platform === 'tiktok') { kCollectSettings(); fill(TSET.regions); kRenderRegionRows(); }
   else { collectSettingsFromDom(); fill(SETTINGS.regions); renderRegionRows(); }
   showToast(n ? `캠페인 표기명 ${n}줄을 채웠어요 — 틀린 건 직접 고쳐주세요` : '비어 있는 캠페인 표기명이 없어요', n ? 'success' : 'info', 5000);
 }
@@ -2033,12 +2088,12 @@ function parseCustomCoords(str) {
 let settingsTab = 'staff';
 const META_TABS = ['staff','account','region','page','diag'];
 const GOOGLE_TABS = ['gstaff','gclinic','gregion','gchannel','gsheet'];
-const TIKTOK_TABS = ['kclinic','kdefault','klink'];
+const TIKTOK_TABS = ['kclinic','kregion','kdefault','klink'];
 function openSettings(tab) {
   const isG = currentPlatform === 'google', isK = currentPlatform === 'tiktok';
   document.getElementById('settingsTitle').textContent = isK ? 'TikTok 설정' : (isG ? 'Google 설정' : 'Meta 설정');
   document.getElementById('settingsDesc').textContent = isK
-    ? 'TikTok API로 가져올 수 없는 사내 규칙(치과·약칭·기본값)과 연결 상태를 여기서 관리합니다'
+    ? 'TikTok API로 가져올 수 없는 사내 규칙(치과·약칭·지역·기본값)과 연결 상태를 여기서 관리합니다'
     : (isG
     ? 'Google Ads API로 가져올 수 없는 사내 규칙(제작자·치과·지역·채널)과 로그인·연동 상태를 여기서 관리합니다'
     : 'Meta API로 가져올 수 없는 사내 규칙만 여기서 관리합니다');
@@ -2456,7 +2511,7 @@ const G_TABLES = {
   staff:     { body: 'gset_staff_body',     cols: [['name','홍길동'], ['id','KCS']] },
   clinics:   { body: 'gset_clinic_body',    cols: [['clinic','오늘의치과'], ['short','오늘']] },
   regions:   { body: 'gset_region_body',    cols: [['clinic','공통'], ['name','부산'], ['criterionId','검색으로 자동 입력'], ['campRef','비우면 오른쪽 값'], ['refName','비우면 안 붙음'], ['custom','35.18,128.11,10; 35.20,128.05,8']] },
-  channels:  { body: 'gset_channel_body',   cols: [['channelName','오늘의병원'], ['channelId','UC...'], ['subChannelId','없음'], ['logoFileId','Drive 링크를 붙여넣으면 파일ID만 남아요']] },
+  channels:  { body: 'gset_channel_body',   cols: [['channelName','오늘의병원'], ['channelId','UC...'], ['logoFileId','Drive 링크를 붙여넣으면 파일ID만 남아요']] },
 };
 /* Drive 공유 링크 어떤 형태든 파일ID만 뽑는다 (이미 ID면 그대로)
    https://drive.google.com/file/d/<ID>/view?usp=sharing · /open?id=<ID> · /uc?id=<ID> · drive.google.com/d/<ID> */
@@ -2515,10 +2570,6 @@ function gRenderTable(key) {
           ? `반경 ${n}곳으로 타겟합니다 — 반경은 새 캠페인에서만 걸려요. 세트 추가에도 쓰려면 왼쪽 criterion ID를 채워주세요` : '지도에서 핀 찍기 (반경 타겟 · 마일)';
         return `<td><div style="display:flex;gap:4px;align-items:center;"><input type="text" data-g="${key}" data-f="${f}" data-i="${i}" value="${esc(r[f] || '')}" placeholder="비우면 criterion ID로 타겟"><button type="button" class="btn-pin${n ? ' has' : ''}" onclick="openPinMap('google',${i})" title="${esc(tip)}">${n ? '📍 ' + n : '📍 지도'}</button></div></td>`;
       }
-      if (key === 'channels' && f === 'subChannelId') {
-        // 서브 채널 — 이 채널이 하루 업로드 한도에 걸리면 남은 영상을 올릴 채널 (자기 자신은 못 고른다)
-        return `<td><select data-g="${key}" data-f="${f}" data-i="${i}" onmousedown="gRefreshSubChannelOptions(this)" onfocus="gRefreshSubChannelOptions(this)" style="width:100%;height:34px;border:1px solid var(--border2);border-radius:6px;padding:0 8px;font-family:inherit;font-size:12px;">${gSubChannelOptionsHtml(rows, r.channelId, r.subChannelId)}</select></td>`;
-      }
       const isLogo = key === 'channels' && f === 'logoFileId';
       const extra = isLogo ? ' onchange="gOnLogoInput(this)" onpaste="setTimeout(() => gOnLogoInput(this), 0)"' : '';
       const val = isLogo ? gExtractDriveId(r[f]) : r[f];
@@ -2538,23 +2589,6 @@ function gRenderTable(key) {
   if (key === 'regions') dragRowsInit(cfg.body, (from, to) => gReorderRow(key, from, to));
   const extraCols = key === 'regions' ? 3 : 1;   // 지역 표는 손잡이 · [제외] 칸이 더 있다
   if (rows.length === 0) body.innerHTML = `<tr><td colspan="${cfg.cols.length + extraCols}" style="padding:14px 4px;color:var(--text3);font-size:12px;">비어 있습니다. 아래 버튼으로 추가하세요.</td></tr>`;
-}
-/* 서브 채널 고르기 — 표의 다른 채널들. 고른 값이 목록에서 사라졌으면 그 값도 남겨 둔다 (지우지 않고 보여준다) */
-function gSubChannelOptionsHtml(rows, ownId, cur) {
-  ownId = String(ownId || '').trim(); cur = String(cur || '').trim();
-  const seen = new Set();
-  const others = (rows || []).filter(x => { const id = String(x.channelId || '').trim(); if (!id || id === ownId || seen.has(id)) return false; seen.add(id); return true; });
-  const opts = ['<option value="">없음</option>'].concat(others.map(x => { const id = String(x.channelId).trim(); return `<option value="${esc(id)}"${id === cur ? ' selected' : ''}>${esc(x.channelName || id)}</option>`; }));
-  if (cur && !seen.has(cur)) opts.push(`<option value="${esc(cur)}" selected>${esc(cur)} (목록에 없음)</option>`);
-  return opts.join('');
-}
-/* 채널명·ID 를 방금 고쳤거나 줄을 추가했을 수 있으니, 열 때마다 지금 표 내용으로 다시 채운다 */
-function gRefreshSubChannelOptions(sel) {
-  const body = document.getElementById(G_TABLES.channels.body); const tr = sel.closest('tr'); if (!body || !tr) return;
-  const rows = Array.from(body.querySelectorAll('tr')).map(x => ({ channelName: (x.querySelector('[data-f="channelName"]') || {}).value || '', channelId: (x.querySelector('[data-f="channelId"]') || {}).value || '' }));
-  const own = (tr.querySelector('[data-f="channelId"]') || {}).value || '';
-  const html = gSubChannelOptionsHtml(rows, own, sel.value);
-  if (sel.dataset.opts !== html) { sel.innerHTML = html; sel.dataset.opts = html; }
 }
 function gAddRow(key) {
   gCollectSettings();
@@ -2820,7 +2854,7 @@ async function gAdsSearch(customerId, query) {
 const G_PROXY_REQUIRED_BUILD = '2026-09-21.2';
 /* 이 HTML 파일 자체의 빌드 — 배포된 페이지가 새 파일인지 설정 → 연동 탭에서 바로 확인한다.
    (파일을 새로 받을 때마다 올라간다) */
-const G_PAGE_BUILD = '2026-11-12.9';
+const G_PAGE_BUILD = '2026-11-13.2';
 function gShowPageBuild() {
   const txt = `📄 이 페이지 빌드 ${G_PAGE_BUILD} — 배포 후 이 숫자가 바뀌지 않으면 옛 파일이 올라간 거예요 (Ctrl+F5 로 새로고침)`;
   ['g_page_build', 'm_page_build'].forEach(id => {
@@ -3980,7 +4014,7 @@ function applyGoogleSettings() {
     if (!id || seenCh.has(id)) return;
     seenCh.add(id);
     const logo = gExtractDriveId(c.logoFileId || '');
-    GDB.youtubeChannels.push({ channelName: c.channelName || '', channelId: id, logoFileId: logo, subChannelId: String(c.subChannelId || '').trim() });
+    GDB.youtubeChannels.push({ channelName: c.channelName || '', channelId: id, logoFileId: logo });
     if (logo) { GDB.logoByChannelId[id] = logo; if (c.channelName) GDB.logoByChannel[c.channelName] = logo; }
   });
   // 계정·잠재고객은 API로 못 가져왔을 때의 폴백
@@ -6424,52 +6458,83 @@ function gLogoForChannelSelect(sel) {
   const name = sel.options[sel.selectedIndex]?.text || '';
   return GDB.logoByChannelId[sel.value] || GDB.logoByChannel[name] || '';
 }
+/* 업체명 — 채널명을 따른다. 채널명에 «오늘의병원» 이 들어 있으면(띄어쓰기 무시: «오늘의 병원 세번째 채널» 도) «오늘의병원», 아니면 채널명 그대로 */
+const G_BIZ_BRAND = '오늘의병원';
+function gBizNameOf(channelName) {
+  const n = String(channelName || '').trim();
+  return normName(n).includes(normName(G_BIZ_BRAND)) ? G_BIZ_BRAND : n;
+}
+/* 서브 채널을 메이크에 알려 줄 값 — 채널 · 업체명 · 로고.
+   메이크(v18)는 서브 채널로 올라간 광고를 만들 때 업체명·로고도 이 값으로 넣는다 (본 채널로 올라간 광고는 본 채널 값 그대로).
+   서브 채널에 로고가 없으면 로고 칸은 비운다 → 메이크가 본 채널 로고를 쓴다 */
+function gSubPayload(sub) {
+  if (!sub) return { 서브채널ID: '', 서브채널명: '', 서브업체명: '', 서브로고파일ID: '', 서브로고채널ID: '' };
+  const logo = sub.logoFileId || GDB.logoByChannelId[sub.channelId] || GDB.logoByChannel[sub.channelName] || '';
+  return { 서브채널ID: sub.channelId, 서브채널명: sub.channelName, 서브업체명: gBizNameOf(sub.channelName), 서브로고파일ID: logo, 서브로고채널ID: logo ? sub.channelId : '' };
+}
 function gOnYoutubeChannel(t) {
   const sel = document.getElementById(`${t}_유튜브채널`); if (!sel) return;
   const selectedText = sel.options[sel.selectedIndex]?.text || '';
-  const bizEl = document.getElementById(`${t}_업체명`); if (bizEl) bizEl.value = selectedText;
+  const bizEl = document.getElementById(`${t}_업체명`); if (bizEl) bizEl.value = gBizNameOf(selectedText);
   if (!window._logoFileId) window._logoFileId = {};
   window._logoFileId[t] = gLogoForChannelSelect(sel);
   gRenderChannelButton(t);
-  gFillSubChannelSelect(t, true);
+  gFillSubChannelSelect(t);
 }
-/* ── 폼의 «서브 채널» 칸 ───────────────────────────────────────────────
-   지금 고른 본 채널이 YouTube 하루 업로드 한도에 걸리면 남은 영상을 올릴 채널. 설정 → 채널의 «서브 채널» 칸과 «같은 값» 이다 —
-   여기서 고르면 그 본 채널의 서브 채널로 바로 저장되고(이 브라우저), 다음에 그 채널을 고르면 다시 나온다. 다른 사람에게도 적용하려면 설정에서 «모두에게 적용». */
-function gFillSubChannelSelect(t, force) {
+/* ── 폼의 «서브 채널» 고르기 (YouTube 채널 바로 아래) ─────────────────────────
+   지금 고른 본 채널의 서브 채널. YouTube 채널 고르기와 같은 모양(로고 · 채널 ID · 업로드 가능 여부)으로 보여준다 —
+   이름이 같은 채널이 여럿이라 로고·ID 로 가려야 한다. 고르면 바로 «내 설정» 으로 저장된다 (개인별 · 본 채널마다). */
+function gFillSubChannelSelect(t) {
   const sel = document.getElementById(`${t}_서브채널`); const main = document.getElementById(`${t}_유튜브채널`); if (!sel || !main) return;
   const mainId = main.value || G_DEFAULT_CHANNEL.channelId;
-  const cur = (gSubChannelOf(mainId) || {}).channelId || '';
-  const html = ['<option value="">없음</option>'].concat(gChannelChoices().filter(c => c.channelId !== mainId).map(c => {
-    const st = gYtChannelState(c.channelId);
-    return `<option value="${esc(c.channelId)}">${esc(c.channelName)}${st && st.state === 'blocked' ? ' · ⛔ 한도' : ''}</option>`;
-  })).join('');
-  // 목록을 펼쳐 보고 있을 때 배경 갱신으로 닫히지 않게 — 내용이 바뀌었을 때만, 그리고 지금 만지고 있지 않을 때만 다시 그린다
-  if (sel.dataset.opts !== html && (force || document.activeElement !== sel)) { sel.innerHTML = html; sel.dataset.opts = html; }
-  if (force || document.activeElement !== sel) sel.value = cur;
+  const choices = gChannelChoices().filter(c => c.channelId !== mainId);
+  const sub = gSubChannelOf(mainId); const cur = sub ? sub.channelId : '';
+  sel.innerHTML = ['<option value="">없음</option>'].concat(choices.map(c => `<option value="${esc(c.channelId)}">${esc(c.channelName)}</option>`)).join('');
+  sel.value = cur;
+  const menu = document.getElementById(`${t}_subpick_menu`);
+  if (menu) {
+    const html = `<div class="chpick-item" role="option" data-id="" onclick="gPickSubChannel('${t}', '')"><span class="chpick-logo noimg">–</span><span class="chpick-text"><b>없음</b><span class="chpick-id">서브 채널을 쓰지 않아요</span></span></div>`
+      + choices.map(ch => `<div class="chpick-item" role="option" data-id="${esc(ch.channelId)}" onclick="gPickSubChannel('${t}', this.dataset.id)">${gLogoBadgeHtml(ch, 64)}<span class="chpick-text"><b>${esc(ch.channelName)}</b><span class="chpick-id">${esc(ch.channelId)}${ch.logoFileId ? '' : ' <span class="nologo">로고 없음</span>'}</span></span><span class="chpick-usage" data-role="usage"></span></div>`).join('');
+    if (menu.dataset.opts !== html) { menu.innerHTML = html; menu.dataset.opts = html; }   // 내용이 바뀌었을 때만 다시 그린다 (펼쳐 보는 중에 깜빡이지 않게)
+    menu.querySelectorAll('.chpick-item').forEach(el => el.classList.toggle('selected', el.dataset.id === cur));
+    gFillChannelUsageTags(menu);
+  }
+  const btn = document.getElementById(`${t}_subpick_btn`);
+  if (btn) {
+    const bh = sub
+      ? `${gLogoBadgeHtml(sub, 48)}<span class="chpick-name">${esc(sub.channelName)}</span><span class="chpick-id">${esc(sub.channelId)}</span><span class="chpick-caret">▾</span>`
+      : `<span class="chpick-logo noimg">–</span><span class="chpick-name" style="color:var(--text3);">없음</span><span class="chpick-caret">▾</span>`;
+    // 내용이 바뀌었을 때만 다시 그린다 — 버튼을 누르는 도중에 안쪽을 갈아 끼우면, 눌린 글자가 화면에서 떨어져 나가 «바깥을 누름» 으로 잘못 읽혀 목록이 바로 닫힌다
+    if (btn.dataset.html !== bh) { btn.innerHTML = bh; btn.dataset.html = bh; }
+  }
   gRenderSubHint(t);
 }
 function gRenderSubHint(t) {
   const el = document.getElementById(`${t}_sub_hint`); const main = document.getElementById(`${t}_유튜브채널`); if (!el || !main) return;
   const sub = gSubChannelOf(main.value || G_DEFAULT_CHANNEL.channelId);
-  if (!sub) { el.className = 'field-hint'; el.textContent = '골라 두면, 본 채널이 올리다가 하루 한도에 걸렸을 때 남은 영상을 이 채널로 이어서 올려요'; return; }
+  if (!sub) { el.className = 'field-hint'; el.textContent = '골라 두면, 본 채널이 올리다가 하루 한도에 걸렸을 때 남은 영상을 이 채널로 이어서 올려요 (나에게만 적용)'; return; }
   const st = gYtChannelState(sub.channelId);
   if (st && st.state === 'blocked') { el.className = 'field-hint err'; el.textContent = `⛔ «${sub.channelName}» 채널도 지금 하루 한도예요 — 다른 채널을 서브로 고르세요`; return; }
-  el.className = 'field-hint'; el.textContent = `본 채널이 하루 한도로 막히면 남은 영상은 «${sub.channelName}» 로 이어서 올려요 (업체명·로고는 본 채널 그대로)`;
+  const sp = gSubPayload(sub);
+  el.className = 'field-hint'; el.textContent = `본 채널이 하루 한도로 막히면 남은 영상은 «${sub.channelName}» 로 이어서 올려요 — 그렇게 올라간 광고는 업체명도 «${sp.서브업체명}»${sp.서브로고파일ID ? ' · 로고도 이 채널 것' : ' (이 채널에 로고가 없어 로고는 본 채널 것)'}`;
 }
-function gOnSubChannelPick(t) {
-  const sel = document.getElementById(`${t}_서브채널`); const main = document.getElementById(`${t}_유튜브채널`); if (!sel || !main) return;
-  const mainId = main.value || G_DEFAULT_CHANNEL.channelId; const subId = sel.value;
+function gToggleSubMenu(t, force) {
+  const box = document.getElementById(`${t}_subpick`); if (!box) return;
+  const open = force === undefined ? !box.classList.contains('open') : !!force;
+  document.querySelectorAll('.chpick.open').forEach(b => { if (b !== box) b.classList.remove('open'); });
+  box.classList.toggle('open', open);
+  if (open) { gFillSubChannelSelect(t); gRefreshChannelUsage(t).catch(() => {}); }   // 열 때 채널 상태(✅/⛔)를 다시 본다
+}
+function gPickSubChannel(t, subId) {
+  const main = document.getElementById(`${t}_유튜브채널`); if (!main) return;
+  const mainId = main.value || G_DEFAULT_CHANNEL.channelId;
   const choices = gChannelChoices();
-  const mainCh = choices.find(c => c.channelId === mainId) || { channelId: mainId, channelName: mainId, logoFileId: '' };
-  const list = (GSET.channels = GSET.channels || []);
-  let row = list.find(c => String(c.channelId || '').trim() === mainId);
-  if (!row) { row = { channelName: mainCh.channelName, channelId: mainId, logoFileId: mainCh.logoFileId || '' }; list.push(row); }   // 기본 채널처럼 설정 표에 없던 채널이면 줄을 만든다
-  row.subChannelId = subId;
-  persistGoogleSettings(); markSettingsDirty(); applyGoogleSettings();
-  ['g1', 'g2'].forEach(x => { gFillSubChannelSelect(x, x !== t); gRenderChannelUsage(x); });
-  const subCh = choices.find(c => c.channelId === subId);
-  showToast(subCh ? `«${mainCh.channelName}» 의 서브 채널을 «${subCh.channelName}» 로 저장했어요 — 다른 사람에게도 적용하려면 설정에서 «모두에게 적용»` : `«${mainCh.channelName}» 의 서브 채널을 없앴어요`, 'success', 5000);
+  const mainCh = choices.find(c => c.channelId === mainId) || { channelName: mainId };
+  const subCh = (subId && subId !== mainId) ? choices.find(c => c.channelId === subId) : null;
+  gSubPrefSet(mainId, subCh ? subCh.channelId : '');
+  gToggleSubMenu(t, false);
+  ['g1', 'g2'].forEach(x => { gFillSubChannelSelect(x); gRenderChannelUsage(x); });
+  showToast(subCh ? `«${mainCh.channelName}» 의 서브 채널을 «${subCh.channelName}» 로 저장했어요 (나에게만 적용돼요)` : `«${mainCh.channelName}» 의 서브 채널을 없앴어요`, 'success', 4000);
 }
 const G_DEFAULT_CHANNEL = { channelId: 'UChg_3mq-CO2kFPkbXlTR3pw', channelName: '오늘의병원' };
 /* Drive 파일ID → 화면에 보여줄 썸네일 주소 (링크 공유된 파일만 보인다) */
@@ -6485,18 +6550,49 @@ function gChannelChoices() {
   list.forEach(ch => {
     if (!ch.channelId || seen.has(ch.channelId)) return;
     seen.add(ch.channelId);
-    out.push({ channelId: ch.channelId, channelName: ch.channelName || ch.channelId, logoFileId: ch.logoFileId || GDB.logoByChannelId[ch.channelId] || '', subChannelId: ch.subChannelId || '' });
+    out.push({ channelId: ch.channelId, channelName: ch.channelName || ch.channelId, logoFileId: ch.logoFileId || GDB.logoByChannelId[ch.channelId] || '' });
   });
   return out;
 }
-/* 이 채널의 «서브 채널» — 본 채널이 YouTube 하루 업로드 한도에 걸리면 남은 영상을 여기로 올린다 (메이크 v17).
-   설정에 있고, 채널 목록에 실제로 있고, 자기 자신이 아닐 때만 돌려준다. 업체명·로고는 본 채널 것을 그대로 쓴다 */
+/* ── 서브 채널은 «개인별» ──────────────────────────────────────────────
+   본 채널이 YouTube 하루 업로드 한도에 걸리면 남은 영상을 올릴 채널 (메이크 v17). 사람마다(로그인한 제작자) · 본 채널마다 따로 기억한다.
+   이 브라우저에만 저장하고, 공유 설정(«모두에게 적용»)에는 들어가지 않는다 — 다른 사람 화면에는 영향이 없다.
+     저장 모양: { users: { '<제작자>': { '<본 채널 ID>': '<서브 채널 ID>' } }, migrated: true } */
+const G_SUB_PREF_KEY = 'adtool_google_subchannel_v1';
+function gSubPrefStore() { try { const j = JSON.parse(localStorage.getItem(G_SUB_PREF_KEY) || '{}'); return (j && typeof j === 'object' && !Array.isArray(j)) ? j : {}; } catch (e) { return {}; } }
+function gSubPrefSave(store) { try { localStorage.setItem(G_SUB_PREF_KEY, JSON.stringify(store)); } catch (e) {} }
+function gSubPrefUser() {
+  // 로그인 정보는 이 아래쪽에서 만들어진다 — 페이지가 뜨는 도중(아직 준비 전)에 불려도 죽지 않게 감싼다
+  try { const staff = loginStaffName(); if (staff) return staff; } catch (e) {}
+  try { return (gTokens && gTokens.core && gTokens.core.hint) || ''; } catch (e) { return ''; }
+}
+function gSubPrefGet(mainId) { const u = gSubPrefUser(); const s = gSubPrefStore(); return String((((s.users || {})[u || '_']) || {})[mainId] || ''); }
+function gSubPrefSet(mainId, subId) {
+  const s = gSubPrefStore(); const u = gSubPrefUser() || '_';
+  s.users = s.users || {}; s.users[u] = s.users[u] || {};
+  if (subId) s.users[u][mainId] = subId; else delete s.users[u][mainId];
+  gSubPrefSave(s);
+}
+/* 2026-11-12.8~.9 에서는 서브 채널을 채널 표(GSET.channels[].subChannelId · 공유 설정)에 넣었다 — 한 번만, 내 설정으로 옮기고 표에서는 지운다 */
+function gMigrateSubChannelPrefs() {
+  if (!gSubPrefUser()) return;                    // 누구 것인지 알 수 있을 때(로그인 뒤)만
+  const s = gSubPrefStore(); if (s.migrated) return;
+  let touched = false;
+  (GSET.channels || []).forEach(c => {
+    if (!c || !Object.prototype.hasOwnProperty.call(c, 'subChannelId')) return;
+    const main = String(c.channelId || '').trim(), sub = String(c.subChannelId || '').trim();
+    if (main && sub && sub !== main && !gSubPrefGet(main)) gSubPrefSet(main, sub);
+    delete c.subChannelId; touched = true;
+  });
+  const s2 = gSubPrefStore(); s2.migrated = true; gSubPrefSave(s2);
+  if (touched) { try { persistGoogleSettings(); } catch (e) {} }
+}
+/* 이 채널의 서브 채널 — 내가 골라 둔 값이 채널 목록에 실제로 있고 자기 자신이 아닐 때만 돌려준다. 서브 채널로 올라간 광고는 업체명·로고도 서브 채널 것 (gSubPayload) */
 function gSubChannelOf(channelId) {
-  const list = gChannelChoices();
-  const me = list.find(c => c.channelId === channelId);
-  const subId = me ? String(me.subChannelId || '').trim() : '';
+  gMigrateSubChannelPrefs();
+  const subId = gSubPrefGet(channelId);
   if (!subId || subId === channelId) return null;
-  return list.find(c => c.channelId === subId) || null;
+  return gChannelChoices().find(c => c.channelId === subId) || null;
 }
 function gLogoBadgeHtml(ch, size) {
   const url = gLogoUrl(ch.logoFileId, size);
@@ -6777,13 +6873,11 @@ function gYtProbeLabel(r) {
   if (r.state === 'unknown') return { text: '확인 못 함', cls: '' };
   return { text: '', cls: '' };
 }
-function gRenderChannelUsage(t) {
-  const sel = document.getElementById(`${t}_유튜브채널`); if (!sel) return;
-  const menu = document.getElementById(`${t}_chpick_menu`);
-  const probeOn = !!gYtProbeUrl();                 // 등록 직전 실시간 확인 웹훅
-  const sheetOn = gYtSheet.byChannel.size > 0;     // 예약 확인 결과가 있음
-  const statusOn = probeOn || sheetOn;
-  if (menu) menu.querySelectorAll('.chpick-item').forEach(el => {
+/* 채널 목록의 각 줄 오른쪽 표시 — 본 채널 목록과 서브 채널 목록이 같이 쓴다 */
+function gFillChannelUsageTags(menu) {
+  if (!menu) return;
+  const statusOn = !!gYtProbeUrl() || gYtSheet.byChannel.size > 0;
+  menu.querySelectorAll('.chpick-item').forEach(el => {
     const tag = el.querySelector('[data-role="usage"]'); if (!tag) return;
     // 확인이 켜져 있으면 YouTube 답(✅/⛔)만, 꺼져 있으면 참고용 24시간 업로드 수만 — 둘 다 넣으면 채널명이 밀린다
     let text = '', cls = 'chpick-usage';
@@ -6792,6 +6886,14 @@ function gRenderChannelUsage(t) {
     tag.textContent = text;
     tag.className = cls;
   });
+}
+function gRenderChannelUsage(t) {
+  const sel = document.getElementById(`${t}_유튜브채널`); if (!sel) return;
+  const menu = document.getElementById(`${t}_chpick_menu`);
+  const probeOn = !!gYtProbeUrl();                 // 등록 직전 실시간 확인 웹훅
+  const sheetOn = gYtSheet.byChannel.size > 0;     // 예약 확인 결과가 있음
+  const statusOn = probeOn || sheetOn;
+  gFillChannelUsageTags(menu);
   const hint = document.getElementById(`${t}_chpick_hint`); if (!hint) return;
   const id = sel.value;
   const ch = gChannelChoices().find(c => c.channelId === id) || { channelName: id };
@@ -6805,7 +6907,7 @@ function gRenderChannelUsage(t) {
     if (r && r.state === 'blocked') {
       // 서브 채널이 있고 그쪽이 막혀 있지 않으면 등록할 수 있다 — 처음부터 서브 채널로 올린다
       const sub0 = gSubChannelOf(id); const subSt = sub0 ? gYtChannelState(sub0.channelId) : null;
-      if (sub0 && !(subSt && subSt.state === 'blocked')) bits.push(`⛔ ${when}: «${esc(ch.channelName)}» 채널은 하루 업로드 한도예요 — <b>등록하면 서브 채널 «${esc(sub0.channelName)}» 로 올립니다</b> (업체명·로고는 그대로)`);
+      if (sub0 && !(subSt && subSt.state === 'blocked')) bits.push(`⛔ ${when}: «${esc(ch.channelName)}» 채널은 하루 업로드 한도예요 — <b>등록하면 서브 채널 «${esc(sub0.channelName)}» 로 올립니다</b> (업체명도 «${esc(gBizNameOf(sub0.channelName))}» 로)`);
       else { cls += ' err'; bits.push(`⛔ ${when}: YouTube 가 «${esc(ch.channelName)}» 채널의 업로드를 거절했어요 (하루 한도 도달)` + (sub0 ? ` · 서브 채널 «${esc(sub0.channelName)}» 도 한도예요 — 아래에서 서브 채널을 바꾸거나, 다른 채널을 고르거나, 다음 확인에서 ✅ 로 바뀐 뒤 등록하세요` : ` — 아래 «서브 채널» 을 고르면 그 채널로 올릴 수 있어요. 아니면 다른 채널을 고르거나, 다음 확인에서 ✅ 로 바뀐 뒤 등록하세요`)); }
     }
     else if (r && r.state === 'error') { cls += ' err'; bits.push(`⚠ ${when}: «${esc(ch.channelName)}» 채널 확인에서 오류 (${esc(r.reason || r.status || '')}${r.message ? ' · ' + esc(r.message) : ''}) — 메이크의 YouTube 연결을 확인하세요`); }
@@ -7906,9 +8008,9 @@ function gGetData(t) {
     채널: gCollectChannels(t),
     잠재고객ID: g(`${t}_잠재고객`),
     유튜브채널ID: g(`${t}_유튜브채널`) || 'UChg_3mq-CO2kFPkbXlTR3pw',
-    // 서브 채널 — 본 채널이 하루 업로드 한도로 거절하면 메이크(v17)가 남은 영상을 이 채널로 이어서 올린다. 없으면 빈 값
-    서브채널ID: (gSubChannelOf(g(`${t}_유튜브채널`) || 'UChg_3mq-CO2kFPkbXlTR3pw') || {}).channelId || '',
-    서브채널명: (gSubChannelOf(g(`${t}_유튜브채널`) || 'UChg_3mq-CO2kFPkbXlTR3pw') || {}).channelName || '',
+    // 서브 채널 — 본 채널이 하루 업로드 한도로 거절하면 메이크(v17~)가 남은 영상을 이 채널로 이어서 올린다. 없으면 빈 값.
+    // 서브업체명·서브로고* = 그렇게 서브 채널로 올라간 광고에 넣을 업체명·로고 (메이크 v18)
+    ...gSubPayload(gSubChannelOf(g(`${t}_유튜브채널`) || 'UChg_3mq-CO2kFPkbXlTR3pw')),
     유튜브막힌채널: '',      // 보내기 직전 확인에서 본 채널이 이미 한도면 본 채널 ID 를 넣는다 → 메이크가 처음부터 서브 채널로 올린다
     기기: g(`${t}_기기`),
     기기제외목록: (() => {
@@ -8083,6 +8185,12 @@ function gValidateCreatives(t) {
     const el = document.getElementById(`${t}_업체명`);
     if (el) { el.classList.add('is-invalid'); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); gKeepViewportTop(); setTimeout(() => el.classList.remove('is-invalid'), 5000); }
     return `업체명 «${biz}» 이 너무 길어요 (${bw}/${G_TEXT_LIMITS.업체명}) — Google 은 한글 한 글자를 2로 세요. 설정 → 채널에서 채널명을 한글 ${Math.floor(G_TEXT_LIMITS.업체명 / 2)}자 안으로 줄여주세요`;
+  }
+  // 서브 채널로 넘어가면 업체명이 서브 채널 것으로 나간다 — 그 이름도 미리 본다
+  const subCh = gSubChannelOf((document.getElementById(`${t}_유튜브채널`) || {}).value || 'UChg_3mq-CO2kFPkbXlTR3pw');
+  if (subCh) {
+    const sb = gBizNameOf(subCh.channelName), sw = gTextWidth(sb);
+    if (sw > G_TEXT_LIMITS.업체명) return `서브 채널 «${subCh.channelName}» 의 업체명이 너무 길어요 (${sw}/${G_TEXT_LIMITS.업체명}) — 서브 채널로 넘어가면 Google 이 거절해요. 설정 → 채널에서 채널명을 한글 ${Math.floor(G_TEXT_LIMITS.업체명 / 2)}자 안으로 줄이거나 서브 채널을 바꿔주세요`;
   }
   return '';
 }
@@ -8340,7 +8448,11 @@ function gSoftenSwitchRows(rows) {
 function gSubNote(data, sub) {
   if (!sub) return '';
   const name = data.서브채널명 || '서브 채널';
-  if (sub.subUploads > 0) return ` · 영상 ${sub.subUploads}개는 서브 채널 «${name}» 에 올렸어요`;
+  if (sub.subUploads > 0) {
+    // 메이크 v18 부터: 서브 채널로 올라간 광고는 업체명도 서브 채널 것 (본 채널과 다를 때만 알려준다)
+    const biz = (Number(sub.ver) >= 18 && data.서브업체명 && data.서브업체명 !== data.업체명) ? ` (그 광고의 업체명은 «${data.서브업체명}»)` : '';
+    return ` · 영상 ${sub.subUploads}개는 서브 채널 «${name}» 에 올렸어요${biz}`;
+  }
   return '';
 }
 function gRenderTrack(t, idx, data, state) {
@@ -8388,9 +8500,17 @@ async function gTrackRegistration(t, idx, data) {
       ['g1', 'g2'].forEach(x => gRenderChannelUsage(x));
     }
     // 서브 채널을 보냈는데 메이크 시나리오가 옛 버전이면 넘어가지 않는다 — 한 번만 알려준다
-    if (data.서브채널ID && subInfo.ver && Number(subInfo.ver) < 17 && !state.subVerWarned) {
-      state.subVerWarned = true;
-      showToast(`메이크 구글 시나리오가 v${subInfo.ver} 이라 서브 채널로 넘어가지 않아요 — v17 블루프린트를 올려주세요`, 'error', 9000);
+    if (data.서브채널ID && subInfo.ver && !state.subVerWarned) {
+      const mv = Number(subInfo.ver);
+      const differs = !!((data.서브업체명 && data.서브업체명 !== data.업체명) || (data.서브로고파일ID && data.서브로고파일ID !== data.로고파일ID));
+      if (mv < 17) {
+        state.subVerWarned = true;
+        showToast(`메이크 구글 시나리오가 v${subInfo.ver} 이라 서브 채널로 넘어가지 않아요 — v18 블루프린트를 올려주세요`, 'error', 9000);
+      } else if (mv < 18 && differs && (data.유튜브막힌채널 || subInfo.switched)) {
+        // v17 은 서브 채널로 올라가도 업체명·로고를 본 채널 것으로 넣는다
+        state.subVerWarned = true;
+        showToast(`메이크 구글 시나리오가 v${subInfo.ver} 이라 서브 채널로 올라간 광고도 업체명·로고가 본 채널 것으로 나가요 — v18 블루프린트를 올려주세요`, 'error', 10000);
+      }
     }
     if (logIds.campaignId) state.campaignId = logIds.campaignId;
     if (logIds.groupId) state.groupId = logIds.groupId;
@@ -8702,10 +8822,10 @@ async function gSubmitAd(t) {
     if (!gate.ok) { showToast(gate.msg, 'error', 10000); restore(); return; }
     data.유튜브막힌채널 = '';
     if (gate.useSub && gate.sub) {
-      // 본 채널이 이미 하루 한도 — 메이크(v17)에 알려서 처음부터 서브 채널로 올린다. 업체명·로고는 본 채널 그대로
-      data.유튜브막힌채널 = data.유튜브채널ID; data.서브채널ID = gate.sub.channelId; data.서브채널명 = gate.sub.channelName;
+      // 본 채널이 이미 하루 한도 — 메이크에 알려서 처음부터 서브 채널로 올린다. 업체명·로고도 서브 채널 것으로 나간다 (메이크 v18)
+      data.유튜브막힌채널 = data.유튜브채널ID; Object.assign(data, gSubPayload(gate.sub));
       const mainName = (gChannelChoices().find(c => c.channelId === data.유튜브채널ID) || {}).channelName || '본';
-      showToast(`«${mainName}» 채널이 하루 업로드 한도라 서브 채널 «${gate.sub.channelName}» 로 올립니다`, 'info', 7000);
+      showToast(`«${mainName}» 채널이 하루 업로드 한도라 서브 채널 «${gate.sub.channelName}» 로 올립니다 (업체명 «${data.서브업체명}»)`, 'info', 7000);
     }
   }
   showToast('Make로 전송 중...', 'info');
@@ -8844,11 +8964,12 @@ const TIKTOK_SETTINGS_KEY = 'adtool_tiktok_settings_v1';
 const T_DEFAULTS = {
   seeded: false,
   advertiserId: '7307541033200664577', advertiserName: '메디컬마케팅3부서',   // 등록에 쓰는 광고계정 — 고정 (설정 → 기본값에서만 바꾼다)
-  clinics: [],                 // {clinic, short, product, regions:[{id,name,path}], pixelId, event, ages}
+  clinics: [],                 // {clinic, short, product}
+  regions: [],                 // 지역 줄 {clinic(''=공통), name, locs:[{id,name,path,level}], campRef, refName, noName, src} — 등록 탭의 «지역구분자»
+  regionInit: 0,               // (이 브라우저만) 1 = 예전 «치과 기본값» 의 지역을 옮김 · 2 = Meta 설정의 지역을 한 번 가져옴
   pixelShow: ['[EZMNC] 데이터세트', '[다이트짐] 데이터 세트'],   // 등록 탭에 보여줄 데이터 연결 (틱톡의 이름 그대로 · 첫 번째가 기본)
   identityName: '오늘의병원', identityId: '9493607a-f8a4-5f34-aba5-c97a607a2e98', identityType: 'BC_AUTH_TT', identityBcId: '',
   cta: 'LEARN_MORE', budget: 30000, budgetStrategy: 'adgroup', ages: ['AGE_45_54', 'AGE_55_100'],
-  adNameWithFile: true,
   fixes: 0,                    // 한 번만 하는 보정을 어디까지 했는지
 };
 /* 지금 틱톡 광고를 돌리는 치과 (진단에서 읽은 것) — 설정 표의 시작값 */
@@ -8856,8 +8977,8 @@ const K_KNOWN_CLINICS = ['충주인플란트치과', '양산서울에스원치�
 const K_KNOWN_SHORT = { '양산서울에스원치과': '양산서울에스원', '충주인플란트치과': '충주', '울산서울탑치과': '울산서울탑치과', '서면오늘플란트치과': '서면오늘플란트', '진주리더플란트치과': '진주', '다이트짐': '다이트짐' };
 const K_KNOWN_PRODUCT = { '다이트짐': '회원권' };
 const TIKTOK_CTA = [   // 리드(상담 신청) 광고에 어울리는 것만
-  { value: 'LEARN_MORE', label: '더 알아보기' }, { value: 'GET_QUOTE', label: '견적 받기' }, { value: 'BOOK_NOW', label: '지금 예약하기' },
-  { value: 'CONTACT_US', label: '문의하기' }, { value: 'APPLY_NOW', label: '지금 신청하기' }, { value: 'SIGN_UP', label: '가입하기' },
+  { value: 'LEARN_MORE', label: '더 알아보기' }, { value: 'BOOK_NOW', label: '지금 예약하기' },
+  { value: 'CONTACT_US', label: '문의하기' }, { value: 'APPLY_NOW', label: '지금 신청하기' },
 ];
 const K_AGE_ORDER = ['AGE_18_24', 'AGE_25_34', 'AGE_35_44', 'AGE_45_54', 'AGE_55_100'];
 const K_TEXT_LIMIT = 100;   // 틱톡 광고 문구 — 한글은 2로 센다 (구글과 같은 규칙)
@@ -8882,6 +9003,10 @@ function kNormalizeSettings() {
   TSET.pixelShow = TSET.pixelShow.map(x => String(x || '').trim()).filter(Boolean);
   // 예전 «치과별 날짜코드» 는 없앴다 — 광고그룹명·광고명 끝 번호는 제작자 사번이다
   TSET.clinics.forEach(c => { if (c && typeof c === 'object') { delete c.dateCode; delete c.advertiserId; } });
+  delete TSET.adNameWithFile;   // 예전 «광고명 앞에 영상 파일명 붙이기» 는 없앴다 — 광고명은 치과명부터 시작한다
+  // 지역 줄 다듬기 + 예전 «치과별 기본값» 정리 (지역만 한 번 옮긴다)
+  TSET.regions = (Array.isArray(TSET.regions) ? TSET.regions : []).filter(r => r && typeof r === 'object').map(kCleanRegionRow).filter(r => r.name || r.locs.length);
+  kMigrateClinicDefaults();
 }
 function persistTiktokSettings() { try { localStorage.setItem(TIKTOK_SETTINGS_KEY, JSON.stringify(TSET)); } catch (e) { showToast('틱톡 설정 저장 실패', 'error'); } }
 /* 치과 표 시작값 — 지금 틱톡을 돌리는 치과 + 구글 설정의 치과·약칭. 이미 있는 치과는 건드리지 않는다 */
@@ -8892,7 +9017,7 @@ function kSeedClinics(silent) {
     const key = normName(clinic); if (!clinic || have.has(key)) return;
     have.add(key);
     const gShort = K_KNOWN_SHORT[clinic] || short || ((GSET.clinics || []).find(c => normName(c.clinic) === key) || {}).short || '';
-    TSET.clinics.push({ clinic, short: gShort, product: K_KNOWN_PRODUCT[clinic] !== undefined ? K_KNOWN_PRODUCT[clinic] : '임플란트', regions: [] });
+    TSET.clinics.push({ clinic, short: gShort, product: K_KNOWN_PRODUCT[clinic] !== undefined ? K_KNOWN_PRODUCT[clinic] : '임플란트' });
     n++;
   };
   K_KNOWN_CLINICS.forEach(c => add(c, ''));
@@ -8926,6 +9051,7 @@ function kApplySettings() {
     sel.innerHTML = '<option value="">선택</option>' + (TSET.clinics || []).filter(c => c.clinic).map(c => `<option value="${esc(c.clinic)}">${esc(c.clinic)}</option>`).join('');
     if (prev) sel.value = prev;
   }
+  kFillRegionSelect();   // 지역 줄이 바뀌었으면 지역구분자도 다시
   kFillStaffSelect();
   const cta = document.getElementById('k1_CTA');
   if (cta) { const prev = cta.value; kFillCta(cta, K.ctaTouched ? (prev || TSET.cta) : TSET.cta); }
@@ -8962,16 +9088,16 @@ function renderTiktokSettings() {
       <td><input type="text" data-k="clinic" data-i="${i}" value="${esc(c.clinic || '')}" placeholder="양산서울에스원치과"></td>
       <td><input type="text" data-k="short" data-i="${i}" value="${esc(c.short || '')}" placeholder="양산서울"></td>
       <td><input type="text" data-k="product" data-i="${i}" value="${esc(c.product || '')}" placeholder="임플란트"></td>
-      <td style="font-size:11px;color:var(--text2);">${(c.regions || []).length ? esc((c.regions || []).map(r => r.name).join(', ')) : '<span style="color:var(--text3)">없음</span>'}${c.event ? ' · ' + esc(c.event) : ''}${(c.ages || []).length ? ' · ' + esc(c.ages.map(a => a.replace('AGE_', '').replace('_100', '+').replace('_', '-')).join(' ')) : ''}${((c.regions || []).length || c.event || c.pixelId || (c.ages || []).length) ? ` <button type="button" class="set-del" title="이 치과 기본값 지우기" onclick="kClearClinicRegions(${i})">✕</button>` : ''}</td>
       <td><button class="set-del" onclick="kRemoveClinicRow(${i})">✕</button></td></tr>`).join('');
-    if (!(TSET.clinics || []).length) body.innerHTML = '<tr><td colspan="5" style="padding:14px 4px;color:var(--text3);font-size:12px;">비어 있습니다. 아래 버튼으로 추가하세요.</td></tr>';
+    if (!(TSET.clinics || []).length) body.innerHTML = '<tr><td colspan="4" style="padding:14px 4px;color:var(--text3);font-size:12px;">비어 있습니다. 아래 버튼으로 추가하세요.</td></tr>';
   }
+  K.regionRowTarget = null; kRenderRegionRows(); kRegionSearchHint();
+  kLoadRegionCands().catch(() => {});   // 비어 있는 줄·추정 줄의 후보를 받아 둔다
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v == null ? '' : v; };
   kFillSettingsSelects(true);
   set('kset_pixelShow', (TSET.pixelShow || []).join(', '));
   const ctaSel = document.getElementById('kset_cta'); if (ctaSel) kFillCta(ctaSel, TSET.cta);
   set('kset_budget', TSET.budget); set('kset_budgetStrategy', TSET.budgetStrategy || 'adgroup'); set('kset_ages', (TSET.ages || []).join(', '));
-  const cb = document.getElementById('kset_adNameWithFile'); if (cb) cb.checked = TSET.adNameWithFile !== false;
   if (typeof gRenderLoginStatus === 'function') gRenderLoginStatus();
   if (typeof gShowPageBuild === 'function') gShowPageBuild();
   const kb = document.getElementById('k_page_build'); const gb = document.getElementById('g_page_build'); if (kb && gb) kb.innerHTML = gb.innerHTML;
@@ -9001,7 +9127,24 @@ function kCollectSettings() {
     rows[i] = rows[i] || Object.assign({}, (TSET.clinics || [])[i] || {});
     rows[i][el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value.trim();
   });
-  if (document.getElementById('kset_clinic_body')) TSET.clinics = rows.filter(r => r && (r.clinic || r.short));
+  const renames = [];   // 치과 이름을 고친 줄 [옛 이름, 새 이름]
+  if (document.getElementById('kset_clinic_body')) {
+    rows.forEach((r, i) => { const old = ((TSET.clinics || [])[i] || {}).clinic; if (r && old && r.clinic && normName(old) !== normName(r.clinic)) renames.push([old, r.clinic]); });
+    TSET.clinics = rows.filter(r => r && (r.clinic || r.short));
+  }
+  // 지역 표 — 그려진 적이 있을 때만 (줄 번호가 표의 줄과 같다 · 빈 줄은 저장할 때 정리한다)
+  const rb = document.getElementById('kset_region_body');
+  const regionShown = !!(rb && rb.dataset.rendered === '1');
+  if (regionShown) {
+    const rr = (TSET.regions || []).map(r => Object.assign({}, r));
+    rb.querySelectorAll('[data-kr]').forEach(el => { const i = Number(el.dataset.i); if (isNaN(i) || !rr[i]) return; rr[i][el.dataset.kr] = el.type === 'checkbox' ? el.checked : el.value.trim(); });
+    TSET.regions = rr.map(kCleanRegionRow);
+  }
+  // 치과 이름을 고쳤으면 그 치과의 지역 줄도 같이 따라간다 (지역 표도 새 이름으로 다시 그린다)
+  if (renames.length) {
+    (TSET.regions || []).forEach(x => { const hit = renames.find(p => normName(p[0]) === normName(x.clinic)); if (hit) x.clinic = hit[1]; });
+    if (regionShown) kRenderRegionRows();
+  }
   const val = id => ((document.getElementById(id) || {}).value || '').trim();
   if (document.getElementById('kset_cta')) {
     const advSel = document.getElementById('kset_advertiser');
@@ -9018,41 +9161,475 @@ function kCollectSettings() {
     TSET.budgetStrategy = val('kset_budgetStrategy') === 'campaign' ? 'campaign' : 'adgroup';
     const ages = val('kset_ages').split(/[,;\s]+/).map(x => x.trim().toUpperCase()).filter(x => K_AGE_ORDER.includes(x));
     TSET.ages = ages.length ? ages : T_DEFAULTS.ages.slice();
-    TSET.adNameWithFile = !!(document.getElementById('kset_adNameWithFile') || {}).checked;
   }
 }
-function kAddClinicRow() { kCollectSettings(); TSET.clinics.push({ clinic: '', short: '', product: '임플란트', regions: [] }); renderTiktokSettings(); }
+function kAddClinicRow() { kCollectSettings(); TSET.clinics.push({ clinic: '', short: '', product: '임플란트' }); renderTiktokSettings(); }
 function kRemoveClinicRow(i) { kCollectSettings(); TSET.clinics.splice(i, 1); renderTiktokSettings(); }
-function kClearClinicRegions(i) { kCollectSettings(); const c = TSET.clinics[i]; if (c) { c.regions = []; c.pixelId = ''; c.event = ''; c.ages = []; } renderTiktokSettings(); }
 function saveTiktokSettingsNow() {
   const idBefore = String(TSET.identityId || '');
-  kCollectSettings(); persistTiktokSettings(); markSettingsDirty();
+  kCollectSettings();
+  // 지역 표 정리 — 완전히 빈 줄은 버리고, 지역명이 빈 줄은 TikTok 지역 이름으로 채운다
+  TSET.regions = (TSET.regions || []).filter(r => r.name || r.locs.length).map(r => { if (!r.name) r.name = r.locs.map(l => l.name).join('+'); return r; });
+  K.regionRowTarget = null;
+  const seen = new Set(), dups = [];
+  TSET.regions.forEach(r => { const k = kRegionKey(r); if (seen.has(k)) { if (!dups.includes(r.name)) dups.push(r.name); } else seen.add(k); });
+  persistTiktokSettings(); markSettingsDirty();
   if (String(TSET.identityId || '') !== idBefore) K.identityTouched = false;   // 기본 틱톡 계정을 바꿨으면 등록 탭도 그 계정으로
   kApplySettings();   // 광고계정을 바꿨으면 여기서 그 계정 것으로 다시 불러온다
-  showToast('틱톡 설정을 저장했어요', 'success');
+  if (dups.length) showToast(`틱톡 설정을 저장했어요 — ⚠ 같은 치과에 지역명이 같은 줄이 있어요 («${dups.join('», «')}») · 지역구분자에는 위쪽 줄만 쓰여요`, 'error', 8000);
+  else showToast('틱톡 설정을 저장했어요', 'success');
   closeSettings();
 }
-/* 등록 탭에서 고른 지역을 그 치과의 기본 지역으로 */
-function kSaveClinicDefaults() {
-  const clinic = kClinicByName((document.getElementById('k1_치과명') || {}).value);
-  if (!clinic) { showToast('치과를 먼저 골라주세요', 'error'); return; }
-  const saved = [];
-  if (K.regions.length) { clinic.regions = K.regions.map(r => ({ id: r.id, name: r.name, path: r.path || '' })); saved.push(`지역 ${clinic.regions.length}곳`); }
-  if (kLeadMode() === 'web') {
-    const px = (document.getElementById('k1_픽셀') || {}).value || ''; const ev = (document.getElementById('k1_이벤트') || {}).value || '';
-    if (px) { clinic.pixelId = px; saved.push('데이터 연결'); }
-    if (ev) { clinic.event = ev; saved.push(`이벤트 ${ev}`); }
-  }
-  const ages = kGetAges(); if (ages.length) { clinic.ages = ages; saved.push('연령'); }
-  if (!saved.length) { showToast('저장할 값이 없어요 — 지역·데이터 연결·이벤트·연령을 먼저 골라주세요', 'error'); return; }
-  persistTiktokSettings(); markSettingsDirty();
-  showToast(`«${clinic.clinic}» 기본값 저장: ${saved.join(' · ')} — 모두에게 적용하려면 설정에서 «모두에게 적용»`, 'success', 6000);
+/* ── 지역 (설정 → 지역 · Meta·Google 과 같은 방식) ──────────────────────────────
+   치과별로 «지역 줄» 을 두고, 등록 탭의 «지역구분자» 에서 그 줄을 고른다.
+     locs    : 실제 타겟 — 틱톡 지역(location_id) 한 곳 이상
+     campRef : 캠페인명에 붙는 표기명 (예: 타지역_부산) — 비우면 refName 을 쓴다
+     refName : 광고그룹명·광고명에 붙는 표기명 (예: 부산타겟) — 비우면 안 붙는다
+     noName  : [제외] — 켜면 이름에 안 붙는다
+   표기명 규칙(refLabel · refCampLabel · refDisplay)은 Meta·Google 과 같은 함수를 그대로 쓴다. */
+function kCleanRegionRow(r) {
+  r = (r && typeof r === 'object') ? r : {};
+  const locs = (Array.isArray(r.locs) ? r.locs : []).filter(l => l && l.id).map(l => ({ id: String(l.id), name: String(l.name || l.id), path: String(l.path || ''), level: String(l.level || '') }));
+  // guess = 같은 이름의 지역이 여러 곳이라 «추정» 으로 연결해 둔 줄 (사람이 확인하면 꺼진다)
+  return { clinic: String(r.clinic || '').trim(), name: String(r.name || '').trim(), locs, campRef: String(r.campRef || '').trim(), refName: String(r.refName || '').trim(), noName: !!r.noName, src: String(r.src || ''), guess: !!r.guess && locs.length === 1 };
 }
-function kSaveClinicRegions() { return kSaveClinicDefaults(); }
+/* 예전 «치과별 기본값(지역·데이터 연결·이벤트·연령)» 은 없앴다 — 저장돼 있던 지역만 한 번 «지역» 표로 옮기고 나머지는 버린다 */
+function kMigrateClinicDefaults() {
+  const first = (TSET.regionInit || 0) < 1;
+  (TSET.clinics || []).forEach(c => {
+    if (!c || typeof c !== 'object') return;
+    if (first && c.clinic && Array.isArray(c.regions) && c.regions.length) {
+      const locs = kCleanRegionRow({ locs: c.regions }).locs;
+      const ids = locs.map(l => l.id).sort().join(',');
+      const dup = TSET.regions.some(r => normName(r.clinic) === normName(c.clinic) && r.locs.map(l => l.id).sort().join(',') === ids);
+      if (locs.length && !dup) TSET.regions.push({ clinic: c.clinic, name: locs.map(l => l.name).join('+'), locs, campRef: '', refName: '', noName: false, src: 'mig' });
+    }
+    delete c.regions; delete c.pixelId; delete c.event; delete c.ages;
+  });
+  if (first) TSET.regionInit = 1;
+}
+function kRegionKey(r) { return normName((r && r.clinic) || '') + '|' + normName((r && r.name) || ''); }
+function kLocFrom(r) { return { id: String(r.id), name: r.nameKo || r.name || String(r.id), path: r.path || '', level: r.level || '' }; }
+function kLocParent(l) { return String((l && l.path) || '').split(',').map(s => s.trim()).filter(Boolean)[1] || ''; }
+function kAdvForRegion() { return (document.getElementById('k1_계정') || {}).value || String(TSET.advertiserId || '') || (((typeof tt !== 'undefined' && tt.advertisers) || [])[0] || {}).id || ''; }
+
+/* ── 등록 탭: 지역구분자 ── */
+/* 치과에 묶인 지역 줄 (치과가 비어 있는 줄은 공통) */
+function kRegionsForClinic(clinic) {
+  const key = normName(clinic || '');
+  return (TSET.regions || []).filter(r => r && r.name && (!r.clinic || normName(r.clinic) === key));
+}
+/* 지역구분자에서 고른 «그 줄» — 같은 지역명이 공통과 치과 전용에 둘 다 있으면 치과 전용 줄 */
+function kRegionOf(name) {
+  const want = name !== undefined ? name : ((document.getElementById('k1_지역구분자') || {}).value || '');
+  if (!want) return null;
+  const list = kRegionsForClinic((document.getElementById('k1_치과명') || {}).value || '');
+  return list.find(r => r.name === want && r.clinic) || list.find(r => r.name === want) || null;
+}
+function kFillRegionSelect() {
+  const sel = document.getElementById('k1_지역구분자'); if (!sel) return;
+  const prev = sel.value;
+  const list = kRegionsForClinic((document.getElementById('k1_치과명') || {}).value || '');
+  // 같은 지역명이 «공통» 과 «이 치과 전용» 에 둘 다 있으면 치과 전용 줄만 보여 준다 (메타와 같은 규칙)
+  const own = new Set(list.filter(r => r.clinic).map(r => r.name));
+  const shown = list.filter(r => r.clinic || !own.has(r.name));
+  sel.innerHTML = '<option value="">선택</option>';
+  shown.forEach(r => { const o = document.createElement('option'); o.value = r.name; const lb = refDisplay(r); o.textContent = (lb ? `${r.name} — ${lb}` : r.name) + (r.locs.length ? '' : ' ⚠'); sel.appendChild(o); });
+  sel.value = (prev && shown.some(r => r.name === prev)) ? prev : '';
+  kOnRegion();
+}
+function kOnRegion() {
+  const sel = document.getElementById('k1_지역구분자');
+  const r = kRegionOf();
+  K.regions = r ? r.locs.map(l => ({ id: l.id, name: l.name, path: l.path || '', sub: kLocParent(l) })) : [];
+  kRenderChips('region');
+  const link = '<span class="link-toggle" onclick="openSettings(\'kregion\')">설정 → 지역</span>';
+  const clinic = (document.getElementById('k1_치과명') || {}).value || '';
+  if (!sel || !sel.value) kHint('k1_지역_hint', (clinic && !kRegionsForClinic(clinic).length) ? `이 치과에 쓸 지역이 아직 없어요 — ${link}에서 추가하세요` : '');
+  else if (!r || !r.locs.length) kHint('k1_지역_hint', `⚠ «${esc(sel.value)}» 줄에 TikTok 지역이 연결되지 않았어요 — ${link}에서 넣어주세요`, 'err');
+  else kHint('k1_지역_hint', `«${esc(r.name)}» — 이 ${r.locs.length}곳에만 광고가 나가요${r.guess ? ` · <span style="color:#b45309;">같은 이름이 여러 곳이라 추정으로 연결한 지역이에요 — ${link}에서 확인</span>` : ''}`);
+  kAutoGenNames();
+}
+
+/* ── 한글 지명 ↔ 틱톡 지역 이름 맞추기 ──
+   틱톡 지역 이름은 영문(Yangsan · Haeundae-gu)으로만 오는 곳이 많다 → 메타의 한글 지역명(양산 · 해운대)을 로마자로 바꿔 맞춰 본다 (api/tiktok.js 와 같은 규칙) */
+const K_RR_I = ['g', 'kk', 'n', 'd', 'tt', 'r', 'm', 'b', 'pp', 's', 'ss', '', 'j', 'jj', 'ch', 'k', 't', 'p', 'h'];
+const K_RR_M = ['a', 'ae', 'ya', 'yae', 'eo', 'e', 'yeo', 'ye', 'o', 'wa', 'wae', 'oe', 'yo', 'u', 'wo', 'we', 'wi', 'yu', 'eu', 'ui', 'i'];
+const K_RR_F = ['', 'k', 'k', 'k', 'n', 'n', 'n', 't', 'l', 'k', 'm', 'l', 'l', 'l', 'p', 'l', 'm', 'p', 'p', 't', 't', 'ng', 't', 't', 'k', 't', 'p', 't'];
+const K_RR_LINK = { 1: 'g', 4: 'n', 7: 'd', 8: 'r', 16: 'm', 17: 'b', 19: 's', 20: 'ss', 22: 'j', 23: 'ch', 24: 'k', 25: 't', 26: 'p' };
+function kRomanize(text) {
+  const syl = [];
+  for (const ch of String(text || '')) {
+    const c = ch.charCodeAt(0) - 0xAC00;
+    if (c < 0 || c > 11171) { syl.push({ raw: ch }); continue; }
+    syl.push({ i: Math.floor(c / 588), m: Math.floor((c % 588) / 28), f: c % 28 });
+  }
+  let out = '';
+  for (let k = 0; k < syl.length; k++) {
+    const cur = syl[k], prev = syl[k - 1], next = syl[k + 1];
+    if (cur.raw !== undefined) { out += cur.raw; continue; }
+    let ini = K_RR_I[cur.i];
+    if (prev && prev.raw === undefined) {
+      if (cur.i === 11 && prev.f && K_RR_LINK[prev.f] !== undefined) ini = K_RR_LINK[prev.f];   // 연음: 밀양 → miryang
+      else if (cur.i === 5 && (prev.f === 4 || prev.f === 8)) ini = 'l';                       // ㄴ·ㄹ + ㄹ: 전라 → jeolla
+      else if (cur.i === 5 && (prev.f === 16 || prev.f === 21)) ini = 'n';                     // ㅁ·ㅇ + ㄹ: 종로 → jongno
+    }
+    let fin = K_RR_F[cur.f];
+    if (next && next.raw === undefined && cur.f) {
+      if (next.i === 11 && K_RR_LINK[cur.f] !== undefined) fin = '';
+      else if (next.i === 5 && cur.f === 4) fin = 'l';
+      else if ((next.i === 2 || next.i === 6) && fin === 'k') fin = 'ng';
+      else if ((next.i === 2 || next.i === 6) && fin === 't') fin = 'n';
+      else if ((next.i === 2 || next.i === 6) && fin === 'p') fin = 'm';
+    }
+    out += ini + K_RR_M[cur.m] + fin;
+  }
+  return out;
+}
+const kGeoNorm = v => String(v || '').toLowerCase().replace(/[\s\-'.·,]/g, '');
+const kHasKo = v => /[가-힣]/.test(String(v || ''));
+const K_ADMIN_KO = /(특별자치시|특별자치도|특별시|광역시|시|군|구|도)$/;
+/* «양산시» → «양산» · «해운대구» → «해운대» (떼고 한 글자만 남으면 그대로: 대구 · 남구) */
+function kStripKo(s) { const t = String(s || '').replace(/\s+/g, ''); const u = t.replace(K_ADMIN_KO, ''); return u.length >= 2 ? u : t; }
+/* «Yangsan-si» → «yangsan» · «Haeundae-gu» → «haeundae» (붙어 있는 Daegu 는 그대로) */
+function kStripEn(s) { return kGeoNorm(String(s || '').replace(/[\s-]+(metropolitan city|special city|special self-governing (city|province)|si|gun|gu|do|city|county|district|province|state)$/i, '')); }
+const K_REGION_ALIAS = { '경남': '경상남도', '경북': '경상북도', '충남': '충청남도', '충북': '충청북도', '전남': '전라남도', '전북': '전라북도', '경기': '경기도', '강원': '강원도' };
+const K_COUNTRY_KO = /^(대한민국|한국|전국|korea|southkorea)$/i;
+/* 한 지역명으로 틱톡에 물어볼 말들 (줄임말은 정식 이름도 같이) */
+function kRegionWants(name) {
+  const n = String(name || '').trim(); const k = n.replace(/\s+/g, '');
+  if (K_COUNTRY_KO.test(k)) return [n, 'Korea'];
+  return K_REGION_ALIAS[k] ? [n, K_REGION_ALIAS[k]] : [n];
+}
+/* 찾는 지역명과 틱톡 지역 후보가 «같은 곳 이름» 인가 — 한글 이름이 있으면 한글로, 영문뿐이면 로마자로 */
+function kRegionNameMatches(want, cand) {
+  if (!cand) return false;
+  const raw = String(want || '').replace(/\s+/g, ''); if (!raw) return false;
+  const ko = cand.nameKo || (kHasKo(cand.name) ? cand.name : '');
+  if (K_COUNTRY_KO.test(raw)) return /COUNTRY/i.test(cand.level || '') && (/korea/i.test(cand.name || '') || /대한민국|한국/.test(ko));
+  if (/COUNTRY/i.test(cand.level || '')) return false;
+  const w = kStripKo(raw);
+  if (ko && kGeoNorm(kStripKo(ko)) === kGeoNorm(w)) return true;
+  const en = kHasKo(cand.name) ? '' : String(cand.name || '');
+  if (!en) return false;
+  const target = kHasKo(w) ? kGeoNorm(kRomanize(w)) : kGeoNorm(w);
+  return !!target && (kStripEn(en) === target || kGeoNorm(en) === target);
+}
+/* 이름 하나로 틱톡 지역을 찾아 «같은 이름» 인 후보만 돌려준다 */
+async function kRegionLookup(name) {
+  const adv = kAdvForRegion(); if (!adv) throw new Error('틱톡 광고계정을 아직 못 불러왔어요');
+  const seen = new Map();
+  for (const w of kRegionWants(name)) {
+    const j = await ttFetch({ op: 'region', advertiser_id: adv, q: w });
+    (j.list || []).forEach(r => { if (r && r.id && !seen.has(String(r.id)) && (kRegionNameMatches(w, r) || kRegionNameMatches(name, r))) seen.set(String(r.id), r); });
+  }
+  return Array.from(seen.values());
+}
+/* 후보 가운데 하나를 고른다 — 하나뿐이면 그것. 여럿이면 ① 메타의 종류가 «도·광역시» / «구·군» 이고 그 단계가 하나뿐일 때
+   ② 한 곳이 나머지의 상위일 때(같은 곳의 시·도 줄과 시 줄) ③ 치과 이름 앞 두 글자(울산…치과 → 울산 아래)로 하나만 남을 때만 고른다 (②③은 «추정» 으로 표시).
+   메타의 «도시» 는 광역시도 도시로 치기 때문에(광주 = 광주광역시 · 경기 광주시) 단계로 가르지 않는다.
+   그래도 여럿이면 고르지 않는다 — 엉뚱한 지역에 광고가 나가는 것보다 사람이 고르는 편이 낫다 */
+function kChooseRegion(exact, typeHint, clinic) {
+  if (!exact.length) return { loc: null, cands: [], guess: false };
+  if (exact.length === 1) return { loc: kLocFrom(exact[0]), cands: [], guess: false };
+  const cands = exact.map(kLocFrom);
+  const lv = typeHint === 'region' ? /PROVINCE/i : (/^(subcity|neighborhood)$/.test(typeHint || '') ? /DISTRICT/i : null);
+  if (lv) { const m = exact.filter(r => lv.test(r.level || '')); if (m.length === 1) return { loc: kLocFrom(m[0]), cands, guess: false }; }
+  const top = exact.find(x => exact.every(y => y === x || String(y.parentId || '') === String(x.id)));
+  if (top) return { loc: kLocFrom(top), cands, guess: true };
+  const c = kClinicByName(clinic);
+  const toks = c ? [c.short, c.clinic].map(v => String(v || '').replace(/\s+/g, '').slice(0, 2)).filter(v => /^[가-힣]{2}$/.test(v)) : [];
+  if (toks.length) {
+    const inPath = r => { const p = kGeoNorm(String(r.path || '').split(',').slice(1).join(',')); return !!p && toks.some(tk => p.includes(kGeoNorm(tk)) || p.includes(kGeoNorm(kRomanize(tk)))); };
+    const m = exact.filter(inPath);
+    if (m.length === 1) return { loc: kLocFrom(m[0]), cands, guess: true };
+  }
+  return { loc: null, cands, guess: false };
+}
+
+/* ── 설정 → 지역 표 ── */
+const K_LEVEL_LABEL = { COUNTRY: '국가', PROVINCE: '시·도', CITY: '시·군', DISTRICT: '구' };
+function kRenderRegionRows() {
+  const body = document.getElementById('kset_region_body'); if (!body) return;
+  const clinics = (TSET.clinics || []).map(c => c && c.clinic).filter(Boolean);
+  const tgt = document.getElementById('k_region_target_clinic');
+  if (tgt) { const prev = tgt.value; tgt.innerHTML = '<option value="">공통 (모든 치과)</option>' + clinics.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join(''); if (prev && clinics.includes(prev)) tgt.value = prev; }
+  const clinicOpts = cur => {
+    const list = clinics.slice();
+    if (cur && !list.some(n => normName(n) === normName(cur))) list.unshift(cur);
+    return '<option value="">공통</option>' + list.map(n => `<option value="${esc(n)}"${normName(n) === normName(cur || '') ? ' selected' : ''}>${esc(n)}</option>`).join('');
+  };
+  const selStyle = 'width:100%;height:34px;border:1px solid var(--border2);border-radius:6px;font-family:inherit;font-size:12px;padding:0 6px;';
+  const locCell = (r, i) => {
+    const key = kRegionKey(r);
+    const guess = !!r.guess && r.locs.length === 1;
+    const chips = r.locs.map((l, j) => { const up = kLocParent(l); return `<span class="kchip${guess ? ' guess' : ''}" title="${esc(l.path || l.name)} · ID ${esc(l.id)}"><b>${esc(l.name)}</b>${up ? `<small>${esc(up)}</small>` : ''}<button type="button" class="x" title="빼기" onclick="kRemoveRegionLoc(${i},${j})">✕</button></span>`; }).join('');
+    const pool = (K.regionCands[key] || []).filter(c => !r.locs.some(l => l.id === c.id));
+    const showCands = (!r.locs.length || guess) ? pool.slice(0, 6) : [];
+    const warn = !r.locs.length ? '<span class="kreg-warn">⚠ 연결 안 됨</span>' : (guess ? `<span class="kreg-warn soft" title="같은 이름의 지역이 여러 곳이라 추정으로 골랐어요 — 맞으면 «맞아요», 아니면 옆의 다른 후보를 누르세요">추정</span><button type="button" class="kreg-cand ok" title="이 지역이 맞아요 (추정 표시를 지웁니다)" onclick="kConfirmRegionGuess(${i})">✓ 맞아요</button>` : '');
+    const candBtns = showCands.map(c => { const up = kLocParent(c); return `<button type="button" class="kreg-cand" title="${esc(c.path || c.name)} · 누르면 이 지역으로${guess ? ' 바꿔요' : ' 연결해요'}" onclick="kPickRegionCandidate(${i},'${esc(c.id)}')">${esc(c.name)}${up ? ' · ' + esc(up) : ''}</button>`; }).join('');
+    const adding = K.regionRowTarget === i;
+    return `<div class="kreg-locs">${chips}${warn}${candBtns}<button type="button" class="kreg-add${adding ? ' on' : ''}" title="이 줄에 TikTok 지역을 검색해서 넣기 (여러 곳 가능)" onclick="kRegionRowSearch(${i})">${adding ? '검색해서 고르세요 ✕' : '＋'}</button></div>`;
+  };
+  const rows = TSET.regions || [];
+  body.innerHTML = rows.map((r, i) => `
+    <tr>
+      <td class="grip-cell"><span class="row-grip" title="여기를 잡고 끌면 순서가 바뀝니다"></span></td>
+      <td><select data-kr="clinic" data-i="${i}" style="${selStyle}">${clinicOpts(r.clinic)}</select></td>
+      <td><input type="text" data-kr="name" data-i="${i}" value="${esc(r.name)}" placeholder="양산"></td>
+      <td>${locCell(r, i)}</td>
+      <td><input type="text" data-kr="campRef" data-i="${i}" value="${esc(r.campRef || '')}" placeholder="${esc(guessCampRef(r.refName) || '비우면 오른쪽 값')}"></td>
+      <td><input type="text" data-kr="refName" data-i="${i}" value="${esc(r.refName || '')}" placeholder="비우면 안 붙음" onchange="onRefNameChanged(this)"></td>
+      <td style="text-align:center;"><label class="ref-ex${r.noName ? ' on' : ''}" title="체크하면 두 표기명 모두 캠페인명·광고그룹명·광고명에 안 붙습니다"><input type="checkbox" data-kr="noName" data-i="${i}"${r.noName ? ' checked' : ''} onchange="this.parentNode.classList.toggle('on', this.checked)">제외</label></td>
+      <td><button class="set-del" onclick="kRemoveRegionRow(${i})">✕</button></td>
+    </tr>`).join('');
+  body.dataset.rendered = '1';
+  dragRowsInit('kset_region_body', kReorderRegionRow);
+  if (!rows.length) body.innerHTML = '<tr><td colspan="8" style="padding:14px 4px;color:var(--text3);font-size:12px;">아직 지역이 없어요 — 위 검색창에서 찾아 추가하거나 아래 «Meta 설정의 지역 가져오기» 를 누르세요.</td></tr>';
+  kRenderRegionNote();
+}
+function kRenderRegionNote() {
+  const el = document.getElementById('kset_region_note'); if (!el) return;
+  const rows = TSET.regions || [];
+  const open = rows.filter(r => r.name && !r.locs.length).length;
+  const guess = rows.filter(r => r.guess && r.locs.length === 1).length;
+  const parts = [];
+  if (open) parts.push(`<span style="color:var(--red);font-weight:600;">⚠ TikTok 지역이 비어 있는 줄 ${open}줄</span> — 후보를 누르거나 <b>＋</b> 로 검색해서 넣어주세요 (비어 있는 줄은 등록할 때 막혀요)`);
+  if (guess) parts.push(`같은 이름이 여러 곳이라 <b>추정으로 고른 줄 ${guess}줄</b> — 칩의 상위 지역(예: 남구 · 울산)이 맞으면 <b>✓ 맞아요</b>, 아니면 옆의 다른 후보를 누르세요`);
+  if ((K.regionSkipped || []).length) parts.push(`틱톡 치과 표에 없어서 안 가져온 Meta 계정: ${esc(K.regionSkipped.join(', '))}`);
+  el.innerHTML = parts.join('<br>'); el.style.display = parts.length ? '' : 'none';
+}
+/* 표를 열었을 때 — TikTok 지역이 비어 있거나 추정인 줄의 후보를 받아 둔다 (가져온 뒤 새로 고침했거나 지역명만 적어 둔 줄).
+   연결은 하지 않고 후보 버튼만 보여 준다. 표에 글을 쓰는 중이면 다시 그리지 않는다 */
+async function kLoadRegionCands() {
+  if (K.regionCandsLoading || !kAdvForRegion()) return;
+  const todo = (TSET.regions || []).filter(r => r.name && (!r.locs.length || r.guess) && !K.regionCands[kRegionKey(r)] && !K.regionCandTried[normName(r.name)]);
+  if (!todo.length) return;
+  K.regionCandsLoading = true;
+  const found = {}; let failed = false;
+  try {
+    for (const r of todo) {
+      const k = normName(r.name); if (k in found) continue;
+      K.regionCandTried[k] = true;
+      try { found[k] = (await kRegionLookup(r.name)).map(kLocFrom); } catch (e) { K.regionCandTried[k] = false; failed = true; break; }
+    }
+  } finally { K.regionCandsLoading = false; }
+  const open = r => r.name && (!r.locs.length || r.guess) && !K.regionCands[kRegionKey(r)];
+  let changed = false;
+  (TSET.regions || []).forEach(r => { const list = found[normName(r.name)]; if (list && list.length && open(r)) { K.regionCands[kRegionKey(r)] = list; changed = true; } });
+  const body = document.getElementById('kset_region_body'); const modal = document.getElementById('settingsModal');
+  // 표에 글을 쓰는 중이면 다시 그리지 않는다 — 다음에 그릴 때 보인다
+  if (changed && body && modal && modal.classList.contains('show') && currentPlatform === 'tiktok' && !body.contains(document.activeElement)) { kCollectSettings(); kRenderRegionRows(); }
+  // 받는 사이에 새 줄이 생겼으면 그것도 (물어보다 실패했으면 다시 묻지 않는다)
+  if (!failed && (TSET.regions || []).some(r => open(r) && !K.regionCandTried[normName(r.name)])) return kLoadRegionCands();
+}
+function kAddRegionRow() { kCollectSettings(); TSET.regions.push({ clinic: (document.getElementById('k_region_target_clinic') || {}).value || '', name: '', locs: [], campRef: '', refName: '', noName: false, src: '' }); K.regionRowTarget = null; kRenderRegionRows(); kShowRegionRow(TSET.regions.length - 1, true); }
+/* 새로 생긴(바뀐) 줄이 보이게 — 표가 길면 화면 밖에 생긴다 */
+function kShowRegionRow(i, focusName) {
+  const tr = document.querySelectorAll('#kset_region_body tr')[i]; if (!tr) return;
+  try { tr.scrollIntoView({ block: 'nearest' }); } catch (e) {}
+  tr.classList.add('row-moved'); setTimeout(() => tr.classList.remove('row-moved'), 1000);
+  if (focusName) { const nm = tr.querySelector('[data-kr="name"]'); if (nm) { try { nm.focus({ preventScroll: true }); } catch (e) {} } }
+}
+function kRemoveRegionRow(i) { kCollectSettings(); TSET.regions.splice(i, 1); K.regionRowTarget = null; kRenderRegionRows(); }
+function kRemoveRegionLoc(i, j) { kCollectSettings(); const r = TSET.regions[i]; if (r) { r.locs.splice(j, 1); r.guess = false; } kRenderRegionRows(); }
+function kConfirmRegionGuess(i) { kCollectSettings(); const r = TSET.regions[i]; if (r) r.guess = false; kRenderRegionRows(); }
+function kReorderRegionRow(from, to) {
+  kCollectSettings();
+  const list = TSET.regions || [];
+  if (from < 0 || from >= list.length || to < 0 || to >= list.length) return;
+  const [row] = list.splice(from, 1); list.splice(to, 0, row);
+  K.regionRowTarget = null; kRenderRegionRows();
+}
+/* 후보 가운데 하나를 눌러 그 줄의 TikTok 지역으로 (추정으로 골라 둔 줄이면 바꾼다) */
+function kPickRegionCandidate(i, id) {
+  kCollectSettings();
+  const r = TSET.regions[i]; if (!r) return;
+  const key = kRegionKey(r);
+  const c = (K.regionCands[key] || []).find(x => String(x.id) === String(id)); if (!c) return;
+  if (r.guess || !r.locs.length) r.locs = [{ id: c.id, name: c.name, path: c.path || '', level: c.level || '' }];
+  else if (!r.locs.some(l => l.id === c.id)) r.locs.push({ id: c.id, name: c.name, path: c.path || '', level: c.level || '' });
+  r.guess = false;
+  kRenderRegionRows();
+}
+/* 줄의 ＋ — 검색창을 그 줄에 묶는다 (다음에 고르는 검색 결과가 새 줄이 아니라 그 줄에 들어간다). 지역명이 있으면 그 이름으로 바로 찾아 준다 */
+function kRegionRowSearch(i) {
+  kCollectSettings();
+  const inp = document.getElementById('k_region_search');
+  if (K.regionRowTarget === i) { K.regionRowTarget = null; kRenderRegionRows(); kRegionSearchHint(); return; }
+  K.regionRowTarget = i; kRenderRegionRows(); kRegionSearchHint();
+  const r = TSET.regions[i];
+  if (inp) { if (r && r.name && !r.locs.length) { inp.value = r.name; kSetRegionSearchNow(); } try { inp.focus({ preventScroll: false }); } catch (e) {} }
+}
+function kRegionSearchHint() {
+  const inp = document.getElementById('k_region_search'); if (!inp) return;
+  const r = K.regionRowTarget !== null ? (TSET.regions || [])[K.regionRowTarget] : null;
+  inp.placeholder = r ? `«${r.name || (K.regionRowTarget + 1) + '번째 줄'}» 줄에 넣을 TikTok 지역 이름 (예: 양산, 해운대구, Busan)` : 'TikTok 지역 이름을 입력하세요 — 한글·영문 모두 (예: 양산, 해운대구, Busan)';
+}
+let kSetRegionTimer = null;
+function kOnSetRegionSearch() {
+  clearTimeout(kSetRegionTimer);
+  const q = ((document.getElementById('k_region_search') || {}).value || '').trim();
+  const box = document.getElementById('k_region_results'); if (!box) return;
+  if (q.length < 1) { box.classList.remove('show'); box.innerHTML = ''; return; }
+  box.innerHTML = '<div class="region-result">검색 중...</div>'; box.classList.add('show');
+  kSetRegionTimer = setTimeout(kSetRegionSearchNow, 350);
+}
+async function kSetRegionSearchNow() {
+  const q = ((document.getElementById('k_region_search') || {}).value || '').trim();
+  const box = document.getElementById('k_region_results'); if (!box) return;
+  if (!q) { box.classList.remove('show'); return; }
+  const adv = kAdvForRegion();
+  if (!adv) { box.innerHTML = '<div class="region-result">틱톡 광고계정을 아직 못 불러왔어요 — «연동» 탭을 확인하세요</div>'; box.classList.add('show'); return; }
+  const seq = K.setRegionSeq = (K.setRegionSeq || 0) + 1;
+  box.innerHTML = '<div class="region-result">검색 중...</div>'; box.classList.add('show');
+  try {
+    const j = await ttFetch({ op: 'region', advertiser_id: adv, q });
+    if (seq !== K.setRegionSeq) return;
+    const list = (j.list || []).slice(0, 30);
+    K.setRegionFound = list;
+    box.innerHTML = list.length ? list.map((r, i) => `<div class="region-result" onclick="kAddRegionFromSearch(${i})"><span><b>${esc(r.nameKo || r.name)}</b>${r.nameKo && r.nameKo !== r.name ? ` <span class="sub">${esc(r.name)}</span>` : ''} <span class="sub">${esc(String(r.path || '').split(',').slice(1).join(',').trim())}</span></span><span class="kind">${esc(K_LEVEL_LABEL[String(r.level || '').toUpperCase()] || r.level || '')}</span></div>`).join('') : '<div class="region-result">검색 결과가 없어요 — 영문으로도 찾아보세요 (예: Yangsan)</div>';
+    box.classList.add('show');
+  } catch (e) { if (seq === K.setRegionSeq) { box.innerHTML = `<div class="region-result" style="color:var(--red);">❌ ${esc(e.message)}</div>`; box.classList.add('show'); } }
+}
+function kAddRegionFromSearch(i) {
+  const hit = (K.setRegionFound || [])[i]; if (!hit) return;
+  kCollectSettings();
+  const loc = kLocFrom(hit);
+  const close = () => { const box = document.getElementById('k_region_results'); if (box) { box.classList.remove('show'); box.innerHTML = ''; } const inp = document.getElementById('k_region_search'); if (inp) inp.value = ''; };
+  const target = K.regionRowTarget !== null ? TSET.regions[K.regionRowTarget] : null;
+  if (target) {
+    if (target.locs.some(l => l.id === loc.id)) { showToast('이 줄에 이미 들어 있는 지역이에요', 'error'); return; }
+    if (target.guess) { target.locs = [loc]; target.guess = false; } else target.locs.push(loc);
+    if (!target.name) target.name = kHasKo(loc.name) ? kStripKo(loc.name) : loc.name;
+    const at = TSET.regions.indexOf(target);
+    K.regionRowTarget = null; kRenderRegionRows(); kRegionSearchHint(); close(); kShowRegionRow(at);
+    showToast(`«${target.name}» 줄에 ${loc.name} 넣었어요`, 'success');
+    return;
+  }
+  const clinic = (document.getElementById('k_region_target_clinic') || {}).value || '';
+  const name = kHasKo(loc.name) ? kStripKo(loc.name) : loc.name;
+  if ((TSET.regions || []).some(r => normName(r.clinic) === normName(clinic) && r.locs.length === 1 && r.locs[0].id === loc.id)) { showToast('이미 추가된 지역이에요', 'error'); return; }
+  TSET.regions.push({ clinic, name, locs: [loc], campRef: '', refName: kHasKo(name) ? `${name}타겟` : '', noName: false, src: '' });
+  kRenderRegionRows(); close(); kShowRegionRow(TSET.regions.length - 1);
+  showToast(`${name} 추가됨 — 표기명을 확인하고 저장하세요`, 'success');
+}
+
+/* ── Meta 설정의 지역을 그대로 가져오기 ──
+   계정 → 치과, 지역명·표기명·[제외] 는 그대로, 실제 타겟(틱톡 지역)은 지역명으로 찾아 연결한다.
+   이미 있는 줄(같은 치과 + 같은 지역명)은 건드리지 않는다. */
+function kMetaAccountName(accountId) {
+  const id = String(accountId || '').replace('act_', '');
+  const list = ((typeof DB !== 'undefined' && DB.accounts) || []).filter(x => String((x && x.id) || '').replace('act_', '') === id);
+  const a = list.find(x => !x.variant) || list[0];
+  return a ? (a.name || '') : '';
+}
+/* 메타 광고계정 → 틱톡 치과. '' = 공통 · null = 틱톡 치과 표에 없는 계정 */
+function kClinicForMetaAccount(accountId) {
+  if (!accountId) return '';
+  const id = String(accountId).replace('act_', '');
+  const accs = ((typeof DB !== 'undefined' && DB.accounts) || []).filter(x => String((x && x.id) || '').replace('act_', '') === id);
+  if (!accs.length) return null;
+  // 계정 이름(괄호 안의 «(치아교정)» 같은 꼬리는 뗀 것도) · 약칭
+  const names = [], abbrs = [];
+  const add = (list, v) => { const n = normName(v); if (n && n.length >= 2 && !list.includes(n)) list.push(n); };
+  accs.forEach(a => { add(names, a.name); add(names, String(a.name || '').replace(/[(\[（【].*?[)\]）】]/g, '')); add(abbrs, a.campaignName); add(abbrs, a.setName); });
+  const clinics = (TSET.clinics || []).filter(c => c && c.clinic);
+  const full = c => normName(c.clinic), short = c => normName(c.short);
+  // ① 이름·약칭이 치과 전체명과 같다 ② 계정 이름과 치과 전체명 중 한쪽이 다른 쪽을 품는다 ③ 계정 이름이 (네 글자 이상인) 치과 약칭을 품는다.
+  //    «진주» 같은 두 글자 약칭으로는 맞추지 않는다 — 같은 도시의 다른 병원 계정이 섞여 들어온다
+  const hit = clinics.find(c => names.includes(full(c)) || abbrs.includes(full(c)))
+    || clinics.find(c => names.some(n => n.length >= 3 && (n.includes(full(c)) || full(c).includes(n))))
+    || clinics.find(c => short(c).length >= 4 && names.some(n => n.includes(short(c))));
+  return hit ? hit.clinic : null;
+}
+async function kImportMetaRegions(opts) {
+  const auto = !!(opts && opts.auto);
+  if (K.regionImporting) return 'busy';
+  const say = (msg, kind) => { if (!auto) showToast(msg, kind || 'error', 6000); };
+  const src = ((typeof SETTINGS !== 'undefined' && SETTINGS.regions) || []).filter(r => r && String(r.name || '').trim());
+  if (!src.length) { say('Meta 설정에 지역이 없어요 — Meta 설정 → 지역을 먼저 확인하세요', 'info'); return 'wait'; }
+  if (src.some(r => r.accountId) && !((typeof DB !== 'undefined' && DB.accounts) || []).length) { say('Meta 계정 목록을 아직 못 불러왔어요 — Meta 연동이 끝난 뒤 다시 눌러주세요'); return 'wait'; }
+  if (!kAdvForRegion()) { say('틱톡 광고계정을 아직 못 불러왔어요 — «연동» 탭을 확인하세요'); return 'wait'; }
+  K.regionImporting = true;
+  const btn = document.getElementById('k_region_import_btn'); if (btn) { btn.disabled = true; btn.textContent = '가져오는 중...'; }
+  try {
+    const modal = document.getElementById('settingsModal');
+    if (!auto && modal && modal.classList.contains('show')) kCollectSettings();   // 표에서 고치던 값부터 담는다
+    const have = new Set((TSET.regions || []).map(kRegionKey));
+    const add = []; const skipped = [];
+    src.forEach(m => {
+      const clinic = kClinicForMetaAccount(m.accountId);
+      if (clinic === null) { const nm = kMetaAccountName(m.accountId) || String(m.accountId); if (!skipped.includes(nm)) skipped.push(nm); return; }
+      const row = kCleanRegionRow({ clinic, name: m.name, campRef: m.campRef, refName: m.refName, noName: m.noName, src: 'meta' });
+      const key = kRegionKey(row); if (have.has(key)) return; have.add(key);
+      row._type = String(m.type || '');
+      add.push(row);
+    });
+    K.regionSkipped = skipped;
+    if (!add.length) {
+      say(skipped.length ? `새로 가져올 지역이 없어요 (틱톡 치과 표에 없는 Meta 계정 ${skipped.length}곳은 건너뜀)` : '새로 가져올 지역이 없어요 — Meta 의 지역이 이미 다 들어와 있어요', 'info');
+      if (auto) {
+        TSET.regionInit = 2; persistTiktokSettings();
+        // 처음 한 번인데 하나도 못 가져왔으면 까닭을 알려 준다 (메타 계정 이름이 틱톡 치과 표와 달라서)
+        if (skipped.length && !(TSET.regions || []).length) showToast(`Meta 지역을 가져오려 했는데, 틱톡 치과 표와 이름이 맞는 Meta 계정이 없었어요 (${skipped.length}곳) — TikTok 설정 → 지역에서 확인하세요`, 'error', 9000);
+      }
+      kRenderRegionNote();
+      return 'none';
+    }
+    // 틱톡 지역 찾기 — 같은 이름은 한 번만 묻는다
+    const found = {}; let failed = '';
+    for (const row of add) {
+      const k = normName(row.name); if (k in found) continue;
+      try { found[k] = await kRegionLookup(row.name); } catch (e) { found[k] = null; failed = e.message; }
+    }
+    if (failed && Object.values(found).every(v => v === null)) throw new Error(failed);   // 한 곳도 못 물어봤으면(연결 문제) 아무것도 넣지 않는다
+    let linked = 0, open = 0;
+    add.forEach(row => {
+      const pick = kChooseRegion(found[normName(row.name)] || [], row._type, row.clinic); delete row._type;
+      const key = kRegionKey(row);
+      if (pick.cands.length) K.regionCands[key] = pick.cands;
+      if (pick.loc) { row.locs = [pick.loc]; row.guess = !!pick.guess; linked++; } else open++;
+    });
+    // 예전 «치과 기본값» 에서 옮겨 둔 줄과 같은 곳이면 그 줄은 지운다 (메타에서 온 줄 하나만 남게)
+    const dropMig = new Set();
+    add.forEach(row => { if (row.locs.length !== 1) return; (TSET.regions || []).forEach((r, i) => { if (r.src === 'mig' && normName(r.clinic) === normName(row.clinic) && r.locs.length === 1 && r.locs[0].id === row.locs[0].id) dropMig.add(i); }); });
+    TSET.regions = (TSET.regions || []).filter((r, i) => !dropMig.has(i)).concat(add);
+    TSET.regionInit = 2; persistTiktokSettings(); if (!auto) markSettingsDirty();
+    K.regionRowTarget = null;
+    kRenderRegionRows(); kFillRegionSelect();
+    showToast(`Meta 지역 ${add.length}줄을 가져왔어요 — TikTok 지역 자동 연결 ${linked}줄${open ? ` · ⚠ 직접 골라야 하는 줄 ${open}줄` : ''}${auto ? ' (TikTok 설정 → 지역에서 확인하세요)' : ''}`, open ? 'info' : 'success', 9000);
+    return 'done';
+  } catch (e) {
+    say('Meta 지역을 가져오지 못했어요 — ' + e.message);
+    return 'wait';
+  } finally {
+    K.regionImporting = false;
+    if (btn) { btn.disabled = false; btn.textContent = 'Meta 설정의 지역 가져오기'; }
+  }
+}
+/* 처음 한 번은 알아서 가져온다 — 표가 비어 있을 때만 (직접 넣었거나 공유 설정으로 받은 줄이 있으면 손대지 않는다) */
+async function kAutoImportMetaRegions() {
+  if ((TSET.regionInit || 0) >= 2 || K.regionImporting) return 'skip';
+  if (!ENV.isHttp || !loginOk()) return 'wait';
+  if (typeof sharedInfo !== 'undefined' && (!sharedInfo.checked || sharedLoadInFlight)) return 'wait';   // 공유 설정(메타의 지역 포함)을 다 받은 뒤에 본다
+  if ((TSET.regions || []).some(r => r.src !== 'mig')) { TSET.regionInit = 2; persistTiktokSettings(); return 'have'; }
+  if (!tt.ping || tt.ping.missing || !tt.ping.hasToken) return 'wait';
+  return kImportMetaRegions({ auto: true });
+}
+function kScheduleAutoImport(n) {
+  if ((TSET.regionInit || 0) >= 2) return;
+  clearTimeout(K.autoImportTimer);
+  K.autoImportTimer = setTimeout(async () => {
+    let r = 'wait';
+    try { r = await kAutoImportMetaRegions(); } catch (e) { r = 'wait'; }
+    if ((r === 'wait' || r === 'busy') && (n || 0) < 12) kScheduleAutoImport((n || 0) + 1);
+  }, n ? 5000 : 1200);
+}
 loadTiktokSettings();
 
 /* ── 상태 ── */
-const K = { loaded: false, loading: null, byAdv: {}, regions: [], excl: [], ints: [], acts: [], strategyTouched: false, agesTouched: false, nameEdited: false, bcs: [], rows: [], sent: [], regionTimer: null, regionSeq: 0, check: { key: '', state: '', hit: null, near: null, error: '', timer: null, seq: 0 }, dup: null };
+const K = { loaded: false, loading: null, byAdv: {}, regions: [], regionRowTarget: null, regionCands: {}, regionCandTried: {}, regionCandsLoading: false, regionSkipped: [], regionImporting: false, setRegionSeq: 0, setRegionFound: [], autoImportTimer: null, excl: [], ints: [], acts: [], strategyTouched: false, agesTouched: false, nameEdited: false, bcs: [], rows: [], sent: [], regionTimer: null, regionSeq: 0, check: { key: '', state: '', hit: null, near: null, error: '', timer: null, seq: 0 }, dup: null };
 let kTypeEdited = false;
 async function ttPost(body) {
   const res = await apiFetch(TIKTOK_PROXY_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), cache: 'no-store' });
@@ -9063,7 +9640,15 @@ async function ttPost(body) {
   return j;
 }
 function kAdvName(id) { const a = (tt.advertisers || []).find(x => String(x.id) === String(id)); return a ? (a.name || a.id) : String(id || ''); }
-function kHint(id, text, cls) { const el = document.getElementById(id); if (!el) return; el.className = 'field-hint' + (cls ? ' ' + cls : ''); el.innerHTML = text || ''; }
+function kHint(id, text, cls) { const el = document.getElementById(id); if (!el) return; el.className = 'field-hint' + (cls ? ' ' + cls : ''); el.innerHTML = text || ''; if (id === 'k1_계정_hint') kSyncAccountAlert(); }
+/* 광고계정은 맨 아래 «고정 값» 에 있다 — 문제가 있을 때(로그인·토큰·권한·옛 버전)만 같은 안내를 폼 맨 위에도 보여 준다 */
+function kSyncAccountAlert() {
+  const src = document.getElementById('k1_계정_hint'), dst = document.getElementById('k1_계정_alert'); if (!src || !dst) return;
+  const txt = src.textContent || '';
+  const bad = src.classList.contains('err') || /⚠|🔐|조회 전용/.test(txt);
+  dst.style.display = bad ? '' : 'none';
+  dst.innerHTML = bad ? `<b>광고계정</b> · ${src.innerHTML}` : '';
+}
 /* 틱톡 탭을 처음 열 때 — 중계 함수 확인 + 광고계정 목록 */
 async function kEnsureLoaded(force) {
   if (K.loading) return K.loading;
@@ -9094,6 +9679,7 @@ async function kEnsureLoaded(force) {
       if (fixedId) kOnAccount();
       kFillSettingsSelects();
       try { const b = await ttFetch({ op: 'bcs' }); K.bcs = b.list || []; } catch (e) { /* 선택 사항 */ }
+      kScheduleAutoImport(0);   // 지역 표가 비어 있으면 Meta 설정의 지역을 한 번 가져온다
     } catch (e) {
       kHint('k1_계정_hint', '⚠ ' + esc(e.message) + ' <span class="link-toggle" onclick="kEnsureLoaded(true)">다시 시도</span> · <span class="link-toggle" onclick="openSettings(\'klink\')">연동 확인</span>', 'err');
     }
@@ -9175,16 +9761,15 @@ function kFillPixelSelects() {
   const label = x => view.filtered ? esc(x.name || ('픽셀 ' + x.id)) : `${esc(x.name || ('픽셀 ' + x.id))}${x.active === false && !x.used ? ' (비활성)' : ''}${x.used ? ' · 사용 중' : ''} · 이벤트 ${(x.events || []).length}개`;
   if (d.pixels === null || d.pixels === undefined) sel.innerHTML = '<option value="">불러오는 중...</option>';
   else sel.innerHTML = '<option value="">선택</option>' + list.map(x => `<option value="${esc(x.id)}">${label(x)}</option>`).join('');
-  // 기본 선택: 치과에 저장해 둔 것 → 이름에 그 치과가 든 것([다이트짐] 데이터 세트) → 설정의 첫 번째([EZMNC] 데이터세트)
+  // 기본 선택: 이름에 그 치과가 든 것([다이트짐] 데이터 세트) → 설정의 첫 번째([EZMNC] 데이터세트)
   const clinic = kClinicByName((document.getElementById('k1_치과명') || {}).value);
   const has = id => !!id && list.some(x => x.id === id);
   const ckeys = clinic ? [normName(clinic.clinic), normName(clinic.short)].filter(k => k && k.length >= 2) : [];
   const byClinic = ckeys.length ? view.picked.find(x => ckeys.some(k => normName(x.name).includes(k))) : null;
   const first = view.picked.find(x => has(x.id)) || null;
   let pick = '';
-  if (K.clinicPicked) pick = has(clinic && clinic.pixelId) ? clinic.pixelId : ((byClinic && has(byClinic.id)) ? byClinic.id : (first ? first.id : ''));   // 치과를 새로 고르면 그 치과 것으로 다시 잡는다
+  if (K.clinicPicked) pick = (byClinic && has(byClinic.id)) ? byClinic.id : (first ? first.id : '');   // 치과를 새로 고르면 그 치과 것으로 다시 잡는다
   if (!pick && has(prev)) pick = prev;
-  if (!pick && has(clinic && clinic.pixelId)) pick = clinic.pixelId;
   if (!pick && byClinic && has(byClinic.id)) pick = byClinic.id;
   if (!pick && first) pick = first.id;
   if (!pick && list.length === 1) pick = list[0].id;
@@ -9228,7 +9813,7 @@ function kEventDef(ev) {
 }
 /* 데이터 세트의 이벤트 → 드롭다운 줄. 같은 이벤트는 한 줄로 합친다 (규칙만 다른 같은 이벤트 · 광고그룹에서 본 같은 이벤트).
    보낼 값(value)은 틱톡이 쓰는 코드 그대로 — 표준 코드(ON_WEB_REGISTER 등)로 온 것이 있으면 그것을 쓴다.
-   keepValue = 리드 이벤트가 아니어도 남겨 둘 값(치과 기본값 · 이미 골라 둔 것) */
+   keepValue = 리드 이벤트가 아니어도 남겨 둘 값(이미 골라 둔 것) */
 function kEventView(px, all, keepValue) {
   const rows = []; const byKey = new Map();
   ((px && px.events) || []).forEach(ev => {
@@ -9264,15 +9849,12 @@ function kOnPixel() {
   const px = (d.pixels || []).find(x => x.id === pid);
   const samePixel = K.evPixel === pid; K.evPixel = pid;
   const prev = samePixel ? sel.value : '';   // 데이터 세트가 바뀌면 전에 고른 이벤트를 끌고 가지 않고 그 데이터 세트 기준으로 다시 잡는다
-  const clinicEv = (kClinicByName((document.getElementById('k1_치과명') || {}).value) || {}).event || '';
-  const view = kEventView(px, all, K.clinicPicked ? clinicEv : (prev || clinicEv));
+  const view = kEventView(px, all, prev);
   const list = view.list;
   sel.innerHTML = px ? (list.length ? '<option value="">선택</option>' + list.map(r => `<option value="${esc(r.value)}">${esc(kEventLabel(r, !view.filtered))}</option>`).join('') : '<option value="">이 데이터 세트에 이벤트가 없어요</option>') : '<option value="">데이터 연결 선택 후</option>';
   const has = v => !!v && list.some(r => r.value === v);
   let pick = '';
-  if (K.clinicPicked && has(clinicEv)) pick = clinicEv;                 // 치과를 새로 고르면 그 치과에 저장해 둔 이벤트
-  if (!pick && has(prev)) pick = prev;
-  if (!pick && has(clinicEv)) pick = clinicEv;
+  if (has(prev)) pick = prev;
   if (!pick && view.lead.length) {
     // 기존 웹사이트 광고그룹이 가장 많이 쓰는 리드 이벤트 → 없으면 광고관리자 순서(등록 완료 → 양식 제출 → 연락처)에서 활성인 것
     const used = view.lead.filter(r => r.used > 0).sort((a, b) => b.used - a.used)[0];
@@ -9303,11 +9885,9 @@ function kFillPageSelect(adv) {
   kHint('k1_양식_hint', (d.pages === null || d.pages === undefined) ? '' : ((d.errors || {}).pages ? `⚠ 양식 목록을 못 받았어요 — ${esc(d.errors.pages)}` : `인스턴트 양식 ${list.length}개${mine.length ? ` · «${esc(clinic.clinic)}» 것 ${mine.length}개를 위에 모았어요` : ''}`), (d.errors || {}).pages ? 'err' : '');
 }
 function kOnClinic() {
-  const clinic = kClinicByName((document.getElementById('k1_치과명') || {}).value);
   const sel = document.getElementById('k1_계정');
-  if (clinic && (clinic.regions || []).length) { K.regions = clinic.regions.map(r => ({ id: r.id, name: r.name, path: r.path || '' })); kRenderChips('region'); }
-  if (clinic && (clinic.ages || []).length) kSetAges(clinic.ages);
-  K.clinicPicked = true;   // 치과를 새로 고르면 그 치과의 기본 데이터 연결·이벤트를 다시 잡는다
+  kFillRegionSelect();     // 그 치과의 지역만 지역구분자에 (고른 지역이 이 치과에 없으면 «선택» 으로 돌아간다)
+  K.clinicPicked = true;   // 치과를 새로 고르면 이름에 그 치과가 든 데이터 연결을 다시 잡는다
   kFillPixelSelects(); kFillPageSelect(sel ? sel.value : '');
   K.clinicPicked = false;
   kAutoGenNames();
@@ -9322,8 +9902,9 @@ function kOnLeadMode() {
   { const el = document.getElementById('k1_유형'); if (el) el.placeholder = web ? '랜딩' : '직접 입력 (지원금 등)'; el.title = web ? '' : '리드(양식) 방식은 유형을 직접 적어요 — 예: 지원금 · 비용혜택 · 30만원대'; }
   const w = document.getElementById('k1_web_wrap'), f = document.getElementById('k1_form_wrap'), u = document.getElementById('k1_url_wrap');
   if (w) w.style.display = web ? '' : 'none'; if (f) f.style.display = web ? 'none' : ''; if (u) u.style.display = web ? '' : 'none';
-  const loc = document.getElementById('k1_최적화위치'); if (loc) loc.value = web ? '웹사이트' : '인스턴트 양식';
+  const loc = document.getElementById('k1_최적화위치'); if (loc) { loc.value = web ? '웹사이트' : '인스턴트 양식'; loc.textContent = loc.value; }
   const attr = document.getElementById('k1_attr_fixed'); if (attr) attr.style.display = web ? '' : 'none';
+  const utm = document.getElementById('k1_utm_fixed'); if (utm) utm.style.display = web ? '' : 'none';
   if (!kTypeEdited) kFillTypeFromMode();
   kCreativeBlocks().forEach(b => { const uw = b.querySelector('[data-role="url_wrap"]'); if (uw) uw.style.display = web ? '' : 'none'; });
   kAutoGenNames();
@@ -9340,44 +9921,14 @@ function kOnPlacement() {
   const list = document.getElementById('k1_게재목록'); if (list) list.style.display = normal ? 'flex' : 'none';
 }
 /* ── 칩 (지역 · 제외 타겟 · 관심사 · 행동) ── */
-const K_CHIP = { region: { key: 'regions', box: 'k1_지역칩', empty: '지역을 검색해서 추가하세요 (여러 개 가능)' }, aud: { key: 'excl', box: 'k1_제외칩', empty: '' }, int: { key: 'ints', box: 'k1_관심사칩', empty: '' }, act: { key: 'acts', box: 'k1_행동칩', empty: '' } };
+const K_CHIP = { region: { key: 'regions', box: 'k1_지역칩', empty: '위에서 «지역구분자» 를 고르면 실제 타겟 지역이 여기에 보여요', readonly: true }, aud: { key: 'excl', box: 'k1_제외칩', empty: '' }, int: { key: 'ints', box: 'k1_관심사칩', empty: '' }, act: { key: 'acts', box: 'k1_행동칩', empty: '' } };
 function kRenderChips(kind) {
   const cfg = K_CHIP[kind]; const box = document.getElementById(cfg.box); if (!box) return;
   const list = K[cfg.key];
-  box.innerHTML = list.length ? list.map(x => `<span class="kchip" title="${esc(x.path || x.name)}"><b>${esc(x.name)}</b>${x.sub ? `<small>${esc(x.sub)}</small>` : ''}<button type="button" class="x" title="빼기" onclick="kRemoveChip('${kind}','${esc(x.id)}')">✕</button></span>`).join('') : (cfg.empty ? `<span style="font-size:12px;color:var(--text3);">${cfg.empty}</span>` : '');
+  box.innerHTML = list.length ? list.map(x => `<span class="kchip" title="${esc(x.path || x.name)}"><b>${esc(x.name)}</b>${x.sub ? `<small>${esc(x.sub)}</small>` : ''}${cfg.readonly ? '' : `<button type="button" class="x" title="빼기" onclick="kRemoveChip('${kind}','${esc(x.id)}')">✕</button>`}</span>`).join('') : (cfg.empty ? `<span style="font-size:12px;color:var(--text3);">${cfg.empty}</span>` : '');
 }
-function kRemoveChip(kind, id) { const cfg = K_CHIP[kind]; K[cfg.key] = K[cfg.key].filter(x => String(x.id) !== String(id)); if (kind === 'region') K.regionsTouched = true; kRenderChips(kind); }
-function kAddChip(kind, item) { const cfg = K_CHIP[kind]; if (K[cfg.key].some(x => String(x.id) === String(item.id))) return; K[cfg.key].push(item); if (kind === 'region') K.regionsTouched = true; kRenderChips(kind); }
-function kOnRegionInput() {
-  clearTimeout(K.regionTimer);
-  const q = ((document.getElementById('k1_지역검색') || {}).value || '').trim();
-  const box = document.getElementById('k1_지역결과'); if (!box) return;
-  if (q.length < 1) { box.classList.remove('show'); box.innerHTML = ''; return; }
-  box.innerHTML = '<div class="region-result">검색 중...</div>'; box.classList.add('show');
-  K.regionTimer = setTimeout(kRegionSearchNow, 350);
-}
-async function kRegionSearchNow() {
-  const q = ((document.getElementById('k1_지역검색') || {}).value || '').trim();
-  const box = document.getElementById('k1_지역결과'); if (!box) return;
-  const adv = (document.getElementById('k1_계정') || {}).value || (tt.advertisers[0] || {}).id || '';
-  if (!adv) { box.innerHTML = '<div class="region-result">광고계정을 먼저 고르세요</div>'; box.classList.add('show'); return; }
-  if (!q) { box.classList.remove('show'); return; }
-  const seq = ++K.regionSeq;
-  try {
-    const j = await ttFetch({ op: 'region', advertiser_id: adv, q });
-    if (seq !== K.regionSeq) return;
-    const list = j.list || [];
-    box.innerHTML = list.length ? list.slice(0, 30).map((r, i) => `<div class="region-result" onclick="kPickRegion(${i})"><span><b>${esc(r.nameKo || r.name)}</b>${r.nameKo && r.nameKo !== r.name ? ` <span class="sub">${esc(r.name)}</span>` : ''} <span class="sub">${esc(r.path || '')}</span></span><span class="sub">${esc(r.level || '')}</span></div>`).join('') : '<div class="region-result">검색 결과가 없어요 — 영문으로도 찾아보세요 (예: Yangsan)</div>';
-    K.regionFound = list;
-    box.classList.add('show');
-  } catch (e) { box.innerHTML = `<div class="region-result">❌ ${esc(e.message)}</div>`; box.classList.add('show'); }
-}
-function kPickRegion(i) {
-  const r = (K.regionFound || [])[i]; if (!r) return;
-  kAddChip('region', { id: r.id, name: r.nameKo || r.name, path: r.path || '', sub: r.level || '' });
-  const box = document.getElementById('k1_지역결과'); if (box) { box.classList.remove('show'); box.innerHTML = ''; }
-  const inp = document.getElementById('k1_지역검색'); if (inp) { inp.value = ''; inp.focus({ preventScroll: true }); }
-}
+function kRemoveChip(kind, id) { const cfg = K_CHIP[kind]; K[cfg.key] = K[cfg.key].filter(x => String(x.id) !== String(id)); kRenderChips(kind); }
+function kAddChip(kind, item) { const cfg = K_CHIP[kind]; if (K[cfg.key].some(x => String(x.id) === String(item.id))) return; K[cfg.key].push(item); kRenderChips(kind); }
 /* 제외 타겟 · 관심사 · 행동 — 목록을 받아 두고 이름으로 거른다 */
 const K_PICK = { aud: { key: 'audiences', input: 'k1_제외검색', box: 'k1_제외결과', hint: 'k1_제외_hint', chip: 'aud', op: 'audiences' }, int: { key: 'interests', input: 'k1_관심사검색', box: 'k1_관심사결과', hint: 'k1_관심사_hint', chip: 'int', op: 'interests' }, act: { key: 'actions', input: 'k1_행동검색', box: 'k1_행동결과', hint: 'k1_행동_hint', chip: 'act', op: 'actions' } };
 async function kEnsureList(kind) {
@@ -9431,7 +9982,8 @@ function kNameParts() {
   const clinic = kClinicByName((document.getElementById('k1_치과명') || {}).value) || {};
   const type = ((document.getElementById('k1_유형') || {}).value || '').trim();
   const staff = ((document.getElementById('k1_제작자') || {}).value || '').trim();
-  return { full: clinic.clinic || '', short: clinic.short || '', product: clinic.product === undefined ? '임플란트' : clinic.product, type, staff, staffId: kStaffId(staff), date: ((document.getElementById('k1_날짜') || {}).value || '').trim(), memo: ((document.getElementById('k1_메모') || {}).value || '').trim() };
+  const region = kRegionOf();   // 지역구분자에서 고른 줄 — 표기명이 이름에 붙는다 (비었거나 [제외]면 안 붙음)
+  return { full: clinic.clinic || '', short: clinic.short || '', product: clinic.product === undefined ? '임플란트' : clinic.product, type, staff, staffId: kStaffId(staff), date: ((document.getElementById('k1_날짜') || {}).value || '').trim(), memo: ((document.getElementById('k1_메모') || {}).value || '').trim(), campRef: refCampLabel(region), refName: refLabel(region) };
 }
 function kBuildCampaignName() {
   const p = kNameParts();
@@ -9439,15 +9991,13 @@ function kBuildCampaignName() {
   const head = p.short || p.full;
   // 약칭에 시술이 이미 들어 있으면(«충주 임플란트») 한 번만 쓴다 — «충주 임플란트 임플란트 랜딩» 처럼 겹치지 않게
   const product = (p.product && head.split(/\s+/).some(w => normName(w) === normName(p.product))) ? '' : p.product;
-  return [head, product, p.type, p.date ? `(${p.date})` : '', p.staff, p.memo].filter(Boolean).join(' ');
+  // 캠페인명엔 «표기명 (캠페인명)» 이 유형 바로 뒤에 — 예) 진주 임플란트 랜딩 타지역_사천 (261113_1) 류지룡
+  return [head, product, p.type, p.campRef, p.date ? `(${p.date})` : '', p.staff, p.memo].filter(Boolean).join(' ');
 }
-/* 광고그룹명 = 치과 전체명 + 시술 + 유형 + 1T + 제작자 사번 (메타·구글과 같은 규칙 — 끝 번호는 치과가 아니라 만든 사람의 사번) */
-function kBuildGroupName(token) { const p = kNameParts(); if (!p.full) return ''; return [p.full, p.product, p.type, token, p.staffId].filter(Boolean).join(' '); }
-function kAdNameFor(i, fileBase) {
-  const base = kBuildGroupName(`1.${i}T`); if (!base) return '';
-  const fb = String(fileBase || '').replace(/\.[^.]+$/, '').trim();
-  return (TSET.adNameWithFile !== false && fb) ? `${fb}_${base}` : base;
-}
+/* 광고그룹명 = 치과 전체명 + 시술 + 유형 + 지역표기 + 1T + 제작자 사번 (메타·구글과 같은 규칙 — 끝 번호는 치과가 아니라 만든 사람의 사번) */
+function kBuildGroupName(token) { const p = kNameParts(); if (!p.full) return ''; return [p.full, p.product, p.type, p.refName, token, p.staffId].filter(Boolean).join(' '); }
+/* 광고명 = 광고그룹명과 같은 규칙에 번호만 1.1T · 1.2T … (영상 파일명은 앞에 붙이지 않는다) */
+function kAdNameFor(i) { return kBuildGroupName(`1.${i}T`); }
 function kAutoGenNames() {
   const camp = kBuildCampaignName();
   const el = document.getElementById('k1_캠페인명');
@@ -9456,7 +10006,7 @@ function kAutoGenNames() {
   const g = document.getElementById('k1_광고그룹명'); if (g) g.value = kBuildGroupName('1T');
   const blocks = kCreativeBlocks();
   const n = blocks.length || 1;
-  const first = kAdNameFor(1, kCardFileBase(blocks[0]));
+  const first = kAdNameFor(1);
   const a = document.getElementById('k1_광고명'); if (a) a.value = first ? (n > 1 ? `${first} 외 ${n - 1}개 (1.2T~1.${n}T)` : first) : '';
   kUpdateCardAdNames();
 }
@@ -9526,21 +10076,16 @@ function kRenderCampaignNameHint() {
 
 /* ── 광고 소재 카드 (1카드 = 영상 1개 = 광고 1개) ── */
 const K_CREATIVE_MAX = 10;
+const K_CARD_W = 600;        // 문구까지 보이는 카드 폭 (문구 공통으로 문구를 숨긴 카드는 280)
 let kCreativeSeq = 0;
 function kCreativeBlocks() { const list = document.getElementById('k1_creative_list'); return list ? Array.from(list.children) : []; }
-function kCardFileBase(block) {
-  if (!block) return '';
-  const f = block.querySelector('[data-role="파일첨부"]');
-  if (f && f.files && f.files[0]) return f.files[0].name;
-  return block.dataset.driveName || '';
-}
 function kAddCreativeBlock() {
   const list = document.getElementById('k1_creative_list'); if (!list) return;
   if (list.children.length >= K_CREATIVE_MAX) { showToast(`광고는 한 번에 최대 ${K_CREATIVE_MAX}개까지예요`, 'error'); return; }
   const id = `k1_kcr_${kCreativeSeq++}`;
   const idx = list.children.length + 1;
   const block = document.createElement('div');
-  block.className = 'creative-card'; block.id = id; block.style.flex = '0 0 520px';
+  block.className = 'creative-card kcard'; block.id = id; block.style.flex = `0 0 ${K_CARD_W}px`;
   block.innerHTML = `
     <div class="creative-card-head"><span class="creative-card-title">광고 ${idx}</span>
       <button type="button" class="creative-remove" onclick="kRemoveCreativeBlock('${id}')">삭제</button>
@@ -9556,15 +10101,14 @@ function kAddCreativeBlock() {
           </div>
           <span class="gvideo-link" data-role="drive_toggle" onclick="kToggleSlotDrive(this)">Drive에 있는 영상이면 링크·파일ID로 넣기</span>
           <div data-role="drive_wrap" style="display:none;margin-top:4px;"><input type="text" data-role="파일ID" placeholder="Drive 링크 또는 파일ID 붙여넣기" oninput="extractDriveId(this);kOnSlotDriveInput(this)"></div>
-          <div class="field" style="margin:6px 0 0;"><input type="text" data-role="파일명" placeholder="광고명 앞에 붙을 영상 이름 (파일명 자동)" oninput="kAutoGenNames()"></div>
         </div>
       </div>
       <div class="gcard-col right" data-role="text_wrap">
         <div class="gcard-sub">광고 문구</div>
-        <div class="field"><label>텍스트 <span class="len-tag" data-role="len" style="float:right;">0/${K_TEXT_LIMIT}</span></label><textarea data-role="텍스트" placeholder="예: 양산 시민이라면 정품 포인트 임플란트 29만원에 가능!!" oninput="kUpdateLenTag(this);kSyncCreativeCommon()"></textarea></div>
-        <div class="field" data-role="url_wrap"><label>웹사이트 URL <span class="auto-tag tt">공통값 대신 쓰려면</span></label><input type="text" data-role="URL" placeholder="비우면 공통 URL" oninput="kSyncCreativeCommon()"></div>
+        <div class="field" style="margin-bottom:0;"><label>텍스트 <span class="len-tag" data-role="len" style="float:right;">0/${K_TEXT_LIMIT}</span></label><textarea class="ktext" data-role="텍스트" placeholder="예: 양산 시민이라면 정품 포인트 임플란트 29만원에 가능!!" oninput="kUpdateLenTag(this);kSyncCreativeCommon()"></textarea></div>
       </div>
-    </div>`;
+    </div>
+    <div class="field kcard-url" data-role="url_wrap"><label>이 광고만 다른 랜딩 주소 <span class="auto-tag tt">선택</span></label><input type="text" data-role="URL" placeholder="비워 두면 왼쪽에 적은 «웹사이트 URL» 로 연결돼요"></div>`;
   list.appendChild(block);
   const uw = block.querySelector('[data-role="url_wrap"]'); if (uw) uw.style.display = kLeadMode() === 'web' ? '' : 'none';
   kApplyCreativeCommon(); kSyncCreativeCommon(); kUpdateCreativeCount(); kAutoGenNames();
@@ -9584,16 +10128,15 @@ function kUpdateLenTag(ta) {
 function kToggleCreativeCommon() { kApplyCreativeCommon(); kSyncCreativeCommon(); }
 function kApplyCreativeCommon() {
   const on = !!(document.getElementById('k1_creative_common') || {}).checked;
-  kCreativeBlocks().forEach((b, i) => { const w = b.querySelector('[data-role="text_wrap"]'); const hide = on && i > 0; if (w) w.style.display = hide ? 'none' : 'block'; b.style.flex = hide ? '0 0 280px' : '0 0 520px'; });
+  kCreativeBlocks().forEach((b, i) => { const w = b.querySelector('[data-role="text_wrap"]'); const hide = on && i > 0; if (w) w.style.display = hide ? 'none' : 'block'; b.style.flex = hide ? '0 0 280px' : `0 0 ${K_CARD_W}px`; });
 }
 function kSyncCreativeCommon() {
   const on = !!(document.getElementById('k1_creative_common') || {}).checked;
   if (!on) return;
   const blocks = kCreativeBlocks(); const first = blocks[0]; if (!first) return;
-  ['텍스트', 'URL'].forEach(role => {
-    const v = (first.querySelector(`[data-role="${role}"]`) || {}).value || '';
-    blocks.forEach((b, i) => { if (i === 0) return; const el = b.querySelector(`[data-role="${role}"]`); if (el) { el.value = v; if (role === '텍스트') kUpdateLenTag(el); } });
-  });
+  // 같이 쓰는 건 «텍스트» 뿐 — 랜딩 주소는 카드마다 따로다 (비우면 왼쪽 «웹사이트 URL»)
+  const v = (first.querySelector('[data-role="텍스트"]') || {}).value || '';
+  blocks.forEach((b, i) => { if (i === 0) return; const el = b.querySelector('[data-role="텍스트"]'); if (el) { el.value = v; kUpdateLenTag(el); } });
 }
 function kOpenCardFile(dz) { const input = dz.parentElement.querySelector('[data-role="파일첨부"]'); if (input) input.click(); }
 function kOnCardDrop(e, dz) {
@@ -9610,9 +10153,7 @@ function kOnCardFileSelected(input) {
   slot.dataset.uploadedId = ''; slot.dataset.coverId = ''; slot.querySelector('[data-role="파일ID"]').value = '';
   const dw = slot.querySelector('[data-role="drive_wrap"]'); const dl = slot.querySelector('[data-role="drive_toggle"]');
   if (dw) dw.style.display = 'none'; if (dl) dl.textContent = 'Drive에 있는 영상이면 링크·파일ID로 넣기';
-  const nm = slot.querySelector('[data-role="파일명"]'); if (nm && !nm.dataset.touched) nm.value = file.name.replace(/\.[^.]+$/, '');
   block.dataset.driveName = '';
-  kAutoGenNames();
   kPrefetchDriveUpload(slot);
 }
 function kToggleSlotDrive(link) {
@@ -9627,12 +10168,11 @@ function kOnSlotDriveInput(input) {
   const id = (input.value || '').trim();
   if (id && id !== (slot.dataset.uploadedId || '')) {
     dz.innerHTML = `🔗 Drive 파일 사용<br><span style="font-size:11px;color:var(--text3);">${esc(id)} · 클릭하면 대신 파일 첨부</span>`;
-    // 파일 이름을 Drive 에서 읽어 광고명에 쓴다 (구글 로그인돼 있을 때만)
+    // 파일 이름을 Drive 에서 읽어 둔다 — 틱톡 영상 보관함에 올릴 때의 파일 이름 (구글 로그인돼 있을 때만)
     if (typeof gTokenValid === 'function' && gTokenValid('core')) {
       gAuthFetch('core', `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?fields=name`).then(r => r.ok ? r.json() : null).then(j => {
         if (!j || !j.name || (input.value || '').trim() !== id) return;
-        block.dataset.driveName = j.name; const nm = slot.querySelector('[data-role="파일명"]'); if (nm && !nm.dataset.touched && !nm.value) nm.value = j.name.replace(/\.[^.]+$/, '');
-        kAutoGenNames();
+        block.dataset.driveName = j.name;
       }).catch(() => {});
     }
   } else if (!id) {
@@ -9693,15 +10233,15 @@ function kCollectCreatives() {
     const fileInput = slot.querySelector('[data-role="파일첨부"]');
     const file = fileInput && fileInput.files[0] ? fileInput.files[0] : null;
     const fileId = (slot.querySelector('[data-role="파일ID"]').value || '').trim();
-    const nameEl = slot.querySelector('[data-role="파일명"]');
-    const fileBase = (nameEl && nameEl.value.trim()) || (file ? file.name : (b.dataset.driveName || ''));
-    return { block: b, slot, 순번: i + 1, 파일첨부: file, 파일명: file ? file.name : (b.dataset.driveName || ''), 파일ID: fileId, 미리올림: !!(fileId && slot.dataset.uploadedId === fileId), 커버ID: slot.dataset.coverId || '', 영상이름: fileBase, 광고명: kAdNameFor(i + 1, fileBase), 텍스트: pick(b, '텍스트'), CTA버튼: (document.getElementById('k1_CTA') || {}).value || TSET.cta, URL: pick(b, 'URL') };
+    const fileBase = (file ? file.name : (b.dataset.driveName || '')).replace(/\.[^.]+$/, '');
+    const ownUrl = ((b.querySelector('[data-role="URL"]') || {}).value || '').trim();   // 이 광고만 다른 랜딩 주소 (비우면 왼쪽 주소)
+    return { block: b, slot, 순번: i + 1, 파일첨부: file, 파일명: file ? file.name : (b.dataset.driveName || ''), 파일ID: fileId, 미리올림: !!(fileId && slot.dataset.uploadedId === fileId), 커버ID: slot.dataset.coverId || '', 영상이름: fileBase, 광고명: kAdNameFor(i + 1), 텍스트: pick(b, '텍스트'), CTA버튼: (document.getElementById('k1_CTA') || {}).value || TSET.cta, URL: ownUrl };
   });
 }
 function kUpdateCardAdNames() {
   kCreativeBlocks().forEach((b, i) => {
     const box = b.querySelector('[data-role="광고명"]'); if (!box) return;
-    const name = kAdNameFor(i + 1, kCardFileBase(b) || ((b.querySelector('[data-role="파일명"]') || {}).value || ''));
+    const name = kAdNameFor(i + 1);
     if (name) { box.classList.remove('is-empty'); box.innerHTML = `<strong>${esc(name)}</strong>`; box.title = name; } else { box.classList.add('is-empty'); box.textContent = '치과 선택 시 광고명 자동생성'; box.title = ''; }
   });
 }
@@ -9726,7 +10266,7 @@ function kGetData() {
     픽셀ID: web ? ((pixelSel || {}).value || '') : '', 픽셀명: web ? pxName : '', 이벤트: web ? ev : '',
     최적화목표: web ? (K_ENGAGE_EVENTS.includes(ev.toUpperCase()) ? 'LEAD_WEB_ENGAGEMENT' : 'LEADS') : 'LEADS',
     양식ID: web ? '' : ((document.getElementById('k1_양식') || {}).value || ''),
-    지역목록: K.regions.map(r => ({ id: r.id, name: r.name, path: r.path || '' })), 연령: kGetAges(), 성별: (document.getElementById('k1_성별') || {}).value || 'GENDER_UNLIMITED', 언어: ['ko'],
+    지역구분자: ((document.getElementById('k1_지역구분자') || {}).value || ''), 지역목록: K.regions.map(r => ({ id: r.id, name: r.name, path: r.path || '' })), 연령: kGetAges(), 성별: (document.getElementById('k1_성별') || {}).value || 'GENDER_UNLIMITED', 언어: ['ko'],
     제외타겟: K.excl.map(x => ({ id: x.id, name: x.name })), 관심사: K.ints.map(x => ({ id: x.id, name: x.name })), 행동: K.acts.map(x => ({ id: x.id, name: x.name, scene: x.scene || 'VIDEO_RELATED' })),
     게재방식: placementNormal ? 'PLACEMENT_TYPE_NORMAL' : 'PLACEMENT_TYPE_AUTOMATIC', 게재위치: placementNormal ? Array.from(document.querySelectorAll('#k1_게재목록 input:checked')).map(x => x.value) : [],
     아이덴티티: kSelectedIdentity(), CTA: (document.getElementById('k1_CTA') || {}).value || TSET.cta, 공통URL: commonUrl, URL파라미터: K_UTM.slice(),
@@ -9753,7 +10293,8 @@ function kValidate(d) {
     if (!d.픽셀ID) return kFocusBad($('k1_픽셀'), '데이터 연결(픽셀)을 골라주세요');
     if (!d.이벤트) return kFocusBad($('k1_이벤트'), '최적화 이벤트를 골라주세요');
   } else if (!d.양식ID) return kFocusBad($('k1_양식'), '인스턴트 양식을 골라주세요');
-  if (!d.지역목록.length) return kFocusBad($('k1_지역검색'), '지역을 1개 이상 골라주세요');
+  if (!d.지역구분자) return kFocusBad($('k1_지역구분자'), '지역구분자를 골라주세요 — 목록이 비어 있으면 설정 → 지역에서 추가하세요');
+  if (!d.지역목록.length) return kFocusBad($('k1_지역구분자'), `«${d.지역구분자}» 줄에 TikTok 지역이 연결되지 않았어요 — 설정 → 지역에서 넣어주세요`);
   if (!d.연령.length) return '연령을 1개 이상 체크해주세요';
   if (d.게재방식 === 'PLACEMENT_TYPE_NORMAL' && !d.게재위치.length) return '게재 위치를 1개 이상 체크해주세요';
   if (!d.아이덴티티 || !d.아이덴티티.id) return kFocusBad($('k1_아이덴티티'), 'TikTok 계정을 골라주세요');
@@ -9764,7 +10305,11 @@ function kValidate(d) {
     if (!a.광고명) return `광고 ${a.순번}: 광고명을 만들지 못했어요`;
     if (!a.텍스트) return kFocusBad(b && b.querySelector('[data-role="텍스트"]'), `광고 ${a.순번}: 광고 텍스트가 비어 있어요`);
     const w = gTextWidth(a.텍스트); if (w > K_TEXT_LIMIT) return kFocusBad(b && b.querySelector('[data-role="텍스트"]'), `광고 ${a.순번}: 텍스트가 너무 길어요 (${w}/${K_TEXT_LIMIT}) — 틱톡은 한글 한 글자를 2로 세요`);
-    if (d.리드방식 === 'web' && !/^https?:\/\/\S+$/i.test(a.URL)) return kFocusBad($('k1_URL'), `광고 ${a.순번}: 웹사이트 URL 이 비어 있거나 https:// 로 시작하지 않아요`);
+    if (d.리드방식 === 'web' && !/^https?:\/\/\S+$/i.test(a.URL)) {
+      const own = b && b.querySelector('[data-role="URL"]');
+      if (own && own.value.trim()) return kFocusBad(own, `광고 ${a.순번}: «이 광고만 다른 랜딩 주소» 가 https:// 로 시작하지 않아요`);
+      return kFocusBad($('k1_URL'), `광고 ${a.순번}: 웹사이트 URL 이 비어 있거나 https:// 로 시작하지 않아요`);
+    }
   }
   return '';
 }
@@ -9971,19 +10516,21 @@ async function kSubmitAd() {
   data.요청ID = kNewRequestId();
   data.state = { log: [], videoIds: {}, imageIds: {}, campaignId: '', adgroupId: '', adIds: {}, paused: false, failed: false, running: false, needTerms: false };
   const idx = kAddCard(data);
-  kStep(idx, '수신', '완료', `${data.광고계정명} · ${data.치과명} · ${data.리드방식 === 'web' ? '웹사이트' : '인스턴트 양식'} · 광고 ${data.광고목록.length}개 · 제작자 ${data.제작자}`);
+  kStep(idx, '수신', '완료', `${data.광고계정명} · ${data.치과명} · 지역 ${data.지역구분자} · ${data.리드방식 === 'web' ? '웹사이트' : '인스턴트 양식'} · 광고 ${data.광고목록.length}개 · 제작자 ${data.제작자}`);
   showToast('틱톡 등록을 시작했어요 — 오른쪽 카드에서 단계를 볼 수 있어요', 'success');
   restore();
   kRunSteps(idx);
 }
 function kClearForm() {
-  K.nameEdited = false; kTypeEdited = false; K.regionsTouched = false; K.strategyTouched = false; K.agesTouched = false;
-  ['k1_날짜', 'k1_메모', 'k1_캠페인명', 'k1_광고그룹명', 'k1_광고명', 'k1_URL', 'k1_지역검색', 'k1_제외검색', 'k1_관심사검색', 'k1_행동검색'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  K.nameEdited = false; kTypeEdited = false; K.strategyTouched = false; K.agesTouched = false;
+  ['k1_날짜', 'k1_메모', 'k1_캠페인명', 'k1_광고그룹명', 'k1_광고명', 'k1_URL', 'k1_제외검색', 'k1_관심사검색', 'k1_행동검색'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   const staff = document.getElementById('k1_제작자'); if (staff) { staff.value = ''; kFillStaffName(); }
   kDefaultDate();
   const clinic = document.getElementById('k1_치과명'); if (clinic) clinic.value = '';
+  { const rs = document.getElementById('k1_지역구분자'); if (rs) rs.value = ''; }
   const mode = document.getElementById('k1_리드방식'); if (mode) mode.value = 'web';
   K.regions = []; K.excl = []; K.ints = []; K.acts = []; Object.keys(K_CHIP).forEach(kRenderChips);
+  kFillRegionSelect();
   const budget = document.getElementById('k1_예산'); if (budget) { budget.value = TSET.budget || 30000; budget.dataset.touched = ''; }
   const strat = document.querySelector(`input[name="k1_budget_strategy"][value="${TSET.budgetStrategy === 'campaign' ? 'campaign' : 'adgroup'}"]`); if (strat) strat.checked = true; kOnBudgetStrategy(true);
   const normal = document.querySelector('input[name="k1_placement"][value="PLACEMENT_TYPE_NORMAL"]'); if (normal) normal.checked = true;
@@ -10053,7 +10600,7 @@ const SHARED_SETTINGS_URL = '/settings.json';
 const SHARED_API_URL = '/api/settings';
 const SHARED_META_KEYS = ['staff', 'accounts', 'accountVariants', 'pages', 'pageInstagram', 'regions'];
 const SHARED_GOOGLE_KEYS = ['staff', 'clinics', 'regions', 'channels', 'cta', 'accounts', 'audiences', 'blockedAccounts'];
-const SHARED_TIKTOK_KEYS = ['advertiserId', 'advertiserName', 'clinics', 'pixelShow', 'identityName', 'identityId', 'identityType', 'identityBcId', 'cta', 'budget', 'budgetStrategy', 'ages', 'adNameWithFile', 'fixes'];
+const SHARED_TIKTOK_KEYS = ['advertiserId', 'advertiserName', 'clinics', 'pixelShow', 'identityName', 'identityId', 'identityType', 'identityBcId', 'cta', 'budget', 'budgetStrategy', 'ages', 'regions', 'fixes'];
 const SHARED_STAMP_KEY = 'adtool_shared_settings_stamp';   // 마지막으로 적용한 공유 설정의 updatedAt
 const SHARED_DIRTY_KEY = 'adtool_settings_local_dirty';    // 이 브라우저에서만 바꾼 게 있음
 const ADMIN_KEY_STORE = 'adtool_admin_key';
@@ -10074,7 +10621,14 @@ function applySharedSettings(shared, source) {
   if (!shared || typeof shared !== 'object' || (!shared.meta && !shared.google && !shared.tiktok)) return false;
   if (shared.meta) { SHARED_META_KEYS.forEach(k => { if (shared.meta[k] !== undefined && shared.meta[k] !== null) SETTINGS[k] = shared.meta[k]; }); persistSettings(); }
   if (shared.google) { SHARED_GOOGLE_KEYS.forEach(k => { if (shared.google[k] !== undefined && shared.google[k] !== null) GSET[k] = shared.google[k]; }); GSET.seeded = true; persistGoogleSettings(); }
-  if (shared.tiktok && typeof TSET !== 'undefined') { SHARED_TIKTOK_KEYS.forEach(k => { if (shared.tiktok[k] !== undefined && shared.tiktok[k] !== null) TSET[k] = shared.tiktok[k]; }); TSET.seeded = true; kNormalizeSettings(); persistTiktokSettings(); }
+  if (shared.tiktok && typeof TSET !== 'undefined') {
+    SHARED_TIKTOK_KEYS.forEach(k => {
+      const v = shared.tiktok[k]; if (v === undefined || v === null) return;
+      if (k === 'regions' && Array.isArray(v) && !v.length) return;   // 빈 지역 표로 이 브라우저의 지역 줄을 지우지는 않는다 (지역을 가져오기 전에 올린 공유 설정일 수 있다)
+      TSET[k] = v;
+    });
+    TSET.seeded = true; kNormalizeSettings(); persistTiktokSettings();
+  }
   lsSet(SHARED_STAMP_KEY, shared.updatedAt || ''); lsSet(SHARED_DIRTY_KEY, '');
   Object.assign(sharedInfo, { updatedAt: shared.updatedAt || '', updatedBy: shared.updatedBy || '', available: true, applied: true, source: source || '' });
   applySettingsToDB(); populateDropdowns(); ['t1', 't2'].forEach(t => { try { autoGenNames(t); } catch (e) {} });
@@ -10093,6 +10647,16 @@ async function fetchSharedFrom(url) {
     if (!r.ok) return { status: r.status, data: null, error: (j && j.error) || '' };
     return { status: r.status, data: (j && (j.meta || j.google || j.tiktok)) ? j : null };
   } catch (e) { return { status: 0, data: null }; }
+}
+function sharedCanon(v) {
+  if (Array.isArray(v)) return v.map(sharedCanon);
+  if (v && typeof v === 'object') { const o = {}; Object.keys(v).sort().forEach(k => { if (v[k] !== undefined) o[k] = sharedCanon(v[k]); }); return o; }
+  return v;
+}
+/* 공유 설정을 지금 적용해도 달라질 게 없는가 — 공유 설정에 들어 있는 항목만 비교한다 */
+function sharedSameAsLocal(shared) {
+  const same = (keys, local, sh) => !sh || keys.every(k => sh[k] === undefined || sh[k] === null || JSON.stringify(sharedCanon(local[k])) === JSON.stringify(sharedCanon(sh[k])));
+  return same(SHARED_META_KEYS, SETTINGS, shared.meta) && same(SHARED_GOOGLE_KEYS, GSET, shared.google) && (typeof TSET === 'undefined' || same(SHARED_TIKTOK_KEYS, TSET, shared.tiktok));
 }
 let sharedLoadInFlight = null;
 function loadSharedSettings() {
@@ -10113,7 +10677,11 @@ async function loadSharedSettingsNow() {
   Object.assign(sharedInfo, { available: true, updatedAt: newest.updatedAt || '', updatedBy: newest.updatedBy || '' });
   const stamp = lsGet(SHARED_STAMP_KEY), dirty = lsGet(SHARED_DIRTY_KEY) === '1';
   // 이 브라우저에서만 고친 게 있고 공유 설정이 그때 그대로면 로컬을 지킨다. 관리자가 더 새 걸 올렸으면 그걸 적용
-  if (dirty && stamp && String(newest.updatedAt || '') <= stamp) { renderSharedStatus(); return; }
+  if (dirty && stamp && String(newest.updatedAt || '') <= stamp) {
+    // 이 브라우저 설정이 공유 설정과 글자 하나까지 같으면 «이 브라우저에서 바꾼 게 있음» 표시를 지운다 (적용해도 달라질 게 없다)
+    try { if (sharedSameAsLocal(newest)) lsSet(SHARED_DIRTY_KEY, ''); } catch (e) {}
+    renderSharedStatus(); return;
+  }
   applySharedSettings(newest, newest === api.data ? 'api' : 'file');
 }
 function sharedTimeLabel(iso) {
@@ -10152,7 +10720,7 @@ function downloadSharedSettingsFile(payload) {
 /* 관리자: 지금 설정을 모두에게 */
 async function shareSettingsNow() {
   // 모달에 입력 중인 값을 먼저 담는다
-  try { if (currentPlatform === 'google') gCollectSettings(); else collectSettingsFromDom(); } catch (e) {}
+  try { if (currentPlatform === 'google') gCollectSettings(); else if (currentPlatform === 'tiktok') { kCollectSettings(); persistTiktokSettings(); } else collectSettingsFromDom(); } catch (e) {}
   persistSettings(); persistGoogleSettings();
   const payload = buildSharedPayload();
   const keyInput = document.getElementById('share_admin_key');
